@@ -1,4 +1,5 @@
 Isha Foundation PCC Platform Project
 ====================================
 
-Repository for pcc code
+#### Developer Setup Documentation
+https://github.com/bishups/pcc-main/blob/master/doc/DeveloperSetup.md
