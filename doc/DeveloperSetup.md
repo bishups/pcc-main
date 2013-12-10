@@ -16,12 +16,16 @@ Basic Setup
 git clone https://username@github.com/bishups/pcc-main
 ```
 
+The above command should clone the Github repository into *pcc-main* directory.
+
 ### Install Gem Dependencies
 
 ```
 gem install bundler
 bundle install
 ```
+
+In case of error, ensure required libraries (headers) are installed in your local system.
 
 ### Setup Database
 
@@ -33,5 +37,16 @@ Setup database tables:
 bundle exec rake db:migrate
 ```
 
-It is a good practice to run database migrate after every pull from the repository in order to sync local schema with other developers.
+It is a good practice to run database migration after every pull from the repository in order to sync local schema with other developers.
 
+### Run Application Server
+
+Start application server in default port (3000).
+```
+rails s
+```
+
+Start application server in custom port
+```
+rails s -p 8899
+```
