@@ -24,8 +24,20 @@ The above command should clone the Github repository into *pcc-main* directory.
 gem install bundler
 bundle install
 ```
-
 In case of error, ensure required libraries (headers) are installed in your local system.
+
+#### A brief overview of Bundler
+
+Bundler maintains a consistent environment for ruby applications. It tracks an application's code and the rubygems it needs to run, so that an application will always have the exact gems (and versions) that it needs to run. 
+
+Reference: http://bundler.io/
+
+To summarize the usage of Bundler:
+
+* Define required Gems in Gemfile
+* Install and Lock (version) Gems using: bundle install
+* The Gemfile.lock is created. This ensures a version lock of the installed Gems.
+* This approach ensures that correct version of Gems are used across all developer and production deployments.
 
 ### Setup Database
 
