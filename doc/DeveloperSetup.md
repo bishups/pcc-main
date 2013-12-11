@@ -62,3 +62,19 @@ Start application server in custom port
 ```
 rails s -p 8899
 ```
+
+Reference
+---------
+
+* Ruby Installation with RVM: http://rvm.io/rubies/installing
+* Gem Bundler: http://bundler.io/
+* Ruby on Rails (3.x) Guide: http://guides.rubyonrails.org/v3.2.14/
+* Ruby on Rails Introductory Tutorials:
+  * http://guides.railsgirls.com/app/
+  * http://rubyonrails.org/screencasts
+* Suitable Editors
+  * Sublime Text: http://www.sublimetext.com/
+  * RedCar: http://redcareditor.com/
+  * TextMate: http://macromates.com/
+  * Aptana (Eclipse based): http://www.aptana.com/
+  * NetBeans (need Rails plugin): https://netbeans.org/
