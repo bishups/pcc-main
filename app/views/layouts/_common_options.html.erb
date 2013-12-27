@@ -1,0 +1,25 @@
+<ul class="nav navbar-nav navbar-right">
+  <% unless user_signed_in? %>
+    <li>
+      <%= link_to "/users/sign_up" do %>
+        <i class='icon-desktop'></i> Register
+      <% end %>
+    </li>
+    <li>
+      <%= link_to "/users/sign_in" do %>
+        <i class='icon-signin'></i> Sign-in
+      <% end %>
+    </li>
+  <% else %>
+    <li>
+      <%= link_to "/users/sign_out", :method => :delete do %>
+        <i class='icon-signout'></i> Sign-out
+      <% end %>
+    </li>
+  <% end %>
+  <li>
+    <a href="/about">
+      <i class='icon-question'></i> About
+    </a>
+  </li>
+</ul>

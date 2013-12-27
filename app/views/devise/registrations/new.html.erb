@@ -1,18 +1,51 @@
-<h2>Sign up</h2>
+<div class='row'>
+  <div class='col-md-12'>
+    <div class='page-header'>
+      <h2>Register with PCC Portal</h2>
+    </div>
+    <div class='page-body'>
+      <div class='row'>
+        <div class='col-md-6 col-md-offset-1'>
+          <%= form_for(resource, :as => resource_name, :url => registration_path(resource_name), :html => { :class => 'form' }) do |f| %>
+            <%= devise_error_messages! %>
+            <div class='form-group'>
+              <%= f.label :email %>
+              <%= f.email_field :email, :class => 'form-control', :autofocus => true %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :password %>
+              <%= f.password_field :password, :class => 'form-control' %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :password_confirmation %>
+              <%= f.password_field :password_confirmation, :class => 'form-control' %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :firstname %>
+              <%= f.text_field :firstname, :class => 'form-control' %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :lastname %>
+              <%= f.text_field :lastname, :class => 'form-control' %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :phone %>
+              <%= f.text_field :phone, :class => 'form-control' %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :mobile %>
+              <%= f.text_field :mobile, :class => 'form-control' %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :address %>
+              <%= f.text_area :address, :class => 'form-control', :rows => 5 %>
+            </div>
 
-<%= form_for(resource, :as => resource_name, :url => registration_path(resource_name)) do |f| %>
-  <%= devise_error_messages! %>
+            <%= f.submit "Register", :class => 'btn btn-lg btn-primary' %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <div><%= f.label :email %><br />
-  <%= f.email_field :email, :autofocus => true %></div>
-
-  <div><%= f.label :password %><br />
-  <%= f.password_field :password %></div>
-
-  <div><%= f.label :password_confirmation %><br />
-  <%= f.password_field :password_confirmation %></div>
-
-  <div><%= f.submit "Sign up" %></div>
-<% end %>
-
-<%= render "devise/shared/links" %>

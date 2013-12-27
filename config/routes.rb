@@ -2,6 +2,9 @@ PccMain::Application.routes.draw do
 
   devise_for :users
 
+  # Misc. static pages
+  get '/about'  => 'home#about'
+
   root :to => 'home#index'
 
   # This is a legacy wild controller route that's not recommended for RESTful applications.
