@@ -6,6 +6,11 @@ PccMain::Application.routes.draw do
   get '/about'                            => 'home#about'
   get '/registration_confirmation'        => 'home#registration_confirmation'
 
+  # Admin exclusive resources
+  namespace :admin do
+    resources :users
+  end
+
   root :to => 'home#index'
 
   # This is a legacy wild controller route that's not recommended for RESTful applications.

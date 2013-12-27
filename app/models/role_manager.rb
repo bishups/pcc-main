@@ -9,6 +9,12 @@ class RoleManager
     @user.roles.where(:name => ::Role::ROLE_SUPER_ADMIN).count() > 0
   end
 
+  def has_manager_role?()
+  end
+
+  def has_admin_role?()
+  end
+
   def has_role?(role_name)
     @user.roles.where(:name => role_name).count() > 0
   end

@@ -41,4 +41,5 @@ gem 'devise'
 gem 'cancan'
 gem 'will_paginate', '~> 3.0'
 gem 'font-awesome-rails'
+gem 'state_machine'
 

@@ -1,0 +1,34 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      User Management 
+      <small>Listing <%= "%d/%d" % [@users.count, @users.total_entries] %> users</small>
+      <span class='pull-right'>
+        <%= render :partial => 'shared/resource_inline_search' %>
+      </span>
+    </h2>
+    <table class='table table-condensed table-hover table-bordered'>
+      <tr>
+        <th>#</th>
+        <th>Email</th>
+        <th>Active</th>
+        <th>Admin</th>
+        <th>Roles</th>
+        <th>...</th>
+      </tr>
+      <% @users.each do |user| %>
+      <tr>
+        <td><%= user.id %></td>
+        <td><%= user.email %></td>
+        <td><%= (user.confirmed?) ? "Yes" : "No" %></td>
+        <td><%= (user.role_manager.has_admin_role?) ? "Yes" : "No" %></td>
+        <td><%= user.role_manager.roles.count %></td>
+        <td><%= link_to "Manage", edit_admin_user_path(user), :class => 'btn btn-sm btn-primary' %></td>
+      </tr>
+      <% end %>
+    </table>
+    <div class='apple_pagination'>
+      <%= will_paginate(@readable_items, :container => false) %>
+    </div>
+  </div>
+</div>
