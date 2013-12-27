@@ -1,9 +1,10 @@
 PccMain::Application.routes.draw do
 
-  devise_for :users
+  devise_for :users, :controllers => { :registrations => 'registrations' }
 
   # Misc. static pages
-  get '/about'  => 'home#about'
+  get '/about'                            => 'home#about'
+  get '/registration_confirmation'        => 'home#registration_confirmation'
 
   root :to => 'home#index'
 
