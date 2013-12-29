@@ -1,0 +1,24 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>Enquiry List</h2>
+  </div>
+  <table class='table table-condensed table-hover table-bordered'>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>Topic</th>
+      <th>State</th>
+      <th> ... </th>
+    </tr>
+    <% @enquiries.each do |enquiry| %>
+    <tr>
+      <td><%= enquiry.id %></td>
+      <td><%= enquiry.name %></td>
+      <td><%= enquiry.topic %></td>
+      <td><%= enquiry_state_tag(enquiry) %></td>
+      <td><%= link_to "Open", enquiry_path(enquiry), :class => 'btn btn-sm btn-primary' %></td>
+    </tr>
+    <% end %>
+  </table>
+</div>
+

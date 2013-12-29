@@ -17,4 +17,8 @@ module ApplicationHelper
 
     html.html_safe
   end
+
+  def state_tag(name, klass = 'label label-default')
+    content_tag(:span, name, :class => klass)
+  end
 end

@@ -15,5 +15,9 @@ class User < ActiveRecord::Base
   def role_manager
     @role_manager ||= ::RoleManager.new(self)
   end
-  
+
+  def fullname
+    "%s %s" % [self.firstname.capitalize, self.lastname.capitalize]
+  end
+
 end

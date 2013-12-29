@@ -1,0 +1,30 @@
+<%= form_for(@enquiry, :html => { :class => 'form' }) do |f| %>
+  <%= resource_error_messages!(@enquiry) %>
+
+  <div class="form-group">
+    <%= f.label :topic %>
+    <%= f.select :topic, options_for_select(Ontology::Enquiry::Type::ALL), {}, { :class => 'form-control' } %>
+  </div>
+  <div class="form-group">
+    <%= f.label :name %>
+    <%= f.text_field :name, :class => 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :email %>
+    <%= f.email_field :email, :class => 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :phone %>
+    <%= f.text_field :phone, :class => 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :mobile %>
+    <%= f.text_field :mobile, :class => 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :description %>
+    <%= f.text_area :description, :class => 'form-control', :rows => 5 %>
+  </div>
+  
+  <%= f.submit 'Submit Enquiry', :class => 'btn btn-lg btn-primary' %>
+<% end %>

@@ -6,6 +6,9 @@ PccMain::Application.routes.draw do
   get '/about'                            => 'home#about'
   get '/registration_confirmation'        => 'home#registration_confirmation'
 
+  # Resources
+  resources :enquiries
+
   # Admin exclusive resources
   namespace :admin do
     resources :users
