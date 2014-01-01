@@ -5,7 +5,7 @@ Git is a free and open source distributed version control system designed to han
 
 Learning Git:
 
-
+* http://git-scm.com/book/en/Getting-Started
 * http://try.github.io
 
 Core Operations:
@@ -48,5 +48,32 @@ git checkout developer2
 ```
 git checkout developer3
 ```
+
+Commiting and Pushing Changes
+-----------------
+
+```
+git status
+```
+
+The above command will show the changes in the local repository that has not been commited.
+
+```
+git add file1 file2 ...
+```
+
+The above command will add (stage) new/modified files for commiting to the local repository.
+
+```
+git commit
+```
+
+The above command will record the changes in the local repository.
+
+```
+git push origin
+```
+
+The above command push the changes to the remote repository.
 
 
