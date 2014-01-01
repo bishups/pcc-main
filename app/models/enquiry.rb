@@ -7,13 +7,28 @@ class Enquiry < ActiveRecord::Base
   validates :description, :presence => true
 
   state_machine :state, :initial => :new do
-    event :respond do
+    event :start_process do
       transition :new => :processing
+    end
+
+    event :pending do
+      transition :processing => :pending
+    end
+
+    event :duplicate do
+      transition any => :duplicate
+    end
+
+    event :invalid do
+      transition any => :invalid
     end
 
     event :close do
       transition any => :closed
     end
+  end
+
+  def add_comment(comment)
   end
 
 end
