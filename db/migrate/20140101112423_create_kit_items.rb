@@ -4,6 +4,7 @@ class CreateKitItems < ActiveRecord::Migration
     	t.string :name
     	t.text :description
     	t.text :type
+    	t.string :capacity
       t.timestamps
     end
   end

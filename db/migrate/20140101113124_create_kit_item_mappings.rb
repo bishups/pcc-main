@@ -4,7 +4,6 @@ class CreateKitItemMappings < ActiveRecord::Migration
   		t.integer :kit_id
   		t.integer :kit_item_id
   		t.integer :count
-  		t.string :capacity
   		t.string :condition
   		t.text :comments
       t.timestamps
