@@ -11,7 +11,7 @@ gem 'sqlite3'
 # Gems used only for assets and not required
 # in production environments by default.
 group :assets do
-  gem 'sass-rails',   '~> 3.2.3'
+  gem 'sass-rails', '~> 3.2.3'
   gem 'coffee-rails', '~> 3.2.1'
 
   # See https://github.com/sstephenson/execjs#readme for more supported runtimes
@@ -39,7 +39,11 @@ gem 'capistrano'
 
 gem 'devise'
 gem 'cancan'
-gem 'will_paginate', '~> 3.0'
+#gem 'will_paginate', "3.0.pre2"
 gem 'font-awesome-rails'
 gem 'state_machine'
+gem "rails_admin", :git => "git://github.com/sferik/rails_admin.git", :tag => "v0.4.9"
+gem "paper_trail", :git => "https://github.com/airblade/paper_trail.git", :tag => "v2.7.2"
+gem 'annotate', ">=2.6.0"
+
 
