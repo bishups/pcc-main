@@ -1,0 +1,37 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Venue Detail <br/>
+      <small><%= @venue.name %></small>
+      <small><span class='label label-success'><%= @venue.capacity %></span></small>
+      <small><%= link_to "View Schedule", venue_venue_schedules_path(@venue) %></small>
+    </h2>
+    <blockquote>
+      <%= @venue.description %>
+    </blockquote>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Address</h3>
+    <address>
+      <%= @venue.address %><br/>
+      PIN: <%= @venue.pin_code %>
+    </address>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Contact</h3>
+    <p>
+      <%= @venue.contact_name %><br/>
+      P: <%= @venue.contact_phone %><br/>
+      M: <%= @venue.contact_mobile %><br/>
+      E: <%= @venue.contact_email %><br/>
+      <address>
+        <%= @venue.contact_address %>
+      </address>
+    </p>
+  </div>
+</div>
+

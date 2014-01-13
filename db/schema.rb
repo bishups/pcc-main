@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20131229133803) do
+ActiveRecord::Schema.define(:version => 20140112125625) do
 
   create_table "enquiries", :force => true do |t|
     t.string   "topic"
@@ -24,6 +24,49 @@ ActiveRecord::Schema.define(:version => 20131229133803) do
     t.string   "external_id"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
+  end
+
+  create_table "kit_item_mappings", :force => true do |t|
+    t.integer  "kit_id"
+    t.integer  "kit_item_id"
+    t.integer  "count"
+    t.string   "condition"
+    t.text     "comments"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+  end
+
+  create_table "kit_items", :force => true do |t|
+    t.string   "name"
+    t.text     "description"
+    t.text     "type"
+    t.string   "capacity"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+  end
+
+  create_table "kit_schedules", :force => true do |t|
+    t.date     "start_date"
+    t.date     "end_date"
+    t.string   "state"
+    t.integer  "issued_to_person_id"
+    t.integer  "blocked_by_person_id"
+    t.integer  "assigned_to_program_id"
+    t.datetime "created_at",             :null => false
+    t.datetime "updated_at",             :null => false
+  end
+
+  create_table "kits", :force => true do |t|
+    t.string   "state"
+    t.integer  "max_participant_number"
+    t.integer  "filling_person_id"
+    t.integer  "center_id"
+    t.integer  "guardian_id"
+    t.string   "condition"
+    t.text     "condition_comments"
+    t.text     "general_comments"
+    t.datetime "created_at",             :null => false
+    t.datetime "updated_at",             :null => false
   end
 
   create_table "roles", :force => true do |t|
@@ -79,5 +122,35 @@ ActiveRecord::Schema.define(:version => 20131229133803) do
 
   add_index "users", ["email"], :name => "index_users_on_email", :unique => true
   add_index "users", ["reset_password_token"], :name => "index_users_on_reset_password_token", :unique => true
+
+  create_table "venue_schedules", :force => true do |t|
+    t.integer  "venue_id"
+    t.integer  "reserving_user_id"
+    t.string   "slot"
+    t.datetime "start_date"
+    t.datetime "end_date"
+    t.datetime "created_at",        :null => false
+    t.datetime "updated_at",        :null => false
+  end
+
+  create_table "venues", :force => true do |t|
+    t.integer  "center_id"
+    t.integer  "zone_id"
+    t.string   "name"
+    t.text     "description"
+    t.text     "address"
+    t.string   "pin_code"
+    t.string   "capacity"
+    t.integer  "seats"
+    t.string   "state"
+    t.string   "contact_name"
+    t.string   "contact_email"
+    t.string   "contact_phone"
+    t.string   "contact_mobile"
+    t.text     "contact_address"
+    t.boolean  "commercial"
+    t.datetime "created_at",      :null => false
+    t.datetime "updated_at",      :null => false
+  end
 
 end

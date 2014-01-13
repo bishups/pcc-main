@@ -1,0 +1,2 @@
+module VenueSchedulesHelper
+end

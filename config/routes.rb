@@ -8,6 +8,9 @@ PccMain::Application.routes.draw do
 
   # Resources
   resources :enquiries
+  resources :venues do
+    resources :venue_schedules
+  end
 
   # Admin exclusive resources
   namespace :admin do

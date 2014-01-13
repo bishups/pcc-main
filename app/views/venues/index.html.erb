@@ -1,0 +1,37 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Available Venues
+      <span class='pull-right'>
+        <%= render :partial => 'shared/resource_inline_search' %>
+      </span>
+    </h2>
+  </div>
+  <table class='table table-condensed table-hover table-bordered'>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>Center</th>
+      <th>PIN Code</th>
+      <th>Capacity</th>
+      <th>Contact</th>
+      <th width='20%'></th>
+    </tr>
+    <% @venues.each do |venue| %>
+    <tr>
+      <td><%= venue.id %></td>
+      <td><%= venue.name %></td>
+      <td></td>
+      <td><%= venue.pin_code %></td>
+      <td><%= venue.capacity %></td>
+      <td><%= venue.contact_name %></td>
+      <td>
+        <%= link_to "Reserve", new_venue_venue_schedule_path(venue), :class => 'btn btn-primary btn-sm' %> 
+        <%= link_to "Show", venue_path(venue), :class => 'btn btn-primary btn-sm' %> 
+        <%= link_to "Schedule", venue_venue_schedules_path(venue), :class => 'btn btn-primary btn-sm' %> 
+      </td>
+    </tr>
+    <% end %>
+  </table>
+</div>
+
