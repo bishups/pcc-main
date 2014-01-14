@@ -2,16 +2,16 @@ class VenueScheduleValidator < ActiveModel::Validator
   def validate(record)
     if ::VenueSchedule.where(['start_date >= ? AND start_date <= ? AND slot = ?', 
       record.start_date, record.end_date, record.slot]).count() > 0
-      record.errors[:start_date] << "overlapps with existing schedule."
+      record.errors[:start_date] << "overlaps with existing schedule."
     elsif ::VenueSchedule.where(['end_date >= ? AND end_date <= ? AND slot = ?', 
       record.start_date, record.end_date, record.slot]).count() > 0
-      record.errors[:end_date] << "overlapps with existing schedule."
+      record.errors[:end_date] << "overlaps with existing schedule."
     elsif ::VenueSchedule.where(['start_date >= ? AND start_date <= ? AND slot = ?', 
       record.start_date, record.end_date, ::Ontology::Venue::SLOT_FULL_DAY]).count() > 0
-      record.errors[:start_date] << "overlapps with existing schedule."
+      record.errors[:start_date] << "overlaps with existing schedule."
     elsif ::VenueSchedule.where(['end_date >= ? AND end_date <= ? AND slot = ?', 
       record.start_date, record.end_date, ::Ontology::Venue::SLOT_FULL_DAY]).count() > 0
-      record.errors[:end_date] << "overlapps with existing schedule."
+      record.errors[:end_date] << "overlaps with existing schedule."
     end
 
     if record.start_date < Time.now
