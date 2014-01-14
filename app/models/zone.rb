@@ -1,6 +1,6 @@
 # == Schema Information
 #
-# Table name: roles
+# Table name: zones
 #
 #  id         :integer          not null, primary key
 #  name       :string(255)
@@ -8,10 +8,8 @@
 #  updated_at :datetime         not null
 #
 
-require 'test_helper'
-
-class RoleTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
+class Zone < ActiveRecord::Base
+  has_many :sectors
+  attr_accessible :name, :sectors_attributes
+  accepts_nested_attributes_for :sectors
 end

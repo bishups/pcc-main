@@ -15,3 +15,7 @@
 # Ignore all logfiles and tempfiles.
 /log/*.log
 /tmp
+# Ignore Gemlock file
+#Gemfile.lock # This is required in order to ensure version lock
+
+
