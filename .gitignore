@@ -18,4 +18,4 @@
 # Ignore Gemlock file
 #Gemfile.lock # This is required in order to ensure version lock
 
-
+.DS_store
