@@ -22,6 +22,7 @@ class Kit < ActiveRecord::Base
   attr_accessible :condition_comments, :general_comments
 
   has_many :kit_item_mappings
+  has_many :kit_schedules
   has_many :kit_items, :through => :kit_item_mappings
 
   has_paper_trail

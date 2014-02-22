@@ -1,0 +1,21 @@
+<h1>Listing kit_schedules</h1>
+
+<table>
+  <tr>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @kit_schedules.each do |kit_schedule| %>
+  <tr>
+    <td><%= link_to 'Show', kit_schedule %></td>
+    <td><%= link_to 'Edit', edit_kit_schedule_path(kit_schedule) %></td>
+    <td><%= link_to 'Destroy', kit_schedule, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Kit schedule', new_kit_schedule_path %>
