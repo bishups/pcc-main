@@ -10,7 +10,7 @@
   <div class='col-md-2'>
     <h2>
       <span>
-        <%= link_to "Propose Program", "#", :class => 'btn btn-primary' %>
+        <%= link_to "Propose Program", new_program_path, :class => 'btn btn-primary' %>
       </span>
     </h2>
   </div>
@@ -20,7 +20,7 @@
     <table class='table table-condensed table-hover table-bordered'>
       <tr>
         <th>#</th>
-        <th>Assigned Id</th>
+        <th>Announced Id</th>
         <th>Type</th>
         <th>Start</th>
         <th>End</th>
@@ -28,6 +28,20 @@
         <th>State</th>
         <th width='20%'></th>
       </tr>
+      <% @programs.each do |program| %>
+      <tr>
+        <td><%= program.id %></td>
+        <td><%= program.announce_program_id.to_s %></td>
+        <td><!-- Program Type --></td>
+        <td><%= program.start_date %></td>
+        <td><%= program.end_date %></td>
+        <td><%= program.slot %></td>
+        <td><!-- State --></td>
+        <td>
+          <!-- Options -->
+        </td>
+      </tr>
+      <% end %>
     </table>
   </div>
 </div>

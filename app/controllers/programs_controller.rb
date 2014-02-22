@@ -9,10 +9,34 @@ class ProgramsController < ApplicationController
     end
   end
 
+  def new
+    @program = Program.new
+
+    respond_to do |format|
+      format.html
+    end
+  end
+
   def show
+    @program = Program.find(params[:id].to_i)
+    
+    respond_to do |format|
+      format.html
+    end
   end
 
   def create
+    @program = Program.new(params[:program])
+    @program.proposer_id = current_user.id
+
+    respond_to do |format|
+      if @program.save
+        format.html { redirect_to @program, :notice => 'Program created successfully' }
+      else
+        format.html { render action: "new" }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      end
+    end
   end
 
   def update

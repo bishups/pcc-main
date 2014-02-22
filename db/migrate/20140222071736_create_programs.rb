@@ -8,8 +8,8 @@ class CreatePrograms < ActiveRecord::Migration
       t.integer :proposer_id
       t.integer :manager_id
       t.string :state
-      t.datetime :start_time
-      t.datetime :end_time
+      t.datetime :start_date
+      t.datetime :end_date
       t.string :slot
       t.string :announce_program_id
 
