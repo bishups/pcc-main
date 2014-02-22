@@ -26,12 +26,18 @@
         <th>End</th>
         <th>Slot</th>
         <th>State</th>
-        <th width='20%'></th>
+        <th></th>
       </tr>
       <% @programs.each do |program| %>
       <tr>
         <td><%= program.id %></td>
-        <td><%= program.announce_program_id.to_s %></td>
+        <td>
+          <% if program.announce_program_id.to_s.empty? %>
+            <span class='label label-danger'>pending</span>
+          <% else %>
+            <%= program.announce_program_id.to_s %>
+          <% end %>
+        </td>
         <td><!-- Program Type --></td>
         <td><%= program.start_date %></td>
         <td><%= program.end_date %></td>
@@ -39,6 +45,7 @@
         <td><!-- State --></td>
         <td>
           <!-- Options -->
+          <%= link_to "Open", program_path(program), :class => 'btn btn-primary btn-sm' %>
         </td>
       </tr>
       <% end %>
