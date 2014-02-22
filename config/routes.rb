@@ -1,5 +1,8 @@
 PccMain::Application.routes.draw do
 
+  resources :programs
+
+
   mount RailsAdmin::Engine => '/admin', :as => 'rails_admin'
 
   devise_for :users, :controllers => { :registrations => 'registrations' }
