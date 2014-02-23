@@ -37,14 +37,19 @@ class VenueSchedule < ActiveRecord::Base
       # TODO ready for assignment
     end
 
+    ## State and Trigger names are referred in view
+
     event :block do
       transition :block_requested => :blocked
     end
-    event :payment do
+    event :request_payment do
       transition :blocked => :payment_pending
     end
-    event :paid do
+    event :process_payment do
       transition [:blocked, :payment_pending] => :paid
+    end
+    event :cancel do
+      transition any => :cancelled
     end
   end
 

@@ -1,0 +1,13 @@
+<% if [:block, :request_payment, :process_payment].include?(@trigger.to_sym) %>
+<div class='alert alert-info'>
+<% else %>
+<div class='alert-alert-danger'>
+<% end %>
+  <h3>Confirmation: </h3>
+  <p>
+    <% if @trigger.to_sym == :block %>
+      Are you sure you want to <strong>block</strong> this venue for the specified dates?
+    <% elsif @trigger.to_sym == :request_payment %>
+    <% end %>
+  </p>
+</div>

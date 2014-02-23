@@ -12,6 +12,7 @@
     <tr>
       <th>#</th>
       <th>Prog #</th>
+      <th>State</th>
       <th>Month</th>
       <th>Start Date</th>
       <th>End Date</th>
@@ -23,6 +24,7 @@
     <tr>
       <td><%= vs.id %></td>
       <td><%= vs.program_id %></td>
+      <td><%= venue_schedule_state_tag(vs) %>
       <td><%= vs.start_date.strftime('%B') + ' ' + vs.start_date.strftime('%Y') %></td>
       <td><%= vs.start_date.strftime('%d/%m/%Y') %></td>
       <td><%= vs.end_date.strftime('%d/%m/%Y') %></td>

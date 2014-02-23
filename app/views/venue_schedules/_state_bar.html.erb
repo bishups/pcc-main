@@ -1,0 +1,30 @@
+<h2>
+  Venue Schdule <small><%= @venue_schedule.venue.name %> | <%= @venue_schedule.program.name %></small>
+  <div class='btn-group'>
+    <button type="button" class="btn btn-danger">Update State</button>
+    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+      <span class="caret"></span>
+      <span class="sr-only">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu" role="menu">
+      <% if @venue_schedule.can_block? %>
+        <li>
+          <%= link_to "Block", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :block) %>
+        </li>
+      <% end %>
+      <% if @venue_schedule.can_request_payment? %>
+        <li>
+          <%= link_to "Request Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :request_payment) %>
+        </li>
+      <% end %>
+      <% if @venue_schedule.can_process_payment? %>
+        <li>
+          <%= link_to "Process Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :process_payment) %>
+        </li>
+      <% end %>
+
+      <li class="divider"></li>
+      <li><a href="#">Cancel Schedule</a></li>
+    </ul>
+  </div>
+</h2>
