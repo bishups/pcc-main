@@ -1,7 +1,7 @@
 <%= form_for([@venue, @venue_schedule], :html => { :class => 'form' }) do |f| %>
   <%= resource_error_messages!(@venue_schedule) %>
 
-  <div class="form-group">
+<!--   <div class="form-group">
     <%= f.label :start_date %>
     <%= f.text_field :start_date, :class => 'form-control dateSelect' %>
     <br/>
@@ -12,9 +12,14 @@
   <div class='form-group'>
     <%= f.label :slot %>
     <%= f.select :slot, options_for_select(::Ontology::Venue::SLOT_ALL), {}, {:class => 'form-control'} %>
-  </div>
+  </div> -->
   
-  <%= f.submit 'Reserve Venue', :class => 'btn btn-lg btn-primary' %>
+  <div class='form-group'>
+    <label for='program_id'>Program Id</label>
+    <%= f.text_field :program_id, :class => 'form-control' %>
+  </div>
+
+  <%= f.submit 'Block Venue', :class => 'btn btn-lg btn-primary' %>
 <% end %>
 
 <script type='text/javascript'>

@@ -13,6 +13,27 @@ class Program < ActiveRecord::Base
 
   before_create :assign_dates!
 
+  belongs_to :center
+  belongs_to :venue_schedule
+
+  def proposer
+    ::User.find(self.proposer_id)
+  end
+
+  def venue_connected?
+    self.venue_schedule_id != nil
+  end
+
+  def connect_venue(venue)
+    self.venue_schedule_id = venue.id
+    self.save!
+  end
+
+  def disconnect_venue(venue)
+    self.venue_schedule_id = nil
+    self.save!
+  end
+
   private
 
   def assign_dates!
