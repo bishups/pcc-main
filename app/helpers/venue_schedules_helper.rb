@@ -7,7 +7,7 @@ module VenueSchedulesHelper
       elsif vs.blocked?
         '<span class="label label-info">Blocked</span>'
       elsif vs.payment_pending?
-        '<span class="label label-warn">Blocked</span>'
+        '<span class="label label-warning">Payment Pending</span>'
       elsif vs.paid?
         '<span class="label label-success">Paid</span>'
       elsif vs.cancelled?

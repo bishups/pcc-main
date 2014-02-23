@@ -3,3 +3,33 @@
     <%= render :partial => 'venue_schedules/state_bar' %>
   </div>
 </div>
+<div class='row'>
+  <div class='col-md-12'>
+    <table class='table table-bordered'>
+      <tr>
+        <td width='20%'><strong>Name</strong></td>
+        <td><%= @venue.name %></td>
+      </tr>
+      <tr>
+        <td><strong>Center</strong></td>
+        <td><%= @venue.center.name rescue '' %></td>
+      </tr>
+      <tr>
+        <td><strong>Address</strong></td>
+        <td>
+          <address>
+            <%= @venue.address rescue '' %>
+          </address>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Booking Start Date</strong></td>
+        <td><%= @venue_schedule.start_date %></td>
+      </tr>
+      <tr>
+        <td><strong>Booking End Date</strong></td>
+        <td><%= @venue_schedule.end_date %></td>
+      </tr>
+    </table>
+  </div>
+</div>
