@@ -23,6 +23,7 @@ class VenueSchedulesController < ApplicationController
   def create
     @venue_schedule = @venue.venue_schedules.new(params[:venue_schedule])
     @venue_schedule.reserving_user_id = current_user.id
+    @venue_schedule.setup_details!
 
     respond_to do |format|
       if @venue_schedule.save
