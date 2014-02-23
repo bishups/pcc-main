@@ -1,0 +1,34 @@
+<h1>Listing kits</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>State</th>
+    <th>Center</th>
+    <th>Max Participants </th>
+    <th> Condition </th>
+    <th> Condition Comments </th>
+    <th> General Comments </th>
+    
+  </tr>
+
+<% @kits.each do |kit| %>
+  <tr>
+    <td> <%=kit.kit_name_string%></td>
+    <td> <%=  kit.state %> </td>
+    <% if kit.center != nil %>
+      <td> <%=  kit.center.name %> </td>
+    <%end%>
+    <td> <%=  kit.max_participant_number %> </td>
+    <td> <%=  kit.condition %> </td>
+    <td> <%=  kit.condition_comments %> </td>
+    <td> <%=  kit.general_comments%> </td>
+    <td><%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %></td> 
+  
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Kit', new_kit_path %>
