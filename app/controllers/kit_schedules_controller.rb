@@ -37,14 +37,19 @@ class KitSchedulesController < ApplicationController
   # GET /kit_schedules/1/edit
   def edit
     @kit_schedule = @kit.kit_schedules.find(params[:id])
+
+    @trigger = params[:trigger]
+
+    respond_to do |format|
+      format.html
+      format.json { render json: @kit_schedule }
+    end
   end
 
   # POST /kit_schedules
   # POST /kit_schedules.json
   def create
     @kit_schedule = @kit.kit_schedules.new(params[:kit_schedule])
-
-
     respond_to do |format|
       if @kit_schedule.save
         format.html { redirect_to [@kit, @kit_schedule], notice: 'Kit schedule was successfully created.' }
@@ -59,16 +64,20 @@ class KitSchedulesController < ApplicationController
   # PUT /kit_schedules/1
   # PUT /kit_schedules/1.json
   def update
+
     @kit_schedule = @kit.kit_schedules.find(params[:id])
+    @kit_schedule.comments = params[:comment]
+
+    @trigger = params[:trigger]
+    state_update(@kit_schedule, @trigger)
 
     respond_to do |format|
-      if @kit_schedule.update_attributes(params[:kit_schedule])
-        format.html { redirect_to @kit_schedule, notice: 'Kit schedule was successfully updated.' }
-        format.json { head :no_content }
+      if @kit_schedule.errors.empty?
+        format.html {redirect_to [@kit,@kit_schedule],notice: 'Kit schedule was successfully updated.' }
       else
-        format.html { render action: "edit" }
-        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
-      end
+         format.html {redirect_to [@kit,@kit_schedule],notice: 'Error in update' }
+      end    
+      format.json { render :json => @kit_schedule }
     end
   end
 
@@ -79,7 +88,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.destroy
 
     respond_to do |format|
-      format.html { redirect_to kit_schedules_url }
+      format.html 
       format.json { head :no_content }
     end
   end
@@ -87,5 +96,11 @@ class KitSchedulesController < ApplicationController
   private
   def load_kit!
     @kit = ::Kit.find(params[:kit_id].to_i)
+  end
+
+   def state_update(ks, trig)
+    if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig.to_sym)
+      ks.send(::KitSchedule::EVENT_STATE_MAP[trig.to_sym].to_sym)
+    end
   end
 end

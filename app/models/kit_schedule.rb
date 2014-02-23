@@ -7,8 +7,8 @@ class KitSchedule < ActiveRecord::Base
   RETURNED_AND_CHECKED = :returned_and_checked
   UNDER_REPAIR = :under_repair
   INCOMPLETE_RETURN = :incomplete_return
-
-
+  CANCELLLED = :cancelled
+  
   belongs_to :kit
   belongs_to :program
   attr_accessible :program_id, :kit_id,:end_date, :start_date,:state
@@ -20,8 +20,27 @@ class KitSchedule < ActiveRecord::Base
   
   #checking for overlap validation 
   validates_with KitScheduleValidator
+
+
+  EVENT_STATE_MAP = { UNAVAILABLE => "unavailable",
+                      BLOCKED => "block",
+                      ISSUED => "issue",
+                      ASSIGNED => "assign",
+                      RETURNED_AND_CHECKED => "returned_and_check",
+                      UNDER_REPAIR => "under_repair",
+                      INCOMPLETE_RETURN => "incomplete_return",
+                      CANCELLLED => "cancel"
+                    }
+
+  PROCESSABLE_EVENTS = [
+    BLOCKED, ASSIGNED, ISSUED, RETURNED_AND_CHECKED, UNDER_REPAIR, INCOMPLETE_RETURN, UNAVAILABLE, CANCELLLED
+  ]
   
   state_machine :state , :initial => BLOCKED do
+
+    event :block do
+      transition [INCOMPLETE_RETURN, RETURNED_AND_CHECKED, UNDER_REPAIR] => BLOCKED
+    end
     
     event :assign do
       transition [BLOCKED] => ASSIGNED
@@ -45,6 +64,10 @@ class KitSchedule < ActiveRecord::Base
 
     event :unavailable do 
       transition [INCOMPLETE_RETURN,UNDER_REPAIR,BLOCKED] => UNAVAILABLE
+    end
+
+    event :cancel do
+      transition [:any] => CANCELLLED
     end
     
   end

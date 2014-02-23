@@ -1,0 +1,24 @@
+<% if [:blocked, :assigned, :issued,:returned_and_checked,:under_repair,:incomplete_return].include?(@trigger.to_sym) %>
+  <div class='alert alert-info'>
+<% else %>
+  <div class='alert-alert-danger'>
+<% end %>
+  <h3>Confirmation: </h3>
+  <p>
+    <% if @trigger.to_sym == :blocked %>
+        Are you sure you want to <strong>block</strong> this kit for program <strong><%= @kit_schedule.program%> </strong>for the specified dates?
+    <% elsif @trigger.to_sym == :assigned %>
+        Are you sure you want to <strong>Assign</strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
+    <% elsif @trigger.to_sym == :issued %>
+        Are you sure you want to <strong> Issue </strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
+    <% elsif @trigger.to_sym == :returned_and_checked %>
+        Are you sure you want to change state to <strong> Returned And Checked </strong> for this kit?
+    <% elsif @trigger.to_sym == :under_repair %>   
+        Are you sure you want to change state to <strong> Under Repair </strong> for this kit?
+    <% elsif @trigger.to_sym == :incomplete_return %>   
+        Are you sure you want to change state to <strong> IncompleteReturn </strong> for this kit?
+    <% else %>
+        Are you sure you want to change state to <strong> Unavailable</strong> for this kit?
+    <% end %>
+  </p>
+</div>

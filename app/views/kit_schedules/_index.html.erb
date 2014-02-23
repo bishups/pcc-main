@@ -6,6 +6,7 @@
     <th>Start Date</th>
     <th>End Date </th>
     <th> State </th>
+    <th> Show </th>
   </tr>
 
 <% @kit.kit_schedules.each do |kit_schedule| %>
@@ -15,6 +16,7 @@
     <td><%= kit_schedule.start_date.strftime('%d/%m/%Y') rescue nil%></td>
     <td><%= kit_schedule.end_date.strftime('%d/%m/%Y') rescue nil%></td>
     <td><%= kit_schedule.state %></td>
+    <td> <%= link_to "Open", kit_kit_schedule_path(kit_schedule.kit,kit_schedule), :class => 'btn btn-primary btn-sm' %> </td> 
   </tr>
 <% end %>
 </table>
