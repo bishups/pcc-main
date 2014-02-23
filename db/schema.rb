@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140222075258) do
+ActiveRecord::Schema.define(:version => 20140222104833) do
 
   create_table "centers", :force => true do |t|
     t.string   "name"
@@ -64,6 +64,7 @@ ActiveRecord::Schema.define(:version => 20140222075258) do
     t.datetime "created_at",             :null => false
     t.datetime "updated_at",             :null => false
     t.string   "comments"
+    t.integer  "kit_id"
   end
 
   create_table "kits", :force => true do |t|
@@ -77,7 +78,23 @@ ActiveRecord::Schema.define(:version => 20140222075258) do
     t.text     "general_comments"
     t.datetime "created_at",             :null => false
     t.datetime "updated_at",             :null => false
-    t.string   "kid_id_string"
+    t.string   "kit_name_string"
+  end
+
+  create_table "programs", :force => true do |t|
+    t.string   "name"
+    t.text     "description"
+    t.string   "center_id"
+    t.integer  "program_type_id"
+    t.integer  "proposer_id"
+    t.integer  "manager_id"
+    t.string   "state"
+    t.datetime "start_date"
+    t.datetime "end_date"
+    t.string   "slot"
+    t.string   "announce_program_id"
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
   end
 
   create_table "rails_admin_histories", :force => true do |t|

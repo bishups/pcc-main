@@ -23,13 +23,14 @@ module Ontology
       CAPACITY_SMALL, CAPACITY_MEDIUM, CAPACITY_LARGE
     ]
 
-    SLOT_MORNING = "Morning"
-    SLOT_AFTERNOON = "Afternoon"
-    SLOT_EVENING = "Evening"
+    SLOT_MORNING = "Morning (6am-9am)"
+    SLOT_AFTERNOON = "Afternoon (10am-1pm)"
+    SLOT_EVENING = "Evening (2pm-5pm)"
+    SLOT_NIGHT = "Night (6pm-9pm)"
     SLOT_FULL_DAY = "Full Day"
 
     SLOT_ALL = [
-      SLOT_MORNING, SLOT_AFTERNOON, SLOT_EVENING, SLOT_FULL_DAY
+      SLOT_MORNING, SLOT_AFTERNOON, SLOT_EVENING, SLOT_NIGHT, SLOT_FULL_DAY
     ]
   end
 

@@ -1,5 +1,4 @@
 PccMain::Application.routes.draw do
-
   mount RailsAdmin::Engine => '/admin', :as => 'rails_admin'
 
   devise_for :users, :controllers => { :registrations => 'registrations' }
@@ -10,8 +9,13 @@ PccMain::Application.routes.draw do
 
   # Resources
   resources :enquiries
+  resources :programs
   resources :venues do
     resources :venue_schedules
+  end
+  
+  resources :kits do
+      resources :kit_schedules
   end
 
   # Admin exclusive resources

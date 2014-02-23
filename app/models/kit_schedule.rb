@@ -1,6 +1,10 @@
 class KitSchedule < ActiveRecord::Base
   belongs_to :kit
-  attr_accessor :assigned_to_program_id, :blocked_by_person_id, :auto_shop_busy, :issued_to_person_id, :state, :end_date, :start_date
+  belongs_to :program
+  attr_accessible :assigned_to_program_id, :blocked_by_person_id, 
+    :auto_shop_busy, :issued_to_person_id, :state, :end_date, :start_date,:state
+  
+  before_validation :assign_start_date_end_date
   
   #checking for overlap validation 
   validates_with KitScheduleValidator
@@ -35,6 +39,12 @@ class KitSchedule < ActiveRecord::Base
       transition [:incomplete_return,:under_repair,:available,:blocked] => :unavailable
     end
     
+  end
+  
+  def assign_start_date_end_date
+    prog = Program.find(self.assigned_to_program_id)
+    self.start_date = prog.start_date - 1
+    self.end_date = prog.end_date + 1 
   end
   
 end

@@ -1,9 +1,11 @@
 class KitSchedulesController < ApplicationController
   # GET /kit_schedules
   # GET /kit_schedules.json
+  before_filter :authenticate_user!
+  before_filter :load_kit!
+  
   def index
-    @kit_schedules = KitSchedule.all
-
+    @kit_schedules = @kit.kit_schedules.where(['start_date > ?', DateTime.now])
     respond_to do |format|
       format.html # index.html.erb
       format.json { render json: @kit_schedules }
@@ -13,7 +15,7 @@ class KitSchedulesController < ApplicationController
   # GET /kit_schedules/1
   # GET /kit_schedules/1.json
   def show
-    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule = @kit.kit_schedules.find(params[:id])
 
     respond_to do |format|
       format.html # show.html.erb
@@ -24,7 +26,14 @@ class KitSchedulesController < ApplicationController
   # GET /kit_schedules/new
   # GET /kit_schedules/new.json
   def new
-    @kit_schedule = KitSchedule.new
+    @kit_schedule = @kit.kit_schedules.new
+    
+    if( params[:kit_id].nil? )
+      @kits = Kit.all
+    else
+      @kit = Kit.find(params[:kit_id])
+    end
+    @programs = Program.all
 
     respond_to do |format|
       format.html # new.html.erb
@@ -34,15 +43,13 @@ class KitSchedulesController < ApplicationController
 
   # GET /kit_schedules/1/edit
   def edit
-    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule = @kit.kit_schedules.find(params[:id])
   end
 
   # POST /kit_schedules
   # POST /kit_schedules.json
   def create
-    @kit_schedule = KitSchedule.new(params[:kit_schedule])
-    
-
+    @kit_schedule = @kit.kit_schedules.new(params[:venue_schedule])
     respond_to do |format|
       if @kit_schedule.save
         format.html { redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.' }
@@ -57,7 +64,7 @@ class KitSchedulesController < ApplicationController
   # PUT /kit_schedules/1
   # PUT /kit_schedules/1.json
   def update
-    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule = @kit.kit_schedules.find(params[:id])
 
     respond_to do |format|
       if @kit_schedule.update_attributes(params[:kit_schedule])
@@ -73,12 +80,17 @@ class KitSchedulesController < ApplicationController
   # DELETE /kit_schedules/1
   # DELETE /kit_schedules/1.json
   def destroy
-    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule = @kit.kit_schedules.find(params[:id])
     @kit_schedule.destroy
 
     respond_to do |format|
       format.html { redirect_to kit_schedules_url }
       format.json { head :no_content }
     end
+  end
+  
+  private
+  def load_kit!
+    @kit = ::Kit.find(params[:kit_id].to_i)
   end
 end
