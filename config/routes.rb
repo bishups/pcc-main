@@ -1,4 +1,6 @@
 PccMain::Application.routes.draw do
+
+  #mount RailsAdminImport::Engine => '/rails_admin_import', :as => 'rails_admin_import'
   mount RailsAdmin::Engine => '/admin', :as => 'rails_admin'
 
   devise_for :users, :controllers => { :registrations => 'registrations' }
