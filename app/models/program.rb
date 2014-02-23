@@ -16,6 +16,7 @@ class Program < ActiveRecord::Base
 
   belongs_to :center
   belongs_to :venue_schedule
+  belongs_to :program_type
 
   def proposer
     ::User.find(self.proposer_id)
@@ -50,6 +51,6 @@ class Program < ActiveRecord::Base
   end  
 
   def assign_dates!
-    # TODO: Assign end date based on ProgramType
+    self.end_date = self.start_date + self.program_type.no_of_days.to_i.days
   end
 end

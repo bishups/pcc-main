@@ -62,7 +62,7 @@ class VenueSchedulesController < ApplicationController
     state_update(@venue_schedule, @trigger)
 
     respond_to do |format|
-      format.html
+      format.html { redirect_to [@venue, @venue_schedule] }
       format.json { render :json => @venue_schedule }
     end
   end
@@ -77,7 +77,7 @@ class VenueSchedulesController < ApplicationController
   end
 
   def state_update(vs, trig)
-    if ::VenueSchedule::PROCESSABLE_EVENTS.include?(@trigger)
+    if ::VenueSchedule::PROCESSABLE_EVENTS.include?(@trigger.to_sym)
       vs.send(trig.to_sym)
     end
   end

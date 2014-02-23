@@ -14,6 +14,7 @@ class Venue < ActiveRecord::Base
   attr_accessible :zone_id
   attr_accessible :center_id
 
+  belongs_to :center
   has_many :venue_schedules
 
   validates_presence_of :zone_id

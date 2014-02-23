@@ -15,6 +15,10 @@
   <div class='col-md-12'>
     <table class='table table-bordered'>
       <tr>
+        <td width='20%'><strong>Internal Id</strong></td>
+        <td><%= @program.id %></td>
+      </tr>
+      <tr>
         <td width='20%'><strong>Center</strong></td>
         <td><%= @program.center.name %></td>
       </tr>
@@ -46,6 +50,9 @@
       Venue <%= link_to "##{@program.venue_schedule.venue.id}", venue_venue_schedule_path(@program.venue_schedule.venue, @program.venue_schedule) %> is associated with this program.
     </div>
     <% else %>
+    <div class='alert alert-danger'>
+      Pending assignment.
+    </div>
     <% end %>
   </div>
 </div>

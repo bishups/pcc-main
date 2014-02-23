@@ -2,6 +2,9 @@
   <div class='col-md-12'>
     <h2>
       Venue Schdule <small><%= @venue_schedule.venue.name %> | <%= @venue_schedule.program.name %></small>
+      <span class='pull-right'>
+        <%= link_to "Back", venue_venue_schedule_path(@venue, @venue_schedule), :class => 'btn btn-primary' %>
+      </span>
     </h2>
   </div>
 </div>
@@ -11,6 +14,11 @@
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'venue_schedules/state_update_confirmation_msg' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'venue_schedules/state_additional_data' %>
   </div>
 </div>
 <div class='row'>

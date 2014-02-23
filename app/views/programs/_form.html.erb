@@ -7,7 +7,7 @@
   </div>
   <div class="form-group">
     <%= f.label :program_type %>
-    <%= f.select :program_type_id, options_for_select([]), {}, :class => 'form-control' %>
+    <%= f.select :program_type_id, options_for_select(::ProgramType.all.map {|e| [e.name, e.id]}), {}, :class => 'form-control' %>
     <br/>
     <%= f.label :start_date %>
     <%= f.text_field :start_date, :class => 'form-control dateSelect' %>

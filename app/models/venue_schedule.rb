@@ -25,6 +25,8 @@ class VenueSchedule < ActiveRecord::Base
     :block, :request_payment, :process_payment, :cancel
   ]
 
+  STATE_CANCELLED = :cancelled
+
   def initialize(*args)
     super(*args)
   end
@@ -64,7 +66,6 @@ class VenueSchedule < ActiveRecord::Base
     self.slot = program.slot
     self.start_date = program.start_date
     self.end_date = program.end_date
-    self.end_date = Time.now + 20.days if self.end_date.nil?
   end
 
   def connect_program!
