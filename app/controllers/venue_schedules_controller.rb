@@ -56,6 +56,15 @@ class VenueSchedulesController < ApplicationController
   end
 
   def update
+    @venue_schedule = @venue.venue_schedules.find(params[:id])
+    @trigger = params[:trigger]
+
+    state_update(@venue_schedule, @trigger)
+
+    respond_to do |format|
+      format.html
+      format.json { render :json => @venue_schedule }
+    end
   end
 
   def destroy
@@ -66,4 +75,11 @@ class VenueSchedulesController < ApplicationController
   def load_venue!
     @venue = ::Venue.find(params[:venue_id].to_i)
   end
+
+  def state_update(vs, trig)
+    if ::VenueSchedule::PROCESSABLE_EVENTS.include?(@trigger)
+      vs.send(trig.to_sym)
+    end
+  end
+
 end

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140222101823) do
+ActiveRecord::Schema.define(:version => 20140222120902) do
 
   create_table "centers", :force => true do |t|
     t.string   "name"
@@ -78,7 +78,15 @@ ActiveRecord::Schema.define(:version => 20140222101823) do
     t.datetime "updated_at",             :null => false
   end
 
-<<<<<<< Updated upstream
+  create_table "program_types", :force => true do |t|
+    t.string   "name"
+    t.string   "language"
+    t.integer  "no_of_days"
+    t.integer  "minimum_no_of_teacher"
+    t.datetime "created_at",            :null => false
+    t.datetime "updated_at",            :null => false
+  end
+
   create_table "programs", :force => true do |t|
     t.string   "name"
     t.text     "description"
@@ -95,15 +103,6 @@ ActiveRecord::Schema.define(:version => 20140222101823) do
     t.integer  "kit_schedule_id"
     t.datetime "created_at",          :null => false
     t.datetime "updated_at",          :null => false
-=======
-  create_table "program_types", :force => true do |t|
-    t.string   "name"
-    t.string   "language"
-    t.integer  "no_of_days"
-    t.integer  "minimum_no_of_teacher"
-    t.datetime "created_at",            :null => false
-    t.datetime "updated_at",            :null => false
->>>>>>> Stashed changes
   end
 
   create_table "rails_admin_histories", :force => true do |t|

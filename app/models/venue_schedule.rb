@@ -21,6 +21,10 @@ class VenueSchedule < ActiveRecord::Base
   before_create :assign_details!
   after_create :connect_program!
 
+  PROCESSABLE_EVENTS = [
+    :block, :request_payment, :process_payment, :cancel
+  ]
+
   def initialize(*args)
     super(*args)
   end
