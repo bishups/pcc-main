@@ -12,6 +12,8 @@ class CreatePrograms < ActiveRecord::Migration
       t.datetime :end_date
       t.string :slot
       t.string :announce_program_id
+      t.integer :venue_schedule_id
+      t.integer :kit_schedule_id
 
       t.timestamps
     end

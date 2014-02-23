@@ -1,0 +1,69 @@
+<div class='row'>
+  <div class='page-header'>
+    <h2>
+      Program Details
+      <span class='pull-right'>
+        <%= link_to 'Assign Teacher', '#', :class => 'btn btn-success' %>
+        <%= link_to 'Announce Program', "#", :class => 'btn btn-danger', :disabled => true %>
+      </span>
+    </h2>
+  </div>
+</div>
+
+<div class='row'>
+  <h3>Basic Details</h3>
+  <div class='col-md-12'>
+    <table class='table table-bordered'>
+      <tr>
+        <td width='20%'><strong>Center</strong></td>
+        <td><%= @program.center.name %></td>
+      </tr>
+      <tr>
+        <td><strong>Proposed By</strong></td>
+        <td><%= @program.proposer.fullname %></td>
+      </tr>
+      <tr>
+        <td><strong>Start Date</strong></td>
+        <td><%= @program.start_date %></td>
+      </tr>
+      <tr>
+        <td><strong>End Date</strong></td>
+        <td><%= @program.end_date %></td>
+      </tr>
+      <tr>
+        <td><strong>Slot</strong></td>
+        <td><%= @program.slot %></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div class='row'>
+  <h3>Venue Details</h3>
+  <div class='col-md-12'>
+    <% if @program.venue_connected? %>
+    <div class='alert alert-success'>
+      Venue <%= link_to "##{@program.venue_schedule.venue.id}", venue_venue_schedule_path(@program.venue_schedule.venue, @program.venue_schedule) %> is associated with this program.
+    </div>
+    <% else %>
+    <% end %>
+  </div>
+</div>
+
+<div class='row'>
+  <h3>Kit Details</h3>
+  <div class='col-md-12'>
+    <div class='alert alert-danger'>
+      Pending assignment.
+    </div>
+  </div>
+</div>
+
+<div class='row'>
+  <h3>Teacher Details</h3>
+  <div class='col-md-12'>
+    <div class='alert alert-danger'>
+      Pending assignment.
+    </div>
+  </div>
+</div>
