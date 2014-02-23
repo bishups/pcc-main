@@ -8,31 +8,8 @@
       </span>
     </h2>
   </div>
-<table class='table table-condensed table-hover table-bordered'>
-  <tr>
-    <th>Kit Name</th>
-    <th>Program Name</th>
-    <th>Start Date</th>
-    <th>End Date </th>
-    <th> State </th>
-    <th></th>
-  </tr>
-
-<% @kit_schedules.each do |kit_schedule| %>
-  <tr>
-    <td><%= kit_schedule.kit.kit_name_string %></td>
-   <td><%= kit_schedule.program.name rescue nil%></td>
-    <td><%= kit_schedule.start_date.strftime('%d/%m/%Y') %></td>
-    <td><%= kit_schedule.end_date.strftime('%d/%m/%Y') %></td>
-    <td><%= kit_schedule.state %></td>
-    <td>
-      <%= link_to "Open", kit_kit_schedule_path(@kit, kit_schedule), :class => 'btn btn-primary btn-sm' %>
-    </td>
-  </tr>
-<% end %>
-</table>
-
-<br />
+  <%=render 'index'%>
+</div>
 
 <%# if @kit_id.nil? %>
   <%#= link_to 'New Kit schedule', new_kit_schedule_path %>

@@ -1,3 +1,31 @@
-<h1>New kit_schedule</h1>
-
-<%= render 'form' %>
+<div class='row'>
+  <div class='col-md-4'>
+    <div class='page-header'>
+      <h2>
+        Block Kit
+        <small><%= @kit.kit_name_string %></small>
+      </h2>
+    </div>
+    <div class='page-body'>
+      <div class='row'>
+        <div class='col-md-6'>
+          <%= render 'form' %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class='page-header'>
+      <h2>
+        Schedules 
+      </h2>
+    </div> 
+    <div class='page-body'>
+      <div class='row'>
+        <div class='col-md-12'>
+          <%= render 'index'%>  
+        </div>
+      </div>
+    </div> 
+  </div>
+</div>

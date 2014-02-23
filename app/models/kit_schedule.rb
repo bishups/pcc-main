@@ -1,8 +1,10 @@
 class KitSchedule < ActiveRecord::Base
   belongs_to :kit
   belongs_to :program
-  attr_accessible :assigned_to_program_id, :blocked_by_person_id, 
-    :auto_shop_busy, :issued_to_person_id, :state, :end_date, :start_date,:state
+  attr_accessible :program_id, :kit_id,:end_date, :start_date,:state
+
+  validates :start_date, :presence => true
+  validates :end_date, :presence => true
   
   before_validation :assign_start_date_end_date, :assign_person_ids
   
@@ -42,7 +44,7 @@ class KitSchedule < ActiveRecord::Base
   end
   
   def assign_start_date_end_date
-    prog = Program.find(self.assigned_to_program_id)
+    prog = Program.find(self.program_id)
     self.start_date = prog.start_date - 1
     self.end_date = prog.end_date + 1 
   end

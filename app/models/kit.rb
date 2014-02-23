@@ -52,6 +52,19 @@ class Kit < ActiveRecord::Base
     end
 
   end
+
+  def getState
+
+    #get the current schedule if any for the kit
+    kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.now, Time.now).order("start_date ASC")
+
+    if( kitSchedule[0].nil? )
+      return "available"
+    else
+      return kitSchedule[0].state
+    end  
+
+  end
   
   private
   def generateKitNameString
