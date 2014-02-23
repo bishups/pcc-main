@@ -27,13 +27,6 @@ class KitSchedulesController < ApplicationController
   # GET /kit_schedules/new.json
   def new
     @kit_schedule = @kit.kit_schedules.new
-    
-    if( params[:kit_id].nil? )
-      @kits = Kit.all
-    else
-      @kit = Kit.find(params[:kit_id])
-    end
-    @programs = Program.all
 
     respond_to do |format|
       format.html # new.html.erb
@@ -49,10 +42,12 @@ class KitSchedulesController < ApplicationController
   # POST /kit_schedules
   # POST /kit_schedules.json
   def create
-    @kit_schedule = @kit.kit_schedules.new(params[:venue_schedule])
+    @kit_schedule = @kit.kit_schedules.new(params[:kit_schedule])
+
+
     respond_to do |format|
       if @kit_schedule.save
-        format.html { redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.' }
+        format.html { redirect_to [@kit, @kit_schedule], notice: 'Kit schedule was successfully created.' }
         format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
       else
         format.html { render action: "new" }

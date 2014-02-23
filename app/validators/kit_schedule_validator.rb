@@ -5,7 +5,7 @@ class KitScheduleValidator < ActiveModel::Validator
   def validate(record)
     if KitSchedule.where(['start_date >= ? AND start_date <= ? AND kit_id = ?', 
       record.start_date-1, record.end_date+1, record.kit_id] ).count() > 0
-      record.errors[:start_date] << "Already Kit is assigned for the date"
+      record.errors[:start_date] << "Kit is Already assigned For the Date"
     elsif ::KitSchedule.where(['end_date >= ? AND end_date <= ? AND kit_id = ?', 
       record.start_date-1, record.end_date+1,record.kit_id]).count() > 0
       record.errors[:end_date] << "Already Kit is assigned for given date range"

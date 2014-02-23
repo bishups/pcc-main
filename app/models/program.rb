@@ -10,6 +10,7 @@ class Program < ActiveRecord::Base
   attr_accessible :start_date
   attr_accessible :center_id
   attr_accessible :slot
+  attr_accessible :end_date
 
   before_create :assign_dates!
 
@@ -34,7 +35,19 @@ class Program < ActiveRecord::Base
     self.save!
   end
 
-  private
+  def kit_connected?
+    self.kit_schedule_id != nil
+  end
+
+  def connect_kit(kit)
+    self.kit_schedule_id = kit.id
+    self.save
+  end
+
+  def disconnect_kit(kit)
+    self.kit_schedule_id = kit.id
+    self.save!
+  end  
 
   def assign_dates!
     # TODO: Assign end date based on ProgramType

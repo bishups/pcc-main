@@ -1,16 +1,9 @@
-<%= form_for(@kit_schedule) do |f| %>
-    <%= resource_error_messages!(@kit_schedule) %>
-
- 
+<%= form_for([@kit,@kit_schedule],:html => { :class => 'form' }) do |f| %>
+  <%= resource_error_messages!(@kit_schedule) %>
   <div class="form-group">
-    <%= f.label :kit_id %>
-    <%= f.text_field :kit_id %>
-      <br/>
-    <%= f.label :Program %>
-    <%= f.text_field :assigned_to_program_id %>
+    <label for='program_id'>Program Id</label>
+    <%= f.text_field :program_id, :class => 'form-control' %>
   </div>
 
-  <div class="actions">
-    <%= f.submit %>
-  </div>
+  <%= f.submit 'Block Kit', :class => 'btn btn-lg btn-primary' %>
 <% end %>

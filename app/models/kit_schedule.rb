@@ -4,7 +4,7 @@ class KitSchedule < ActiveRecord::Base
   attr_accessible :assigned_to_program_id, :blocked_by_person_id, 
     :auto_shop_busy, :issued_to_person_id, :state, :end_date, :start_date,:state
   
-  before_validation :assign_start_date_end_date
+  before_validation :assign_start_date_end_date, :assign_person_ids
   
   #checking for overlap validation 
   validates_with KitScheduleValidator
@@ -45,6 +45,18 @@ class KitSchedule < ActiveRecord::Base
     prog = Program.find(self.assigned_to_program_id)
     self.start_date = prog.start_date - 1
     self.end_date = prog.end_date + 1 
+  end
+
+  def assign_person_ids
+    if self.state == "Blocked"
+      self.blocked_by_person_id = current_user.id
+    elsif self.state == "Issued"
+       self.issued_to_person_id = current_user.id 
+    end 
+  end
+
+  def connect_program!
+    self.program.connect_kit(self)
   end
   
 end
