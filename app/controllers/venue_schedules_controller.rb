@@ -45,6 +45,19 @@ class VenueSchedulesController < ApplicationController
     end
   end
 
+  def edit
+    @venue_schedule = @venue.venue_schedules.find(params[:id])
+    @trigger = params[:trigger]
+
+    respond_to do |format|
+      format.html
+      format.json { render json: @venue_schedule }
+    end
+  end
+
+  def update
+  end
+
   def destroy
   end
 

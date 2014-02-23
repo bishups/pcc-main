@@ -1,0 +1,26 @@
+# == Schema Information
+#
+# Table name: program_types
+#
+#  id                    :integer          not null, primary key
+#  name                  :string(255)
+#  language              :string(255)
+#  no_of_days            :integer
+#  minimum_no_of_teacher :integer
+#  created_at            :datetime         not null
+#  updated_at            :datetime         not null
+#
+
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  name: MyString
+  language: MyString
+  no_of_days: 1
+  minimum_no_of_teacher: MyString
+
+two:
+  name: MyString
+  language: MyString
+  no_of_days: 1
+  minimum_no_of_teacher: MyString
