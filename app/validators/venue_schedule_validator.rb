@@ -9,7 +9,7 @@ class VenueScheduleValidator < ActiveModel::Validator
     elsif ::VenueSchedule.where(['start_date >= ? AND start_date <= ? AND slot = ? AND id != ? and state != ?', 
       record.start_date, record.end_date, ::Ontology::Venue::SLOT_FULL_DAY, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
       record.errors[:start_date] << "overlaps with existing schedule."
-    elsif ::VenueSchedule.where(['end_date >= ? AND end_date <= ? AND slot = ? AND id != ? AND id != ? and state != ?', 
+    elsif ::VenueSchedule.where(['end_date >= ? AND end_date <= ? AND slot = ? AND id != ? and state != ?', 
       record.start_date, record.end_date, ::Ontology::Venue::SLOT_FULL_DAY, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
       record.errors[:end_date] << "overlaps with existing schedule."
     end
