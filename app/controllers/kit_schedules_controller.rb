@@ -29,7 +29,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule = @kit.kit_schedules.new
 
     respond_to do |format|
-      format.html # new.html.erb
+      format.html 
       format.json { render json: @kit_schedule }
     end
   end
@@ -72,11 +72,7 @@ class KitSchedulesController < ApplicationController
     state_update(@kit_schedule, @trigger)
 
     respond_to do |format|
-      if @kit_schedule.errors.empty?
-        format.html {redirect_to [@kit,@kit_schedule],notice: 'Kit schedule was successfully updated.' }
-      else
-         format.html {redirect_to [@kit,@kit_schedule],notice: 'Error in update' }
-      end    
+      format.html {redirect_to [@kit,@kit_schedule]}
       format.json { render :json => @kit_schedule }
     end
   end

@@ -2,21 +2,21 @@
 <table class='table table-condensed table-hover table-bordered'>
   <tr>
     <th>Kit Name</th>
+    <th> State </th>
     <th>Program Name</th>
     <th>Start Date</th>
     <th>End Date </th>
-    <th> State </th>
     <th> Show </th>
   </tr>
 
-<% @kit.kit_schedules.each do |kit_schedule| %>
+<% @kit.kit_schedules.each do |ks| %>
   <tr>
-    <td><%= kit_schedule.kit.kit_name_string %></td>
-   <td><%= kit_schedule.program.name rescue nil%></td>
-    <td><%= kit_schedule.start_date.strftime('%d/%m/%Y') rescue nil%></td>
-    <td><%= kit_schedule.end_date.strftime('%d/%m/%Y') rescue nil%></td>
-    <td><%= kit_schedule.state %></td>
-    <td> <%= link_to "Open", kit_kit_schedule_path(kit_schedule.kit,kit_schedule), :class => 'btn btn-primary btn-sm' %> </td> 
+    <td><%= ks.kit.kit_name_string %></td>
+    <td><%= kit_schedule_state_tag(ks) %></td>
+    <td><%= ks.program.name rescue nil%></td>
+    <td><%= ks.start_date.strftime('%d/%m/%Y') rescue nil%></td>
+    <td><%= ks.end_date.strftime('%d/%m/%Y') rescue nil%></td>
+    <td> <%= link_to "Open", kit_kit_schedule_path(ks.kit, ks), :class => 'btn btn-primary btn-sm' %> </td> 
   </tr>
 <% end %>
 </table>

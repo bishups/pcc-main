@@ -1,17 +1,23 @@
-module VenueSchedulesHelper
+module KitSchedulesHelper
   
-  def venue_schedule_state_tag(vs)
+  def kit_schedule_state_tag(ks)
     proc do
-      if vs.block_requested?
-        '<span class="label label-info">Blocked Requested</span>'
-      elsif vs.blocked?
+      if ks.blocked?
         '<span class="label label-info">Blocked</span>'
-      elsif vs.payment_pending?
-        '<span class="label label-warning">Payment Pending</span>'
-      elsif vs.paid?
-        '<span class="label label-success">Paid</span>'
-      elsif vs.cancelled?
+      elsif ks.issued?
+        '<span class="label label-info">Issued</span>'
+       elsif ks.assigned?
+        '<span class="label label-info">Assigned</span>'  
+      elsif ks.under_repair?
+        '<span class="label label-warning">Under Repair</span>'
+      elsif ks.incomplete_return?
+        '<span class="label label-warning">Incomplete Return</span>'
+      elsif ks.unavailable?
+        '<span class="label label-danger">Unavailable</span>'
+      elsif ks.cancelled?
         '<span class="label label-danger">Cancelled</span>'
+      elsif ks.returned_and_checked?
+        '<span class="label label-success">Returned And Checked</span>'  
       else
         '<span class="label label-default">Unknown</span>'
       end

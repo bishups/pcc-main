@@ -1,5 +1,6 @@
 <h2>
-  <small><%= @kit_schedule.state %></small>
+  <% state = @kit_schedule.state %>
+  <small><%= state.capitalize %></small>
   <div class='btn-group'>
     <button type="button" class="btn btn-danger">Update State</button>
     <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">

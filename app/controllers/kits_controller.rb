@@ -4,6 +4,18 @@ class KitsController < ApplicationController
   def index
     @kits = Kit.all
 
+    @kits.each do |kit|
+      @kit_schedules = kit.kit_schedules.where("start_date <= ? and end_date >= ?", Time.now, Time.now).order(:start_date)
+
+      if( @kit_schedules.nil? || @kit_schedules.empty? )
+        kit.state = "available"
+      else
+        kit.state = @kit_schedules.first.state
+       end    
+    end
+
+
+
     respond_to do |format|
       format.html # index.html.erb
       format.json { render json: @kits }
