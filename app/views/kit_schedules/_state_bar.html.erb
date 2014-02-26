@@ -10,7 +10,7 @@
     <ul class="dropdown-menu" role="menu">
       <% if @kit_schedule.can_block? %>
         <li>
-          <%= link_to "Block", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :block) %>
+          <%= link_to "Block", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :blocked) %>
         </li>
       <% end %>
        <% if @kit_schedule.can_assign? %>

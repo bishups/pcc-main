@@ -6,7 +6,8 @@
   </div>
 </div>
 <%= form_for([@kit, @kit_schedule], :html => {:class => 'form'}) do |f| %>
-<%= resource_error_messages!(@venue_schedule) %>
+<%= resource_error_messages!(@kit_schedule) %>
+
 <%= hidden_field_tag 'trigger', @trigger %>
 
 <div class='row'>

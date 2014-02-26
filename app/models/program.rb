@@ -17,7 +17,8 @@ class Program < ActiveRecord::Base
   belongs_to :center
   belongs_to :venue_schedule
   belongs_to :program_type
-
+  belongs_to :kit_schedule
+  
   def proposer
     ::User.find(self.proposer_id)
   end

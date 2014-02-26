@@ -15,8 +15,12 @@ class KitSchedule < ActiveRecord::Base
 
   validates :start_date, :presence => true
   validates :end_date, :presence => true
+  validates :kit_id , :presence => true
+  validates :state , :presence => true
+  validates :program_id, :presence => true
   
-  before_validation :assign_start_date_end_date, :assign_person_ids
+  before_create :assign_start_date_end_date!, :assign_person_ids!
+  after_create :connect_program!
   
   #checking for overlap validation 
   validates_with KitScheduleValidator
@@ -72,14 +76,25 @@ class KitSchedule < ActiveRecord::Base
     end
     
   end
+
+  def set_up_details!
+    assign_start_date_end_date!
+    assign_person_ids!
+  end
   
-  def assign_start_date_end_date
+  def assign_start_date_end_date!
+    if self.program_id.nil?
+      return
+    end  
     prog = Program.find(self.program_id)
     self.start_date = prog.start_date - 1
     self.end_date = prog.end_date + 1 
   end
 
-  def assign_person_ids
+  def assign_person_ids!
+    if self.state.nil?
+      return
+    end
     if self.state == "Blocked"
       self.blocked_by_person_id = current_user.id
     elsif self.state == "Issued"
@@ -88,7 +103,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def connect_program!
-    self.program.connect_kit(self)
+    #self.program.connect_kit(self)
   end
   
 end

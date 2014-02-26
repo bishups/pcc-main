@@ -6,7 +6,7 @@
   <h3>Confirmation: </h3>
   <p>
     <% if @trigger.to_sym == :blocked %>
-        Are you sure you want to <strong>block</strong> this kit for program <strong><%= @kit_schedule.program%> </strong>for the specified dates?
+        Are you sure you want to <strong>block</strong> this kit for program <strong><%= @kit_schedule.program.name%> </strong>for the specified dates?
     <% elsif @trigger.to_sym == :assigned %>
         Are you sure you want to <strong>Assign</strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
     <% elsif @trigger.to_sym == :issued %>

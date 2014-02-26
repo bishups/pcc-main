@@ -50,6 +50,8 @@ class KitSchedulesController < ApplicationController
   # POST /kit_schedules.json
   def create
     @kit_schedule = @kit.kit_schedules.new(params[:kit_schedule])
+    @kit_schedule.set_up_details!
+
     respond_to do |format|
       if @kit_schedule.save
         format.html { redirect_to [@kit, @kit_schedule], notice: 'Kit schedule was successfully created.' }
@@ -66,13 +68,20 @@ class KitSchedulesController < ApplicationController
   def update
 
     @kit_schedule = @kit.kit_schedules.find(params[:id])
+    @trigger = params[:trigger]
     @kit_schedule.comments = params[:comment]
 
-    @trigger = params[:trigger]
-    state_update(@kit_schedule, @trigger)
-
     respond_to do |format|
-      format.html {redirect_to [@kit,@kit_schedule]}
+      format.html do
+        if state_update(@kit_schedule, @trigger)
+
+          #redirect_to action: "edit" , :trigger => params[:trigger]
+            redirect_to [@kit,@kit_schedule]
+        else
+            render :action => 'edit'
+        end
+      end
+
       format.json { render :json => @kit_schedule }
     end
   end
