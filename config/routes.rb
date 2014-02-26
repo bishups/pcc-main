@@ -16,10 +16,14 @@ PccMain::Application.routes.draw do
     resources :venue_schedules
   end
 
-  # Admin exclusive resources
-  namespace :admin do
-    resources :users
+  resources :teachers do
+    resources :teacher_schedules
   end
+
+  # Admin exclusive resources
+  #namespace :admin do
+  #  resources :users
+  #end
 
   root :to => 'home#index'
 
