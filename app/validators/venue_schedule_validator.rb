@@ -1,5 +1,7 @@
 class VenueScheduleValidator < ActiveModel::Validator
   def validate(record)
+    return if record.program.nil?
+
     if ::VenueSchedule.where(['start_date >= ? AND start_date <= ? AND slot = ? AND id != ? AND state != ?', 
       record.start_date, record.end_date, record.slot, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
       record.errors[:start_date] << "overlaps with existing schedule."
