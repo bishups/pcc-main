@@ -16,7 +16,6 @@
     <th> Condition Comments </th>
     <th> General Comments </th>
     <th></th>
-    <th></th>
   </tr>
 
 <% @kits.each do |kit| %>
@@ -28,8 +27,10 @@
     <td> <%=  kit.condition %> </td>
     <td> <%=  kit.condition_comments %> </td> 
     <td> <%=  kit.general_comments%> </td>
-    <td> <%= link_to "Block", new_kit_kit_schedule_path(kit), :class => 'btn btn-primary btn-sm' %> </td> 
-    <td> <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %> </td> 
+    <td> <%= link_to "Block", new_kit_kit_schedule_path(kit), :class => 'btn btn-primary btn-sm' %> 
+        <%= link_to "Show", kit_path(kit), :class => 'btn btn-primary btn-sm' %> 
+        <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %> 
+    </td> 
   </tr>
 <% end %>
 </table>

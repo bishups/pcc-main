@@ -1,0 +1,33 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Kit Detail <br/>
+      <small><%= @kit.kit_name_string %></small>
+      <small><%= link_to "View Schedule", kit_kit_schedules_path(@kit) %></small>
+    </h2>
+    <blockquote>
+      <%= @kit.kit_name_string %>
+    </blockquote>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Center</h3>
+    <p>
+
+      <%= @kit.center.name rescue nil %>
+    </p>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Other Details</h3>
+    <p>
+     Max Participant Number: <%= @kit.max_participant_number %><br/>
+     General Comments: <%= @kit.general_comments%><br/>
+     Condition: <%= @kit.condition %><br/>
+     Condition Comments: <%= @kit.condition_comments %>
+    </p>
+  </div>
+</div>
+
