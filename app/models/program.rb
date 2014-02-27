@@ -1,7 +1,7 @@
 class Program < ActiveRecord::Base
   validates :slot, :presence => true
   validates :start_date, :presence => true
-  #validates :end_date, :presence => true
+  validates :end_date, :presence => true
   validates :center_id, :presence => true
   validates :proposer_id, :presence => true
 
@@ -47,7 +47,7 @@ class Program < ActiveRecord::Base
   end
 
   def disconnect_kit(kit)
-    self.kit_schedule_id = kit.id
+    self.kit_schedule_id = nil
     self.save!
   end  
 
