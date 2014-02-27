@@ -1,0 +1,37 @@
+<div class='col-md-12'>
+    <h2>
+      Available Kits
+      <span class='pull-right'>
+        <%= render :partial => 'shared/resource_inline_search' %>
+      </span>
+    </h2>
+  </div>
+  <table class='table table-condensed table-hover table-bordered'>
+  <tr>
+    <th>Name</th>
+    <th>State</th>
+    <th>Center</th>
+    <th>Max Participants </th>
+    <th> Condition </th>
+    <th> Condition Comments </th>
+    <th> General Comments </th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @kits.each do |kit| %>
+  <tr>
+    <td> <%=kit.kit_name_string%></td>
+    <td> <%=  kit.getState() %> </td>
+    <td> <%=  kit.center.name rescue '' %> </td>
+    <td> <%=  kit.max_participant_number %> </td>
+    <td> <%=  kit.condition %> </td>
+    <td> <%=  kit.condition_comments %> </td> 
+    <td> <%=  kit.general_comments%> </td>
+    <td> <%= link_to "Block", new_kit_kit_schedule_path(kit), :class => 'btn btn-primary btn-sm' %> </td> 
+    <td> <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %> </td> 
+  </tr>
+<% end %>
+</table>
+<br />
+

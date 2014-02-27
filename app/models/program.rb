@@ -10,13 +10,15 @@ class Program < ActiveRecord::Base
   attr_accessible :start_date
   attr_accessible :center_id
   attr_accessible :slot
+  attr_accessible :end_date
 
   before_create :assign_dates!
 
   belongs_to :center
   belongs_to :venue_schedule
   belongs_to :program_type
-
+  belongs_to :kit_schedule
+  
   def proposer
     ::User.find(self.proposer_id)
   end
@@ -35,7 +37,19 @@ class Program < ActiveRecord::Base
     self.save!
   end
 
-  private
+  def kit_connected?
+    self.kit_schedule_id != nil
+  end
+
+  def connect_kit(kit)
+    self.kit_schedule_id = kit.id
+    self.save
+  end
+
+  def disconnect_kit(kit)
+    self.kit_schedule_id = kit.id
+    self.save!
+  end  
 
   def assign_dates!
     self.end_date = self.start_date + self.program_type.no_of_days.to_i.days

@@ -19,12 +19,19 @@
 #
 
 class Kit < ActiveRecord::Base
-  attr_accessible :condition_comments, :general_comments
+  attr_accessible :condition,:condition_comments,
+                  :general_comments, :kit_name_string,
+                  :center_id,:state,:max_participant_number
 
   has_many :kit_item_mappings
+  has_many :kit_schedules
   has_many :kit_items, :through => :kit_item_mappings
-
+  belongs_to :center
   has_paper_trail
+  
+  before_create :generateKitNameString
+  before_update :generateKitNameString
+  
   state_machine :state, :initial => :new do
     event :approve do
       transition :new => :available
@@ -44,6 +51,26 @@ class Kit < ActiveRecord::Base
       # DB - period kit_id - assigned
     end
 
+  end
+
+  def getState
+
+    #get the current schedule if any for the kit
+    kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.now, Time.now).order("start_date ASC")
+
+    if( kitSchedule[0].nil? )
+      return "available"
+    else
+      return kitSchedule[0].state
+    end  
+
+  end
+  
+  private
+  def generateKitNameString
+    center = Center.find(self.center_id )
+    name = center.name+"_"+self.max_participant_number.to_s+"_"+self.id.to_s
+    self.kit_name_string = name
   end
 
 #canBeBlocked

@@ -62,8 +62,11 @@ class VenueSchedulesController < ApplicationController
     state_update(@venue_schedule, @trigger)
 
     respond_to do |format|
-      format.html { redirect_to [@venue, @venue_schedule] }
-      format.json { render :json => @venue_schedule }
+      if state_update(@venue_schedule, @trigger)
+        format.html { redirect_to [@venue, @venue_schedule] }
+      else
+        format.json { render :json => @venue_schedule }
+      end
     end
   end
 
