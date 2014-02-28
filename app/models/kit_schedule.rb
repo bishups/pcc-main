@@ -27,14 +27,14 @@ class KitSchedule < ActiveRecord::Base
   validates_uniqueness_of :program_id
 
 
-  EVENT_STATE_MAP = { UNAVAILABLE => "unavailable",
-                      BLOCKED => "block",
-                      ISSUED => "issue",
-                      ASSIGNED => "assign",
-                      RETURNED_AND_CHECKED => "returned_and_check",
-                      UNDER_REPAIR => "under_repair",
-                      INCOMPLETE_RETURN => "incomplete_return",
-                      CANCELLLED => "cancel"
+  EVENT_STATE_MAP = { UNAVAILABLE => UNAVAILABLE.to_s,
+                      BLOCKED => BLOCKED.to_s,
+                      ISSUED => ISSUED.to_s,
+                      ASSIGNED => ASSIGNED.to_s,
+                      RETURNED_AND_CHECKED => RETURNED_AND_CHECKED.to_s,
+                      UNDER_REPAIR => UNDER_REPAIR.to_s,
+                      INCOMPLETE_RETURN => INCOMPLETE_RETURN.to_s,
+                      CANCELLLED => CANCELLLED.to_s
                     }
 
   PROCESSABLE_EVENTS = [
@@ -85,7 +85,8 @@ class KitSchedule < ActiveRecord::Base
   def assign_start_date_end_date!
     if self.program_id.nil?
       return
-    end  
+    end
+    
     prog = Program.find(self.program_id)
     self.start_date = prog.start_date - 1
     self.end_date = prog.end_date + 1 
@@ -95,15 +96,15 @@ class KitSchedule < ActiveRecord::Base
     if self.state.nil?
       return
     end
-    if self.state == "Blocked"
+    if self.state == BLOCKED
       self.blocked_by_person_id = current_user.id
-    elsif self.state == "Issued"
+    elsif self.state == ISSUED
        self.issued_to_person_id = current_user.id 
     end 
   end
 
   def connect_program!
-    #self.program.connect_kit(self)
+    self.program.connect_kit(self) unless self.program.nil?
   end
   
 end
