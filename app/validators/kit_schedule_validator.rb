@@ -8,12 +8,14 @@ class KitScheduleValidator < ActiveModel::Validator
       return
     end  
 
+    date_offset = record.program.program_type.no_of_days = nil ? 0 : record.program.program_type.no_of_days
+
     if ::KitSchedule.where(['start_date >= ? AND start_date <= ? AND kit_id = ? and id != ? and state != ?', 
-      record.start_date-1, record.end_date+1, record.kit_id, record.id,'cancelled' ] ).count() > 0
+      record.start_date-date_offset, record.end_date+date_offset, record.kit_id, record.id,'cancelled' ] ).count() > 0
       record.errors[:start_date] << " -- Kit is Already assigned For the Date"
 
     elsif ::KitSchedule.where(['end_date >= ? AND end_date <= ? AND kit_id = ? and id != ? and state != ?', 
-      record.start_date-1, record.end_date+1,record.kit_id,record.id,'cancelled']).count() > 0
+      record.start_date-date_offset, record.end_date+date_offset,record.kit_id,record.id,'cancelled']).count() > 0
       record.errors[:end_date] << " -- Already Kit is assigned for given date range"
     end
     if record.start_date < Date.today

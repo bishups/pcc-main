@@ -1,0 +1,6 @@
+<% if @trigger.to_sym == :issued %>
+<div class='form-group'>
+  <label>Issuer ID </label>
+  <%= text_field_tag 'payment_mode', nil, :class => 'form-control' %>
+</div>
+<% end %>
