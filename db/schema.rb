@@ -11,19 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140227050924) do
-
-  create_table "access_privileges", :force => true do |t|
-    t.integer  "role_id"
-    t.integer  "user_id"
-    t.integer  "resource_id"
-    t.string   "resource_type"
-    t.datetime "created_at",    :null => false
-    t.datetime "updated_at",    :null => false
-  end
-
-  add_index "access_privileges", ["role_id"], :name => "index_access_privileges_on_role_id"
-  add_index "access_privileges", ["user_id"], :name => "index_access_privileges_on_user_id"
+ActiveRecord::Schema.define(:version => 20140222120902) do
 
   create_table "centers", :force => true do |t|
     t.string   "name"
@@ -45,17 +33,6 @@ ActiveRecord::Schema.define(:version => 20140227050924) do
     t.string   "external_id"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
-  end
-
-  create_table "functional_groups", :force => true do |t|
-    t.string   "name"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
-  end
-
-  create_table "functional_groups_permissions", :id => false, :force => true do |t|
-    t.integer "functional_group_id"
-    t.integer "permission_id"
   end
 
   create_table "kit_item_mappings", :force => true do |t|
@@ -99,19 +76,6 @@ ActiveRecord::Schema.define(:version => 20140227050924) do
     t.text     "general_comments"
     t.datetime "created_at",             :null => false
     t.datetime "updated_at",             :null => false
-  end
-
-  create_table "permissions", :force => true do |t|
-    t.string   "name"
-    t.datetime "created_at",    :null => false
-    t.datetime "updated_at",    :null => false
-    t.string   "cancan_action"
-    t.string   "subject"
-  end
-
-  create_table "permissions_roles", :id => false, :force => true do |t|
-    t.integer "role_id"
-    t.integer "permission_id"
   end
 
   create_table "program_types", :force => true do |t|

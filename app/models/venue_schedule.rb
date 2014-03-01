@@ -9,6 +9,7 @@ class VenueSchedule < ActiveRecord::Base
   validates :end_date, :presence => true
   validates :slot, :presence => true
   validates :reserving_user_id, :presence => true
+  validates :program_id, :presence => true
 
   # Overlap validation
   validates_with VenueScheduleValidator
@@ -62,7 +63,9 @@ class VenueSchedule < ActiveRecord::Base
   private
 
   def assign_details!
-    program = ::Program.find(self.program_id)
+    program = ::Program.where(:id => self.program_id).first()
+    return if program.nil?
+
     self.slot = program.slot
     self.start_date = program.start_date
     self.end_date = program.end_date
