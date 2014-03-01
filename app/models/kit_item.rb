@@ -11,8 +11,10 @@
 #
 
 class KitItem < ActiveRecord::Base
-  attr_accessible :name, :description
 
   has_many :kit_item_mappings
   has_many :kits, :through => :kit_item_mappings
+
+  attr_accessible :name, :description, :kit_item_type
+
 end

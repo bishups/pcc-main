@@ -19,12 +19,14 @@
 #
 
 class Kit < ActiveRecord::Base
-  attr_accessible :condition_comments, :general_comments
-
   has_many :kit_item_mappings
   has_many :kit_items, :through => :kit_item_mappings
 
+  attr_accessible :condition_comments, :general_comments, :kit_item_mappings
+  accepts_nested_attributes_for :kit_item_mappings
+
   has_paper_trail
+
   state_machine :state, :initial => :new do
     event :approve do
       transition :new => :available
