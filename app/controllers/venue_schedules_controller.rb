@@ -1,6 +1,8 @@
 class VenueSchedulesController < ApplicationController
   before_filter :authenticate_user!
-  before_filter :load_venue!
+#  before_filter :load_venue!
+  load_and_authorize_resource :venue
+  load_and_authorize_resource :through => :venue
 
   def index
     @venue_schedules = @venue.venue_schedules.where(['start_date > ?', DateTime.now])
