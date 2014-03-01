@@ -10,6 +10,12 @@
 
 class Zone < ActiveRecord::Base
   has_many :sectors
-  attr_accessible :name, :sectors_attributes
-  accepts_nested_attributes_for :sectors
+  has_many :centers, :through => :sectors
+  has_many :access_privileges, :as => :resource, :inverse_of => :resource
+
+  validates :name, :presence => true
+
+  attr_accessible :name, :sector_ids
+
+
 end
