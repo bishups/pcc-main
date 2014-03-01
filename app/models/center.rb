@@ -11,5 +11,10 @@
 
 class Center < ActiveRecord::Base
   belongs_to :sector
-  attr_accessible :name
+  has_many :access_privileges, :as => :resource, :inverse_of => :resource
+  attr_accessible :name, :sector_id
+
+  validates :name, :presence => true
+
+
 end
