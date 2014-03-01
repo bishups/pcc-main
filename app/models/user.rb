@@ -31,25 +31,66 @@ class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable,
-         :confirmable
+  devise :database_authenticatable,
+         :recoverable, :rememberable, :trackable,  :confirmable,:registerable #, :validatable
+
+  has_many :access_privileges
+  has_many :roles, :through => :access_privileges
+  has_many :permissions, :through => :roles
+  has_many :resources, :through => :access_privileges
 
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
-  attr_accessible :firstname, :lastname, :address, :phone, :mobile
+  attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names
+  attr_accessible :access_privileges_attributes
+  accepts_nested_attributes_for :access_privileges
 
-  has_and_belongs_to_many :roles
+      has_paper_trail
 
-  has_paper_trail
+  def access_privilege_names=(names)
+    names.collect do |n|
+      ap=self.access_privileges.new
+      ap.role=Role.where(:name => n[:role_name] ).first
+      ap.resource=Center.where(:name => n[:center_name] ).first
+    end
+  end
 
-
-  def role_manager
-    @role_manager ||= ::RoleManager.new(self)
+  def is_super_admin?
+    self.roles.exists?(:name => "Super Admin")
   end
 
   def fullname
     "%s %s" % [self.firstname.capitalize, self.lastname.capitalize]
   end
+  rails_admin do
+    list do
+      field :firstname
+      field :created_at  do
+        date_format :short
+      end
+    end
+    edit do
+      group :default do
+        label "User information"
+        help "Please fill all informations related to user..."
+      end
+      field :firstname
+      field :lastname
+      field :address
+      field :mobile
+      field :phone
+      field :email
+      field :access_privileges
+
+    end
+    update do
+      configure :email do
+        visible do
+          false
+        end
+      end
+    end
+  end
+
 
 end
