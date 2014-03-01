@@ -1,3 +1,27 @@
+# == Schema Information
+#
+# Table name: venues
+#
+#  id              :integer          not null, primary key
+#  center_id       :integer
+#  zone_id         :integer
+#  name            :string(255)
+#  description     :text
+#  address         :text
+#  pin_code        :string(255)
+#  capacity        :string(255)
+#  seats           :integer
+#  state           :string(255)
+#  contact_name    :string(255)
+#  contact_email   :string(255)
+#  contact_phone   :string(255)
+#  contact_mobile  :string(255)
+#  contact_address :text
+#  commercial      :boolean
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#
+
 class Venue < ActiveRecord::Base
   # attr_accessible :title, :body
   attr_accessible :name

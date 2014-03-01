@@ -1,3 +1,16 @@
+# == Schema Information
+#
+# Table name: access_privileges
+#
+#  id            :integer          not null, primary key
+#  role_id       :integer
+#  user_id       :integer
+#  resource_id   :integer
+#  resource_type :string(255)
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#
+
 class AccessPrivilege < ActiveRecord::Base
   belongs_to :role
   belongs_to :user

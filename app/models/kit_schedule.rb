@@ -1,3 +1,20 @@
+# == Schema Information
+#
+# Table name: kit_schedules
+#
+#  id                   :integer          not null, primary key
+#  start_date           :date
+#  end_date             :date
+#  state                :string(255)
+#  issued_to_person_id  :integer
+#  blocked_by_person_id :integer
+#  program_id           :integer
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  comments             :string(255)
+#  kit_id               :integer
+#
+
 class KitSchedule < ActiveRecord::Base
 
   UNAVAILABLE = :unavailable

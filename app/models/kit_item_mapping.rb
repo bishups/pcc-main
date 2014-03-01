@@ -6,7 +6,6 @@
 #  kit_id      :integer
 #  kit_item_id :integer
 #  count       :integer
-#  capacity    :string(255)
 #  condition   :string(255)
 #  comments    :text
 #  created_at  :datetime         not null

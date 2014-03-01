@@ -6,6 +6,7 @@
 #  name          :string(255)
 #  description   :text
 #  kit_item_type :text
+#  capacity      :string(255)
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
 #

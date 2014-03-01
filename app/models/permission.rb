@@ -1,3 +1,15 @@
+# == Schema Information
+#
+# Table name: permissions
+#
+#  id            :integer          not null, primary key
+#  name          :string(255)
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  cancan_action :string(255)
+#  subject       :string(255)
+#
+
 class Permission < ActiveRecord::Base
   attr_accessible :name
   has_and_belongs_to_many :functional_groups
