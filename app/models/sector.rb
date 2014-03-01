@@ -10,8 +10,12 @@
 #
 
 class Sector < ActiveRecord::Base
-  belongs_to :zone
+  belongs_to :zone, :inverse_of => :sectors
   has_many :centers
-  attr_accessible :name, :centers_attributes
-  accepts_nested_attributes_for :centers
+  validates :name, :presence => true
+
+  has_many :access_privileges, :as => :resource, :inverse_of => :resource
+
+
+  attr_accessible :name, :zone_id, :center_ids
 end
