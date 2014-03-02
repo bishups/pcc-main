@@ -45,5 +45,5 @@ gem 'state_machine'
 gem "rails_admin", :git => "git://github.com/sferik/rails_admin.git", :tag => "v0.4.9"
 gem "paper_trail", :git => "https://github.com/airblade/paper_trail.git", :tag => "v2.7.2"
 gem 'annotate', ">=2.6.0"
-
+gem 'validates_overlap'
 

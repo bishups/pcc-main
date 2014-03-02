@@ -40,6 +40,7 @@ class User < ActiveRecord::Base
   attr_accessible :firstname, :lastname, :address, :phone, :mobile
 
   has_and_belongs_to_many :roles
+  has_many :teacher_schedules
 
   has_paper_trail
 
