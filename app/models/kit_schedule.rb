@@ -107,7 +107,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def connect_program!
-    # self.program.connect_kit(self) unless self.program.nil?
+    self.program.connect_kit(self) unless self.program.nil?
   end
   
 end
