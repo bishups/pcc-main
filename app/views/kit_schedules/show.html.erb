@@ -29,7 +29,23 @@
         <td><strong>Booking End Date</strong></td>
         <td><%= @kit_schedule.end_date %></td>
       </tr>
+      <tr>
+        <td><strong>Comments</strong></td>
+        <td><%= @kit_schedule.comments %></td>
+      </tr>
+      <% if !@kit_schedule.issued_to_person_id.nil?%>
+      <tr>
+        <td><strong>Kit Issued to</strong></td>
+        <td><%= @kit_schedule.issued_to_person.email %></td>
+      </tr>
+      <%end%>
+
+      <% if !@kit_schedule.blocked_by_person_id.nil? %>
+      <tr>
+        <td><strong>Kit Assigned to</strong></td>
+        <td><%= @kit_schedule.blocked_by_person.email %></td>
+      </tr>
+      <%end%>
     </table>
-    <%= link_to "Schedules", kit_kit_schedules_path(@kit), :class => 'btn btn-primary btn-sm' %> 
   </div>
 </div>

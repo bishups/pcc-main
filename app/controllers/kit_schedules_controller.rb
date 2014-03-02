@@ -71,6 +71,14 @@ class KitSchedulesController < ApplicationController
     @trigger = params[:trigger]
     @kit_schedule.comments = params[:comment]
 
+    if !params[:issued_to_person_id].nil?
+      @kit_schedule.issued_to_person_id = params[:issued_to_person_id]
+    end
+
+    if @trigger == "blocked"
+      @kit_schedule.blocked_by_person_id = current_user.id
+    end
+
     respond_to do |format|
       format.html do
         if state_update(@kit_schedule, @trigger)
