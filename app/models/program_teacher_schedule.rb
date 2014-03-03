@@ -13,6 +13,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   #validates :user_id, :presence => true
   validates :created_by_user_id, :presence => true
   validates_uniqueness_of :program_id, :scope => [:teacher_schedule_id]
+  validates :start_date, :end_date, :overlap => [:teacher_schedule_id, :slot]
 
   before_create :copy_program_attributes!
 
