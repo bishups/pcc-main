@@ -14,6 +14,7 @@
       <th>Start Date</th>
       <th>End Date</th>
       <th>Slot</th>
+      <th>Engagements</th>
       <th width='15%'></th>
     </tr>
     <% @teacher_schedules.each do |ts| %>
@@ -23,6 +24,7 @@
       <td><%= ts.start_date %></td>
       <td><%= ts.end_date %></td>
       <td><%= ts.slot %></td>
+      <td><%= ts.program_teacher_schedules.count %></td>
       <td>
         <%= link_to edit_teacher_teacher_schedule_path(@teacher, ts) do %>
           <i class='icon-edit'></i> Edit

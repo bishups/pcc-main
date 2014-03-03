@@ -75,8 +75,16 @@
 <div class='row'>
   <h3>Teacher Details</h3>
   <div class='col-md-12'>
+    <% if @program.program_teacher_schedules.count > 0 %>
+      <% @program.program_teacher_schedules.each do |pts| %>
+      <div class='alert alert-success'>
+        Teacher Schedule <%= link_to "##{pts.id}", program_teacher_schedule_path(pts) %> has been assigned with this program.
+      </div>
+      <% end %>
+    <% else %>
     <div class='alert alert-danger'>
       Pending assignment.
     </div>
+    <% end %>
   </div>
 </div>
