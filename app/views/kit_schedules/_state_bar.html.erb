@@ -1,6 +1,5 @@
 <h2>
-  <% state = @kit_schedule.state %>
-  <small><%= state.capitalize %></small>
+  <small><%= kit_schedule_state_tag(@kit_schedule) %></small> Kit Schdule <small><%= @kit_schedule.kit.kit_name_string %> | <%= @kit_schedule.program.name %></small>
   <div class='btn-group'>
     <button type="button" class="btn btn-danger">Update State</button>
     <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
@@ -47,7 +46,11 @@
         </li>
       <%end%>  
       <li class="divider"></li>
-      <li><a href="#">Cancel Schedule</a></li>
+      <li><a href="#">Cancel Kit Schedule</a></li>
     </ul>
   </div>
+
+   <span class='pull-right'>
+    <%= link_to "Back to Kit Schedules", kit_kit_schedules_path(@kit), :class => 'btn btn-primary' %>
+  </span>
 </h2>

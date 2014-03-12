@@ -28,6 +28,9 @@ class KitSchedule < ActiveRecord::Base
   
   belongs_to :kit
   belongs_to :program
+  belongs_to :issued_to_person, :class_name => User
+  belongs_to :blocked_by_person, :class_name => User
+
   attr_accessible :program_id, :kit_id,:end_date, :start_date,:state
 
   validates :start_date, :presence => true
@@ -45,13 +48,13 @@ class KitSchedule < ActiveRecord::Base
 
 
   EVENT_STATE_MAP = { UNAVAILABLE => UNAVAILABLE.to_s,
-                      BLOCKED => BLOCKED.to_s,
-                      ISSUED => ISSUED.to_s,
-                      ASSIGNED => ASSIGNED.to_s,
-                      RETURNED_AND_CHECKED => RETURNED_AND_CHECKED.to_s,
+                      BLOCKED => "block",
+                      ISSUED => "issue",
+                      ASSIGNED => "assign",
+                      RETURNED_AND_CHECKED => "returned_and_check",
                       UNDER_REPAIR => UNDER_REPAIR.to_s,
                       INCOMPLETE_RETURN => INCOMPLETE_RETURN.to_s,
-                      CANCELLLED => CANCELLLED.to_s
+                      CANCELLLED => "cancel"
                     }
 
   PROCESSABLE_EVENTS = [
@@ -61,7 +64,7 @@ class KitSchedule < ActiveRecord::Base
   state_machine :state , :initial => BLOCKED do
 
     event :block do
-      transition [INCOMPLETE_RETURN, RETURNED_AND_CHECKED, UNDER_REPAIR] => BLOCKED
+      transition [INCOMPLETE_RETURN, UNDER_REPAIR] => BLOCKED
     end
     
     event :assign do

@@ -178,6 +178,8 @@ GEM
     uglifier (2.3.2)
       execjs (>= 0.3.0)
       json (>= 1.8.0)
+    validates_overlap (0.2.0)
+      rails (>= 3.0.0)
     warden (1.2.1)
       rack (>= 1.0)
 
@@ -200,3 +202,4 @@ DEPENDENCIES
   sqlite3
   state_machine
   uglifier (>= 1.0.3)
+  validates_overlap

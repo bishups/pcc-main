@@ -38,14 +38,14 @@ class User < ActiveRecord::Base
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
   has_many :resources, :through => :access_privileges
-
+  has_many :teacher_schedules
+  
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names
   attr_accessible :access_privileges_attributes
   accepts_nested_attributes_for :access_privileges
 
-      has_paper_trail
 
   def access_privilege_names=(names)
     names.collect do |n|

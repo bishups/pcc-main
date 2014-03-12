@@ -12,6 +12,8 @@ PccMain::Application.routes.draw do
   # Resources
   resources :enquiries
   resources :programs
+  resources :program_teacher_schedules
+  
   resources :venues do
     resources :venue_schedules
   end
