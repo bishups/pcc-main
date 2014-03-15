@@ -26,7 +26,7 @@ class TeacherSchedule < ActiveRecord::Base
     if self.start_date and self.end_date
       errors.add(:start_date, "cannot be in the past") if self.start_date < Time.now
       errors.add(:end_date, "cannot be less than start date") if self.start_date > self.end_date
-      errors.add(:end_date, "cannot be less than 3 days after start date") if (self.end_date - self.start_date) < 3.days
+      errors.add(:end_date, "cannot be less than 3 days after start date") if (self.end_date - self.start_date) < 2.days
     end
   end
 end
