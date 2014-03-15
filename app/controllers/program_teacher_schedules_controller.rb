@@ -22,7 +22,10 @@ class ProgramTeacherSchedulesController < ApplicationController
 
     respond_to do |format|
       if @program_teacher_schedule.save
-        format.html { redirect_to program_teacher_schedule_path(@program_teacher_schedule) }
+        format.html { 
+          #redirect_to program_teacher_schedule_path(@program_teacher_schedule) 
+          redirect_to program_path(@program_teacher_schedule.program)
+        }
       else
         format.html { render(:action => 'new') }
       end

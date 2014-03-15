@@ -17,5 +17,5 @@ class Sector < ActiveRecord::Base
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
 
 
-  attr_accessible :name, :zone_id, :center_ids
+  attr_accessible :name, :zone_id, :center_ids, :centers
 end

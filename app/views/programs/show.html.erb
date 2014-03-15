@@ -4,7 +4,11 @@
       Program Details
       <span class='pull-right'>
         <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
-        <%= link_to 'Announce Program', "#", :class => 'btn btn-danger', :disabled => (! @program.ready_for_announcement? ) %>
+        <% unless @program.is_announced? %> 
+          <%= link_to 'Announce Program', announce_program_path, :class => 'btn btn-danger', :disabled => (! @program.ready_for_announcement? ) %>
+        <% else %>
+          <%= render :partial => 'programs/state_bar' %>
+        <% end %>
       </span>
     </h2>
   </div>
@@ -12,7 +16,7 @@
 
 <% if @program.ready_for_announcement? %>
 <div class='alert alert-success'>
-  This program is ready for announcement.
+  <strong>This program is ready for announcement.</strong>
 </div>
 <% else %>
 <div class='alert alert-danger'>

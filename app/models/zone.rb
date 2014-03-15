@@ -15,7 +15,7 @@ class Zone < ActiveRecord::Base
 
   validates :name, :presence => true
 
-  attr_accessible :name, :sector_ids
+  attr_accessible :name, :sector_ids, :sectors
 
 
 end

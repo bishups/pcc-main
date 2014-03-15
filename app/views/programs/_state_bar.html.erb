@@ -1,0 +1,29 @@
+<div class='btn-group'>
+  <button type="button" class="btn btn-danger">Update State</button>
+  <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+    <span class="caret"></span>
+    <span class="sr-only">Toggle Dropdown</span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <% if @program.can_registration_open? %>
+    <li>
+      <%= link_to 'Open Registration', edit_program_path(@program, :trigger => :open_registration) %>
+    </li>
+    <% end %>
+    <% if @program.can_cancel? %>
+    <li>
+      <%= link_to 'Cancel', edit_program_path(@program, :trigger => :cancel) %>
+    </li>
+    <% end %>
+    <% if @program.can_start? %>
+    <li>
+      <%= link_to 'Start (In-Progress)', edit_program_path(@program, :trigger => :start) %>
+    </li>
+    <% end %>
+    <% if @program.can_close? %>
+    <li>
+      <%= link_to 'Close', edit_program_path(@program, :trigger => :close) %>
+    </li>
+    <% end %>
+  </ul>
+</div>
