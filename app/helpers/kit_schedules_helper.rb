@@ -10,7 +10,7 @@ module KitSchedulesHelper
         '<span class="label label-info">Assigned</span>'  
       elsif ks.closed?
         '<span class="label label-success">Closed</span>'
-      elsif ks.cancelled?
+      elsif ks.cancel?
         '<span class="label label-danger">Cancelled</span>'
       else
         '<span class="label label-default">Unknown</span>'

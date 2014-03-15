@@ -1,3 +1,9 @@
+<% if @kit_schedule.kit.state != ::Kit::AVAILABLE.to_s%>
+  <div class="alert alert-danger"> You cannot change the state of Schedule as Kit is 
+    <%=@kit_schedule.kit.state%> 
+    <%= link_to "Update Kit", kit_path(@kit_schedule.kit), :class => 'alert-link' %> 
+    </div>
+<% end %>
 <h2>
   <small><%= kit_schedule_state_tag(@kit_schedule) %></small> Kit Schdule <small><%= @kit_schedule.kit.kit_name_string %> | <%= @kit_schedule.program.name %></small>
   <div class='btn-group'>
@@ -26,7 +32,7 @@
       <% if @kit_schedule.can_cancel? %>
          <li class="divider"></li>
         <li>
-          <%= link_to "Cancel", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :cancelled) %>
+          <%= link_to "Cancel", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :cancel) %>
         </li>
       <% end %>    
     </ul>

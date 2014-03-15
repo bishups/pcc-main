@@ -32,7 +32,7 @@ class User < ActiveRecord::Base
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable,
-         :recoverable, :rememberable, :trackable,  :confirmable,:registerable #, :validatable
+         :recoverable, :rememberable, :trackable,:registerable #, :validatable
 
   has_many :access_privileges
   has_many :roles, :through => :access_privileges

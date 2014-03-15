@@ -66,7 +66,7 @@ class KitsController < ApplicationController
     respond_to do |format|
       format.html do
         if state_update(@kit, @trigger)
-          if @kit.update_attributes(params[:kit])
+          if @kit.save!
             #redirect_to action: "edit" , :trigger => params[:trigger]
             redirect_to [@kit]
           end
@@ -74,7 +74,6 @@ class KitsController < ApplicationController
             render :action => 'edit'
         end
       end
-      
     end
   end
 
@@ -90,9 +89,28 @@ class KitsController < ApplicationController
     end
   end
 
-  def state_update(ks, trig)
+  def state_update(kit, trig)
+    if trig != ::Kit::AVAILABLE.to_s
+      assigned_kit_schedules = kit.kit_schedules.where("state NOT IN (?)",['blocked','closed','cancel'])
+        if( !assigned_kit_schedules.nil? && assigned_kit_schedules.count > 0 )
+          kit.errors[:error] << "-- An Open Kit Schedule is there CANNOT change Kit State"
+          return false
+        end
+       if trig == ::Kit::UNDER_REPAIR.to_s
+          if kit.condition_comments.empty? || kit.condition_comments == ""
+            kit.errors[:condition_comments] << "-- Cannot Leave Empty"
+            return false
+          end  
+       end 
+       if trig == ::Kit::UNAVAILABLE.to_s
+          if kit.general_comments.empty? 
+            kit.errors[:general_comments] << "-- Cannot Leave Empty"
+            return false
+          end
+       end
+    end
     if ::Kit::PROCESSABLE_EVENTS.include?(trig.to_sym)
-      ks.send(::Kit::EVENT_STATE_MAP[trig.to_sym].to_sym)
+      kit.send(::Kit::EVENT_STATE_MAP[trig.to_sym].to_sym)
     end
   end
 end

@@ -26,7 +26,9 @@ class Kit < ActiveRecord::Base
                   :center_id,:state,:max_participant_number
 
   has_many :kit_item_mappings
+  has_many :kit_schedules
   has_many :kit_items, :through => :kit_item_mappings
+  belongs_to :center
   has_paper_trail
   
   after_create :generateKitNameStringAfterCreate

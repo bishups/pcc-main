@@ -89,11 +89,16 @@ class KitSchedule < ActiveRecord::Base
   def assign_start_date_end_date!
     if self.program_id.nil?
       return
+    end    
+    prog = Program.find_by_id(self.program_id)
+    if prog
+      self.start_date = prog.start_date - 1
+      self.end_date = prog.end_date + 1 
+    else
+      self.start_date = Date.today
+      self.end_date = Date.today
     end
-    
-    prog = Program.find(self.program_id)
-    self.start_date = prog.start_date - 1
-    self.end_date = prog.end_date + 1 
+
   end
 
   def assign_person_ids!

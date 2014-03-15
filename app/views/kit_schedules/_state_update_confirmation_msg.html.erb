@@ -1,4 +1,4 @@
-<% if [:blocked, :assigned, :issued,:closed,:cancelled,:over_due].include?(@trigger.to_sym) %>
+<% if [:blocked, :assigned, :issued,:closed,:cancel,:over_due].include?(@trigger.to_sym) %>
   <div class='alert alert-info'>
 <% else %>
   <div class='alert-alert-danger'>
@@ -13,7 +13,7 @@
         Are you sure you want to <strong> Issue </strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
     <% elsif @trigger.to_sym == :closed %>
         Are you sure you want to change state to <strong> Closed </strong> for this kit?
-    <% elsif @trigger.to_sym == :cancelled %>   
+    <% elsif @trigger.to_sym == :cancel %>   
         Are you sure you want to change state to <strong> Cancelled </strong> for this kit?
     <% elsif @trigger.to_sym == :over_due %>   
         Are you sure you want to change state to <strong> Over Due </strong> for this kit?
