@@ -1,8 +1,6 @@
 class VenueSchedulesController < ApplicationController
   before_filter :authenticate_user!
-#  before_filter :load_venue!
-  load_and_authorize_resource :venue
-  load_and_authorize_resource :through => :venue
+  before_filter :load_venue!
 
   def index
     @venue_schedules = @venue.venue_schedules.where(['start_date > ?', DateTime.now])
@@ -50,7 +48,7 @@ class VenueSchedulesController < ApplicationController
   def edit
     @venue_schedule = @venue.venue_schedules.find(params[:id])
     @trigger = params[:trigger]
-
+    authorize! :update, @venue
     respond_to do |format|
       format.html
       format.json { render json: @venue_schedule }
@@ -60,7 +58,7 @@ class VenueSchedulesController < ApplicationController
   def update
     @venue_schedule = @venue.venue_schedules.find(params[:id])
     @trigger = params[:trigger]
-
+    authorize! :update, @venue
     state_update(@venue_schedule, @trigger)
 
     respond_to do |format|
