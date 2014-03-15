@@ -4,18 +4,6 @@ class KitsController < ApplicationController
   def index
     @kits = Kit.all
 
-    @kits.each do |kit|
-      @kit_schedules = kit.kit_schedules.where("start_date <= ? and end_date >= ?", Time.now, Time.now).order(:start_date)
-
-      if( @kit_schedules.nil? || @kit_schedules.empty? )
-        kit.state = "available"
-      else
-        kit.state = @kit_schedules.first.state
-       end    
-    end
-
-
-
     respond_to do |format|
       format.html # index.html.erb
       format.json { render json: @kits }
@@ -47,6 +35,8 @@ class KitsController < ApplicationController
   # GET /kits/1/edit
   def edit
     @kit = Kit.find(params[:id])
+        @trigger = params[:trigger]
+
   end
 
   # POST /kits
@@ -69,15 +59,22 @@ class KitsController < ApplicationController
   # PUT /kits/1.json
   def update
     @kit = Kit.find(params[:id])
+    @trigger = params[:trigger]
+    @kit.condition_comments = params[:condition_comments]
+    @kit.general_comments = params[:general_comments]
 
     respond_to do |format|
-      if @kit.update_attributes(params[:kit])
-        format.html { redirect_to @kit, notice: 'Kit was successfully updated.' }
-        format.json { head :no_content }
-      else
-        format.html { render action: "edit" }
-        format.json { render json: @kit.errors, status: :unprocessable_entity }
+      format.html do
+        if state_update(@kit, @trigger)
+          if @kit.update_attributes(params[:kit])
+            #redirect_to action: "edit" , :trigger => params[:trigger]
+            redirect_to [@kit]
+          end
+        else
+            render :action => 'edit'
+        end
       end
+      
     end
   end
 
@@ -90,6 +87,12 @@ class KitsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to kits_url }
       format.json { head :no_content }
+    end
+  end
+
+  def state_update(ks, trig)
+    if ::Kit::PROCESSABLE_EVENTS.include?(trig.to_sym)
+      ks.send(::Kit::EVENT_STATE_MAP[trig.to_sym].to_sym)
     end
   end
 end
