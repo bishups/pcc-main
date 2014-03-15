@@ -8,30 +8,21 @@
 #  filling_person_id      :integer
 #  center_id              :integer
 #  guardian_id            :integer
-#  issued_to_person_id    :integer
-#  blocked_by_person_id   :integer
-#  assigned_to_program_id :integer
 #  condition              :string(255)
 #  condition_comments     :text
 #  general_comments       :text
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
+#  kit_name_string        :string(255)
 #
 
 class Kit < ActiveRecord::Base
-  attr_accessible :condition,:condition_comments,
-                  :general_comments, :kit_name_string,
-                  :center_id,:state,:max_participant_number
+  attr_accessible :condition_comments, :general_comments
 
   has_many :kit_item_mappings
-  has_many :kit_schedules
   has_many :kit_items, :through => :kit_item_mappings
-  belongs_to :center
+
   has_paper_trail
-  
-  before_create :generateKitNameString
-  before_update :generateKitNameString
-  
   state_machine :state, :initial => :new do
     event :approve do
       transition :new => :available

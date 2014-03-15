@@ -1,7 +1,29 @@
+# == Schema Information
+#
+# Table name: programs
+#
+#  id                  :integer          not null, primary key
+#  name                :string(255)
+#  description         :text
+#  center_id           :string(255)
+#  program_type_id     :integer
+#  proposer_id         :integer
+#  manager_id          :integer
+#  state               :string(255)
+#  start_date          :datetime
+#  end_date            :datetime
+#  slot                :string(255)
+#  announce_program_id :string(255)
+#  venue_schedule_id   :integer
+#  kit_schedule_id     :integer
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#
+
 class Program < ActiveRecord::Base
   validates :slot, :presence => true
   validates :start_date, :presence => true
-  #validates :end_date, :presence => true
+#  validates :end_date, :presence => true
   validates :center_id, :presence => true
   validates :proposer_id, :presence => true
 
@@ -18,7 +40,6 @@ class Program < ActiveRecord::Base
   belongs_to :venue_schedule
   belongs_to :program_type
   belongs_to :kit_schedule
-
   has_many :program_teacher_schedules
   
   def proposer

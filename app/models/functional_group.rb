@@ -1,20 +1,19 @@
 # == Schema Information
 #
-# Table name: centers
+# Table name: functional_groups
 #
 #  id         :integer          not null, primary key
 #  name       :string(255)
-#  sector_id  :integer
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #
 
-class Center < ActiveRecord::Base
-  belongs_to :sector
-  has_many :access_privileges, :as => :resource, :inverse_of => :resource
-  attr_accessible :name, :sector_id
+class FunctionalGroup < ActiveRecord::Base
+  attr_accessible :name
+  has_and_belongs_to_many :permissions
 
   validates :name, :presence => true
 
+  attr_accessible :name, :permission_ids
 
 end
