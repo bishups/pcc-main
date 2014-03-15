@@ -17,8 +17,6 @@
 #
 
 class Kit < ActiveRecord::Base
-<<<<<<< HEAD
-
   AVAILABLE = :available
   UNDER_REPAIR = :under_repair
   UNAVAILABLE = :unavailable
