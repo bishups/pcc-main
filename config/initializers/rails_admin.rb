@@ -1,7 +1,7 @@
 RailsAdmin.config do |config|
   # or somethig more dynamic
   config.main_app_name = Proc.new { |controller| [ "PCC", "Administration BackOffice - #{controller.params[:action].try(:titleize)}" ] }
-  config.included_models = [Zone,Sector,Center,ProgramType,Venue]
+  config.included_models = [Kit, KitItem, User, Zone, Sector, Center, ProgramType, Venue, Permission, Role, FunctionalGroup, AccessPrivilege]
   #config.authorize_with :cancan
   config.audit_with :history, User
   config.actions do

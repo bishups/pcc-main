@@ -1,38 +1,40 @@
 <div class='row'>
-  <div class='col-md-12'>
-    <h2>
-      Venue Schedules
-      <small><%= @venue.name %></small>
+    <div class='col-md-12'>
+        <h2>
+            Venue Schedules
+            <small><%= @venue.name %></small>
       <span class='pull-right'>
         <%= link_to "Reserve Venue", new_venue_venue_schedule_path(@venue), :class => 'btn btn-primary btn-sm' %>
       </span>
-    </h2>
-  </div>
-  <table class='table table-condensed table-hover table-bordered'>
-    <tr>
-      <th>#</th>
-      <th>Prog #</th>
-      <th>State</th>
-      <th>Month</th>
-      <th>Start Date</th>
-      <th>End Date</th>
-      <th>Slot</th>
-      <th>Reserved By</th>
-      <th></th>
-    </tr>
-    <% @venue_schedules.each do |vs| %>
-    <tr>
-      <td><%= vs.id %></td>
-      <td><%= vs.program_id %></td>
-      <td><%= venue_schedule_state_tag(vs) %>
-      <td><%= vs.start_date.strftime('%B') + ' ' + vs.start_date.strftime('%Y') %></td>
-      <td><%= vs.start_date.strftime('%d/%m/%Y') %></td>
-      <td><%= vs.end_date.strftime('%d/%m/%Y') %></td>
-      <td><%= vs.slot %></td>
-      <td><%= vs.reserving_user.fullname %></td>
-      <td><%= link_to "Open", venue_venue_schedule_path(@venue, vs), :class => 'btn btn-primary btn-sm' %></td>
-    </tr>
-    <% end %>
-  </table>
+        </h2>
+    </div>
+    <table class='table table-condensed table-hover table-bordered'>
+        <tr>
+            <th>#</th>
+            <th>Prog #</th>
+            <th>State</th>
+            <th>Month</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Slot</th>
+            <th>Reserved By</th>
+            <th></th>
+        </tr>
+        <% @venue_schedules.each do |vs| %>
+        <tr>
+            <td><%= vs.id %></td>
+            <td><%= vs.program_id %></td>
+            <td><%= venue_schedule_state_tag(vs) %>
+            <td><%= vs.start_date.strftime('%B') + ' ' + vs.start_date.strftime('%Y') %></td>
+            <td><%= vs.start_date.strftime('%d/%m/%Y') %></td>
+            <td><%= vs.end_date.strftime('%d/%m/%Y') %></td>
+            <td><%= vs.slot %></td>
+            <td><%= vs.reserving_user.fullname %></td>
+            <% if can? :read, @venue %>
+            <td><%= link_to "Open", venue_venue_schedule_path(@venue, vs), :class => 'btn btn-primary btn-sm' %></td>
+            <% end %>
+        </tr>
+        <% end %>
+    </table>
 </div>
 

@@ -11,42 +11,50 @@
 class Role < ActiveRecord::Base
 
   has_and_belongs_to_many :users
+  has_and_belongs_to_many :permissions
+  has_many :access_privileges
 
-  ROLE_SUPER_ADMIN = "super_admin"
-  ROLE_USER_ADMIN = "user_admin"
-  ROLE_MASTER_DATA_ADMIN = "master_admin"
+  attr_accessible :name, :permission_ids
+
+  validates :name, :presence => true
 
   ROLES = [
       {
-          :role => ROLE_SUPER_ADMIN,
           :name => "Super Admin",
-          :desc => "Allows access to all functionalities."
+          :desc => "Allows access to all functionalities.",
+          :permissions => :all
       },
       {
-          :role => ROLE_USER_ADMIN,
-          :name => "User Admin",
-          :desc => "Allows access to User Management related functionalities."
+          :name => "Center Organiser",
+          :desc => "Allows access to particular center organiser.",
+          :permissions => ["Teacher Scheduling","Venue Scheduling","Kit Scheduling"]
       },
       {
-          :role => ROLE_MASTER_DATA_ADMIN,
+          :name => "Center Treasurer",
+          :desc => "Allows access to particular center treasurer",
+          :permissions => ["Venue Read"]
+      },
+      {
           :name => "Master Data Admin",
-          :desc => "Allows access to Administration of Master Data."
+          :desc => "Allows access to Administration of Master Data.",
+          :permissions => ["Master Data"]
       }
   ]
 
   def self.init_roles!
+    Permission.init_permissions!
     ROLES.each do |r|
-      if Role.where(:name => r[:role]).first().nil?
+      if Role.where(:name => r[:name]).first().nil?
         Role.new do |role|
-          role.name = r[:role]
+          role.name = r[:name]
+          role.permissions = Permission.where(:name=>r[:permissions])
           role.save!
         end
       end
     end
   end
 
-  def self.find_meta(name)
-    ROLES.find { |e| e[:role] == name }
-  end
+
+
 end
 

@@ -1,3 +1,19 @@
+# == Schema Information
+#
+# Table name: venue_schedules
+#
+#  id                :integer          not null, primary key
+#  venue_id          :integer
+#  reserving_user_id :integer
+#  slot              :string(255)
+#  start_date        :datetime
+#  end_date          :datetime
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  program_id        :integer
+#  state             :string(255)
+#
+
 class VenueSchedule < ActiveRecord::Base
   # attr_accessible :title, :body
   attr_accessible :slot
