@@ -21,7 +21,7 @@
 <% @kits.each do |kit| %>
   <tr>
     <td> <%=kit.kit_name_string%></td>
-    <td> <%=  kit.getState() %> </td>
+    <td> <%=  kit_state_tag(kit) %> </td>
     <td> <%=  kit.center.name rescue '' %> </td>
     <td> <%=  kit.max_participant_number %> </td>
     <td> <%=  kit.condition %> </td>

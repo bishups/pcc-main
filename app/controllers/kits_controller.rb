@@ -4,18 +4,6 @@ class KitsController < ApplicationController
   def index
     @kits = Kit.all
 
-    @kits.each do |kit|
-      @kit_schedules = kit.kit_schedules.where("start_date <= ? and end_date >= ?", Time.now, Time.now).order(:start_date)
-
-      if( @kit_schedules.nil? || @kit_schedules.empty? )
-        kit.state = "available"
-      else
-        kit.state = @kit_schedules.first.state
-       end    
-    end
-
-
-
     respond_to do |format|
       format.html # index.html.erb
       format.json { render json: @kits }
@@ -47,6 +35,8 @@ class KitsController < ApplicationController
   # GET /kits/1/edit
   def edit
     @kit = Kit.find(params[:id])
+        @trigger = params[:trigger]
+
   end
 
   # POST /kits
@@ -69,14 +59,20 @@ class KitsController < ApplicationController
   # PUT /kits/1.json
   def update
     @kit = Kit.find(params[:id])
+    @trigger = params[:trigger]
+    @kit.condition_comments = params[:condition_comments]
+    @kit.general_comments = params[:general_comments]
 
     respond_to do |format|
-      if @kit.update_attributes(params[:kit])
-        format.html { redirect_to @kit, notice: 'Kit was successfully updated.' }
-        format.json { head :no_content }
-      else
-        format.html { render action: "edit" }
-        format.json { render json: @kit.errors, status: :unprocessable_entity }
+      format.html do
+        if state_update(@kit, @trigger)
+          if @kit.save!
+            #redirect_to action: "edit" , :trigger => params[:trigger]
+            redirect_to [@kit]
+          end
+        else
+            render :action => 'edit'
+        end
       end
     end
   end
@@ -90,6 +86,31 @@ class KitsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to kits_url }
       format.json { head :no_content }
+    end
+  end
+
+  def state_update(kit, trig)
+    if trig != ::Kit::AVAILABLE.to_s
+      assigned_kit_schedules = kit.kit_schedules.where("state NOT IN (?)",['blocked','closed','cancel'])
+        if( !assigned_kit_schedules.nil? && assigned_kit_schedules.count > 0 )
+          kit.errors[:error] << "-- An Open Kit Schedule is there CANNOT change Kit State"
+          return false
+        end
+       if trig == ::Kit::UNDER_REPAIR.to_s
+          if kit.condition_comments.empty? || kit.condition_comments == ""
+            kit.errors[:condition_comments] << "-- Cannot Leave Empty"
+            return false
+          end  
+       end 
+       if trig == ::Kit::UNAVAILABLE.to_s
+          if kit.general_comments.empty? 
+            kit.errors[:general_comments] << "-- Cannot Leave Empty"
+            return false
+          end
+       end
+    end
+    if ::Kit::PROCESSABLE_EVENTS.include?(trig.to_sym)
+      kit.send(::Kit::EVENT_STATE_MAP[trig.to_sym].to_sym)
     end
   end
 end
