@@ -23,3 +23,48 @@
     :contact_address => 'sssss'
   }
 ].each {|e| Venue.create(e) }
+
+[
+  {
+    :email => "%s%s%s@%s.com" % [rand(100), rand(100), rand(100), rand(1000000)], 
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :password => 'abc12345', :password_confirmation => 'abc12345'
+  },
+  {
+    :email => "%s%s%s@%s.com" % [rand(100), rand(100), rand(100), rand(1000000)], 
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :password => 'abc12345', :password_confirmation => 'abc12345'
+  },
+  {
+    :email => "%s%s%s@%s.com" % [rand(100), rand(100), rand(100), rand(1000000)], 
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :password => 'abc12345', :password_confirmation => 'abc12345'
+  },
+  {
+    :email => "%s%s%s@%s.com" % [rand(100), rand(100), rand(100), rand(1000000)], 
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :password => 'abc12345', :password_confirmation => 'abc12345'
+  },
+  {
+    :email => "%s%s%s@%s.com" % [rand(100), rand(100), rand(100), rand(1000000)], 
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :password => 'abc12345', :password_confirmation => 'abc12345'
+  },
+  {
+    :email => "%s%s%s@%s.com" % [rand(100), rand(100), rand(100), rand(1000000)], 
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :password => 'abc12345', :password_confirmation => 'abc12345'
+  },
+  {
+    :email => "%s%s%s@%s.com" % [rand(100), rand(100), rand(100), rand(1000000)], 
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :firstname => "%s%s%s" % [rand(100), rand(100), rand(100)],
+    :password => 'abc12345', :password_confirmation => 'abc12345'
+  }
+].each {|u| User.create(u) }
