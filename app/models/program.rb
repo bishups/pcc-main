@@ -56,4 +56,14 @@ class Program < ActiveRecord::Base
   def assign_dates!
     self.end_date = self.start_date + self.program_type.no_of_days.to_i.days
   end
+
+  def minimum_teachers_connected?
+    self.program_teacher_schedules.count >= self.program_type.minimum_no_of_teacher
+  end
+
+  def ready_for_announcement?
+    return false unless self.venue_connected?
+    return false unless self.kit_connected?
+    return false unless self.minimum_teachers_connected?
+  end
 end

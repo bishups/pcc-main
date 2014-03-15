@@ -44,13 +44,16 @@ class User < ActiveRecord::Base
 
   has_paper_trail
 
+  def name
+    self.fullname
+  end
 
   def role_manager
     @role_manager ||= ::RoleManager.new(self)
   end
 
   def fullname
-    "%s %s" % [self.firstname.capitalize, self.lastname.capitalize]
+    "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]
   end
 
 end
