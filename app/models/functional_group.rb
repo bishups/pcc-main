@@ -12,8 +12,20 @@ class FunctionalGroup < ActiveRecord::Base
   attr_accessible :name
   has_and_belongs_to_many :permissions
 
-  validates :name, :presence => true
+  validates :name,:permissions, :presence => true
 
   attr_accessible :name, :permission_ids
+
+
+  rails_admin do
+    list do
+      field :name
+      field :permissions
+    end
+    edit do
+      field :name
+      field :permissions
+    end
+  end
 
 end

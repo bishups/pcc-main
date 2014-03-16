@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140302085216) do
+ActiveRecord::Schema.define(:version => 20140315104513) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -88,6 +88,11 @@ ActiveRecord::Schema.define(:version => 20140302085216) do
     t.datetime "updated_at",           :null => false
     t.string   "comments"
     t.integer  "kit_id"
+    t.integer  "program_id"
+    t.datetime "created_at",           :null => false
+    t.datetime "updated_at",           :null => false
+    t.string   "comments"
+    t.integer  "kit_id"
   end
 
   create_table "kits", :force => true do |t|
@@ -116,6 +121,16 @@ ActiveRecord::Schema.define(:version => 20140302085216) do
     t.integer "role_id"
     t.integer "permission_id"
   end
+
+  create_table "pincodes", :force => true do |t|
+    t.integer  "pincode",       :limit => 6
+    t.string   "location_name"
+    t.integer  "center_id"
+    t.datetime "created_at",                 :null => false
+    t.datetime "updated_at",                 :null => false
+  end
+
+  add_index "pincodes", ["center_id"], :name => "index_pincodes_on_center_id"
 
   create_table "program_teacher_schedules", :force => true do |t|
     t.integer  "program_id"

@@ -5,6 +5,8 @@ module ProgramsHelper
         '<span class="label label-warning">Proposed</span>'
       elsif prog.announced?
         '<span class="label label-success">Announced</span>'
+      elsif prog.registration_open?
+        '<span class="label label-success">Registration Open</span>'
       elsif prog.cancelled?
         '<span class="label label-danger">Cancelled</span>'
       elsif prog.in_progress?

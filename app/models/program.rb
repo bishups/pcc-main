@@ -50,6 +50,10 @@ class Program < ActiveRecord::Base
   STATE_CONDUCTED = :conducted
   STATE_CLOSED = :closed
 
+  PROCESSABLE_EVENTS = [
+    :announce, :registration_open, :start, :finish, :close, :cancel
+  ]
+
   def initialize(*args)
     super(*args)
   end
@@ -71,22 +75,28 @@ class Program < ActiveRecord::Base
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_IN_PROGRESS
     end
 
+    event :finish do
+      transition [STATE_IN_PROGRESS] => STATE_CONDUCTED
+    end
+
     event :close do
       transition STATE_CONDUCTED => STATE_CLOSED
     end
 
     event :cancel do
-      transition [STATE_PROPOSED, STATE_ANNOUNCED] => STATE_CANCELLED
+      transition [STATE_PROPOSED, STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED
     end
 
   end
 
   def is_announced?
-    self.announced?
+    ! [STATE_PROPOSED.to_s, ''].include?(self.state.to_s)
   end
 
   def generate_program_id!
-    self.announce_program_id = ("PROG %s %d" % [self.start_date.strftime('%B%Y'), self.id]).parameterize
+    self.announce_program_id = ("%s %s %d" % 
+      [self.center.name, self.start_date.strftime('%B%Y'), self.id]
+    ).parameterize
     self.save!
   end
   

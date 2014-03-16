@@ -55,6 +55,11 @@ class KitSchedule < ActiveRecord::Base
   PROCESSABLE_EVENTS = [
     BLOCKED, ASSIGNED, ISSUED, OVERDUE,CLOSED, CANCELLLED
   ]
+
+  
+  def initialize(*args)
+    super(*args)
+  end
    
   state_machine :state , :initial => BLOCKED do
 

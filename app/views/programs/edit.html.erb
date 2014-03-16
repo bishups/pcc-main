@@ -3,6 +3,7 @@
     <h2>
       Program <small></small>
       <span class='pull-right'>
+        <%= link_to 'Back to Program', program_path(@program), :class => 'btn btn-success' %>
       </span>
     </h2>
   </div>
@@ -12,17 +13,17 @@
 
 <div class='row'>
   <div class='col-md-12'>
-    <%= render :partial => 'venue_schedules/state_update_confirmation_msg' %>
+    <%= render :partial => 'programs/state_update_confirmation_msg' %>
   </div>
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <%= render :partial => 'venue_schedules/state_additional_data' %>
+    <%= render :partial => 'programs/state_additional_data' %>
   </div>
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <%= render :partial => 'venue_schedules/state_update_comment' %>
+    <%= render :partial => 'programs/state_update_comment' %>
   </div>
 </div>
 <div class='row'>
