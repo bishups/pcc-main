@@ -20,3 +20,11 @@
 
 .DS_store
 nbproject
+
+#Ignore IDE files
+
+/.idea/*
+
+#Ignore Ruby Version
+/.ruby-version
+
