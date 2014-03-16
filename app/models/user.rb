@@ -68,6 +68,22 @@ class User < ActiveRecord::Base
     self.fullname
   end
 
+  def programs
+    Program.all
+  end
+
+  def venues
+    Venue.all
+  end
+
+  def kits
+    Kit.all
+  end
+
+  def teachers
+    Teacher.all
+  end
+
   rails_admin do
     navigation_label 'Access Privilege'
     weight 0
