@@ -119,6 +119,21 @@ class KitSchedulesController < ApplicationController
         return false
       end
     end
+
+    if trig == ::KitSchedule::ISSUED.to_s
+      if ks.issued_to_person_id.nil?
+        ks.errors[:issued_to_person_id] << "-- Cannot be left Blank"
+        return false
+      else
+        user = User.find_by_id(ks.issued_to_person_id)
+        if user.nil?
+          ks.errors[:issued_to_person_id] << "-- User Id does not exist"
+          return false
+        end
+      end  
+    end
+
+    
     if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig.to_sym)
       ks.send(::KitSchedule::EVENT_STATE_MAP[trig.to_sym].to_sym)
     end
