@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  pincode: 1
+  location_name: MyString
+  center: 
+
+two:
+  pincode: 1
+  location_name: MyString
+  center: 
