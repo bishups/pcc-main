@@ -42,10 +42,11 @@ class User < ActiveRecord::Base
   
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
-  attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names
+  attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges_attributes
   accepts_nested_attributes_for :access_privileges
 
+  validates :firstname,:email,:mobile,:address,:permissions, :presence => true
 
   def access_privilege_names=(names)
     names.collect do |n|
@@ -68,11 +69,14 @@ class User < ActiveRecord::Base
   end
 
   rails_admin do
+    navigation_label 'Access Privilege'
+    weight 0
     list do
       field :firstname
-      field :created_at  do
-        date_format :short
-      end
+      field :lastname
+      field :mobile
+      field :email
+      field :type
     end
     edit do
       group :default do
@@ -85,17 +89,9 @@ class User < ActiveRecord::Base
       field :mobile
       field :phone
       field :email
+      field :type
       field :access_privileges
 
     end
-    update do
-      configure :email do
-        visible do
-          false
-        end
-      end
-    end
   end
-
-
 end
