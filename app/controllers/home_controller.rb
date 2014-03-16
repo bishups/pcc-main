@@ -5,10 +5,10 @@ class HomeController < ApplicationController
 
     # @programs = current_user.programs
     # @venues = current_user.venues
-    @kits = Kit.all
-    @venues = Venue.all
-    @teachers = Teacher.all
-    @programs = Program.all
+    @kits = current_user.kits
+    @venues = current_user.venues
+    @teachers = current_user.teachers
+    @programs = current_user.programs
     # @teacher = current_user.teachers
 
     @pills = ["Programs","Venues","Kits","Teachers"]
