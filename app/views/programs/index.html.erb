@@ -32,8 +32,11 @@
       <tr>
         <td><%= program.id %></td>
         <td>
-          <% if program.announce_program_id.to_s.empty? %>
+          <% unless program.is_announced? %>
             <span class='label label-danger'>pending</span>
+            <% if program.ready_for_announcement? %>
+            <span class='label label-success'>Ready</span>
+            <% end %>
           <% else %>
             <%= program.announce_program_id.to_s %>
           <% end %>

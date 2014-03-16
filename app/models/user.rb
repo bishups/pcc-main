@@ -32,7 +32,7 @@ class User < ActiveRecord::Base
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable,
-         :recoverable, :rememberable, :trackable,  :confirmable,:registerable #, :validatable
+         :recoverable, :rememberable, :trackable, :registerable
 
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
@@ -61,8 +61,13 @@ class User < ActiveRecord::Base
   end
 
   def fullname
-    "%s %s" % [self.firstname.capitalize, self.lastname.capitalize]
+    "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]
   end
+
+  def name
+    self.fullname
+  end
+
   rails_admin do
     navigation_label 'Access Privilege'
     weight 0

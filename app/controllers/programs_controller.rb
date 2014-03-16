@@ -39,6 +39,24 @@ class ProgramsController < ApplicationController
     end
   end
 
+  def announce
+    @program = Program.find(params[:id])
+    @program.announce! if @program.ready_for_announcement?
+
+    respond_to do |format|
+      format.html { redirect_to @program }
+    end
+  end
+
+  def edit
+    @program = Program.find(params[:id])
+    @trigger = params[:trigger]
+
+    respond_to do |format|
+      format.html
+    end
+  end
+
   def update
   end
 

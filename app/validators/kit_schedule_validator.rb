@@ -7,6 +7,10 @@ class KitScheduleValidator < ActiveModel::Validator
     if record.program_id.nil?
       return
     end  
+    if !Program.exists?(record.program_id)
+      record.errors[:program_id] << " --- Mentioned Program does not exist"
+      return
+    end
 
     if ::KitSchedule.where(['start_date >= ? AND start_date <= ? AND kit_id = ? and id != ? and state != ?', 
       record.start_date-1, record.end_date+1, record.kit_id, record.id,'cancelled' ] ).count() > 0

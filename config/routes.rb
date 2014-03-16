@@ -11,7 +11,11 @@ PccMain::Application.routes.draw do
 
   # Resources
   resources :enquiries
-  resources :programs
+  resources :programs do
+    member do
+      get 'announce'
+    end
+  end
   resources :program_teacher_schedules
   
   resources :venues do

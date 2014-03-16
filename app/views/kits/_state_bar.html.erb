@@ -1,0 +1,33 @@
+<h2>
+  <small><%= kit_state_tag(@kit) %></small> Kit  <small><%= @kit.kit_name_string %> </small>
+  <div class='btn-group'>
+    <button type="button" class="btn btn-danger">Update State</button>
+    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+      <span class="caret"></span>
+      <span class="sr-only">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu" role="menu">
+     
+       <% if @kit.can_under_repair? %>
+        <li>
+          <%= link_to "Under Repair", edit_kit_path(@kit, :trigger => :under_repair) %>
+        </li>
+      <% end %>
+      <% if @kit.can_unavailable? %>
+        <li>
+          <%= link_to "Unavailable", edit_kit_path(@kit, :trigger => :unavailable) %>
+        </li>
+      <% end %>
+      <% if @kit.can_available? %>
+        <li>
+          <%= link_to "Available", edit_kit_path(@kit, :trigger => :available) %>
+        </li>
+      <% end %>
+      
+    </ul>
+  </div>
+
+   <span class='pull-right'>
+    <%= link_to "Back to Kits", kits_path, :class => 'btn btn-primary' %>
+  </span>
+</h2>

@@ -41,6 +41,54 @@ class Program < ActiveRecord::Base
   belongs_to :program_type
   belongs_to :kit_schedule
   has_many :program_teacher_schedules
+
+  STATE_PROPOSED = :proposed
+  STATE_ANNOUNCED = :announced
+  STATE_REGISTRATION_OPEN = :registration_open
+  STATE_CANCELLED = :cancelled
+  STATE_IN_PROGRESS = :in_progress
+  STATE_CONDUCTED = :conducted
+  STATE_CLOSED = :closed
+
+  def initialize(*args)
+    super(*args)
+  end
+
+  state_machine :state, :initial => STATE_PROPOSED do
+    after_transition any => STATE_ANNOUNCED do |program, transition|
+      program.generate_program_id!
+    end
+
+    event :announce do
+      transition STATE_PROPOSED => STATE_ANNOUNCED
+    end
+
+    event :registration_open do
+      transition STATE_ANNOUNCED => STATE_REGISTRATION_OPEN
+    end
+
+    event :start do
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_IN_PROGRESS
+    end
+
+    event :close do
+      transition STATE_CONDUCTED => STATE_CLOSED
+    end
+
+    event :cancel do
+      transition [STATE_PROPOSED, STATE_ANNOUNCED] => STATE_CANCELLED
+    end
+
+  end
+
+  def is_announced?
+    self.announced?
+  end
+
+  def generate_program_id!
+    self.announce_program_id = ("PROG %s %d" % [self.start_date.strftime('%B%Y'), self.id]).parameterize
+    self.save!
+  end
   
   def proposer
     ::User.find(self.proposer_id)
@@ -76,5 +124,17 @@ class Program < ActiveRecord::Base
 
   def assign_dates!
     self.end_date = self.start_date + self.program_type.no_of_days.to_i.days
+  end
+
+  def minimum_teachers_connected?
+    self.program_teacher_schedules.count >= self.program_type.minimum_no_of_teacher
+  end
+
+  def ready_for_announcement?
+    return false unless self.venue_connected?
+    return false unless self.kit_connected?
+    return false unless self.minimum_teachers_connected?
+
+    true
   end
 end

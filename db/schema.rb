@@ -88,6 +88,11 @@ ActiveRecord::Schema.define(:version => 20140315104513) do
     t.datetime "updated_at",           :null => false
     t.string   "comments"
     t.integer  "kit_id"
+    t.integer  "program_id"
+    t.datetime "created_at",           :null => false
+    t.datetime "updated_at",           :null => false
+    t.string   "comments"
+    t.integer  "kit_id"
   end
 
   create_table "kits", :force => true do |t|

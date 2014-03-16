@@ -17,14 +17,12 @@
 
 class KitSchedule < ActiveRecord::Base
 
-  UNAVAILABLE = :unavailable
   BLOCKED = :blocked
   ISSUED = :issued
   ASSIGNED = :assigned
-  RETURNED_AND_CHECKED = :returned_and_checked
-  UNDER_REPAIR = :under_repair
-  INCOMPLETE_RETURN = :incomplete_return
-  CANCELLLED = :cancelled
+  OVERDUE = :over_due
+  CANCELLLED = :cancel
+  CLOSED = :closed
   
   belongs_to :kit
   belongs_to :program
@@ -47,54 +45,40 @@ class KitSchedule < ActiveRecord::Base
   validates_uniqueness_of :program_id
 
 
-  EVENT_STATE_MAP = { UNAVAILABLE => UNAVAILABLE.to_s,
+  EVENT_STATE_MAP = {
                       BLOCKED => "block",
                       ISSUED => "issue",
                       ASSIGNED => "assign",
-                      RETURNED_AND_CHECKED => "returned_and_check",
-                      UNDER_REPAIR => UNDER_REPAIR.to_s,
-                      INCOMPLETE_RETURN => INCOMPLETE_RETURN.to_s,
-                      CANCELLLED => "cancel"
+                      OVERDUE => OVERDUE.to_s,
+                      CANCELLLED => CANCELLLED.to_s,
+                      CLOSED => CLOSED.to_s
                     }
 
   PROCESSABLE_EVENTS = [
-    BLOCKED, ASSIGNED, ISSUED, RETURNED_AND_CHECKED, UNDER_REPAIR, INCOMPLETE_RETURN, UNAVAILABLE, CANCELLLED
+    BLOCKED, ASSIGNED, ISSUED, OVERDUE,CLOSED, CANCELLLED
   ]
-  
+   
   state_machine :state , :initial => BLOCKED do
 
-    event :block do
-      transition [INCOMPLETE_RETURN, UNDER_REPAIR] => BLOCKED
-    end
-    
     event :assign do
-      transition [BLOCKED] => ASSIGNED
+      transition [BLOCKED] => ASSIGNED, :if => :canChangeState?
     end
     
     event :issue do
-      transition [ASSIGNED] => ISSUED
+      transition [ASSIGNED] => ISSUED, :if => :canChangeState?
     end
     
-    event :returned_and_check do 
-      transition [ISSUED] => RETURNED_AND_CHECKED
+    event :closed do 
+      transition [ISSUED] => CLOSED , :if => :canChangeState?
     end
     
-    event :under_repair do
-      transition [BLOCKED, RETURNED_AND_CHECKED, INCOMPLETE_RETURN,BLOCKED] => UNDER_REPAIR
-    end
-    
-    event :incomplete_return do
-      transition [RETURNED_AND_CHECKED] => INCOMPLETE_RETURN
-    end
-
-    event :unavailable do 
-      transition [INCOMPLETE_RETURN,UNDER_REPAIR,BLOCKED] => UNAVAILABLE
+    event :over_due do
+      transition [BLOCKED,ISSUED,ASSIGNED] => OVERDUE 
     end
 
     event :cancel do
-      transition [:any] => CANCELLLED
+      transition any => CANCELLLED
     end
-    
   end
 
   def set_up_details!
@@ -105,11 +89,16 @@ class KitSchedule < ActiveRecord::Base
   def assign_start_date_end_date!
     if self.program_id.nil?
       return
+    end    
+    prog = Program.find_by_id(self.program_id)
+    if prog
+      self.start_date = prog.start_date - 1
+      self.end_date = prog.end_date + 1 
+    else
+      self.start_date = Date.today
+      self.end_date = Date.today
     end
-    
-    prog = Program.find(self.program_id)
-    self.start_date = prog.start_date - 1
-    self.end_date = prog.end_date + 1 
+
   end
 
   def assign_person_ids!
@@ -125,6 +114,26 @@ class KitSchedule < ActiveRecord::Base
 
   def connect_program!
     self.program.connect_kit(self) unless self.program.nil?
+  end
+
+  def canChangeState?
+    if self.kit.state != ::Kit::AVAILABLE.to_s
+      return false
+    else
+      return true  
+    end
+  end
+
+  def can_assign?
+    if self.kit.state != ::Kit::AVAILABLE.to_s
+      return false
+    else
+      return true  
+    end
+  end
+
+  def assigned!
+    self.state = ASSIGNED    
   end
   
 end
