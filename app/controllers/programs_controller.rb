@@ -48,6 +48,15 @@ class ProgramsController < ApplicationController
     end
   end
 
+  def edit
+    @program = Program.find(params[:id])
+    @trigger = params[:trigger]
+
+    respond_to do |format|
+      format.html
+    end
+  end
+
   def update
   end
 

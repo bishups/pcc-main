@@ -1,0 +1,33 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Program <small></small>
+      <span class='pull-right'>
+      </span>
+    </h2>
+  </div>
+</div>
+<%= form_for(@program, :html => {:class => 'form'}) do |f| %>
+<%= hidden_field_tag 'trigger', @trigger %>
+
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'venue_schedules/state_update_confirmation_msg' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'venue_schedules/state_additional_data' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'venue_schedules/state_update_comment' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= submit_tag "Update", :class => 'btn btn-primary btn-lg' %>
+  </div>
+</div>
+<% end %>
