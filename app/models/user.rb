@@ -42,7 +42,7 @@ class User < ActiveRecord::Base
   
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
-  attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names
+  attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges_attributes
   accepts_nested_attributes_for :access_privileges
 
@@ -76,6 +76,7 @@ class User < ActiveRecord::Base
       field :lastname
       field :mobile
       field :email
+      field :type
     end
     edit do
       group :default do
@@ -88,6 +89,7 @@ class User < ActiveRecord::Base
       field :mobile
       field :phone
       field :email
+      field :type
       field :access_privileges
 
     end
