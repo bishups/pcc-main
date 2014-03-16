@@ -45,4 +45,13 @@ class Venue < ActiveRecord::Base
   validates_presence_of :center_id
   validates_uniqueness_of :name, :scope => [:zone_id, :center_id]
 
+  def current_schedule
+    self.venue_schedules.where('start_date < ? AND end_date > ?', Time.now, Time.now).first()
+  end
+
+  def current_state
+    vs = current_schedule
+    vs ? vs.state : 'Unknown'
+  end
+
 end

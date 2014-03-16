@@ -46,6 +46,11 @@ class Kit < ActiveRecord::Base
   ]
 
   validates_with KitValidator
+
+  
+  def initialize(*args)
+    super(*args)
+  end
   
   state_machine :state, :initial => :available do
     event :under_repair do

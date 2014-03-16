@@ -1,10 +1,24 @@
-<% if [:cancel].include?(@trigger.to_sym) %>
-<div class='alert alert-info'>
-<% else %>
+<% if [:announce, :cancel].include?(@trigger.to_sym) %>
 <div class='alert alert-danger'>
+<% else %>
+<div class='alert alert-info'>
 <% end %>
   <h3>Confirmation: </h3>
   <p>
-
+    <% if @trigger.to_sym == :announce %>
+    This action will <strong>announce</strong> the program to various departments and entities involved. This action cannot be reverted. Are you sure you want to proceed?
+    <% elsif @trigger.to_sym == :open_registration %>
+    This action will <strong>Open Registration</strong> for the program and send appropriate notification to parties involved. Are you sure you want to proceed?
+    <% elsif @trigger.to_sym == :cancel %>
+    <strong>WARNING: </strong> This will cancel the program and free all associated resources. This action cannot be reverted. Are you sure if you want to proceed?
+    <% elsif @trigger.to_sym == :start %>
+    Are you sure you want to change the program to In-Progress state?
+    <% elsif @trigger.to_sym == :finish %>
+    Are you sure you want to change the program to Finished (Conducted) state?
+    <% elsif @trigger.to_sym == :close %>
+    Are you sure you want to close this program?
+    <% else %>
+      Unknown state!
+    <% end %>
   </p>
 </div>

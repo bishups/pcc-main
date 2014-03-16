@@ -23,7 +23,6 @@
         <th>Announced Id</th>
         <th>Type</th>
         <th>Start</th>
-        <th>End</th>
         <th>Slot</th>
         <th>State</th>
         <th></th>
@@ -41,11 +40,10 @@
             <%= program.announce_program_id.to_s %>
           <% end %>
         </td>
-        <td><!-- Program Type --></td>
+        <td><%= (program.program_type.name rescue '')%></td>
         <td><%= program.start_date %></td>
-        <td><%= program.end_date %></td>
         <td><%= program.slot %></td>
-        <td><!-- State --></td>
+        <td><%= program_state_tag(program) %></td>
         <td>
           <!-- Options -->
           <%= link_to "Open", program_path(program), :class => 'btn btn-primary btn-sm' %>

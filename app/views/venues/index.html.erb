@@ -15,6 +15,7 @@
       <th>PIN Code</th>
       <th>Capacity</th>
       <th>Contact</th>
+      <th>Current State</th>
       <th width='20%'></th>
     </tr>
     <% @venues.each do |venue| %>
@@ -25,6 +26,7 @@
       <td><%= venue.pin_code %></td>
       <td><%= venue.capacity %></td>
       <td><%= venue.contact_name %></td>
+      <td><span class='label label-warning'><%= venue.current_state.to_s.capitalize %></span></td>
       <td>
         <%= link_to "Block", new_venue_venue_schedule_path(venue), :class => 'btn btn-primary btn-sm' %> 
         <%= link_to "Show", venue_path(venue), :class => 'btn btn-primary btn-sm' %> 
