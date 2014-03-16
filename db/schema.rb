@@ -11,7 +11,19 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140222120902) do
+ActiveRecord::Schema.define(:version => 20140315104513) do
+
+  create_table "access_privileges", :force => true do |t|
+    t.integer  "role_id"
+    t.integer  "user_id"
+    t.integer  "resource_id"
+    t.string   "resource_type"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+  end
+
+  add_index "access_privileges", ["role_id"], :name => "index_access_privileges_on_role_id"
+  add_index "access_privileges", ["user_id"], :name => "index_access_privileges_on_user_id"
 
   create_table "centers", :force => true do |t|
     t.string   "name"
@@ -33,6 +45,17 @@ ActiveRecord::Schema.define(:version => 20140222120902) do
     t.string   "external_id"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
+  end
+
+  create_table "functional_groups", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "functional_groups_permissions", :id => false, :force => true do |t|
+    t.integer "functional_group_id"
+    t.integer "permission_id"
   end
 
   create_table "kit_item_mappings", :force => true do |t|
@@ -60,9 +83,11 @@ ActiveRecord::Schema.define(:version => 20140222120902) do
     t.string   "state"
     t.integer  "issued_to_person_id"
     t.integer  "blocked_by_person_id"
-    t.integer  "assigned_to_program_id"
-    t.datetime "created_at",             :null => false
-    t.datetime "updated_at",             :null => false
+    t.integer  "program_id"
+    t.datetime "created_at",           :null => false
+    t.datetime "updated_at",           :null => false
+    t.string   "comments"
+    t.integer  "kit_id"
   end
 
   create_table "kits", :force => true do |t|
@@ -76,6 +101,42 @@ ActiveRecord::Schema.define(:version => 20140222120902) do
     t.text     "general_comments"
     t.datetime "created_at",             :null => false
     t.datetime "updated_at",             :null => false
+    t.string   "kit_name_string"
+  end
+
+  create_table "permissions", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+    t.string   "cancan_action"
+    t.string   "subject"
+  end
+
+  create_table "permissions_roles", :id => false, :force => true do |t|
+    t.integer "role_id"
+    t.integer "permission_id"
+  end
+
+  create_table "pincodes", :force => true do |t|
+    t.integer  "pincode",       :limit => 6
+    t.string   "location_name"
+    t.integer  "center_id"
+    t.datetime "created_at",                 :null => false
+    t.datetime "updated_at",                 :null => false
+  end
+
+  add_index "pincodes", ["center_id"], :name => "index_pincodes_on_center_id"
+
+  create_table "program_teacher_schedules", :force => true do |t|
+    t.integer  "program_id"
+    t.integer  "user_id"
+    t.integer  "teacher_schedule_id"
+    t.integer  "created_by_user_id"
+    t.integer  "start_date"
+    t.integer  "end_date"
+    t.integer  "slot"
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
   end
 
   create_table "program_types", :force => true do |t|
@@ -152,6 +213,15 @@ ActiveRecord::Schema.define(:version => 20140222120902) do
 
   add_index "sessions", ["session_id"], :name => "index_sessions_on_session_id"
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
+
+  create_table "teacher_schedules", :force => true do |t|
+    t.integer  "user_id"
+    t.string   "slot"
+    t.datetime "start_date"
+    t.datetime "end_date"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
 
   create_table "users", :force => true do |t|
     t.string   "email",                                  :default => "", :null => false
