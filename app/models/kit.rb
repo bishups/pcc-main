@@ -29,6 +29,7 @@ class Kit < ActiveRecord::Base
   has_many :kit_schedules
   has_many :kit_items, :through => :kit_item_mappings
   belongs_to :center
+  
   has_paper_trail
   
   after_create :generateKitNameStringAfterCreate

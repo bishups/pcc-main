@@ -1,10 +1,59 @@
+
+<style type="text/css" title="currentStyle">
+      @import "../ext/css/jquery.dataTables.css"; 
+</style>
+<script src="../ext/js/jquery.dataTables.js"type="text/javascript">
+</script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#example').dataTable({
+        
+    });
+} );
+</script>
 <div class='row'>
   <div class='col-md-12'>
-    <div class='page-header'>
-      <h2>Home</h2>
-    </div>
-    <div class='page-body'>
-      Home Page contents go here.
-    </div>
+    <ul class="nav nav-pills">
+      <%i = 0%>
+      <%@pills.each do |pill|%>
+         <% if i == 0 %> 
+          <li class = "active"><a href="#"><%=pill%></a></li>
+         <% else %> 
+          <li><a href="#"><%=pill%></a></li>
+         <% end %> 
+      <% i = i + 1%>
+      <% end %>
+    </ul>
+      <table id = "example" class='display dataTable table table-condensed table-hover table-bordered'>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>State</th>
+            <th>Center</th>
+            <th>Max Participants </th>
+            <th> Condition </th>
+            <th> Condition Comments </th>
+            <th> General Comments </th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @kits.each do |kit| %>
+            <tr>
+              <td> <%=kit.kit_name_string%></td>
+              <td> <%=  kit_state_tag(kit) %> </td>
+              <td> <%=  kit.center.name rescue '' %> </td>
+              <td> <%=  kit.max_participant_number %> </td>
+              <td> <%=  kit.condition %> </td>
+              <td> <%=  kit.condition_comments %> </td> 
+              <td> <%=  kit.general_comments%> </td>
+              <td> <%= link_to "Block", new_kit_kit_schedule_path(kit), :class => 'btn btn-primary btn-sm' %> 
+                  <%= link_to "Show", kit_path(kit), :class => 'btn btn-primary btn-sm' %> 
+                  <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %> 
+              </td> 
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
   </div>
 </div>

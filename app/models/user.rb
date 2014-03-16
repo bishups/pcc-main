@@ -39,6 +39,7 @@ class User < ActiveRecord::Base
   has_many :permissions, :through => :roles
   has_many :resources, :through => :access_privileges
   has_many :teacher_schedules
+  has_many :kits
   
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
