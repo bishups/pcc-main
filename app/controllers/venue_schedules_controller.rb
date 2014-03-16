@@ -48,7 +48,7 @@ class VenueSchedulesController < ApplicationController
   def edit
     @venue_schedule = @venue.venue_schedules.find(params[:id])
     @trigger = params[:trigger]
-    authorize! :update, @venue
+    #authorize! :update, @venue
     respond_to do |format|
       format.html
       format.json { render json: @venue_schedule }
@@ -58,15 +58,12 @@ class VenueSchedulesController < ApplicationController
   def update
     @venue_schedule = @venue.venue_schedules.find(params[:id])
     @trigger = params[:trigger]
-    authorize! :update, @venue
+    #authorize! :update, @venue
     state_update(@venue_schedule, @trigger)
 
     respond_to do |format|
-      if state_update(@venue_schedule, @trigger)
-        format.html { redirect_to [@venue, @venue_schedule] }
-      else
-        format.json { render :json => @venue_schedule }
-      end
+      format.html { redirect_to [@venue, @venue_schedule] }
+      format.json { render :json => @venue_schedule }
     end
   end
 

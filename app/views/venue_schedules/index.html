@@ -30,9 +30,7 @@
             <td><%= vs.end_date.strftime('%d/%m/%Y') %></td>
             <td><%= vs.slot %></td>
             <td><%= vs.reserving_user.fullname %></td>
-            <% if can? :read, @venue %>
             <td><%= link_to "Open", venue_venue_schedule_path(@venue, vs), :class => 'btn btn-primary btn-sm' %></td>
-            <% end %>
         </tr>
         <% end %>
     </table>
