@@ -17,6 +17,8 @@ class AccessPrivilege < ActiveRecord::Base
   belongs_to :resource, :polymorphic => true
   has_many :permissions, :through => :role
 
+  validates :role,:resource, :presence => true
+
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name
 
   def role_name=(role_name)
@@ -28,10 +30,23 @@ class AccessPrivilege < ActiveRecord::Base
   end
 
   rails_admin do
+    visible false
+    object_label_method do
+      :role_name
+    end
     field :role do
-
+      inline_edit do
+        false
+      end
+      inline_add do
+        false
+      end
     end
     field :resource
+  end
+
+  def role_name
+    self.role.name if self.role
   end
 
 end

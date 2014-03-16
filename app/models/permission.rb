@@ -14,7 +14,7 @@ class Permission < ActiveRecord::Base
   attr_accessible :name
   has_and_belongs_to_many :functional_groups
   has_and_belongs_to_many :roles
-  validates :name, :functional_groups, :cancan_action, :subject, :presence => true
+  validates :name, :cancan_action, :subject, :presence => true
 
   attr_accessible :name, :role_ids, :functional_group_ids,:cancan_action, :subject
 
@@ -40,5 +40,21 @@ class Permission < ActiveRecord::Base
   def subject_enum
     %w(Venue Teacher Kit)
   end
+
+  rails_admin do
+    navigation_label 'Access Privilege'
+    weight 1
+    list do
+      field :name
+      field :cancan_action
+      field :subject
+    end
+    edit do
+      field :name
+      field :cancan_action
+      field :subject
+    end
+  end
+
 
 end

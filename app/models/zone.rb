@@ -15,7 +15,23 @@ class Zone < ActiveRecord::Base
 
   validates :name, :presence => true
 
-  attr_accessible :name, :sector_ids
+  attr_accessible :name, :sector_ids, :sectors
 
+  rails_admin do
+    navigation_label 'Geo-graphical informations'
+      weight 0
+    list do
+      field :name
+      field :sectors
+    end
+    edit do
+      field :name
+      field :sectors   do
+        inline_add do
+          false
+        end
+      end
+    end
+  end
 
 end

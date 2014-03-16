@@ -16,7 +16,7 @@ class Role < ActiveRecord::Base
 
   attr_accessible :name, :permission_ids
 
-  validates :name, :presence => true
+  validates :name,:permissions, :presence => true
 
   ROLES = [
       {
@@ -54,6 +54,22 @@ class Role < ActiveRecord::Base
     end
   end
 
+  rails_admin do
+    navigation_label 'Access Privilege'
+    weight 1
+    list do
+      field :name
+      field :permissions
+    end
+    edit do
+      field :name
+      field :permissions do
+        inline_add do
+          false
+        end
+      end
+    end
+  end
 
 
 end
