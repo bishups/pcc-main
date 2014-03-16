@@ -6,54 +6,36 @@
 </script>
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#example').dataTable({
-        
-    });
-} );
+    $('#kit_table').dataTable();
+    $('#venue_table').dataTable();
+    $('#program_table').dataTable();
+    $('#teacher_table').dataTable();
+  });
 </script>
 <div class='row'>
   <div class='col-md-12'>
-    <ul class="nav nav-pills">
-      <%i = 0%>
-      <%@pills.each do |pill|%>
-         <% if i == 0 %> 
-          <li class = "active"><a href="#"><%=pill%></a></li>
-         <% else %> 
-          <li><a href="#"><%=pill%></a></li>
-         <% end %> 
-      <% i = i + 1%>
-      <% end %>
+    <div class="tabbable">
+    <ul id = "myTab" class="nav nav-pills">
+        <li class="active"><a href="#Programs" data-toggle="pill">Programs</a></li>
+        <li ><a href="#Venues" data-toggle="pill">Venues</a></li>
+        <li ><a href="#Kits" data-toggle="pill">Kits</a></li>
+        <li ><a href="#Teachers" data-toggle="pill">Teachers</a></li>
     </ul>
-      <table id = "example" class='display dataTable table table-condensed table-hover table-bordered'>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>State</th>
-            <th>Center</th>
-            <th>Max Participants </th>
-            <th> Condition </th>
-            <th> Condition Comments </th>
-            <th> General Comments </th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @kits.each do |kit| %>
-            <tr>
-              <td> <%=kit.kit_name_string%></td>
-              <td> <%=  kit_state_tag(kit) %> </td>
-              <td> <%=  kit.center.name rescue '' %> </td>
-              <td> <%=  kit.max_participant_number %> </td>
-              <td> <%=  kit.condition %> </td>
-              <td> <%=  kit.condition_comments %> </td> 
-              <td> <%=  kit.general_comments%> </td>
-              <td> <%= link_to "Block", new_kit_kit_schedule_path(kit), :class => 'btn btn-primary btn-sm' %> 
-                  <%= link_to "Show", kit_path(kit), :class => 'btn btn-primary btn-sm' %> 
-                  <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %> 
-              </td> 
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+    <div id="myTabContent" class="tab-content">
+      <div class="tab-pane active" id="Programs">
+        <%= render :partial => 'home/program_index' %>
+      </div>
+      <div class="tab-pane " id="Venues">
+        <%= render :partial => 'home/venue_index' %>
+      </div>
+      <div class="tab-pane " id="Kits">
+        <%= render :partial => 'home/kit_index' %>
+      </div>
+      <div class="tab-pane " id="Teachers">
+        <%= render :partial => 'home/teachers_index' %>
+      </div>
+        
+      </div>
+    </div> 
   </div>
 </div>
