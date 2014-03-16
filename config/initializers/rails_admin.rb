@@ -19,7 +19,7 @@ RailsAdmin.config do |config|
     edit
     delete
     history_show
-    show_in_app
+   # show_in_app
     # import actions using external gem rails_admin_import
     #import
   end

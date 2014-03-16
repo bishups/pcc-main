@@ -39,7 +39,7 @@ class User < ActiveRecord::Base
   has_many :permissions, :through => :roles
   has_many :resources, :through => :access_privileges
   has_many :teacher_schedules
-  
+
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
@@ -68,6 +68,22 @@ class User < ActiveRecord::Base
     self.fullname
   end
 
+  def programs
+    Program.all
+  end
+
+  def venues
+    Venue.all
+  end
+
+  def kits
+    Kit.all
+  end
+
+  def teachers
+    Teacher.all
+  end
+
   rails_admin do
     navigation_label 'Access Privilege'
     weight 0
@@ -89,7 +105,13 @@ class User < ActiveRecord::Base
       field :mobile
       field :phone
       field :email
-      field :type
+      field :type do
+        label "Teacher"
+        def render
+          bindings[:view].render :partial => "user_type_checkbox", :locals => {:field => self, :f => bindings[:form]}
+        end
+      end
+
       field :access_privileges
 
     end
