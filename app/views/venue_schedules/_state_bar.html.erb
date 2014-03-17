@@ -1,7 +1,6 @@
 <h2>
   <small><%= venue_schedule_state_tag(@venue_schedule) %></small> Venue Schdule <small><%= @venue_schedule.venue.name %> | <%= @venue_schedule.program.name %></small>
   <div class='btn-group'>
-    <% if can? :update, @venue %>
     <button type="button" class="btn btn-danger">Update State</button>
     <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
       <span class="caret"></span>
@@ -11,6 +10,11 @@
       <% if @venue_schedule.can_block? %>
         <li>
           <%= link_to "Block", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :block) %>
+        </li>
+      <% end %>
+      <% if @venue_schedule.can_authorize_for_payment? %>
+        <li>
+          <%= link_to "Authorize for Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :authorize_for_payment) %>
         </li>
       <% end %>
       <% if @venue_schedule.can_request_payment? %>
@@ -27,7 +31,6 @@
       <li class="divider"></li>
       <li><%= link_to "Cancel Schedule", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :cancel) %></li>
     </ul>
-    <% end %>
   </div>
   <span class='pull-right'>
     <%= link_to "Back to Schedules", venue_venue_schedules_path(@venue), :class => 'btn btn-primary' %>

@@ -1,0 +1,33 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <table id="venue_table" class='display dataTable table table-condensed table-hover table-bordered'>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Center</th>
+          <th>PIN Code</th>
+          <th>Capacity</th>
+          <th>Contact</th>
+          <th ></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @venues.each do |venue| %>
+        <tr>
+          <td><%= venue.id %></td>
+          <td><%= link_to venue.name, venue_path(venue)%></td>           
+          <td><%= venue.center.name %></td>
+          <td><%= venue.pin_code %></td>
+          <td><%= venue.capacity %></td>
+          <td><%= venue.contact_name %></td>
+          <td>
+            <%= link_to "Block", new_venue_venue_schedule_path(venue), :class => 'btn btn-primary btn-sm' %> 
+            <%= link_to "Schedule", venue_venue_schedules_path(venue), :class => 'btn btn-primary btn-sm' %> 
+          </td>
+        </tr>
+        <% end %>
+      </tbody>  
+    </table>
+  </div>
+</div>

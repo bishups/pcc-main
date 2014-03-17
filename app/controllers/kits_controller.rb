@@ -1,6 +1,7 @@
 class KitsController < ApplicationController
   # GET /kits
   # GET /kits.json
+  before_filter :authenticate_user!
   def index
     @kits = Kit.all
 

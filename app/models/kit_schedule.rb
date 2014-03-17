@@ -42,8 +42,6 @@ class KitSchedule < ActiveRecord::Base
   
   #checking for overlap validation 
   validates_with KitScheduleValidator
-  validates_uniqueness_of :program_id
-
 
   EVENT_STATE_MAP = {
                       BLOCKED => "block",
@@ -82,7 +80,7 @@ class KitSchedule < ActiveRecord::Base
     end
 
     event :cancel do
-      transition any => CANCELLLED
+      transition [BLOCKED,ASSIGNED] => CANCELLLED
     end
   end
 
