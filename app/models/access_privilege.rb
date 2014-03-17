@@ -19,7 +19,7 @@ class AccessPrivilege < ActiveRecord::Base
 
   validates :role,:resource, :presence => true
 
-  attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name
+  attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role
 
   def role_name=(role_name)
     Role.where(:name => role_name ).first

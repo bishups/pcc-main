@@ -14,9 +14,9 @@ class Role < ActiveRecord::Base
   has_and_belongs_to_many :permissions
   has_many :access_privileges
 
-  attr_accessible :name, :permission_ids
+  attr_accessible :name, :permission_ids, :permissions
 
-  validates :name,:permissions, :presence => true
+  validates :name, :permissions, :presence => true
 
   ROLES = [
       {
