@@ -46,7 +46,7 @@ class User < ActiveRecord::Base
   attr_accessible :access_privileges_attributes
   accepts_nested_attributes_for :access_privileges
 
-  validates :firstname,:email,:mobile,:address,:permissions, :presence => true
+  validates :firstname,:email,:presence => true
 
   def access_privilege_names=(names)
     names.collect do |n|
@@ -62,6 +62,10 @@ class User < ActiveRecord::Base
 
   def fullname
     "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]
+  end
+
+  def access_to_resource?(resource)
+    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s,resource.id)
   end
 
   def name
