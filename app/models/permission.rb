@@ -38,7 +38,7 @@ class Permission < ActiveRecord::Base
   end
 
   def subject_enum
-    %w(Venue Teacher Kit)
+    %w(Venue Teacher Kit Program)
   end
 
   rails_admin do
