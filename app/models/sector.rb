@@ -11,7 +11,7 @@
 
 class Sector < ActiveRecord::Base
   belongs_to :zone, :inverse_of => :sectors
-  has_many :centers
+  has_many :centers, :inverse_of => :sector
   validates :name,:zone, :presence => true
 
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
