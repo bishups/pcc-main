@@ -1,3 +1,9 @@
+<% if @kit_schedule.kit.state != ::Kit::AVAILABLE.to_s%>
+  <div class="alert alert-danger"> You cannot change the state of Schedule as Kit is 
+    <%=@kit_schedule.kit.state%> 
+    <%= link_to "Update Kit", kit_path(@kit_schedule.kit), :class => 'alert-link' %> 
+    </div>
+<% end %>
 <h2>
   <small><%= kit_schedule_state_tag(@kit_schedule) %></small> Kit Schdule <small><%= @kit_schedule.kit.kit_name_string %> | <%= @kit_schedule.program.name %></small>
   <div class='btn-group'>
@@ -7,11 +13,7 @@
       <span class="sr-only">Toggle Dropdown</span>
     </button>
     <ul class="dropdown-menu" role="menu">
-      <% if @kit_schedule.can_block? %>
-        <li>
-          <%= link_to "Block", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :blocked) %>
-        </li>
-      <% end %>
+     
        <% if @kit_schedule.can_assign? %>
         <li>
           <%= link_to "Assign", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :assigned) %>
@@ -22,31 +24,17 @@
           <%= link_to "Issued", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :issued) %>
         </li>
       <% end %>
-      <% if @kit_schedule.can_returned_and_check? %>
+      <% if @kit_schedule.can_closed? %>
         <li>
-          <%= link_to "Returned And Checked", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :returned_and_checked) %>
+          <%= link_to "Close", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :closed) %>
         </li>
       <% end %>
-
-      <%if @kit_schedule.can_under_repair?%>
+      <% if @kit_schedule.can_cancel? %>
+         <li class="divider"></li>
         <li>
-          <%= link_to "Under Repair", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :under_repair) %>
+          <%= link_to "Cancel", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :cancel) %>
         </li>
-      <%end%>
-
-      <%if @kit_schedule.can_incomplete_return?%>
-        <li>
-          <%= link_to "Incomplete Return", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :incomplete_return) %>
-        </li>
-      <%end%>
-
-      <%if @kit_schedule.can_unavailable?%>
-        <li>
-          <%= link_to "Unavailable", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :unavailable) %>
-        </li>
-      <%end%>  
-      <li class="divider"></li>
-      <li><a href="#">Cancel Kit Schedule</a></li>
+      <% end %>    
     </ul>
   </div>
 

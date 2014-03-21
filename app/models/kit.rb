@@ -8,17 +8,19 @@
 #  filling_person_id      :integer
 #  center_id              :integer
 #  guardian_id            :integer
-#  issued_to_person_id    :integer
-#  blocked_by_person_id   :integer
-#  assigned_to_program_id :integer
 #  condition              :string(255)
 #  condition_comments     :text
 #  general_comments       :text
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
+#  kit_name_string        :string(255)
 #
 
 class Kit < ActiveRecord::Base
+  AVAILABLE = :available
+  UNDER_REPAIR = :under_repair
+  UNAVAILABLE = :unavailable
+
   attr_accessible :condition,:condition_comments,
                   :general_comments, :kit_name_string,
                   :center_id,:state,:max_participant_number
@@ -27,44 +29,57 @@ class Kit < ActiveRecord::Base
   has_many :kit_schedules
   has_many :kit_items, :through => :kit_item_mappings
   belongs_to :center
+  
   has_paper_trail
   
-  before_create :generateKitNameString
+  after_create :generateKitNameStringAfterCreate
   before_update :generateKitNameString
+
+  EVENT_STATE_MAP = {
+                      AVAILABLE => AVAILABLE.to_s,
+                      UNDER_REPAIR => UNDER_REPAIR.to_s,
+                      UNAVAILABLE => UNAVAILABLE.to_s
+                    }
+
+
+  PROCESSABLE_EVENTS = [
+    AVAILABLE, UNDER_REPAIR, UNAVAILABLE
+  ]
+
+  validates_with KitValidator
+
   
-  state_machine :state, :initial => :new do
-    event :approve do
-      transition :new => :available
+  def initialize(*args)
+    super(*args)
+  end
+  
+  state_machine :state, :initial => :available do
+    event :under_repair do
+      transition [AVAILABLE,UNAVAILABLE] => :under_repair
     end
-
-
-    #will be manual event
-    event :block do
-      #check availability for given period
-      transition :available => :blocked, :if => lambda { |kit| !vehicle.passed_inspection? }
-      # DB - period kit_id - blocked
+    event :unavailable do
+      transition [UNDER_REPAIR,AVAILABLE] => :unavailable
     end
-
-    #will be automatic event when proram is announced!
-    event :assign do
-      transition :blocked => :assigned, :if => lambda { |kit| !vehicle.passed_inspection? }
-      # DB - period kit_id - assigned
+    event :available do 
+      transition any => :available
     end
-
   end
 
   def getState
-
+    if (self.state == UNDER_REPAIR.to_s || self.state == UNAVAILABLE.to_s)
+      return self.state
+    end
     #get the current schedule if any for the kit
     kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.now, Time.now).order("start_date ASC")
 
     if( kitSchedule[0].nil? )
-      return "available"
+      return AVAILABLE
     else
       return kitSchedule[0].state
     end  
-
   end
+
+  
   
   private
   def generateKitNameString
@@ -73,5 +88,13 @@ class Kit < ActiveRecord::Base
     self.kit_name_string = name
   end
 
+  def generateKitNameStringAfterCreate
+    center = Center.find(self.center_id )
+    name = center.name+"_"+self.max_participant_number.to_s+"_"+self.id.to_s
+    self.kit_name_string = name
+    self.save!
+  end  
+
+  
 #canBeBlocked
 end

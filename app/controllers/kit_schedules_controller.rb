@@ -82,9 +82,10 @@ class KitSchedulesController < ApplicationController
     respond_to do |format|
       format.html do
         if state_update(@kit_schedule, @trigger)
-
-          #redirect_to action: "edit" , :trigger => params[:trigger]
+          if @kit_schedule.save!
+            #redirect_to action: "edit" , :trigger => params[:trigger]
             redirect_to [@kit,@kit_schedule]
+          end
         else
             render :action => 'edit'
         end
@@ -112,6 +113,27 @@ class KitSchedulesController < ApplicationController
   end
 
    def state_update(ks, trig)
+    if trig == ::KitSchedule::CANCELLLED.to_s
+      if ks.comments.empty?
+        ks.errors[:comments] << "Cannot be left empty"
+        return false
+      end
+    end
+
+    if trig == ::KitSchedule::ISSUED.to_s
+      if ks.issued_to_person_id.nil?
+        ks.errors[:issued_to_person_id] << "-- Cannot be left Blank"
+        return false
+      else
+        user = User.find_by_id(ks.issued_to_person_id)
+        if user.nil?
+          ks.errors[:issued_to_person_id] << "-- User Id does not exist"
+          return false
+        end
+      end  
+    end
+
+    
     if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig.to_sym)
       ks.send(::KitSchedule::EVENT_STATE_MAP[trig.to_sym].to_sym)
     end

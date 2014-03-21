@@ -7,13 +7,17 @@ class KitScheduleValidator < ActiveModel::Validator
     if record.program_id.nil?
       return
     end  
+    if !Program.exists?(record.program_id)
+      record.errors[:program_id] << " --- Mentioned Program does not exist"
+      return
+    end
 
     if ::KitSchedule.where(['start_date >= ? AND start_date <= ? AND kit_id = ? and id != ? and state != ?', 
-      record.start_date-1, record.end_date+1, record.kit_id, record.id,'cancelled' ] ).count() > 0
+      record.start_date-1, record.end_date+1, record.kit_id, record.id,'cancel' ] ).count() > 0
       record.errors[:start_date] << " -- Kit is Already assigned For the Date"
 
     elsif ::KitSchedule.where(['end_date >= ? AND end_date <= ? AND kit_id = ? and id != ? and state != ?', 
-      record.start_date-1, record.end_date+1,record.kit_id,record.id,'cancelled']).count() > 0
+      record.start_date-1, record.end_date+1,record.kit_id,record.id,'cancel']).count() > 0
       record.errors[:end_date] << " -- Already Kit is assigned for given date range"
     end
     if record.start_date < Date.today
@@ -21,6 +25,16 @@ class KitScheduleValidator < ActiveModel::Validator
     elsif record.end_date < record.start_date
       record.errors[:end_date] << "cannot be before start date"
     end
+
+    if record.id.nil?
+      if ::KitSchedule.where( ['program_id = ? AND state != ?',record.program_id,'cancel'] ).count() > 0
+        record.errors[:program_id] << "- Kit is Already assigned for the program"
+      end
+     else
+      if ::KitSchedule.where( ['program_id = ? AND state != ? AND id != ?',record.program_id,'cancel',record.id] ).count() > 0
+        record.errors[:program_id] << "- Kit is Already assigned for the program"
+      end
+     end 
 
     if record.state == 'unavailable'
       if record.comments.nil?

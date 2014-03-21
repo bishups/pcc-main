@@ -39,9 +39,43 @@ class ProgramsController < ApplicationController
     end
   end
 
+  def announce
+    @program = Program.find(params[:id])
+    @program.announce! if @program.ready_for_announcement?
+
+    respond_to do |format|
+      format.html { redirect_to @program }
+    end
+  end
+
+  def edit
+    @program = Program.find(params[:id])
+    @trigger = params[:trigger]
+
+    respond_to do |format|
+      format.html
+    end
+  end
+
   def update
+    @program = Program.find(params[:id])
+    @trigger = params[:trigger]
+
+    state_update(@program, @trigger)
+
+    respond_to do |format|
+      format.html { redirect_to @program }
+    end
   end
 
   def destroy
+  end
+
+  private
+
+  def state_update(prog, trig)
+    if Program::PROCESSABLE_EVENTS.include?(trig.to_sym)
+      prog.send(trig.to_sym)
+    end
   end
 end

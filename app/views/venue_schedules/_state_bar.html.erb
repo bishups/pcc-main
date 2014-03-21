@@ -12,6 +12,11 @@
           <%= link_to "Block", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :block) %>
         </li>
       <% end %>
+      <% if @venue_schedule.can_authorize_for_payment? %>
+        <li>
+          <%= link_to "Authorize for Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :authorize_for_payment) %>
+        </li>
+      <% end %>
       <% if @venue_schedule.can_request_payment? %>
         <li>
           <%= link_to "Request Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :request_payment) %>

@@ -1,0 +1,19 @@
+<% if (!@trigger.nil? && [:available, :under_repair, :unavailable].include?(@trigger.to_sym)) %>
+  <div class='alert alert-info'>
+<% else %>
+  <div class='alert-alert-danger'>
+<% end %>
+  <h3>Confirmation: </h3>
+  <p>
+    <% if @trigger.nil? %>
+    <%else%>
+      <% if @trigger.to_sym == :available %>
+          Are you sure you want to change state to<strong>Available</strong> for this Kit?
+      <% elsif @trigger.to_sym == :unavailable %>
+          Are you sure you want to change state to<strong>Unavailable</strong> for this Kit?
+      <% elsif @trigger.to_sym == :under_repair %>
+          Are you sure you want to change state to<strong> Under Repair </strong> for this Kit?
+      <% end %>
+    <%end%>
+  </p>
+</div>

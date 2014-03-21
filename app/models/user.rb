@@ -31,26 +31,93 @@ class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable
-         #:confirmable
+  devise :database_authenticatable,
+         :recoverable, :rememberable, :trackable, :registerable
+
+  has_many :access_privileges
+  has_many :roles, :through => :access_privileges
+  has_many :permissions, :through => :roles
+  has_many :resources, :through => :access_privileges
+  has_many :teacher_schedules
 
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
-  attr_accessible :firstname, :lastname, :address, :phone, :mobile
+  attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
+  attr_accessible :access_privileges_attributes
+  accepts_nested_attributes_for :access_privileges
 
-  has_and_belongs_to_many :roles
-  has_many :teacher_schedules
+  validates :firstname,:email,:presence => true
 
-  has_paper_trail
+  def access_privilege_names=(names)
+    names.collect do |n|
+      ap=self.access_privileges.new
+      ap.role=Role.where(:name => n[:role_name] ).first
+      ap.resource=Center.where(:name => n[:center_name] ).first
+    end
+  end
 
-
-  def role_manager
-    @role_manager ||= ::RoleManager.new(self)
+  def is_super_admin?
+    self.roles.exists?(:name => "Super Admin")
   end
 
   def fullname
-    "%s %s" % [self.firstname.capitalize, self.lastname.capitalize]
+    "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]
   end
 
+  def access_to_resource?(resource)
+    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s,resource.id)
+  end
+
+  def name
+    self.fullname
+  end
+
+  def programs
+    Program.all
+  end
+
+  def venues
+    Venue.all
+  end
+
+  def kits
+    Kit.all
+  end
+
+  def teachers
+    Teacher.all
+  end
+
+  rails_admin do
+    navigation_label 'Access Privilege'
+    weight 0
+    list do
+      field :firstname
+      field :lastname
+      field :mobile
+      field :email
+      field :type
+    end
+    edit do
+      group :default do
+        label "User information"
+        help "Please fill all informations related to user..."
+      end
+      field :firstname
+      field :lastname
+      field :address
+      field :mobile
+      field :phone
+      field :email
+      field :type do
+        label "Teacher"
+        def render
+          bindings[:view].render :partial => "user_type_checkbox", :locals => {:field => self, :f => bindings[:form]}
+        end
+      end
+
+      field :access_privileges
+
+    end
+  end
 end

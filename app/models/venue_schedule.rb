@@ -1,3 +1,19 @@
+# == Schema Information
+#
+# Table name: venue_schedules
+#
+#  id                :integer          not null, primary key
+#  venue_id          :integer
+#  reserving_user_id :integer
+#  slot              :string(255)
+#  start_date        :datetime
+#  end_date          :datetime
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  program_id        :integer
+#  state             :string(255)
+#
+
 class VenueSchedule < ActiveRecord::Base
   # attr_accessible :title, :body
   attr_accessible :slot
@@ -23,7 +39,7 @@ class VenueSchedule < ActiveRecord::Base
   after_create :connect_program!
 
   PROCESSABLE_EVENTS = [
-    :block, :request_payment, :process_payment, :cancel
+    :block, :authorize_for_payment, :request_payment, :process_payment, :cancel
   ]
 
   STATE_CANCELLED = :cancelled
@@ -49,11 +65,14 @@ class VenueSchedule < ActiveRecord::Base
     event :block do
       transition :block_requested => :blocked
     end
+    event :authorize_for_payment do
+      transition :blocked => :authorized_for_payment
+    end
     event :request_payment do
-      transition :blocked => :payment_pending
+      transition :authorized_for_payment => :payment_pending
     end
     event :process_payment do
-      transition [:blocked, :payment_pending] => :paid
+      transition [:authorized_for_payment, :payment_pending] => :paid
     end
     event :cancel do
       transition any => :cancelled

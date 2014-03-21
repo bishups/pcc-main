@@ -1,14 +1,65 @@
 <div class='row'>
   <div class='page-header'>
     <h2>
-      Program Details
+      Program Details 
+      <small>
+        <%= program_state_tag(@program) %>
+      </small>
       <span class='pull-right'>
         <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
-        <%= link_to 'Announce Program', "#", :class => 'btn btn-danger', :disabled => true %>
+        <% unless @program.is_announced? %> 
+          <%= link_to 'Announce Program', announce_program_path, :class => 'btn btn-danger', :disabled => (! @program.ready_for_announcement? ) %>
+        <% else %>
+          <%= render :partial => 'programs/state_bar' %>
+        <% end %>
       </span>
     </h2>
   </div>
 </div>
+
+<% if @program.ready_for_announcement? %>
+<div class='alert alert-success'>
+  <strong>This program is ready for announcement.</strong>
+</div>
+<% else %>
+<div class='alert alert-danger'>
+  This program is not yet ready for announcement.
+  <small><%= link_to "[Why?]", '#', :id => 'prog-why-a' %></small>
+</div>
+<div class='row' id='program-announcement-overview' style='display :none;'>
+  <div class='col-md-12'>
+    <table class='table table-bordered'>
+      <tr>
+        <td width='25%'><strong>Venue Status</strong></td>
+        <td>
+          <% if @program.venue_connected? %>
+            Venue State: <%= @program.venue_schedule.state %>
+          <% else %>
+            Venue is not yet associated with this program.
+          <% end %>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Kit Status</strong></td>
+        <td>
+          <% if @program.kit_connected? %>
+            Kit State: <%= @program.kit_schedule.state %>
+          <% else %>
+            Kit is not associated with this program yet.
+          <% end %>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Teacher Status</strong></td>
+        <td>
+          Teacher Required: <%= @program.program_type.minimum_no_of_teacher %> <br/>
+          Teacher Associated: <%= @program.program_teacher_schedules.count %>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+<% end %>
 
 <div class='row'>
   <h3>Basic Details</h3>
@@ -17,6 +68,10 @@
       <tr>
         <td width='20%'><strong>Internal Id</strong></td>
         <td><%= @program.id %></td>
+      </tr>
+      <tr>
+        <td><strong>Announced Program Id</strong></td>
+        <td><%= @program.announce_program_id %></td>
       </tr>
       <tr>
         <td width='20%'><strong>Center</strong></td>
@@ -88,3 +143,10 @@
     <% end %>
   </div>
 </div>
+
+<script type='text/javascript'>
+  $('#prog-why-a').click(function() {
+    $('#program-announcement-overview').toggle();
+    return false;
+  });
+</script>
