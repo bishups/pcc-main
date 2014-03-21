@@ -30,7 +30,13 @@ class TeacherSchedulesController < ApplicationController
     @teacher_schedule = @teacher.teacher_schedules.new(params[:teacher_schedule])
 
     respond_to do |format|
-      if @teacher_schedule.save
+#      if @teacher_schedule.save
+      if @teacher_schedule.valid?
+#        @teacher_schedule = TeacherSchedulesHelper.combine_consecutive_schedules(@teacher_schedule)
+        puts "### Amit ###"
+#        @teacher_schedule = combine_consecutive_schedules(@teacher_schedule)
+        @teacher_schedule1 = combine_consecutive_schedules(@teacher_schedule)
+        @teacher_schedule.save
         format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
       else
         format.html { render(:action => 'new') }
@@ -51,6 +57,8 @@ class TeacherSchedulesController < ApplicationController
 
     respond_to do |format|
       if @teacher_schedule.update_attributes(params[:teacher_schedule])
+        @teacher_schedule = combine_consecutive_schedules(@teacher_schedule)
+        @teacher_schedule.save
         format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
       else
         format.html { render(:action => 'edit') }
@@ -72,6 +80,41 @@ private
   # TODO: Enforce role
   def load_teacher!
     @teacher = current_user
+  end
+
+  def combine_consecutive_schedules2(ts)
+    teacher_schedule = TeacherSchedule.where(['end_date = ? AND slot = ? AND user_id = ?', ts.start_date - 1.day, ts.slot, ts.user_id]).first
+
+    if (teacher_schedule != nil)
+      ts.start_date = teacher_schedule.start_date
+    end
+
+    teacher_schedule = TeacherSchedule.where(['start_date = ? AND slot = ? AND user_id = ?', ts.end_date + 1.day, ts.slot, ts.user_id]).first
+
+    if (teacher_schedule != nil)
+      ts.end_date = teacher_schedule.end_date
+    end
+
+    return ts
+  end
+
+  def combine_consecutive_schedules(ts)
+    if (ts.state == ::Ontology::Teacher::STATE_AVAILABLE || ts.state == ::Ontology::Teacher::STATE_UNAVAILABLE)
+      teacher_schedule = TeacherSchedule.where(['end_date = ? AND slot = ? AND state = ? AND user_id = ?', ts.start_date - 1.day, ts.slot, ts.state, ts.user_id]).first
+
+      if (teacher_schedule != nil)
+        ts.start_date = teacher_schedule.start_date
+        teacher_schedule.delete
+      end
+
+      teacher_schedule = TeacherSchedule.where(['start_date = ? AND slot = ? AND state = ? AND user_id = ?', ts.end_date + 1.day, ts.slot, ts.state, ts.user_id]).first
+
+      if (teacher_schedule != nil)
+        ts.end_date = teacher_schedule.end_date
+        teacher_schedule.delete
+      end
+    end
+    return ts
   end
 
 end

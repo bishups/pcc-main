@@ -4,7 +4,10 @@
       Teacher Schedule
       <small><%= @teacher.fullname %></small>
       <span class='pull-right'>
-      </span>
+        <% if @teacher.id == current_user.id %>
+        <%= link_to "New Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' %>
+        <% end %>
+      </span>      
     </h2>
   </div>
   <table class='table table-condensed table-hover table-bordered'>
@@ -14,6 +17,7 @@
       <th>Start Date</th>
       <th>End Date</th>
       <th>Slot</th>
+      <th>State</th>
       <th>Engagements</th>
       <th width='15%'></th>
     </tr>
@@ -24,6 +28,7 @@
       <td><%= ts.start_date %></td>
       <td><%= ts.end_date %></td>
       <td><%= ts.slot %></td>
+      <td><%= ts.state %></td>
       <td><%= ts.program_teacher_schedules.count %></td>
       <td>
         <%= link_to edit_teacher_teacher_schedule_path(@teacher, ts) do %>

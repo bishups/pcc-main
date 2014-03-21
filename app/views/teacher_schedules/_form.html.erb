@@ -11,7 +11,12 @@
   
   <div class='form-group'>
     <%= label_tag :slot %>
-    <%= select_tag 'teacher_schedule[slot]', options_for_select(::Ontology::Venue::SLOT_ALL), {:class => 'form-control'} %>
+    <%= select_tag 'teacher_schedule[slot]', options_for_select(::Ontology::Teacher::SLOT_ALL), {:class => 'form-control'} %>
+  </div>
+
+  <div class='form-group'>
+    <%= label_tag :state %>
+    <%= select_tag 'teacher_schedule[state]', options_for_select(::Ontology::Teacher::STATE_RESERVE), {:class => 'form-control'} %>
   </div>
 
   <%= submit_tag 'Publish', :class => 'btn btn-lg btn-primary' %>
