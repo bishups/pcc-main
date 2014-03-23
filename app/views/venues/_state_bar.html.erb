@@ -1,0 +1,14 @@
+<div class='btn-group'>
+    <button type="button" class="btn btn-danger">Update State</button>
+    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+      <span class="caret"></span>
+      <span class="sr-only">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu" role="menu">
+      <% @venue.state_events.each do |ev| %>
+      <li>
+        <%= link_to ev.to_s.capitalize, edit_venue_path(@venue, :trigger => ev) %>
+      </li>
+      <% end %>
+    </ul>
+  </div>

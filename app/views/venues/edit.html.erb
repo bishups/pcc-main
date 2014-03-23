@@ -1,6 +1,31 @@
-<h1>Editing venue</h1>
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Venue <small><%= @venue.name %></small>
+    </h2>
+  </div>
+</div>
+<%= form_for(@venue, :html => {:class => 'form'}) do |f| %>
+<%= hidden_field_tag 'trigger', @trigger %>
 
-<%= render 'form' %>
-
-<%= link_to 'Show', @venue %> |
-<%= link_to 'Back', venues_path %>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'venues/state_update_confirmation_msg' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'venues/state_additional_data' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'venues/state_update_comment' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= submit_tag "Update", :class => 'btn btn-primary btn-lg' %>
+  </div>
+</div>
+<% end %>
