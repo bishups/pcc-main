@@ -62,7 +62,6 @@ class KitsController < ApplicationController
     @kit = Kit.find(params[:id])
     @trigger = params[:trigger]
     @kit.condition_comments = params[:condition_comments]
-    @kit.general_comments = params[:general_comments]
 
     respond_to do |format|
       format.html do
@@ -92,22 +91,17 @@ class KitsController < ApplicationController
 
   def state_update(kit, trig)
     if trig != ::Kit::AVAILABLE.to_s
-      assigned_kit_schedules = kit.kit_schedules.where("state NOT IN (?)",['blocked','closed','cancel'])
+      assigned_kit_schedules = kit.kit_schedules.where("state NOT IN (?) and start_date <= ? and end_date >= ?",
+                                                    ['closed','cancel'],Date.today,Date.today)
         if( !assigned_kit_schedules.nil? && assigned_kit_schedules.count > 0 )
           kit.errors[:error] << "-- An Open Kit Schedule is there CANNOT change Kit State"
           return false
         end
-       if trig == ::Kit::UNDER_REPAIR.to_s
+       if trig == ::Kit::UNDER_REPAIR.to_s || trig == ::Kit::UNAVAILABLE.to_s
           if kit.condition_comments.empty? || kit.condition_comments == ""
             kit.errors[:condition_comments] << "-- Cannot Leave Empty"
             return false
           end  
-       end 
-       if trig == ::Kit::UNAVAILABLE.to_s
-          if kit.general_comments.empty? 
-            kit.errors[:general_comments] << "-- Cannot Leave Empty"
-            return false
-          end
        end
     end
     if ::Kit::PROCESSABLE_EVENTS.include?(trig.to_sym)
