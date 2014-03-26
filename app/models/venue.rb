@@ -62,12 +62,12 @@ class Venue < ActiveRecord::Base
       transition [STATE_PROPOSED, STATE_INSUFFICIENT_INFO, STATE_REJECTED] => STATE_APPROVED
     end
 
-    after_transition any => STATE_APPROVED do |transition|
+    after_transition any => STATE_APPROVED do |venue, transition|
       # TODO: check if paid venue or not
-      if self.paid?
-        self.finance_approval()
+      if venue.paid?
+        venue.finance_approval()
       else
-        self.possible()
+        venue.possible()
       end
     end
 

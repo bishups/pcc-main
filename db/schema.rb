@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140315104513) do
+ActiveRecord::Schema.define(:version => 20140326080015) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -83,11 +83,6 @@ ActiveRecord::Schema.define(:version => 20140315104513) do
     t.string   "state"
     t.integer  "issued_to_person_id"
     t.integer  "blocked_by_person_id"
-    t.integer  "program_id"
-    t.datetime "created_at",           :null => false
-    t.datetime "updated_at",           :null => false
-    t.string   "comments"
-    t.integer  "kit_id"
     t.integer  "program_id"
     t.datetime "created_at",           :null => false
     t.datetime "updated_at",           :null => false
@@ -251,6 +246,7 @@ ActiveRecord::Schema.define(:version => 20140315104513) do
     t.string   "mobile"
     t.datetime "created_at",                                             :null => false
     t.datetime "updated_at",                                             :null => false
+    t.string   "type"
   end
 
   add_index "users", ["email"], :name => "index_users_on_email", :unique => true
@@ -284,8 +280,12 @@ ActiveRecord::Schema.define(:version => 20140315104513) do
     t.string   "contact_mobile"
     t.text     "contact_address"
     t.boolean  "commercial"
-    t.datetime "created_at",      :null => false
-    t.datetime "updated_at",      :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+    t.string   "payment_contact_name"
+    t.string   "payment_contact_address"
+    t.string   "payment_contact_mobile"
+    t.integer  "per_day_price"
   end
 
   create_table "versions", :force => true do |t|
