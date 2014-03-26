@@ -59,12 +59,16 @@ class Venue < ActiveRecord::Base
 
   state_machine :state, :initial => STATE_PROPOSED do
     event :approve do
-      transition [STATE_PROPOSED, STATE_INSUFFICIENT_INFO] => STATE_APPROVED
+      transition [STATE_PROPOSED, STATE_INSUFFICIENT_INFO, STATE_REJECTED] => STATE_APPROVED
     end
 
     after_transition any => STATE_APPROVED do |transition|
       # TODO: check if paid venue or not
-      self.finance_approval()
+      if self.paid?
+        self.finance_approval()
+      else
+        self.possible()
+      end
     end
 
     event :finance_approval do
@@ -76,7 +80,7 @@ class Venue < ActiveRecord::Base
     end
 
     event :reject do
-      transition STATE_PROPOSED => STATE_REJECTED
+      transition [STATE_PROPOSED, STATE_PUBLISHED] => STATE_REJECTED
     end
 
     event :publish do
@@ -90,6 +94,14 @@ class Venue < ActiveRecord::Base
 
   def initialize(*args)
     super(args)
+  end
+
+  def paid?
+    self.per_day_price.to_i > 0
+  end
+
+  def published?
+    self.state.to_sym == STATE_PUBLISHED
   end
 
   def current_schedule
