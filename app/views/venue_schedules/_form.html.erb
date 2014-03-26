@@ -15,8 +15,9 @@
   </div> -->
   
   <div class='form-group'>
-    <label for='program_id'>Program Id</label>
-    <%= f.text_field :program_id, :class => 'form-control' %>
+    <label for='program_id'>Program</label>
+    <%#= f.text_field :program_id, :class => 'form-control' %>
+    <%= f.select :program_id, options_for_select(@venue.blockable_programs.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
   </div>
 
   <%= f.submit 'Block Venue', :class => 'btn btn-lg btn-primary' %>

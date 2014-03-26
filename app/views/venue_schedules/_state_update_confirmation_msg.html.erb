@@ -15,6 +15,8 @@
       This venue will be assigned and made available for use in the associated <strong>Program</strong> once payment processing is complete. Are you sure you want to proceed?
     <% elsif @trigger.to_sym == :cancel %>
       This will cancel the venue booking associated with the program. Are you sure you want to proceed?
+    <% elsif @trigger.to_sym == :request_approval %>
+      Are you sure you want to send this venue schedule for approval?
     <% end %>
   </p>
 </div>

@@ -89,6 +89,10 @@ class Program < ActiveRecord::Base
 
   end
 
+  def friendly_name
+    ("%s %s %s" % [self.center.name, self.start_date.strftime('%d-%m-%Y'), self.program_type.name]).parameterize
+  end
+
   def is_announced?
     ! [STATE_PROPOSED.to_s, ''].include?(self.state.to_s)
   end

@@ -96,6 +96,10 @@ class Venue < ActiveRecord::Base
     super(args)
   end
 
+  def blockable_programs
+    Program.where('center_id = ? AND start_date > ?', self.center_id, Time.now)
+  end
+
   def paid?
     self.per_day_price.to_i > 0
   end
