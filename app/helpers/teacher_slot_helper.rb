@@ -1,0 +1,2 @@
+module TeacherSlotHelper
+end

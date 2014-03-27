@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140315104513) do
+ActiveRecord::Schema.define(:version => 20140322144216) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -83,11 +83,6 @@ ActiveRecord::Schema.define(:version => 20140315104513) do
     t.string   "state"
     t.integer  "issued_to_person_id"
     t.integer  "blocked_by_person_id"
-    t.integer  "program_id"
-    t.datetime "created_at",           :null => false
-    t.datetime "updated_at",           :null => false
-    t.string   "comments"
-    t.integer  "kit_id"
     t.integer  "program_id"
     t.datetime "created_at",           :null => false
     t.datetime "updated_at",           :null => false
@@ -224,6 +219,17 @@ ActiveRecord::Schema.define(:version => 20140315104513) do
     t.string   "slot"
     t.datetime "start_date"
     t.datetime "end_date"
+    t.datetime "created_at",        :null => false
+    t.datetime "updated_at",        :null => false
+    t.string   "state"
+    t.integer  "reserving_user_id"
+  end
+
+  create_table "teacher_slots", :force => true do |t|
+    t.integer  "user_id"
+    t.string   "status"
+    t.string   "slot"
+    t.date     "date"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
@@ -251,6 +257,7 @@ ActiveRecord::Schema.define(:version => 20140315104513) do
     t.string   "mobile"
     t.datetime "created_at",                                             :null => false
     t.datetime "updated_at",                                             :null => false
+    t.string   "type"
   end
 
   add_index "users", ["email"], :name => "index_users_on_email", :unique => true

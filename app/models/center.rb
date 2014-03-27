@@ -14,6 +14,7 @@ class Center < ActiveRecord::Base
   has_many :pincodes
   has_one :zone, :through => :sector
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
+  has_and_belongs_to_many :teachers
   attr_accessible :name, :sector_id, :sector, :pincodes, :pincode_ids
 
   validates :name,:sector, :presence => true

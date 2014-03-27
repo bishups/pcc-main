@@ -1,0 +1,27 @@
+<%= form_tag("/teachers/#{@teacher.id}/teacher_slots", :method => 'post', :html => { :class => 'form' }) do |f| %>
+  <%= resource_error_messages!(@teacher_slot) %>
+
+  <div class="form-group">
+    <%= label_tag(:start_date, "Start Date") %>
+    <%= text_field_tag (:start_date), nil, :class => 'form-control dateSelect' %>
+    <br/>
+    <%= label_tag(:end_date, "End Date") %>
+    <%= text_field_tag (:end_date), nil, :class => 'form-control dateSelect' %>
+  </div>
+  
+  <div class='form-group'>
+    <%= label_tag(:slot, "Slot") %>
+    <%= select_tag (:slot), options_for_select(::Ontology::Teacher::SLOT_ALL, 2), {:multiple => true, :class => 'form-control'} %>
+  </div>
+
+  <div class='form-group'>
+    <%= label_tag(:status, "State") %>
+    <%= select_tag (:status), options_for_select(::Ontology::Teacher::STATE_RESERVE), {:class => 'form-control'} %>
+  </div>
+
+  <%= submit_tag 'Publish', :class => 'btn btn-lg btn-primary' %>
+<% end %>
+
+<script type='text/javascript'>
+$('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
+</script>

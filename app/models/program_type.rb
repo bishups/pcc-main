@@ -13,5 +13,6 @@
 
 class ProgramType < ActiveRecord::Base
   attr_accessible :language, :minimum_no_of_teacher, :name, :no_of_days
+  has_and_belongs_to_many :teachers
   validates:language, :minimum_no_of_teacher, :name, :no_of_days, :presence => true
 end

@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  status: MyString
+  slot: MyString
+  date: 2014-03-22
+
+two:
+  status: MyString
+  slot: MyString
+  date: 2014-03-22
