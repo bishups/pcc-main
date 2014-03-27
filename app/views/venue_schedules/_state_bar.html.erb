@@ -7,29 +7,11 @@
       <span class="sr-only">Toggle Dropdown</span>
     </button>
     <ul class="dropdown-menu" role="menu">
-      <% if @venue_schedule.can_block? %>
-        <li>
-          <%= link_to "Block", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :block) %>
-        </li>
+      <% @venue_schedule.state_events.each do |ev| %>
+      <li>
+        <%= link_to ev.to_s.humanize, edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => ev) %>
+      </li>
       <% end %>
-      <% if @venue_schedule.can_authorize_for_payment? %>
-        <li>
-          <%= link_to "Authorize for Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :authorize_for_payment) %>
-        </li>
-      <% end %>
-      <% if @venue_schedule.can_request_payment? %>
-        <li>
-          <%= link_to "Request Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :request_payment) %>
-        </li>
-      <% end %>
-      <% if @venue_schedule.can_process_payment? %>
-        <li>
-          <%= link_to "Process Payment", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :process_payment) %>
-        </li>
-      <% end %>
-
-      <li class="divider"></li>
-      <li><%= link_to "Cancel Schedule", edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => :cancel) %></li>
     </ul>
   </div>
   <span class='pull-right'>

@@ -45,6 +45,69 @@ class Venue < ActiveRecord::Base
   validates_presence_of :center_id
   validates_uniqueness_of :name, :scope => [:zone_id, :center_id]
 
+  STATE_PROPOSED  = :proposed
+  STATE_APPROVED  = :approved
+  STATE_REJECTED  = :rejected
+  STATE_POSSIBLE  = :possible
+  STATE_PENDING_FINANCE_APPROVAL = :pending_finance_approval
+  STATE_INSUFFICIENT_INFO = :insufficient_info
+  STATE_PUBLISHED = :published
+
+  PROCESSABLE_EVENTS = [
+    :approve, :reject, :publish, :insufficient_info
+  ]
+
+  state_machine :state, :initial => STATE_PROPOSED do
+    event :approve do
+      transition [STATE_PROPOSED, STATE_INSUFFICIENT_INFO, STATE_REJECTED] => STATE_APPROVED
+    end
+
+    after_transition any => STATE_APPROVED do |venue, transition|
+      # TODO: check if paid venue or not
+      if venue.paid?
+        venue.finance_approval()
+      else
+        venue.possible()
+      end
+    end
+
+    event :finance_approval do
+      transition STATE_APPROVED => STATE_PENDING_FINANCE_APPROVAL
+    end
+
+    event :possible do
+      transition [STATE_APPROVED, STATE_PENDING_FINANCE_APPROVAL] => STATE_POSSIBLE
+    end
+
+    event :reject do
+      transition [STATE_PROPOSED, STATE_PUBLISHED] => STATE_REJECTED
+    end
+
+    event :publish do
+      transition [STATE_APPROVED, STATE_PENDING_FINANCE_APPROVAL] => STATE_PUBLISHED
+    end
+
+    event :insufficient_info do
+      transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO
+    end
+  end
+
+  def initialize(*args)
+    super(args)
+  end
+
+  def blockable_programs
+    Program.where('center_id = ? AND start_date > ?', self.center_id, Time.now)
+  end
+
+  def paid?
+    self.per_day_price.to_i > 0
+  end
+
+  def published?
+    self.state.to_sym == STATE_PUBLISHED
+  end
+
   def current_schedule
     self.venue_schedules.where('start_date < ? AND end_date > ?', Time.now, Time.now).first()
   end

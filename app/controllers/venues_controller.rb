@@ -38,6 +38,7 @@ class VenuesController < ApplicationController
   # GET /venues/1/edit
   def edit
     @venue = Venue.find(params[:id])
+    @trigger = params[:trigger]
   end
 
   # POST /venues
@@ -60,6 +61,9 @@ class VenuesController < ApplicationController
   # PUT /venues/1.json
   def update
     @venue = Venue.find(params[:id])
+    @trigger = params[:trigger]
+
+    state_update(@venue, @trigger)
 
     respond_to do |format|
       if @venue.update_attributes(params[:venue])
@@ -81,6 +85,14 @@ class VenuesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to venues_url }
       format.json { head :no_content }
+    end
+  end
+
+  private
+
+  def state_update(vs, trig)
+    if ::Venue::PROCESSABLE_EVENTS.include?(@trigger.to_sym)
+      vs.send(trig.to_sym)
     end
   end
 end

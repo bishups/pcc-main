@@ -74,6 +74,7 @@ class VenueSchedulesController < ApplicationController
 
   def load_venue!
     @venue = ::Venue.find(params[:venue_id].to_i)
+    redirect_to venue_path(@venue) unless @venue.published?
   end
 
   def state_update(vs, trig)

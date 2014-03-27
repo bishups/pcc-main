@@ -41,5 +41,16 @@ class KitScheduleValidator < ActiveModel::Validator
         record.errors[:comments] << "Cannot be Left blank To make a Kit unavailable"
       end
     end
+
+    kit = Kit.find(record.kit_id)
+    if kit.state != ::Kit::AVAILABLE.to_s
+      record.errors[:kit_id] << "Kit state is #{kit.state} , cannot be blocked until Available"
+    end
+
+    program_center = Program.find(record.program_id).center
+    if program_center.id != kit.center.id
+      record.errors[:center] << "-- Kit Can only be blocked for Center #{kit.center.name}"
+    end
+
   end
 end

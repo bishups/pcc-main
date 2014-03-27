@@ -3,7 +3,9 @@
     <h2>
       Venue Detail <br/>
       <small><%= @venue.name %></small>
+      <small><span class='label label-info'><%= @venue.state.to_s.capitalize %></span></small>
       <small><span class='label label-success'><%= @venue.capacity %></span></small>
+      <small><%= render :partial => 'venues/state_bar' %></small>
       <small><%= link_to "View Schedule", venue_venue_schedules_path(@venue) %></small>
     </h2>
     <blockquote>
