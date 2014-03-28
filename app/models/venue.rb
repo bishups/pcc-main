@@ -93,7 +93,7 @@ class Venue < ActiveRecord::Base
   end
 
   def initialize(*args)
-    super(args)
+    super(*args)
   end
 
   def blockable_programs
