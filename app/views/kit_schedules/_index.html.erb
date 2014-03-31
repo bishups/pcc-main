@@ -11,7 +11,7 @@
 
 <% @kit.kit_schedules.each do |ks| %>
   <tr>
-    <td><%= ks.kit.kit_name_string %></td>
+    <td><%= ks.kit.name %></td>
     <td><%= kit_schedule_state_tag(ks) %></td>
     <td><%= ks.program.name rescue nil%></td>
     <td><%= ks.start_date.strftime('%d/%m/%Y') rescue nil%></td>

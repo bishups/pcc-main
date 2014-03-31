@@ -7,7 +7,7 @@
     <table class='table table-bordered'>
       <tr>
         <td width='20%'><strong>Name</strong></td>
-        <td><%= @kit.kit_name_string %></td>
+        <td><%= @kit.name %></td>
       </tr>
       <tr>
         <td><strong>Center</strong></td>
@@ -17,7 +17,7 @@
         <td><strong>Max Participants</strong></td>
         <td>
           <address>
-            <%= @kit.max_participant_number %>
+            <%= @kit.capacity %>
           </address>
         </td>
       </tr>

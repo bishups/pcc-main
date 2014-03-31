@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140331123134) do
+ActiveRecord::Schema.define(:version => 20140331123142) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -91,15 +91,15 @@ ActiveRecord::Schema.define(:version => 20140331123134) do
 
   create_table "kits", :force => true do |t|
     t.string   "state"
-    t.integer  "max_participant_number"
-    t.integer  "filling_person_id"
     t.integer  "guardian_id"
     t.string   "condition"
     t.text     "condition_comments"
     t.text     "general_comments"
-    t.datetime "created_at",             :null => false
-    t.datetime "updated_at",             :null => false
-    t.string   "kit_name_string"
+    t.datetime "created_at",         :null => false
+    t.datetime "updated_at",         :null => false
+    t.integer  "requester_id"
+    t.string   "name"
+    t.integer  "capacity"
   end
 
   create_table "permissions", :force => true do |t|

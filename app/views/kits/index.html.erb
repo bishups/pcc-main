@@ -20,10 +20,10 @@
 
 <% @kits.each do |kit| %>
   <tr>
-    <td> <%=kit.kit_name_string%></td>
+    <td> <%=kit.name%></td>
     <td> <%=  kit_state_tag(kit) %> </td>
     <td> <%=  kit.center.name rescue '' %> </td>
-    <td> <%=  kit.max_participant_number %> </td>
+    <td> <%=  kit.capacity %> </td>
     <td> <%=  kit.condition %> </td>
     <td> <%=  kit.condition_comments %> </td> 
     <td> <%=  kit.general_comments%> </td>

@@ -4,7 +4,7 @@
 #
 #  id                     :integer          not null, primary key
 #  state                  :string(255)
-#  max_participant_number :integer
+#  capacity :integer
 #  filling_person_id      :integer
 #  center_id              :integer
 #  guardian_id            :integer
@@ -22,14 +22,20 @@ class Kit < ActiveRecord::Base
   UNAVAILABLE = :unavailable
 
   attr_accessible :condition,:condition_comments,
-                  :general_comments, :kit_name_string,
-                  :state,:max_participant_number
+                  :general_comments, :name,
+                  :state,:capacity
 
   has_many :kit_items
+  attr_accessible :kit_item_ids, :kit_items
+
   has_many :kit_schedules
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
+
+  belongs_to :requester, :class_name => "User"
+  belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
+  attr_accessible :requester_id, :guardian_id, :requester, :guardian
 
   has_paper_trail
   
@@ -89,17 +95,45 @@ class Kit < ActiveRecord::Base
   private
   def generateKitNameString
     center = Center.find(self.center_id )
-    name = center.name+"_"+self.max_participant_number.to_s+"_"+self.id.to_s
-    self.kit_name_string = name
+    name = center.name+"_"+self.capacity.to_s+"_"+self.id.to_s
+    self.name = name
   end
 
   def generateKitNameStringAfterCreate
     center = Center.find(self.center_id )
-    name = center.name+"_"+self.max_participant_number.to_s+"_"+self.id.to_s
-    self.kit_name_string = name
+    name = center.name+"_"+self.capacity.to_s+"_"+self.id.to_s
+    self.name = name
     self.save!
   end
 
 
 #canBeBlocked
+
+  rails_admin do
+    list do
+      field :name
+      field :capacity
+      field :kit_items
+      field :centers
+      field :condition
+    end
+    edit do
+      field :name
+      field :capacity
+      field :kit_items do
+        help 'Type any character to search for kit item'
+        inline_add do
+          false
+        end
+      end
+      field :centers  do
+        help 'Type any character to search for center'
+        inline_add do
+          false
+        end
+      end
+      field :condition
+    end
+
+  end
 end
