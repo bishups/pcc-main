@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140326080015) do
+ActiveRecord::Schema.define(:version => 20140331081224) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -33,6 +33,21 @@ ActiveRecord::Schema.define(:version => 20140326080015) do
   end
 
   add_index "centers", ["sector_id"], :name => "index_centers_on_sector_id"
+
+  create_table "centers_kits", :force => true do |t|
+    t.integer "center_id"
+    t.integer "kit_id"
+  end
+
+  create_table "centers_teachers", :force => true do |t|
+    t.integer "center_id"
+    t.integer "teacher_id"
+  end
+
+  create_table "centers_venues", :force => true do |t|
+    t.integer "center_id"
+    t.integer "venue_id"
+  end
 
   create_table "enquiries", :force => true do |t|
     t.string   "topic"
@@ -94,7 +109,6 @@ ActiveRecord::Schema.define(:version => 20140326080015) do
     t.string   "state"
     t.integer  "max_participant_number"
     t.integer  "filling_person_id"
-    t.integer  "center_id"
     t.integer  "guardian_id"
     t.string   "condition"
     t.text     "condition_comments"
@@ -146,6 +160,11 @@ ActiveRecord::Schema.define(:version => 20140326080015) do
     t.integer  "minimum_no_of_teacher"
     t.datetime "created_at",            :null => false
     t.datetime "updated_at",            :null => false
+  end
+
+  create_table "program_types_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
   end
 
   create_table "programs", :force => true do |t|
@@ -234,6 +253,16 @@ ActiveRecord::Schema.define(:version => 20140326080015) do
     t.datetime "updated_at", :null => false
   end
 
+  create_table "teachers", :force => true do |t|
+    t.string   "t_no"
+    t.string   "state"
+    t.boolean  "is_attached"
+    t.integer  "zone_id"
+    t.integer  "user_id"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+  end
+
   create_table "users", :force => true do |t|
     t.string   "email",                                  :default => "", :null => false
     t.string   "encrypted_password",                     :default => "", :null => false
@@ -276,8 +305,6 @@ ActiveRecord::Schema.define(:version => 20140326080015) do
   end
 
   create_table "venues", :force => true do |t|
-    t.integer  "center_id"
-    t.integer  "zone_id"
     t.string   "name"
     t.text     "description"
     t.text     "address"

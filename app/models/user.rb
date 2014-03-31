@@ -41,6 +41,20 @@ class User < ActiveRecord::Base
   has_many :teacher_schedules
   has_many :teacher_slots
 
+  ROLE_ACCESS_HIERARCHY =
+        {:zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :in_hierarchy => [:geography, :pcc]},
+          :zao                  => {:text => "ZAO", :access_level => 4, :in_hierarchy => [:geography]},
+          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :in_hierarchy => [:geography, :pcc]},
+          :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :in_hierarchy => [:geography] },
+          :volunteer_committee  => {:text => "Volunteer Coordinator", :access_level => 1, :in_hierarchy => [:geography] },
+          :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :in_hierarchy => [:geography] },
+          :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :in_hierarchy => [:geography] },
+          :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :in_hierarchy => [:geography] },
+          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :in_hierarchy => [:geography] },
+          :teacher              => {:text => "Teacher", :access_level => 0, :in_hierarchy => [:pcc] }
+  }
+
+
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
@@ -60,6 +74,45 @@ class User < ActiveRecord::Base
   def is_super_admin?
     self.roles.exists?(:name => "Super Admin")
   end
+
+  # usage -- check if user has role for specific resource
+  # if user.is? :zone_coordinator, :center_id => 10
+  # if user.is? :zone_coordinator, :center_id => [1,2,3]
+  #
+  def is?(role, params)
+    is = false
+    if !params.key?(center_id)
+      center_id = params[:center_id]
+    else
+      center_id = []
+    end
+
+    self.access_privileges.each do |ap|
+      break if is == true
+      if ap.resource.class.name.demodulize == "Center"
+        resource = [ap.resource]
+      elsif ap.resource.class.name.demodulize == "Sector" || ap.resource.class.name.demodulize == "Zone"
+        resource = ap.resource.centers
+      else
+        resource = []
+      end
+
+      # if for given ap, self has >= centers than asked for
+      if (center_id.type == Array && a2.all? { |id| resource.include?(id) }) || resource.include?(center_id)
+        role = Role.find_by_id(ap.role_id).
+        self_ah = ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == role.name}
+        ah =  ROLE_ACCESS_HIERARCHY[role]
+
+        # if for given ap, self has >= access_level than asked for
+        if (self_ah[:access_level] >= ah[:access_level]) && (ah[:hierarchy].all? { |h| self_ah[:hierarchy].include?(h)})
+          is = true
+        end
+      end
+    end
+
+  is
+  end
+
 
   def fullname
     "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]

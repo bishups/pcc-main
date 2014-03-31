@@ -41,6 +41,7 @@ class DeviseCreateUsers < ActiveRecord::Migration
       t.string :phone
       t.string :mobile
 
+
       t.timestamps
     end
 

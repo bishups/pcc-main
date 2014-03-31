@@ -1,7 +1,7 @@
 class Pincode < ActiveRecord::Base
   belongs_to :center
   attr_accessible :location_name, :pincode, :center, :center_id
-  validates :location_name, :pincode, :presence => true
+  validates :location_name, :pincode, :center, :presence => true
 
 
   rails_admin do

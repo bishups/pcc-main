@@ -23,13 +23,19 @@ class Kit < ActiveRecord::Base
 
   attr_accessible :condition,:condition_comments,
                   :general_comments, :kit_name_string,
-                  :center_id,:state,:max_participant_number
+                  :state,:max_participant_number
 
   has_many :kit_item_mappings
   has_many :kit_schedules
   has_many :kit_items, :through => :kit_item_mappings
-  belongs_to :center
-  
+  has_and_belongs_to_many :centers
+  attr_accessible :center_ids, :centers
+  validate :has_centers?
+
+  belongs_to :zone
+  attr_accessible :zone_id, :zone
+  validates_presence_of :zone, :zone_id
+
   has_paper_trail
   
   after_create :generateKitNameStringAfterCreate
@@ -52,7 +58,11 @@ class Kit < ActiveRecord::Base
   def initialize(*args)
     super(*args)
   end
-  
+
+  def has_centers?
+    self.errors.add_to_base "Kit needs to be associated to center(s)." if self.centers.blank?
+  end
+
   state_machine :state, :initial => :available do
     event :under_repair do
       transition [AVAILABLE,UNAVAILABLE] => :under_repair
@@ -79,8 +89,7 @@ class Kit < ActiveRecord::Base
     end  
   end
 
-  
-  
+
   private
   def generateKitNameString
     center = Center.find(self.center_id )
@@ -93,8 +102,8 @@ class Kit < ActiveRecord::Base
     name = center.name+"_"+self.max_participant_number.to_s+"_"+self.id.to_s
     self.kit_name_string = name
     self.save!
-  end  
+  end
 
-  
+
 #canBeBlocked
 end

@@ -1,0 +1,28 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <table id = "teacher-table" class='display dataTable table table-condensed table-hover table-bordered'>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Center</th>
+          <th>Name</th>
+          <th width='15%'>Active Schedules</th>
+          <th width='20%'></th>
+        </tr>
+      <thead>
+      <tbody>
+        <% @teachers.each do |teacher| %>
+        <tr>
+          <td><%= teacher.id %></td>
+          <td></td>
+          <td><%= link_to teacher.firstname, teacher_path(teacher)%> </td>
+          <td><%= teacher.teacher_schedules.where('end_date > ?', Time.now).count() %></td>
+          <td>
+            <%= link_to "Schedule", teacher_teacher_schedules_path(teacher), :class => 'btn btn-primary btn-sm' %> 
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -62,7 +62,8 @@ class Role < ActiveRecord::Base
       field :permissions
     end
     edit do
-      field :name
+      ### do not allow user to change name of existing role
+      #field :name
       field :permissions do
         inline_add do
           false

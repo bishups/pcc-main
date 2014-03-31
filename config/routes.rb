@@ -27,7 +27,7 @@ PccMain::Application.routes.draw do
   end
 
   resources :teachers do
-#    resources :teacher_schedules
+    resources :teacher_schedules
     resources :teacher_slots
   end
 
