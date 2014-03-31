@@ -73,8 +73,16 @@ ActiveRecord::Schema.define(:version => 20140331123142) do
     t.integer "permission_id"
   end
 
-# Could not dump table "kit_items" because of following StandardError
-#   Unknown type 'belongs_to' for column 'kit'
+  create_table "kit_items", :force => true do |t|
+    t.text     "kit_item_type"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+    t.string   "type"
+    t.string   "description"
+    t.integer  "count"
+    t.string   "comments"
+    t.integer  "kit_id"
+  end
 
   create_table "kit_schedules", :force => true do |t|
     t.date     "start_date"
