@@ -25,9 +25,8 @@ class Kit < ActiveRecord::Base
                   :general_comments, :kit_name_string,
                   :state,:max_participant_number
 
-  has_many :kit_item_mappings
+  has_many :kit_items
   has_many :kit_schedules
-  has_many :kit_items, :through => :kit_item_mappings
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
