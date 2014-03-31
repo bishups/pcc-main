@@ -32,10 +32,6 @@ class Kit < ActiveRecord::Base
   attr_accessible :center_ids, :centers
   validate :has_centers?
 
-  belongs_to :zone
-  attr_accessible :zone_id, :zone
-  validates_presence_of :zone, :zone_id
-
   has_paper_trail
   
   after_create :generateKitNameStringAfterCreate
@@ -60,7 +56,8 @@ class Kit < ActiveRecord::Base
   end
 
   def has_centers?
-    self.errors.add_to_base "Kit needs to be associated to center(s)." if self.centers.blank?
+    self.errors.add(:centers, "Kit needs to be associated to center(s).") if self.centers.blank?
+    self.errors.add(:centers, " should belong to one sector.") if ::Sector::all_centers_in_one_sector?(self.centers)
   end
 
   state_machine :state, :initial => :available do

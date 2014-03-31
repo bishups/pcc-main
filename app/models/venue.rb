@@ -25,11 +25,8 @@
 class Venue < ActiveRecord::Base
   # attr_accessible :title, :body
   attr_accessible :name, :description, :address, :pin_code, :capacity, :seats, :contact_name, :contact_phone,
-  :contact_mobile, :contact_email, :contact_address, :zone_id, :commercial, :payment_contact_name,
+  :contact_mobile, :contact_email, :contact_address, :commercial, :payment_contact_name,
   :payment_contact_address,:payment_contact_mobile,:per_day_price
-
-  belongs_to :zone
-  attr_accessible :zone_id, :zone
 
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
@@ -125,6 +122,7 @@ class Venue < ActiveRecord::Base
 
   def has_centers?
     self.errors.add(:centers, "- required field.") if self.centers.blank?
+    self.errors.add(:centers, " should belong to one sector.") if ::Sector::all_centers_in_one_sector?(self.centers)
   end
 
   def has_per_day_price?
@@ -141,10 +139,6 @@ class Venue < ActiveRecord::Base
     end
     edit do
       field :name
-      field :zone do
-        inline_edit false
-        inline_add false
-      end
       field :centers do
         help 'Type any character to search for center'
         inline_add do

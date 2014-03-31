@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140331081224) do
+ActiveRecord::Schema.define(:version => 20140331123134) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -73,24 +73,8 @@ ActiveRecord::Schema.define(:version => 20140331081224) do
     t.integer "permission_id"
   end
 
-  create_table "kit_item_mappings", :force => true do |t|
-    t.integer  "kit_id"
-    t.integer  "kit_item_id"
-    t.integer  "count"
-    t.string   "condition"
-    t.text     "comments"
-    t.datetime "created_at",  :null => false
-    t.datetime "updated_at",  :null => false
-  end
-
-  create_table "kit_items", :force => true do |t|
-    t.string   "name"
-    t.text     "description"
-    t.text     "kit_item_type"
-    t.string   "capacity"
-    t.datetime "created_at",    :null => false
-    t.datetime "updated_at",    :null => false
-  end
+# Could not dump table "kit_items" because of following StandardError
+#   Unknown type 'belongs_to' for column 'kit'
 
   create_table "kit_schedules", :force => true do |t|
     t.date     "start_date"
@@ -203,16 +187,6 @@ ActiveRecord::Schema.define(:version => 20140331081224) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
-
-  create_table "roles_users", :force => true do |t|
-    t.integer  "role_id"
-    t.integer  "user_id"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
-  end
-
-  add_index "roles_users", ["role_id"], :name => "index_roles_users_on_role_id", :unique => true
-  add_index "roles_users", ["user_id"], :name => "index_roles_users_on_user_id", :unique => true
 
   create_table "sectors", :force => true do |t|
     t.string   "name"

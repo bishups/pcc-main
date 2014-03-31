@@ -9,23 +9,26 @@
 #  create_default_permissions
   permissions = [
       { :name => "Program Management", :cancan_action => "manage", :subject => "Program"},
-      { :name => "Teacher Scheduling", :cancan_action => "manage", :subject => "Teacher"},
+      { :name => "Teacher Scheduling", :cancan_action => "update", :subject => "Teacher"},
+      { :name => "Teacher Management", :cancan_action => "update", :subject => "Teacher"},
       { :name => "Kit Management", :cancan_action => "manage", :subject => "Kit"},
       { :name => "Venue Management", :cancan_action => "manage", :subject => "Venue"},
       { :name => "Teacher View", :cancan_action => "read", :subject => "Teacher"},
       { :name => "Program View", :cancan_action => "read", :subject => "Program"},
       { :name => "Kit View", :cancan_action => "read", :subject => "Kit"},
       { :name => "Venue View", :cancan_action => "read", :subject => "Venue"},
+      { :name => "User View", :cancan_action => "read", :subject => "User"},
+      { :name => "Access Privilege Management", :cancan_action => "update", :subject => "AccessPrivilege"},
       { :name => "Master Data Management", :cancan_action => "manage", :subject => :all}
   ]
   permissions.each{|p| Permission.create(p) }
 
 ## create_default_roles
   roles={
-      ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
-    ::User::ROLE_ACCESS_HIERARCHY[:zao][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
-    ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
-    ::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
+      ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Teacher Management","Kit Management","Venue Management", "User View", "Access Privilege Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:zao][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management", "User View", "Access Privilege Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management", "User View", "Access Privilege Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management", "User View", "Access Privilege Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_scheduler][:text] =>  ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:volunteer_committee][:text] => ["Program Management","Teacher View","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text] => ["Program View","Teacher View","Kit Management","Venue Management"] ,

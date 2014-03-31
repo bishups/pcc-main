@@ -37,7 +37,7 @@ class User < ActiveRecord::Base
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
-  has_many :resources, :through => :access_privileges
+  #has_many :resources, :through => :access_privileges
   has_many :teacher_schedules
   has_many :teacher_slots
 
@@ -61,7 +61,11 @@ class User < ActiveRecord::Base
   attr_accessible :access_privileges_attributes
   accepts_nested_attributes_for :access_privileges
 
-  validates :firstname,:email,:presence => true
+  validates :firstname,:email, :mobile, :presence => true
+  validates_format_of :email, :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
+
+  validates_numericality_of :mobile, :only_integer => true
+  validates_length_of :mobile, :is => 10
 
   def access_privilege_names=(names)
     names.collect do |n|
@@ -162,13 +166,15 @@ class User < ActiveRecord::Base
       field :address
       field :mobile
       field :phone
-      field :email
-      field :type do
-        label "Teacher"
-        def render
-          bindings[:view].render :partial => "user_type_checkbox", :locals => {:field => self, :f => bindings[:form]}
-        end
+      field :email do
+        help "Required"
       end
+      #field :type do
+      #  label "Teacher"
+      #  def render
+      #    bindings[:view].render :partial => "user_type_checkbox", :locals => {:field => self, :f => bindings[:form]}
+      #  end
+      # end
 
       field :access_privileges
 

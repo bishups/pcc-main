@@ -18,6 +18,16 @@ class Sector < ActiveRecord::Base
 
   attr_accessible :name, :zone_id, :center_ids, :centers, :zone
 
+
+  # usage -> ::Sector::all_centers_in_one_sector? [center1, center2, center3]
+  def all_centers_in_one_sector?(centers)
+    if !centers.empty?
+      sector_id = centers[0].sector_id
+      centers.each {|c| return false if sector_id != c.sector_id }
+    end
+    true
+  end
+
   rails_admin do
     navigation_label 'Geo-graphical informations'
     weight 1
