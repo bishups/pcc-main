@@ -37,6 +37,8 @@ class Kit < ActiveRecord::Base
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
   attr_accessible :requester_id, :guardian_id, :requester, :guardian
 
+  validates :name, :capacity, :condition, :presence => true
+
   has_paper_trail
   
   after_create :generateKitNameStringAfterCreate
@@ -110,16 +112,19 @@ class Kit < ActiveRecord::Base
 #canBeBlocked
 
   rails_admin do
+    navigation_label 'Kit Management'
+    weight 0
     list do
       field :name
       field :capacity
-      field :kit_items
-      field :centers
       field :condition
+      field :centers
+      field :kit_items
     end
     edit do
       field :name
       field :capacity
+      field :condition
       field :kit_items do
         help 'Type any character to search for kit item'
         inline_add do
@@ -132,7 +137,6 @@ class Kit < ActiveRecord::Base
           false
         end
       end
-      field :condition
     end
 
   end
