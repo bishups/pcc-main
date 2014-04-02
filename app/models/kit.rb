@@ -37,7 +37,8 @@ class Kit < ActiveRecord::Base
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
   attr_accessible :requester_id, :guardian_id, :requester, :guardian
 
-  validates :name, :capacity, :condition, :presence => true
+  validates :name, :condition, :presence => true
+  validates :capacity, :numericality => {:only_integer => true }
 
   has_paper_trail
   
@@ -63,8 +64,8 @@ class Kit < ActiveRecord::Base
   end
 
   def has_centers?
-    self.errors.add(:centers, "Kit needs to be associated to center(s).") if self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if ::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " required field.") if self.centers.blank?
+    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
   state_machine :state, :initial => :available do
@@ -127,16 +128,12 @@ class Kit < ActiveRecord::Base
       field :condition
       field :kit_items do
         help 'Type any character to search for kit item'
-        inline_add do
-          false
-        end
+        #inline_add false
       end
       field :centers  do
         help 'Type any character to search for center'
-        inline_add do
-          false
-        end
-      end
+        inline_add false
+       end
     end
 
   end

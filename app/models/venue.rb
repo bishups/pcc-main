@@ -32,20 +32,23 @@ class Venue < ActiveRecord::Base
   attr_accessible :center_ids, :centers
   validate :has_centers?
   validate :has_per_day_price?
+  validate :has_commercial?
 
   has_many :venue_schedules
 
-  validates_presence_of :zone, :name, :address, :pin_code, :capacity, :contact_mobile, :commercial
+  validates_presence_of :address
   #validates_presence_of :center_id
-  validates_numericality_of :pin_code, :only_integer => true
-  validates_length_of :pin_code, :is => 6
-  validates_numericality_of :capacity, :only_integer => true
-  validates_length_of :capacity, :within => 1..4
-  validates_numericality_of :contact_mobile, :only_integer => true
-  validates_length_of :contact_mobile, :is => 10
+  validates :name, :presence => true, :uniqueness => true
+  validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
+  validates :contact_mobile, :presence => true, :length => { is: 10}, :numericality => {:only_integer => true }
+  validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
+  validates :per_day_price, :numericality => true, :allow_nil => true
+
+  validates :payment_contact_mobile, :length => { is: 10}, :numericality => {:only_integer => true }, :allow_blank => true
+  validates :contact_email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}, :allow_blank => true
+  validates :contact_phone, :length => { is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
 
 
-  validates_uniqueness_of :name
 
   STATE_PROPOSED  = :proposed
   STATE_APPROVED  = :approved
@@ -122,11 +125,15 @@ class Venue < ActiveRecord::Base
 
   def has_centers?
     self.errors.add(:centers, "- required field.") if self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if ::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
   def has_per_day_price?
     self.errors.add(:per_day_price, "required for commercial venue.") if self.commercial? && self.per_day_price.blank?
+  end
+
+  def has_commercial?
+    self.errors.add(:commercial, "should be selected for venue with per day price.") if self.commercial.blank? && !self.per_day_price.blank?
   end
 
   rails_admin do
@@ -140,10 +147,8 @@ class Venue < ActiveRecord::Base
     edit do
       field :name
       field :centers do
-        help 'Type any character to search for center'
-        inline_add do
-          false
-        end
+        help 'Required. Type any character to search for center ...'
+        inline_add false
       end
       field :description
       field :address

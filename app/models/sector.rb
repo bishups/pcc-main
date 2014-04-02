@@ -20,7 +20,7 @@ class Sector < ActiveRecord::Base
 
 
   # usage -> ::Sector::all_centers_in_one_sector? [center1, center2, center3]
-  def all_centers_in_one_sector?(centers)
+  def self.all_centers_in_one_sector?(centers)
     if !centers.empty?
       sector_id = centers[0].sector_id
       centers.each {|c| return false if sector_id != c.sector_id }

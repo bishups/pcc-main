@@ -62,10 +62,10 @@ class User < ActiveRecord::Base
   accepts_nested_attributes_for :access_privileges
 
   validates :firstname,:email, :mobile, :presence => true
-  validates_format_of :email, :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
 
-  validates_numericality_of :mobile, :only_integer => true
-  validates_length_of :mobile, :is => 10
+  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
+  validates :phone, :length => { is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
+  validates :mobile, :length => { is: 10}, :numericality => {:only_integer => true }
 
   def access_privilege_names=(names)
     names.collect do |n|
@@ -165,7 +165,9 @@ class User < ActiveRecord::Base
       field :lastname
       field :address
       field :mobile
-      field :phone
+      field :phone do
+        help "Optional. Format of stdcode-number (e.g, 0422-2515345)."
+      end
       field :email do
         help "Required"
       end

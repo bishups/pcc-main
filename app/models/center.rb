@@ -21,6 +21,8 @@ class Center < ActiveRecord::Base
 
   validates :name,:sector, :presence => true
 
+
+
   rails_admin do
     navigation_label 'Geo-graphical informations'
     weight 2
@@ -32,15 +34,11 @@ class Center < ActiveRecord::Base
     end
     edit do
       field :name
-      field :pincodes do
-        inline_add do
-          false
-        end
-      end
       field :sector do
-        inline_edit do
-          false
-        end
+        inline_edit false
+        inline_add false
+      end
+      field :pincodes do
         inline_add do
           false
         end
