@@ -4,7 +4,7 @@ class KitItem < ActiveRecord::Base
   attr_accessible :kit_id, :kit
   belongs_to :kit_item_name
   attr_accessible :kit_item_name_id, :kit_item_name
-  validates :kit, :kit_item_name, :description, :condition, :presence => true
+  validates :kit, :kit_item_name, :condition, :presence => true
   validates :count, :numericality => {:only_integer => true }
 
   rails_admin do

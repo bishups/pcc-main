@@ -26,7 +26,9 @@ class Kit < ActiveRecord::Base
                   :state,:capacity
 
   has_many :kit_items
-  attr_accessible :kit_item_ids, :kit_items
+  attr_accessible :kit_items
+
+  has_many :kit_item_names, :through => :kit_items
 
   has_many :kit_schedules
   has_and_belongs_to_many :centers
@@ -42,8 +44,8 @@ class Kit < ActiveRecord::Base
 
   has_paper_trail
   
-  after_create :generateKitNameStringAfterCreate
-  before_update :generateKitNameString
+  #after_create :generateKitNameStringAfterCreate
+  #before_update :generateKitNameString
 
   EVENT_STATE_MAP = {
                       AVAILABLE => AVAILABLE.to_s,
@@ -95,6 +97,7 @@ class Kit < ActiveRecord::Base
   end
 
 
+=begin
   private
   def generateKitNameString
     center = Center.find(self.center_id )
@@ -108,7 +111,7 @@ class Kit < ActiveRecord::Base
     self.name = name
     self.save!
   end
-
+=end
 
 #canBeBlocked
 
@@ -120,16 +123,16 @@ class Kit < ActiveRecord::Base
       field :capacity
       field :condition
       field :centers
-      field :kit_items
+      field :kit_item_names
     end
     edit do
       field :name
       field :capacity
       field :condition
-      field :kit_items do
-        help 'Type any character to search for kit item'
-        #inline_add false
-      end
+      #field :kit_items do
+      #  help 'Type any character to search for kit item'
+      #  #inline_add false
+      #end
       field :centers  do
         help 'Type any character to search for center'
         inline_add false

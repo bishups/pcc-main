@@ -8,19 +8,19 @@ class Teacher < ActiveRecord::Base
   validate :has_program_types?
 
   belongs_to :user
-  attr_accessible :user_id
+  attr_accessible :user_id, :user
 
   belongs_to :zone
-  attr_accessible :zone_id
+  attr_accessible :zone_id, :zone
   validate :has_zone?
 
   attr_accessible :t_no
   validates :t_no, :presence => true, :length => { :in => 1..9}
-  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
+  #validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
 
 
   def has_centers?
-    self.errors.add(:centers, "Teacher needs to be associated to center(s).") if self.centers.blank?
+    self.errors.add(:centers, "Teacher needs to be associated to center(s).") if !self.zone.blank? && self.centers.blank?
     self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
