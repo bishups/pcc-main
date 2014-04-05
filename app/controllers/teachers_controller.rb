@@ -1,7 +1,7 @@
 class TeachersController < ApplicationController
   
   def index
-    @teachers = User.all   # TODO: Filter by role
+    @teachers = Teacher.all   # TODO: Filter by role
 
     respond_to do |format|
       format.html
@@ -9,7 +9,7 @@ class TeachersController < ApplicationController
   end
 
   def show
-    @teacher = User.find(params[:id])
+    @teacher = Teacher.find(params[:id])
 
     respond_to do |format|
       format.html

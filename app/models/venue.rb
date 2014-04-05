@@ -103,7 +103,7 @@ class Venue < ActiveRecord::Base
   end
 
   def blockable_programs
-    Program.where('center_id = ? AND start_date > ?', self.center_id, Time.now)
+    Program.where('center_id IN (?) AND start_date > ?', self.center_ids, Time.now)
   end
 
   def paid?

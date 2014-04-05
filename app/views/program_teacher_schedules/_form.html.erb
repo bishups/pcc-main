@@ -2,12 +2,12 @@
   <%= resource_error_messages!(@program_teacher_schedule) %>
   
   <div class='form-group'>
-    <label for='program_id'>Program Id</label>
-    <%= f.text_field :program_id, :class => 'form-control' %>
+    <label for='program_id'>Program ID</label>
+    <%= f.text_field :program_id, :value=> params[:program_id], :readonly => true, :class => 'form-control' %>
   </div>
   <div class='form-group'>
-    <label for='teacher_schedule_id'>Teacher</label>
-    <%= f.select :teacher_schedule_id, options_for_select(@teacher_schedules.map {|ts| [ts.user.fullname, ts.id] }), {}, :class => 'form-control' %>
+    <label for='teacher_id'>Teacher</label>
+    <%= f.select :teacher_id, options_for_select(@program_teacher_schedule.teachers.map {|t| [t.user.fullname, t.id] }), {}, :class => 'form-control' %>
   </div>
 
   <%= f.submit 'Associated Teacher with Program', :class => 'btn btn-lg btn-primary' %>

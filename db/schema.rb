@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140401064631) do
+ActiveRecord::Schema.define(:version => 201404052110004) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -166,6 +166,11 @@ ActiveRecord::Schema.define(:version => 20140401064631) do
     t.integer "teacher_id"
   end
 
+  create_table "program_types_timings", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "timing_id"
+  end
+
   create_table "programs", :force => true do |t|
     t.string   "name"
     t.text     "description"
@@ -182,6 +187,11 @@ ActiveRecord::Schema.define(:version => 20140401064631) do
     t.integer  "kit_schedule_id"
     t.datetime "created_at",          :null => false
     t.datetime "updated_at",          :null => false
+  end
+
+  create_table "programs_timings", :force => true do |t|
+    t.integer "program_id"
+    t.integer "timing_id"
   end
 
   create_table "rails_admin_histories", :force => true do |t|
@@ -223,14 +233,16 @@ ActiveRecord::Schema.define(:version => 20140401064631) do
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
 
   create_table "teacher_schedules", :force => true do |t|
-    t.integer  "user_id"
-    t.string   "slot"
-    t.datetime "start_date"
-    t.datetime "end_date"
     t.datetime "created_at",        :null => false
     t.datetime "updated_at",        :null => false
     t.string   "state"
     t.integer  "reserving_user_id"
+    t.date     "start_date"
+    t.date     "end_date"
+    t.integer  "timing_id"
+    t.integer  "program_id"
+    t.integer  "teacher_id"
+    t.integer  "center_id"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -250,6 +262,16 @@ ActiveRecord::Schema.define(:version => 20140401064631) do
     t.integer  "user_id"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
+    t.boolean  "unfit"
+    t.text     "comments"
+  end
+
+  create_table "timings", :force => true do |t|
+    t.string   "name"
+    t.time     "start_time"
+    t.time     "end_time"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
   create_table "users", :force => true do |t|

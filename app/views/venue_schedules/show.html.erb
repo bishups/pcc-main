@@ -30,6 +30,10 @@
         <td><strong>Booking End Date</strong></td>
         <td><%= @venue_schedule.end_date %></td>
       </tr>
+      <tr>
+        <td><strong>Timing</strong></td>
+        <td><%= (@venue_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
+      </tr>
     </table>
   </div>
 </div>

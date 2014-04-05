@@ -38,8 +38,8 @@ class User < ActiveRecord::Base
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
   #has_many :resources, :through => :access_privileges
-  has_many :teacher_schedules
-  has_many :teacher_slots
+  #has_many :teacher_schedules
+  #has_many :teacher_slots
 
   ROLE_ACCESS_HIERARCHY =
         {:zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :in_hierarchy => [:geography, :pcc]},

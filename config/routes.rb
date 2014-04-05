@@ -8,6 +8,7 @@ PccMain::Application.routes.draw do
   # Misc. static pages
   get '/about'                            => 'home#about'
   get '/registration_confirmation'        => 'home#registration_confirmation'
+  get 'programs/update_timings', :as => 'update_timings'
 
   # Resources
   resources :enquiries
@@ -28,8 +29,8 @@ PccMain::Application.routes.draw do
 
   resources :teachers do
     resources :teacher_schedules
-    resources :teacher_slots
   end
+
 
   # Admin exclusive resources
   #namespace :admin do

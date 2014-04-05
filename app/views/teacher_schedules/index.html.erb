@@ -2,9 +2,9 @@
   <div class='col-md-12'>
     <h2>
       Teacher Schedule
-      <small><%= @teacher.fullname %></small>
+      <small><%= @teacher.user.name %></small>
       <span class='pull-right'>
-        <% if @teacher.id == current_user.id %>
+        <% if @teacher.user_id == current_user.id %>
         <%= link_to "New Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' %>
         <% end %>
       </span>      
@@ -12,31 +12,42 @@
   </div>
   <table class='table table-condensed table-hover table-bordered'>
     <tr>
-      <th>#</th>
       <th>Month</th>
       <th>Start Date</th>
       <th>End Date</th>
-      <th>Slot</th>
+      <th>Timing</th>
       <th>State</th>
-      <th>Engagements</th>
+      <th>Center ID</th>
+      <!-- <th>Engagements</th> -->
       <th width='15%'></th>
     </tr>
     <% @teacher_schedules.each do |ts| %>
     <tr>
-      <td><%= ts.id %></td>
       <td><%= ts.start_date.strftime("%B %Y") %></td>
       <td><%= ts.start_date %></td>
       <td><%= ts.end_date %></td>
-      <td><%= ts.slot %></td>
-      <td><%= ts.state %></td>
+      <td><%= ts.timing.name %></td>
+      <td><%= teacher_schedule_state_tag(ts) %></td>
+      <td><%= ts.center_id %></td>
+      <% if false %>
       <td><%= ts.program_teacher_schedules.count %></td>
       <td>
         <%= link_to edit_teacher_teacher_schedule_path(@teacher, ts) do %>
           <i class='icon-edit'></i> Edit
         <% end %> |
-        <%= link_to teacher_teacher_schedule_path(@teacher, ts), :method => :delete, :confirm => 'Are you sure you want to delete this schedule?' do %>
-          <i class='icon-edit'></i> Delete
+        <%= link_to teacher_teacher_schedule_path(@teacher, ts), :method => :show, :confirm => 'Are you sure you want to delete this schedule?' do %>
+          <i class='icon-edit'></i> Show
         <% end %>
+      </td>
+      <% end %>
+      <td>
+        <%= link_to "Edit", edit_teacher_teacher_schedule_path(@teacher, ts), :class => 'btn btn-primary btn-sm' %>
+        <%= link_to "Schedule", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' %>
+      </td>
+      <td>
+        <%# <%= link_to "Block", edit_teacher_teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>
+        <%# <%= link_to "Show", teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>
+        <%# <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %>
       </td>
     </tr>
     <% end %>

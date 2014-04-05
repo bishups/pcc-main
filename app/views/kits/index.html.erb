@@ -22,7 +22,8 @@
   <tr>
     <td> <%=kit.name%></td>
     <td> <%=  kit_state_tag(kit) %> </td>
-    <td> <%=  kit.center.name rescue '' %> </td>
+    <td> <%=  (kit.centers.map {|c| c[:name]}).join(", ") %> </td>
+    <%-# kit.center.name rescue '' -%>
     <td> <%=  kit.capacity %> </td>
     <td> <%=  kit.condition %> </td>
     <td> <%=  kit.condition_comments %> </td> 

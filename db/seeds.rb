@@ -43,10 +43,25 @@
   user.firstname= "test"
   user.password= "test123"
   user.password_confirmation = "test123"
+  user.mobile = 9999999999
   user.save
   if not user.save
     puts "User #{user.firstname} has not been saved because of #{user.errors.messages}"
   end
+
+  item = KitItem.find_or_initialize_by_kit_item_name("Carpet")
+  if not item.save
+    puts "User #{item.kit_item_name} has not been saved because of #{kititem.errors.messages}"
+  end
+  item = KitItem.find_or_initialize_by_kit_item_name_id("Sadhguru Photo")
+  if not item.save
+    puts "User #{item.kit_item_name} has not been saved because of #{kititem.errors.messages}"
+  end
+
+  #timing = Timing.find_or_initialize_by_name("Morning (6am-9am)")
+  #timing = Timing.find_or_initialize_by_name("Afternoon (10am-1pm)")
+  #timing = Timing.find_or_initialize_by_name("Evening (2pm-5pm)")
+  #timing = Timing.find_or_initialize_by_name("Night (6pm-9pm)")
 
 
 
