@@ -1,0 +1,16 @@
+<div class='btn-group'>
+  <button type="button" class="btn btn-danger">Update State</button>
+  <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+    <span class="caret"></span>
+    <span class="sr-only">Toggle Dropdown</span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <% if false %>
+    <% @teacher.state_events.each do |ev| %>
+        <li>
+          <%= link_to ev.to_s.humanize, edit_teacher_path(:id => @teacher.id, :trigger => ev) %>
+        </li>
+    <% end %>
+    <% end %>
+  </ul>
+</div>

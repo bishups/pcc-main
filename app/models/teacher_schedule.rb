@@ -36,8 +36,8 @@ class TeacherSchedule < ActiveRecord::Base
 #    self.teacher.user
 #  end
   def teacher_enabled?
-    self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.zone.blank?
-    self.errors.add("Not enabled to publish schedule. Please contact your co-ordinator.") if !self.teacher.unfit.blank? && self.teacher.unfit?
+    self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED.to_s
+    self.errors.add("Not enabled to publish schedule. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNFIT.to_s
   end
 
   def split_schedule(start_date, end_date)

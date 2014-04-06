@@ -134,7 +134,7 @@
     teacher=Teacher.find_or_initialize_by_t_no(row["TraineeID"])
     if teacher.new_record?
       teacher.t_no = row["TraineeID"]
-      teacher.is_attached = false
+      teacher.state = Teacher::STATE_UNATTACHED.to_s
       user=User.find_or_initialize_by_email(row["teacher_email_address"])
       if user.new_record?
         user.firstname=row["name"]

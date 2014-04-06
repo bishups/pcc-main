@@ -13,7 +13,7 @@
       <th>Program Types</th>
       <th>Zone</th>
       <th>Center(s)</th>
-      <th width='15%'>Schedules Published</th>
+      <%# <th width='15%'>Schedules Published</th> %>
       <th width='20%'></th>
     </tr>
     <% @teachers.each do |teacher| %>
@@ -23,7 +23,9 @@
       <td><%= (teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
       <td><%= teacher.zone.name %></td>
       <td><%= (teacher.centers.map {|c| c[:name]}).join(", ") %></td>
-      <td><%= teacher.teacher_schedules.where('end_date > ?', Time.now).count() %></td>
+      <% if false %>
+        <td><%= teacher.teacher_schedules.where('end_date > ?', Time.now).count() %></td>
+      <% end %>
       <td>
         <%= link_to "Show", teacher_path(teacher), :class => 'btn btn-primary btn-sm' %>
         <%= link_to "Schedule", teacher_teacher_schedules_path(teacher), :class => 'btn btn-primary btn-sm' %> 

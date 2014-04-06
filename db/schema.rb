@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404052110004) do
+ActiveRecord::Schema.define(:version => 201404062113004) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -257,12 +257,10 @@ ActiveRecord::Schema.define(:version => 201404052110004) do
   create_table "teachers", :force => true do |t|
     t.string   "t_no"
     t.string   "state"
-    t.boolean  "is_attached"
     t.integer  "zone_id"
     t.integer  "user_id"
-    t.datetime "created_at",  :null => false
-    t.datetime "updated_at",  :null => false
-    t.boolean  "unfit"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
     t.text     "comments"
   end
 

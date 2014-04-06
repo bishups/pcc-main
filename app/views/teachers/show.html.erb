@@ -1,0 +1,57 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Teacher Detail <br/>
+      <small><%= @teacher.user.fullname %></small>
+      <small><span class='label label-info'><%= @teacher.state.to_s.capitalize %></span></small>
+      <small><%= render :partial => 'teachers/state_bar' %></small>
+      <small><%= link_to "View Schedule", teacher_teacher_schedules_path(@teacher) %></small>
+    </h2>
+  </div>
+</div>
+<div class='row'>
+  <h3>Details</h3>
+  <div class='col-md-12'>
+    <table class='table table-bordered'>
+      <tr>
+        <td width='20%'><strong>T No</strong></td>
+        <td><%= @teacher.t_no %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Program Types</strong></td>
+        <td><%= (@teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Zone</strong></td>
+        <td><%= @teacher.zone.name %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Center(s)</strong></td>
+        <td><%= (@teacher.centers.map {|c| c[:name]}).join(", ") %></td>
+      </tr>
+    </table>
+  </div>
+</div>
+<div class='row'>
+  <h3>Contact</h3>
+  <div class='col-md-12'>
+    <table class='table table-bordered'>
+      <tr>
+        <td width='20%'><strong>Mobile</strong></td>
+        <td><%= @teacher.user.mobile %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Email</strong></td>
+        <td><%= @teacher.user.email %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Phone</strong></td>
+        <td><%=  @teacher.user.phone %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Address</strong></td>
+        <td><%=  @teacher.user.address %></td>
+      </tr>
+    </table>
+  </div>
+</div>
