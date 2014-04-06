@@ -37,7 +37,15 @@ class User < ActiveRecord::Base
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
-  #has_many :resources, :through => :access_privileges
+
+  has_many :centers, :through => :access_privileges, :source => :resource, :source_type => 'Center'
+  has_many :sectors, :through => :access_privileges, :source => :resource, :source_type => 'Sector'
+  has_many :zones, :through => :access_privileges, :source => :resource, :source_type => 'Zone'
+
+  has_many :sector_centers, :through => :sectors, :source => :centers
+  has_many :zone_centers, :through => :sectors, :source => :centers
+  has_many :zone_sectors, :through => :zones, :source => :sectors
+
   has_many :teacher_schedules
   has_many :teacher_slots
 
@@ -79,44 +87,47 @@ class User < ActiveRecord::Base
     self.roles.exists?(:name => "Super Admin")
   end
 
+  def accessible_centers
+    self.centers+self.sector_centers+self.zone_centers
+  end
+
+  def accessible_sectors
+    self.sectors+self.zone_sectors
+  end
+
+  def accessible_zones
+    self.zones
+  end
+
   # usage -- check if user has role for specific resource
   # if user.is? :zone_coordinator, :center_id => 10
   # if user.is? :zone_coordinator, :center_id => [1,2,3]
   #
   def is?(role, params)
-    is = false
-    if !params.key?(center_id)
-      center_id = params[:center_id]
-    else
-      center_id = []
-    end
-
+    center_ids = params[:center_ids] || [params[:center_id]]
+    puts "Center_ids ---> #{center_ids.inspect}"
     self.access_privileges.each do |ap|
-      break if is == true
+      accessisble_centers = []
       if ap.resource.class.name.demodulize == "Center"
-        resource = [ap.resource]
+        accessisble_centers = [ap.resource]
       elsif ap.resource.class.name.demodulize == "Sector" || ap.resource.class.name.demodulize == "Zone"
-        resource = ap.resource.centers
-      else
-        resource = []
+        accessisble_centers = ap.resource.centers
       end
-
+      puts "accessisble_centers ---> #{accessisble_centers.collect(&:id).inspect}"
       # if for given ap, self has >= centers than asked for
-      if (center_id.type == Array && a2.all? { |id| resource.include?(id) }) || resource.include?(center_id)
-        role = Role.find_by_id(ap.role_id).
-        self_ah = ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == role.name}
+      if (center_ids - accessisble_centers.collect(&:id)).empty?
+        self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         ah =  ROLE_ACCESS_HIERARCHY[role]
-
+        puts "self_ah ---> #{self_ah.inspect}"
+        puts "ah ---> #{ah.inspect}"
         # if for given ap, self has >= access_level than asked for
-        if (self_ah[:access_level] >= ah[:access_level]) && (ah[:hierarchy].all? { |h| self_ah[:hierarchy].include?(h)})
-          is = true
+        if (self_ah[:access_level] and self_ah[:access_level] >= ah[:access_level]) # && (ah[:hierarchy].all? { |h| self_ah[:hierarchy].include?(h)})
+          return true
         end
       end
     end
-
-  is
+    return false
   end
-
 
   def fullname
     "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]
