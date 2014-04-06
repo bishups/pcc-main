@@ -119,7 +119,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       error = ts.split_schedule(program.start_date.to_date, program.end_date.to_date)
       ts.state = Ontology::Teacher::STATE_BLOCKED
       ts.program_id = program.id
-      if !ts.save(validate: false)
+      if !ts.save #(validate: false)
         error = "Unable to update schedule"
       end
       break if error != ""

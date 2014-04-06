@@ -17,7 +17,7 @@
       <th>End Date</th>
       <th>Timing</th>
       <th>State</th>
-      <th>Center ID</th>
+      <th>Center</th>
       <!-- <th>Engagements</th> -->
       <th width='15%'></th>
     </tr>
@@ -28,7 +28,7 @@
       <td><%= ts.end_date %></td>
       <td><%= ts.timing.name %></td>
       <td><%= teacher_schedule_state_tag(ts) %></td>
-      <td><%= ts.center_id %></td>
+      <td><%= ts.center.name %></td>
       <% if false %>
       <td><%= ts.program_teacher_schedules.count %></td>
       <td>
@@ -41,8 +41,8 @@
       </td>
       <% end %>
       <td>
-        <%= link_to "Edit", edit_teacher_teacher_schedule_path(@teacher, ts), :class => 'btn btn-primary btn-sm' %>
-        <%= link_to "Schedule", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' %>
+        <%= link_to "Schedule", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id  %>
+        <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if !ts.program_id %>
       </td>
       <td>
         <%# <%= link_to "Block", edit_teacher_teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>

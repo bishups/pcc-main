@@ -17,6 +17,7 @@ class TeacherSchedule < ActiveRecord::Base
   belongs_to :timing
   belongs_to :teacher
   belongs_to :program
+  belongs_to :center
 
   attr_accessible :start_date, :end_date, :state
   attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
@@ -43,7 +44,7 @@ class TeacherSchedule < ActiveRecord::Base
     if self.start_date < start_date
       ts = self.dup
       ts.end_date = start_date - 1.day
-      if !ts.save(validate: false)
+      if !ts.save #(validate: false)
         errors[:start_date] << "Unable to split schedule, around start date"
       end
       self.start_date = start_date
@@ -52,7 +53,7 @@ class TeacherSchedule < ActiveRecord::Base
     if self.end_date > end_date
       ts = self.dup
       ts.start_date = end_date + 1.day
-      if !ts.save(validate: false)
+      if !ts.save #(validate: false)
         errors[:end_date] << "Unable to split schedule, around end date"
       end
       self.end_date = end_date
@@ -117,14 +118,16 @@ class TeacherSchedule < ActiveRecord::Base
 
   def scheduleOverlapNotAllowed
     # teacher schedule should not overlap with any existing schedule
+    ts = TeacherSchedule.where(['(start_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
+                                start_date, end_date, timing_id, teacher_id]).to_a
+    if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
+      errors[:start_date] << "start date overlaps with existing schedule."
+    end
 
-
-    if TeacherSchedule.where(['(start_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
-                                start_date, end_date, timing_id, teacher_id]).count() > 0
-      errors[:start_date] << "overlaps with existing schedule."
-    elsif TeacherSchedule.where(['(end_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
-                                 start_date, end_date, timing_id, teacher_id]).count() > 0
-      errors[:end_date] << "overlaps with existing schedule."
+    ts = TeacherSchedule.where(['(end_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
+                                 start_date, end_date, timing_id, teacher_id]).to_a
+    if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
+        errors[:end_date] << "overlaps with existing schedule."
     end
   end
 

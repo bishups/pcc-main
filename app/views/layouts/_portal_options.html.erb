@@ -3,7 +3,9 @@
     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Teachers <b class="caret"></b></a>
     <ul class="dropdown-menu">
       <li><a href="<%= teacher_teacher_schedules_path(current_user) %>">My Schedule</a></li>
-      <li><a href="<%= new_teacher_teacher_schedule_path(current_user) %>">Publish Schedule</a></li>
+      <% if false %>
+        <li><a href="<%= new_teacher_teacher_schedule_path(current_user) %>">Publish Schedule</a></li>
+      <% end %>
     </ul>
   </li>
   <li class="dropdown">
