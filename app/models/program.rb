@@ -21,18 +21,13 @@
 #
 
 class Program < ActiveRecord::Base
-  validates :slot, :presence => true
+  # validates :slot, :presence => true
   validates :start_date, :presence => true
 #  validates :end_date, :presence => true
   validates :center_id, :presence => true
   validates :proposer_id, :presence => true
 
-  attr_accessible :name
-  attr_accessible :program_type_id
-  attr_accessible :start_date
-  attr_accessible :center_id
-  attr_accessible :slot
-  attr_accessible :end_date
+  attr_accessible :name, :program_type_id, :start_date, :center_id, :slot, :end_date
 
   before_create :assign_dates!
 
@@ -40,7 +35,13 @@ class Program < ActiveRecord::Base
   belongs_to :venue_schedule
   belongs_to :program_type
   belongs_to :kit_schedule
-  has_many :program_teacher_schedules
+  has_many :teacher_schedules
+  attr_accessible :teacher_schedules, :teacher_schedule_ids
+  has_many :teachers, :through => :teacher_schedules
+  attr_accessible :teachers, :teacher_ids
+
+  has_and_belongs_to_many :timings
+  attr_accessible :timing_ids, :timings
 
   STATE_PROPOSED = :proposed
   STATE_ANNOUNCED = :announced

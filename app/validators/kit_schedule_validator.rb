@@ -48,8 +48,8 @@ class KitScheduleValidator < ActiveModel::Validator
     end
 
     program_center = Program.find(record.program_id).center
-    if program_center.id != kit.center.id
-      record.errors[:center] << "-- Kit Can only be blocked for Center #{kit.center.name}"
+    if  !kit.center_ids.include? program_center.id
+      record.errors[:center] << "-- Kit Can only be blocked for #{(kit.centers.map {|c| c[:name]})}"
     end
 
   end

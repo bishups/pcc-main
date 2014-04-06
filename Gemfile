@@ -37,7 +37,6 @@ gem 'capistrano'
 # To use debugger
 # gem 'debugger'
 
-#gem 'rake', '~> 10.1.0'
 gem 'devise'
 gem 'cancan'
 #gem 'will_paginate', "3.0.pre2"

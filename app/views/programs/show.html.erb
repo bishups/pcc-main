@@ -53,7 +53,7 @@
         <td><strong>Teacher Status</strong></td>
         <td>
           Teacher Required: <%= @program.program_type.minimum_no_of_teacher %> <br/>
-          Teacher Associated: <%= @program.program_teacher_schedules.count %>
+          Teacher Associated: <%= @program.teacher_schedules.group("teacher_id").count %>
         </td>
       </tr>
     </table>
@@ -90,8 +90,8 @@
         <td><%= @program.end_date %></td>
       </tr>
       <tr>
-        <td><strong>Slot</strong></td>
-        <td><%= @program.slot %></td>
+        <td><strong>Timing</strong></td>
+        <td><%= (@program.timings.map {|c| c[:name]}).join(", ") %></td>
       </tr>
     </table>
   </div>
@@ -130,10 +130,10 @@
 <div class='row'>
   <h3>Teacher Details</h3>
   <div class='col-md-12'>
-    <% if @program.program_teacher_schedules.count > 0 %>
-      <% @program.program_teacher_schedules.each do |pts| %>
+    <% if @program.teachers.count > 0 %>
+      <% @program.teachers.each do |pt| %>
       <div class='alert alert-success'>
-        Teacher Schedule <%= link_to "##{pts.id}", program_teacher_schedule_path(pts) %> has been assigned with this program.
+        Teacher  <%= link_to "#{pt.user.firstname}", teacher_teacher_schedules_path(pt.user) %> is linked to the program.
       </div>
       <% end %>
     <% else %>

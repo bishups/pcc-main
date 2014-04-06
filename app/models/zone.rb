@@ -36,9 +36,7 @@ class Zone < ActiveRecord::Base
     edit do
       field :name
       field :sectors   do
-        inline_add do
-          false
-        end
+         inline_add false
       end
     end
   end

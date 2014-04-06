@@ -12,6 +12,9 @@ class ProgramsController < ApplicationController
   def new
     @program = Program.new
 
+    #@program_types = ProgramType.all
+    #@timings = []
+
     respond_to do |format|
       format.html
     end
@@ -69,6 +72,21 @@ class ProgramsController < ApplicationController
   end
 
   def destroy
+  end
+
+  def update_timings
+    # TODO - Need to update the slot times based on the program type selected
+    # TODO - Keyword - cascaded drop down
+    # TODO - Complications - 1. accessing formbuilder value from ajax, 2. multiple selection box
+    # updates artists and songs based on program_type selected
+    program_type = ProgramType.find(params[:program_type_id])
+    # map to name and id for use in our options_for_select
+    @timings = program_type.timings
+    # @timings = program_type.timings.map{|a| [a.name, a.id]}.insert(0, "Select a Slot Time")
+  end
+
+  def count_teachers
+    @program.teacher_schedules.group("teacher_id").count
   end
 
   private

@@ -19,11 +19,11 @@ class VenueSchedule < ActiveRecord::Base
   attr_accessible :slot
   attr_accessible :start_date
   attr_accessible :end_date
-  attr_accessible :program_id
+  attr_accessible :program_id, :program
 
   validates :start_date, :presence => true
   validates :end_date, :presence => true
-  validates :slot, :presence => true
+  #validates :slot, :presence => true
   validates :reserving_user_id, :presence => true
   validates :program_id, :presence => true
 

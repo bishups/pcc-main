@@ -2,9 +2,9 @@
   <div class='col-md-12'>
     <h2>
       Teacher Schedule
-      <small><%= @teacher.fullname %></small>
+      <small><%= @teacher.user.name %></small>
       <span class='pull-right'>
-        <% if @teacher.id == current_user.id %>
+        <% if @teacher.user_id == current_user.id %>
         <%= link_to "New Schedule", new_teacher_teacher_slot_path(@teacher), :class => 'btn btn-primary btn-sm' %>
         <% end %>
       </span>      
