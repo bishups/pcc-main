@@ -1,9 +1,13 @@
 class VenueSchedulesController < ApplicationController
   before_filter :authenticate_user!
-  before_filter :load_venue!
+  #before_filter :load_venue!
 
+
+  # GET /venue_schedules
+  # GET /venue_schedules.json
   def index
-    @venue_schedules = @venue.venue_schedules.where(['start_date > ?', DateTime.now])
+    @venue = ::Venue.find(params[:venue_id].to_i)
+    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.start_date > ?', DateTime.now])
 
     respond_to do |format|
       format.html
@@ -11,8 +15,14 @@ class VenueSchedulesController < ApplicationController
     end
   end
 
+  # GET /venue_schedules/new
+  # GET /venue_schedules/new.json
   def new
+    @venue = ::Venue.find(params[:venue_id].to_i)
     @venue_schedule = @venue.venue_schedules.new
+
+    @venue_schedule.program_id = params[:program_id] if params.has_key?(:program_id)
+    @venue_schedule.venue_id = params[:venue_id] if params.has_key?(:venue_id)
 
     respond_to do |format|
       format.html
@@ -20,14 +30,18 @@ class VenueSchedulesController < ApplicationController
     end
   end
 
+  # POST /venue_schedules
+  # POST /venue_schedules.json
   def create
+    @venue = ::Venue.find(params[:venue_id].to_i)
     @venue_schedule = @venue.venue_schedules.new(params[:venue_schedule])
-    @venue_schedule.reserving_user_id = current_user.id
-    @venue_schedule.setup_details!
+
+    @venue_schedule.blocked_by_user_id = current_user.id
+    #@venue_schedule.setup_details!
 
     respond_to do |format|
       if @venue_schedule.save
-        format.html { redirect_to [@venue, @venue_schedule], notice: 'Venue Schedule was successfully created.' }
+        format.html { redirect_to @venue_schedule, notice: 'Venue Schedule was successfully created.' }
         format.json { render json: @venue_schedule, status: :created, location: @venue_schedule }
       else
         format.html { render action: "new" }
@@ -36,8 +50,10 @@ class VenueSchedulesController < ApplicationController
     end
   end
 
+  # GET /venue_schedules/1
+  # GET /venue_schedules/1.json
   def show
-    @venue_schedule = @venue.venue_schedules.find(params[:id])
+    @venue_schedule = ::VenueSchedule.find(params[:id].to_i)
 
     respond_to do |format|
       format.html
@@ -45,8 +61,9 @@ class VenueSchedulesController < ApplicationController
     end
   end
 
+  # GET /venue_schedules/1/edit
   def edit
-    @venue_schedule = @venue.venue_schedules.find(params[:id])
+    @venue_schedule = ::VenueSchedule.find(params[:id].to_i)
     @trigger = params[:trigger]
     #authorize! :update, @venue
     respond_to do |format|
@@ -55,8 +72,10 @@ class VenueSchedulesController < ApplicationController
     end
   end
 
+  # PUT /venue_schedules/1
+  # PUT /venue_schedules/1.json
   def update
-    @venue_schedule = @venue.venue_schedules.find(params[:id])
+    @venue_schedule =::VenueSchedule.find(params[:id].to_i)
     @trigger = params[:trigger]
     #authorize! :update, @venue
     state_update(@venue_schedule, @trigger)
@@ -67,15 +86,17 @@ class VenueSchedulesController < ApplicationController
     end
   end
 
+  # DELETE /venue_schedules/1
+  # DELETE /venue_schedules/1.json
   def destroy
   end
 
   private
 
-  def load_venue!
-    @venue = ::Venue.find(params[:venue_id].to_i)
-    redirect_to venue_path(@venue) unless @venue.published?
-  end
+  #def load_venue!
+  #  @venue = ::Venue.find(params[:venue_id].to_i)
+  #  redirect_to venue_path(@venue) unless @venue.published?
+  #end
 
   def state_update(vs, trig)
     if ::VenueSchedule::PROCESSABLE_EVENTS.include?(@trigger.to_sym)

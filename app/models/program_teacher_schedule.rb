@@ -38,56 +38,82 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   # attr_accessible :program, :program_id, :teacher_id, :reserving_user_id
   # validates :program_id, :teacher_id, :reserving_user_id, :presence => true
+  before_save :update_teacher_schedules
 
 
+  STATE_UNKNOWN  = :unknown
+  STATE_AVAILABLE  = :available
+  STATE_UNAVAILABLE  = :unavailable
+  STATE_BLOCKED  = :blocked
+  STATE_ASSIGNED  = :assigned
+  STATE_REQUEST_RELEASE  = :request_release
+  STATE_IN_CLASS  = :in_class
+  STATE_COMPLETED_CLASS  = :completed_class
+  STATE_WITHDRAWN  = :withdrawn
 
-  STATE_PROPOSED  = :proposed
-  STATE_APPROVED  = :approved
-  STATE_REJECTED  = :rejected
-  STATE_POSSIBLE  = :possible
-  STATE_PENDING_FINANCE_APPROVAL = :pending_finance_approval
-  STATE_INSUFFICIENT_INFO = :insufficient_info
-  STATE_PUBLISHED = :published
+  ### TODO -
+  # http://www.sitepoint.com/comparing-ruby-background-processing-libraries-delayed-job/
+  # Program will be sending four notifications - two on timers, two on user action
+  # timer can be set using the delayed action for the program state machine
+  ###
 
   PROCESSABLE_EVENTS = [
-      :approve, :reject, :publish, :possible, :insufficient_info, :finance_approval
+      :available, :unavailable, :assigned, :request_release,
+      :program_cancelled, :program_dropped, :program_started, :program_completed, :withdraw
   ]
 
-  state_machine :state, :initial => STATE_PROPOSED do
-    event :approve do
-      transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED
+  state_machine :state, :initial => STATE_BLOCKED do
+    event :available do
+      transition STATE_ASSIGNED => STATE_AVAILABLE, :if => lambda {|pts| pts.is_zonal_coordinator?}, :do => :remove_program_id
+      transition STATE_BLOCKED => STATE_AVAILABLE, if: lambda {|pts| pts.can_unblock?}, :do => :remove_program_id
     end
 
-    after_transition any => STATE_APPROVED do |venue, transition|
-      # TODO: check if paid venue or not
-      if venue.paid?
-        venue.finance_approval()
-      else
-        venue.possible()
-      end
+    event :unavailable do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
     end
 
-    event :finance_approval do
-      transition [STATE_APPROVED, STATE_INSUFFICIENT_INFO] => STATE_PENDING_FINANCE_APPROVAL
+    event :assigned do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
     end
 
-    event :possible do
-      transition [STATE_APPROVED, STATE_PENDING_FINANCE_APPROVAL] => STATE_POSSIBLE
+    event :request_release do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
     end
 
-    event :reject do
-      transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED
+    event :program_cancelled do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
     end
 
-    event :publish do
-      transition [STATE_POSSIBLE] => STATE_PUBLISHED
+    event :program_dropped do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
     end
 
-    event :insufficient_info do
-      transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO
+    event :program_started do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
+    end
+
+    event :program_completed do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
+    end
+
+    event :withdraw do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED
+    end
+
+    def remove_program_id
+      ### TODO - for all teacher schedules for the program, remove the program-id entry
     end
 
   end
+
+  def is_zonal_coordinator?
+    ### TODO - fill is zonal coordinator
+  end
+
+  def can_unblock?
+    ### TODO - set validations if user can unblock, CS and SC on venue conditions
+  end
+
 
 
 end

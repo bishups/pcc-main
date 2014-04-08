@@ -16,15 +16,9 @@
 
 class VenueSchedule < ActiveRecord::Base
   # attr_accessible :title, :body
-  attr_accessible :slot
-  attr_accessible :start_date
-  attr_accessible :end_date
   attr_accessible :program_id, :program
 
-  validates :start_date, :presence => true
-  validates :end_date, :presence => true
-  #validates :slot, :presence => true
-  validates :reserving_user_id, :presence => true
+  validates :blocked_by_user_id, :presence => true
   validates :program_id, :presence => true
 
   # Overlap validation
@@ -32,11 +26,13 @@ class VenueSchedule < ActiveRecord::Base
   validates_uniqueness_of :program_id
 
   belongs_to :venue
-  belongs_to :reserving_user, :class_name => User
+  belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
 
-  before_create :assign_details!
-  after_create :connect_program!
+  has_many :timings, :through => :program
+
+  #before_create :assign_details!
+  #after_create :connect_program!
 
   PROCESSABLE_EVENTS = [
     :block, :request_approval, :authorize_for_payment, :request_payment, :process_payment, :cancel
@@ -58,9 +54,9 @@ class VenueSchedule < ActiveRecord::Base
     super(*args)
   end
 
-  def setup_details!
-    assign_details!
-  end
+  #def setup_details!
+  #  assign_details!
+  #end
 
   state_machine :state, :initial => STATE_BLOCK_REQUESTED do
     after_transition any => :blocked do |venue_schedule, transition|
@@ -114,21 +110,24 @@ class VenueSchedule < ActiveRecord::Base
     event :cancel do
       transition any => STATE_CANCELLED
     end
+
+    def on_block
+    end
   end
 
   private
 
-  def assign_details!
-    program = ::Program.where(:id => self.program_id).first()
-    return if program.nil?
+  #def assign_details!
+  #  program = ::Program.where(:id => self.program_id).first()
+  #  return if program.nil?
 
-    self.slot = program.slot
-    self.start_date = program.start_date
-    self.end_date = program.end_date
-  end
+    #self.slot = program.slot
+    #self.start_date = program.start_date
+    #self.end_date = program.end_date
+  #end
 
-  def connect_program!
-    self.program.connect_venue(self)
-  end
+  #def connect_program!
+  #  self.program.connect_venue(self)
+  #end
 
 end

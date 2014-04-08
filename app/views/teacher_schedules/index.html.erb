@@ -15,7 +15,7 @@
       <th>Month</th>
       <th>Start Date</th>
       <th>End Date</th>
-      <th>Timing</th>
+      <th>Timing(s)</th>
       <th>State</th>
       <th>Center</th>
       <!-- <th>Engagements</th> -->
@@ -26,7 +26,13 @@
       <td><%= ts.start_date.strftime("%B %Y") %></td>
       <td><%= ts.start_date %></td>
       <td><%= ts.end_date %></td>
-      <td><%= ts.timing.name %></td>
+      <td>
+        <% if ts.program_id %>
+            <%=  (ts.program.timings.map {|c| c[:name]}).join(", ") %>
+        <% else %>
+            <%= ts.timing.name %>
+        <% end %>
+      </td>
       <td><%= teacher_schedule_state_tag(ts) %></td>
       <td><%= ts.center.name %></td>
       <% if false %>
@@ -47,7 +53,7 @@
       <td>
         <%# <%= link_to "Block", edit_teacher_teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>
         <%# <%= link_to "Show", teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>
-        <%# <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %>
+        <%# <%= link_to "Schedule", kit_schedules_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
       </td>
     </tr>
     <% end %>

@@ -19,13 +19,14 @@ PccMain::Application.routes.draw do
   end
   resources :program_teacher_schedules
   
-  resources :venues do
-    resources :venue_schedules
-  end
-  
-  resources :kits do
-      resources :kit_schedules
-  end
+  #resources :venues do
+  #  resources :venue_schedules
+  #end
+
+  resources :venues
+  resources :kits
+  resources :venue_schedules
+  resources :kit_schedules
 
   resources :teachers do
     resources :teacher_schedules

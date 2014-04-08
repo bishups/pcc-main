@@ -16,29 +16,29 @@
      
        <% if @kit_schedule.can_assign? %>
         <li>
-          <%= link_to "Assign", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :assigned) %>
+          <%= link_to "Assign", edit_kit_schedule_path( @kit_schedule, :trigger => :assigned) %>
         </li>
       <% end %>
       <% if @kit_schedule.can_issue? %>
         <li>
-          <%= link_to "Issued", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :issued) %>
+          <%= link_to "Issued", edit_kit_schedule_path(@kit_schedule, :trigger => :issued) %>
         </li>
       <% end %>
       <% if @kit_schedule.can_closed? %>
         <li>
-          <%= link_to "Close", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :closed) %>
+          <%= link_to "Close", edit_kit_schedule_path(@kit_schedule, :trigger => :closed) %>
         </li>
       <% end %>
       <% if @kit_schedule.can_cancel? %>
          <li class="divider"></li>
         <li>
-          <%= link_to "Cancel", edit_kit_kit_schedule_path(@kit, @kit_schedule, :trigger => :cancel) %>
+          <%= link_to "Cancel", edit_kit_schedule_path(@kit_schedule, :trigger => :cancel) %>
         </li>
       <% end %>    
     </ul>
   </div>
 
    <span class='pull-right'>
-    <%= link_to "Back to Kit Schedules", kit_kit_schedules_path(@kit), :class => 'btn btn-primary' %>
+    <%= link_to "Back to Kit Schedules", kit_schedules_path(:kit_id => @kit.id), :class => 'btn btn-primary' %>
   </span>
 </h2>

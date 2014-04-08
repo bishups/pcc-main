@@ -9,12 +9,12 @@
     <ul class="dropdown-menu" role="menu">
       <% @venue_schedule.state_events.each do |ev| %>
       <li>
-        <%= link_to ev.to_s.humanize, edit_venue_venue_schedule_path(@venue, @venue_schedule, :trigger => ev) %>
+        <%= link_to ev.to_s.humanize, edit_venue_schedule_path(@venue_schedule, :trigger => ev) %>
       </li>
       <% end %>
     </ul>
   </div>
   <span class='pull-right'>
-    <%= link_to "Back to Schedules", venue_venue_schedules_path(@venue), :class => 'btn btn-primary' %>
+    <%= link_to "Back to Schedules", venue_schedules_path(:venue_id => @venue_schedule.venue.id), :class => 'btn btn-primary' %>
   </span>
 </h2>

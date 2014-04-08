@@ -103,7 +103,15 @@ class Venue < ActiveRecord::Base
   end
 
   def blockable_programs
-    Program.where('center_id IN (?) AND start_date > ?', self.center_ids, Time.now)
+    # TODO - check if the venue is already not blocked for the same program
+    # TODO - also if the schedule of the venue permits the blocking to be done
+
+    # join of program, venue, programs_timings, venue_schedules, programs, and program_timings
+    # if there is no other venue_schedule in the same timings as the one for the program
+    # programs => center_id should be venue
+    # programs => (date and timings) should not be in venue_schedule
+
+    Program.joins().joins().where('programs.center_id IN (?) AND programs.start_date > ? ', self.center_ids, Time.now)
   end
 
   def paid?

@@ -21,20 +21,21 @@
 #
 
 class Program < ActiveRecord::Base
-  # validates :slot, :presence => true
   validates :start_date, :presence => true
 #  validates :end_date, :presence => true
   validates :center_id, :presence => true
   validates :proposer_id, :presence => true
 
-  attr_accessible :name, :program_type_id, :start_date, :center_id, :slot, :end_date
+  attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date
 
   before_create :assign_dates!
 
   belongs_to :center
-  belongs_to :venue_schedule
   belongs_to :program_type
-  belongs_to :kit_schedule
+  has_many :venue_schedules
+  attr_accessible :venue_schedules, :venue_schedule_ids
+  has_many :kit_schedules
+  attr_accessible :kit_schedules, :kit_schedule_ids
   has_many :teacher_schedules
   attr_accessible :teacher_schedules, :teacher_schedule_ids
   has_many :teachers, :through => :teacher_schedules
@@ -110,39 +111,39 @@ class Program < ActiveRecord::Base
   end
 
   def venue_connected?
-    self.venue_schedule_id != nil
+    !self.venue_schedules.empty?
   end
 
-  def connect_venue(venue)
-    self.venue_schedule_id = venue.id
-    self.save!
-  end
+  #def connect_venue(venue)
+  #  self.venue_schedule_id = venue.id
+  #  self.save!
+  #end
 
-  def disconnect_venue(venue)
-    self.venue_schedule_id = nil
-    self.save!
-  end
+  #def disconnect_venue(venue)
+  #  self.venue_schedule_id = nil
+  #  self.save!
+  #end
 
   def kit_connected?
-    self.kit_schedule_id != nil
+    !self.kit_schedules.empty?
   end
 
-  def connect_kit(kit)
-    self.kit_schedule_id = kit.id
-    self.save
-  end
+  #def connect_kit(kit)
+  #  self.kit_schedule_id = kit.id
+  #  self.save
+  #end
 
-  def disconnect_kit(kit)
-    self.kit_schedule_id = nil
-    self.save!
-  end  
+  #def disconnect_kit(kit)
+  #  self.kit_schedule_id = nil
+  #  self.save!
+  #end
 
   def assign_dates!
     self.end_date = self.start_date + self.program_type.no_of_days.to_i.days
   end
 
   def minimum_teachers_connected?
-    self.program_teacher_schedules.count >= self.program_type.minimum_no_of_teacher
+    self.teachers.uniq >= self.program_type.minimum_no_of_teacher
   end
 
   def ready_for_announcement?

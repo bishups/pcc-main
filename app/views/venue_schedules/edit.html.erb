@@ -3,12 +3,12 @@
     <h2>
       Venue Schdule <small><%= @venue_schedule.venue.name %> | <%= @venue_schedule.program.name %></small>
       <span class='pull-right'>
-        <%= link_to "Back", venue_venue_schedule_path(@venue, @venue_schedule), :class => 'btn btn-primary' %>
+        <%= link_to "Back", venue_schedule_path(@venue_schedule), :class => 'btn btn-primary' %>
       </span>
     </h2>
   </div>
 </div>
-<%= form_for([@venue, @venue_schedule], :html => {:class => 'form'}) do |f| %>
+<%= form_for([@venue_schedule], :html => {:class => 'form'}) do |f| %>
 <%= hidden_field_tag 'trigger', @trigger %>
 
 <div class='row'>

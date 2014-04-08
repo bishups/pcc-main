@@ -1,4 +1,5 @@
 class KitSchedulesController < ApplicationController
+
   # GET /kit_schedules
   # GET /kit_schedules.json
   before_filter :authenticate_user!
@@ -27,6 +28,8 @@ class KitSchedulesController < ApplicationController
   # GET /kit_schedules/new.json
   def new
     @kit_schedule = @kit.kit_schedules.new
+    @kit_schedule.program_id = params[:program_id] if params.has_key?(:program_id)
+    @kit_schedule.kit_id = params[:kit_id] if params.has_key?(:kit_id)
 
     respond_to do |format|
       format.html 

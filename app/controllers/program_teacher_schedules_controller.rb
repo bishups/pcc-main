@@ -5,7 +5,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule = ProgramTeacherSchedule.new
     @program_teacher_schedule.program_id = params[:program_id]
     @program_teacher_schedule.program = ::Program.find(params[:program_id])
-    @program_teacher_schedule.teachers = load_relevant_teachers()
+    @teachers = load_relevant_teachers()
 
     # @program_teacher_schedule.program = ::Program.find(params[:program_id])
     # @teacher_schedules = load_relevant_teacher_schedules()
@@ -21,10 +21,11 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   def create
     # TODO - add the logic for saving the program with the schedule, and splitting the teacher schedule
+
     error = block_teacher_schedule(params[:program_teacher_schedule])
     program = Program.find(params[:program_teacher_schedule][:program_id])
     respond_to do |format|
-      if !error
+      if !error.empty?
         format.html { 
           #redirect_to program_teacher_schedule_path(@program_teacher_schedule)
           redirect_to program_path(program)
@@ -104,25 +105,28 @@ class ProgramTeacherSchedulesController < ApplicationController
   def block_teacher_schedule(params)
     program = Program.find(params[:program_id])
     teacher = Teacher.find(params[:teacher_id])
-    error = ""
+    error = []
     program.timings.each {|t|
-      tr_id = TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ?',
-                                     program.start_date.to_date, program.end_date.to_date, t.id,
-                                     Ontology::Teacher::STATE_AVAILABLE, program.center_id]).pluck(:teacher_id)
-
       ts = teacher.teacher_schedules.where('start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ?',
                              program.start_date.to_date, program.end_date.to_date, t.id,
                              Ontology::Teacher::STATE_AVAILABLE, program.center_id).first
       #ts = ts_s[0]
       # split this schedule as per program dates
       puts ts.class
-      error = ts.split_schedule(program.start_date.to_date, program.end_date.to_date)
+      ts.split_schedule(program.start_date.to_date, program.end_date.to_date)
+      # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
+      if !ts.errors.empty?
+        error << ts.errors.full_messages
+        break
+      end
       ts.state = Ontology::Teacher::STATE_BLOCKED
       ts.program_id = program.id
-      if !ts.save #(validate: false)
-        error = "Unable to update schedule"
+      ts.save(:validate => false)
+      # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
+      if !ts.errors.empty?
+        error << ts.errors.full_messages
+        break
       end
-      break if error != ""
     }
     error
   end

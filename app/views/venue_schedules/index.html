@@ -4,7 +4,7 @@
             Venue Schedules
             <small><%= @venue.name %></small>
       <span class='pull-right'>
-        <%= link_to "Reserve Venue", new_venue_venue_schedule_path(@venue), :class => 'btn btn-primary btn-sm' %>
+        <%= link_to "Reserve Venue", new_venue_schedule_path(:venue_id => @venue.id), :class => 'btn btn-primary btn-sm' %>
       </span>
         </h2>
     </div>
@@ -25,12 +25,12 @@
             <td><%= vs.id %></td>
             <td><%= vs.program_id %></td>
             <td><%= venue_schedule_state_tag(vs) %>
-            <td><%= vs.start_date.strftime('%B') + ' ' + vs.start_date.strftime('%Y') %></td>
-            <td><%= vs.start_date.strftime('%d/%m/%Y') %></td>
-            <td><%= vs.end_date.strftime('%d/%m/%Y') %></td>
-            <td><%= vs.slot %></td>
-            <td><%= vs.reserving_user.fullname %></td>
-            <td><%= link_to "Open", venue_venue_schedule_path(@venue, vs), :class => 'btn btn-primary btn-sm' %></td>
+            <td><%= vs.program.start_date.strftime('%B') + ' ' + vs.program.start_date.strftime('%Y') %></td>
+            <td><%= vs.program.start_date.strftime('%d/%m/%Y') %></td>
+            <td><%= vs.program.end_date.strftime('%d/%m/%Y') %></td>
+            <td><%= (vs.program.timings.map {|c| c[:name]}).join(", ") %></td>
+            <td><%= vs.blocked_by_user.fullname %></td>
+            <td><%= link_to "Open", venue_schedule_path(vs), :class => 'btn btn-primary btn-sm' %></td>
         </tr>
         <% end %>
     </table>

@@ -2,14 +2,20 @@ class TeacherSchedulesController < ApplicationController
   before_filter :authenticate_user!
   before_filter :load_teacher!
 
+  # GET /teacher_schedules
+  # GET /teacher_schedules.json
   def index
-    @teacher_schedules = TeacherSchedule.find_all_by_teacher_id(@teacher.id)
+    #@teacher = Teacher.find(params[:teacher_id])
+    @teacher = Teacher.find(params[:teacher_id])
+    @teacher_schedules = TeacherSchedule.where("teacher_id = ?", @teacher.id).group("coalesce(program_id, created_at)")
 
     respond_to do |format|
       format.html
     end
   end
 
+  # GET /teacher_schedules/new
+  # GET /teacher_schedules/new.json
   def new
     @teacher_schedule = TeacherSchedule.new
 
@@ -18,6 +24,8 @@ class TeacherSchedulesController < ApplicationController
     end
   end
 
+  # GET /teacher_schedules/1
+  # GET /teacher_schedules/1.json
   def show
     @teacher_schedule = TeacherSchedule.find(params[:id])
 
@@ -26,6 +34,8 @@ class TeacherSchedulesController < ApplicationController
     end
   end
 
+  # POST /teacher_schedules
+  # POST /teacher_schedules.json
   def create
     @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
     @teacher_schedule.teacher_id = params[:teacher_id]
@@ -39,8 +49,12 @@ class TeacherSchedulesController < ApplicationController
           format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
         else
           @teacher_schedule.combine_consecutive_schedules if additional_days != 0
-          @teacher_schedule.save
-          format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
+          if !@teacher_schedule.save
+            format.html { render action: "new" }
+            format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
+          else
+            format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
+          end
         end
       else
         format.html { render action: "new" }
@@ -49,6 +63,7 @@ class TeacherSchedulesController < ApplicationController
     end
   end
 
+  # GET /teacher_schedules/1/edit
   def edit
     #@teacher_schedule = @teacher.teacher_schedules.find(params[:id])
     @teacher_schedule = TeacherSchedule.find(params[:id])
@@ -58,6 +73,8 @@ class TeacherSchedulesController < ApplicationController
     end
   end
 
+  # PUT /teacher_schedules/1
+  # PUT /teacher_schedules/1.json
   def update
     #@teacher_schedule = @teacher.teacher_schedules.find(params[:id])
     @teacher_schedule = TeacherSchedule.find(params[:id])
@@ -71,12 +88,18 @@ class TeacherSchedulesController < ApplicationController
         format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
       else
         @teacher_schedule.combine_consecutive_schedules if additional_days != 0
-        @teacher_schedule.save
-        format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
+        if !@teacher_schedule.save
+          format.html { render action: "edit" }
+          format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
+        else
+          format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
+        end
       end
     end
   end
 
+  # DELETE /teacher_schedules/1
+  # DELETE /teacher_schedules/1.json
   def destroy
     # @teacher_schedule = @teacher.teacher_schedules.find(params[:id])
     @teacher_schedule = TeacherSchedule.find(params[:id])

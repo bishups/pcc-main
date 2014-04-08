@@ -42,26 +42,22 @@ class Teacher < ActiveRecord::Base
 
     event :unattach do
       # TODO - if not transitioning in state machine, see if need to pass back some error message
-      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, if: !:in_schedule?
+      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|teacher| !teacher.in_schedule?}
     end
     after_transition :any => STATE_UNATTACHED, :do => :on_unattach
 
     event :unfit do
-      transition [STATE_ATTACHED, STATE_UNATTACHED] => STATE_UNFIT, if: !:in_schedule?
+      transition [STATE_ATTACHED, STATE_UNATTACHED] => STATE_UNFIT, :if  => lambda {|teacher| !teacher.in_schedule?}
     end
     after_transition :any => STATE_UNATTACHED, :do => :on_unfit
 
-    def on_unattach
-      self.zone = ""
-    end
+  end
 
-    def on_unfit
-    end
+  def on_unattach
+    self.zone = ""
+  end
 
-    def in_schedule?
-      self.in_schedule?
-    end
-
+  def on_unfit
   end
 
 
@@ -74,7 +70,7 @@ class Teacher < ActiveRecord::Base
   def in_schedule?
     in_schedule = false
     self.teacher_schedules.each { |ts|
-      if !(ts.state == ::Ontology::Teacher::STATE_AVAILABLE || state == ::Ontology::Teacher::STATE_UNAVAILABLE)
+      if !(ts.state == ::Ontology::Teacher::STATE_AVAILABLE.to_s || ts.state == ::Ontology::Teacher::STATE_UNAVAILABLE.to_s)
         in_schedule = true
         break
       end

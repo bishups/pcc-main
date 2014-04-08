@@ -16,7 +16,7 @@
     <td><%= ks.program.name rescue nil%></td>
     <td><%= ks.start_date.strftime('%d/%m/%Y') rescue nil%></td>
     <td><%= ks.end_date.strftime('%d/%m/%Y') rescue nil%></td>
-    <td> <%= link_to "Open", kit_kit_schedule_path(ks.kit, ks), :class => 'btn btn-primary btn-sm' %> </td> 
+    <td> <%= link_to "Open", kit_schedule_path(ks), :class => 'btn btn-primary btn-sm' %> </td>
   </tr>
 <% end %>
 </table>

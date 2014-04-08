@@ -4,7 +4,7 @@
       Kit Schedules
       <small><%= @kit.name %></small>
       <span class='pull-right'>
-        <%= link_to "Block Kit", new_kit_kit_schedule_path(@kit), :class => 'btn btn-primary btn-sm' %>
+        <%= link_to "Block Kit", new_kit_schedule_path(:kit_id = @kit.id), :class => 'btn btn-primary btn-sm' %>
       </span>
     </h2>
   </div>

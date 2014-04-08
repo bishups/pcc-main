@@ -96,6 +96,11 @@ class Kit < ActiveRecord::Base
     end  
   end
 
+  def blockable_programs
+    # TODO - check if the kit is already not blocked for the same program
+    # TODO - also if the schedule of the kit permits the blocking to be done
+    Program.where('center_id IN (?) AND start_date > ?', self.center_ids, Time.now)
+  end
 
 =begin
   private

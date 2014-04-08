@@ -6,8 +6,10 @@
         <%= program_state_tag(@program) %>
       </small>
       <span class='pull-right'>
+        <% if false %>
         <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
-        <% unless @program.is_announced? %> 
+        <% end %>
+        <% unless @program.is_announced? %>
           <%= link_to 'Announce Program', announce_program_path, :class => 'btn btn-danger', :disabled => (! @program.ready_for_announcement? ) %>
         <% else %>
           <%= render :partial => 'programs/state_bar' %>
@@ -33,9 +35,9 @@
         <td width='25%'><strong>Venue Status</strong></td>
         <td>
           <% if @program.venue_connected? %>
-            Venue State: <%= @program.venue_schedule.state %>
+            Venue State: <%= (@program.venue_schedules.map {|vs| "#{vs.venue[:name]} => #{vs[:state]}"}).join(", ") %>
           <% else %>
-            Venue is not yet associated with this program.
+            Venue is not associated with this program.
           <% end %>
         </td>
       </tr>
@@ -43,9 +45,9 @@
         <td><strong>Kit Status</strong></td>
         <td>
           <% if @program.kit_connected? %>
-            Kit State: <%= @program.kit_schedule.state %>
+            Kit State: <%= (@program.kit_schedules.map {|ks| "#{ks.kit[:name]} => #{ks[:state]}"}).join(", ") %>
           <% else %>
-            Kit is not associated with this program yet.
+            Kit is not associated with this program.
           <% end %>
         </td>
       </tr>
@@ -97,12 +99,23 @@
   </div>
 </div>
 
-<div class='row'>
-  <h3>Venue Details</h3>
+
+  <div class='row'>
+    <div class='page-header'>
+      <h3>
+        Venue Details
+      <span class='pull-right'>
+        <%= link_to 'Assign Venue', new_venue_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
+      </span>
+      </h3>
+    </div>
+  </div>
+
+  <div class='row'>
   <div class='col-md-12'>
     <% if @program.venue_connected? %>
     <div class='alert alert-success'>
-      Venue <%= link_to "##{@program.venue_schedule.venue.id}", venue_venue_schedule_path(@program.venue_schedule.venue, @program.venue_schedule) %> is associated with this program.
+      Venue <%= link_to "##{@program.venue_schedule.venue.id}", venue_schedule_path(@program.venue_schedule) %> is associated with this program.
     </div>
     <% else %>
     <div class='alert alert-danger'>
@@ -113,11 +126,20 @@
 </div>
 
 <div class='row'>
-  <h3>Kit Details</h3>
+  <div class='page-header'>
+    <h3>
+      Kit Details
+      <span class='pull-right'>
+        <%= link_to 'Assign Kit', new_kit_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
+      </span>
+    </h3>
+  </div>
+</div>
+<div class='row'>
   <div class='col-md-12'>
     <% if @program.kit_connected? %>
     <div class='alert alert-success'>
-      Kit <%= link_to "##{@program.kit_schedule.kit.id}", kit_kit_schedule_path(@program.kit_schedule.kit, @program.kit_schedule) %> is associated with this program.
+      Kit <%= link_to "##{@program.kit_schedule.kit.id}", kit_schedule_path(@program.kit_schedule) %> is associated with this program.
     </div>
     <% else %>
     <div class='alert alert-danger'>
@@ -128,12 +150,21 @@
 </div>
 
 <div class='row'>
-  <h3>Teacher Details</h3>
+  <div class='page-header'>
+    <h3>
+      Teacher Details
+      <span class='pull-right'>
+        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
+      </span>
+    </h3>
+  </div>
+</div>
+<div class='row'>
   <div class='col-md-12'>
-    <% if @program.teachers.count > 0 %>
-      <% @program.teachers.each do |pt| %>
+    <% if @program.teachers.uniq.count > 0 %>
+      <% @program.teachers.uniq.each do |t| %>
       <div class='alert alert-success'>
-        Teacher  <%= link_to "#{pt.user.firstname}", teacher_teacher_schedules_path(pt.user) %> is linked to the program.
+        Teacher  <%= link_to "#{t.user.firstname}", teacher_teacher_schedules_path(t) %> is linked to the program.
       </div>
       <% end %>
     <% else %>

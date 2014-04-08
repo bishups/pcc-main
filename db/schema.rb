@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404062113004) do
+ActiveRecord::Schema.define(:version => 201404072110620) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -48,6 +48,22 @@ ActiveRecord::Schema.define(:version => 201404062113004) do
     t.integer "center_id"
     t.integer "venue_id"
   end
+
+  create_table "delayed_jobs", :force => true do |t|
+    t.integer  "priority",   :default => 0, :null => false
+    t.integer  "attempts",   :default => 0, :null => false
+    t.text     "handler",                   :null => false
+    t.text     "last_error"
+    t.datetime "run_at"
+    t.datetime "locked_at"
+    t.datetime "failed_at"
+    t.string   "locked_by"
+    t.string   "queue"
+    t.datetime "created_at",                :null => false
+    t.datetime "updated_at",                :null => false
+  end
+
+  add_index "delayed_jobs", ["priority", "run_at"], :name => "delayed_jobs_priority"
 
   create_table "enquiries", :force => true do |t|
     t.string   "topic"
@@ -95,13 +111,14 @@ ActiveRecord::Schema.define(:version => 201404062113004) do
     t.date     "start_date"
     t.date     "end_date"
     t.string   "state"
-    t.integer  "issued_to_person_id"
-    t.integer  "blocked_by_person_id"
     t.integer  "program_id"
-    t.datetime "created_at",           :null => false
-    t.datetime "updated_at",           :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.string   "comments"
     t.integer  "kit_id"
+    t.integer  "issued_to_user_id"
+    t.integer  "blocked_by_user_id"
+    t.integer  "last_updated_by_user_id"
   end
 
   create_table "kits", :force => true do |t|
@@ -177,16 +194,13 @@ ActiveRecord::Schema.define(:version => 201404062113004) do
     t.string   "center_id"
     t.integer  "program_type_id"
     t.integer  "proposer_id"
-    t.integer  "manager_id"
     t.string   "state"
     t.datetime "start_date"
     t.datetime "end_date"
-    t.string   "slot"
     t.string   "announce_program_id"
-    t.integer  "venue_schedule_id"
-    t.integer  "kit_schedule_id"
-    t.datetime "created_at",          :null => false
-    t.datetime "updated_at",          :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+    t.integer  "last_updated_by_user_id"
   end
 
   create_table "programs_timings", :force => true do |t|
@@ -233,16 +247,17 @@ ActiveRecord::Schema.define(:version => 201404062113004) do
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
 
   create_table "teacher_schedules", :force => true do |t|
-    t.datetime "created_at",        :null => false
-    t.datetime "updated_at",        :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.string   "state"
-    t.integer  "reserving_user_id"
     t.date     "start_date"
     t.date     "end_date"
     t.integer  "timing_id"
     t.integer  "program_id"
     t.integer  "teacher_id"
     t.integer  "center_id"
+    t.integer  "blocked_by_user_id"
+    t.integer  "last_updated_by_user_id"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -303,14 +318,12 @@ ActiveRecord::Schema.define(:version => 201404062113004) do
 
   create_table "venue_schedules", :force => true do |t|
     t.integer  "venue_id"
-    t.integer  "reserving_user_id"
-    t.string   "slot"
-    t.datetime "start_date"
-    t.datetime "end_date"
-    t.datetime "created_at",        :null => false
-    t.datetime "updated_at",        :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.integer  "program_id"
     t.string   "state"
+    t.integer  "blocked_by_user_id"
+    t.integer  "last_updated_by_user_id"
   end
 
   create_table "venues", :force => true do |t|

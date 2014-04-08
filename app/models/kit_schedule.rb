@@ -38,7 +38,7 @@ class KitSchedule < ActiveRecord::Base
   validates :program_id, :presence => true
   
   before_create :assign_start_date_end_date!, :assign_person_ids!
-  after_create :connect_program!
+  #after_create :connect_program!
   
   #checking for overlap validation 
   validates_with KitScheduleValidator
@@ -115,9 +115,9 @@ class KitSchedule < ActiveRecord::Base
     end 
   end
 
-  def connect_program!
-    self.program.connect_kit(self) unless self.program.nil?
-  end
+  #def connect_program!
+  #  self.program.connect_kit(self) unless self.program.nil?
+  #end
 
   def canChangeState?
     if self.kit.state != ::Kit::AVAILABLE.to_s

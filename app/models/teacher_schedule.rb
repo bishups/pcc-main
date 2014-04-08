@@ -44,7 +44,7 @@ class TeacherSchedule < ActiveRecord::Base
     if self.start_date < start_date
       ts = self.dup
       ts.end_date = start_date - 1.day
-      if !ts.save #(validate: false)
+      if !ts.save(:validate => false)
         errors[:start_date] << "Unable to split schedule, around start date"
       end
       self.start_date = start_date
@@ -53,7 +53,7 @@ class TeacherSchedule < ActiveRecord::Base
     if self.end_date > end_date
       ts = self.dup
       ts.start_date = end_date + 1.day
-      if !ts.save #(validate: false)
+      if !ts.save(:validate => false)
         errors[:end_date] << "Unable to split schedule, around end date"
       end
       self.end_date = end_date
@@ -119,15 +119,24 @@ class TeacherSchedule < ActiveRecord::Base
   def scheduleOverlapNotAllowed
     # teacher schedule should not overlap with any existing schedule
     ts = TeacherSchedule.where(['(start_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
-                                start_date, end_date, timing_id, teacher_id]).to_a
+                                self.start_date, self.end_date, self.timing_id, self.teacher_id]).to_a
     if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
-      errors[:start_date] << "start date overlaps with existing schedule."
+      errors[:start_date] << " timing overlaps with existing schedule."
+      return
     end
 
     ts = TeacherSchedule.where(['(end_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
-                                 start_date, end_date, timing_id, teacher_id]).to_a
+                                self.start_date, self.end_date, self.timing_id, self.teacher_id]).to_a
     if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
-        errors[:end_date] << "overlaps with existing schedule."
+        errors[:end_date] << " timing overlaps with existing schedule."
+        return
+    end
+
+    ts = TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND teacher_id = ?',
+                                self.start_date, self.end_date, self.timing_id, self.teacher_id]).to_a
+    if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
+       errors[:start_date] << " timing overlaps with existing schedule."
+       return
     end
   end
 
