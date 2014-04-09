@@ -9,10 +9,11 @@ class VenueScheduleValidator < ActiveModel::Validator
     elsif program.end_date < program.start_date
       record.errors[:end_date] << "cannot be before start date"
     elsif
-    #VenueSchedule.joins(:pricing_plans => {:subscriptions => :person}).where(:subscriptions => {:person_id => self})
+      if VenueSchedule.overlapping(record).count() > 0
+        record.errors[:start_date] << "timing overlaps with existing schedule."
+      end
 
-    ""
-
+=begin
       timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
       if VenueSchedule.joins("JOIN programs ON programs.id = venue_schedules.program_id").joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where(
           ['programs.id = programs_timings.program_id AND (programs.start_date BETWEEN ? AND ?) AND programs_timings.timing_id IN (?) AND venue_schedules.id != ? AND venue_schedules.state != ?',
@@ -32,6 +33,7 @@ class VenueScheduleValidator < ActiveModel::Validator
         record.errors[:start_date] << " timing overlaps with existing schedule."
         return
       end
+=end
     end
   end
 end

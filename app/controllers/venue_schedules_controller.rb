@@ -18,8 +18,8 @@ class VenueSchedulesController < ApplicationController
   # GET /venue_schedules/new
   # GET /venue_schedules/new.json
   def new
-    @venue = ::Venue.find(params[:venue_id].to_i)
-    @venue_schedule = @venue.venue_schedules.new
+    @venue = ::Venue.find(params[:venue_id].to_i) if params.has_key?(:venue_id)
+    @venue_schedule = VenueSchedule.new
 
     @venue_schedule.program_id = params[:program_id] if params.has_key?(:program_id)
     @venue_schedule.venue_id = params[:venue_id] if params.has_key?(:venue_id)
@@ -33,8 +33,17 @@ class VenueSchedulesController < ApplicationController
   # POST /venue_schedules
   # POST /venue_schedules.json
   def create
-    @venue = ::Venue.find(params[:venue_id].to_i)
-    @venue_schedule = @venue.venue_schedules.new(params[:venue_schedule])
+    # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
+    if params.has_key?(:venue_id)
+      venue_id = params[:venue_id].to_i
+    elsif params.has_key?(:venue_schedule)
+      venue_id = (params[:venue_schedule][:venue_id]).to_i  if params[:venue_schedule].has_key?(:venue_id)
+    end
+
+    @venue = ::Venue.find(venue_id)
+
+    @venue_schedule = VenueSchedule.new(params[:venue_schedule])
+    @venue_schedule.venue_id = @venue.id
 
     @venue_schedule.blocked_by_user_id = current_user.id
     #@venue_schedule.setup_details!

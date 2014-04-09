@@ -55,7 +55,7 @@
         <td><strong>Teacher Status</strong></td>
         <td>
           Teacher Required: <%= @program.program_type.minimum_no_of_teacher %> <br/>
-          Teacher Associated: <%= @program.teacher_schedules.group("teacher_id").count %>
+          Teacher Associated: <%= @program.teachers_connected %>
         </td>
       </tr>
     </table>
@@ -114,9 +114,11 @@
   <div class='row'>
   <div class='col-md-12'>
     <% if @program.venue_connected? %>
-    <div class='alert alert-success'>
-      Venue <%= link_to "##{@program.venue_schedule.venue.id}", venue_schedule_path(@program.venue_schedule) %> is associated with this program.
-    </div>
+        <% @program.venue_schedules.each do |vs| %>
+            <div class='alert alert-success'>
+              Venue  <%= link_to "#{vs.venue.name}", venue_schedule_path(vs) %> is linked to the program.
+            </div>
+        <% end %>
     <% else %>
     <div class='alert alert-danger'>
       Pending assignment.
@@ -138,9 +140,11 @@
 <div class='row'>
   <div class='col-md-12'>
     <% if @program.kit_connected? %>
-    <div class='alert alert-success'>
-      Kit <%= link_to "##{@program.kit_schedule.kit.id}", kit_schedule_path(@program.kit_schedule) %> is associated with this program.
-    </div>
+        <% @program.kit_schedules.each do |ks| %>
+            <div class='alert alert-success'>
+              Kit  <%= link_to "#{ks.kit.name}", kit_schedule_path(ks) %> is linked to the program.
+            </div>
+        <% end %>
     <% else %>
     <div class='alert alert-danger'>
       Pending assignment.
@@ -161,7 +165,7 @@
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <% if @program.teachers.uniq.count > 0 %>
+    <% if @program.teachers_connected > 0 %>
       <% @program.teachers.uniq.each do |t| %>
       <div class='alert alert-success'>
         Teacher  <%= link_to "#{t.user.firstname}", teacher_teacher_schedules_path(t) %> is linked to the program.

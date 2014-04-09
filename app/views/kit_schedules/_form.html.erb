@@ -1,10 +1,26 @@
-<%= form_for([@kit_schedule],:html => { :class => 'form' }) do |f| %>
-  <%= resource_error_messages!(@kit_schedule) %>
-  <div class="form-group">
-    <label for='program_id'>Program Id</label>
-    <%= f.text_field :program_id, :class => 'form-control' %>
-    <%= f.select :program_id, options_for_select(@kit.blockable_programs.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
-  </div>
-
-  <%= f.submit 'Block Kit', :class => 'btn btn-lg btn-primary' %>
+<%= form_for(@kit_schedule, :html => { :class => 'form' }) do |f| %>
+    <%= resource_error_messages!(@kit_schedule) %>
+    <% if @kit_schedule.program_id %>
+        <div class='form-group'>
+          <label for='program_id'>Program ID</label>
+          <%= f.text_field :program_id, :value=> @kit_schedule.program_id, :readonly => true, :class => 'form-control' %>
+        </div>
+        <div class='form-group'>
+          <label for='kit_id'>Kit</label>
+          <%= f.select :kit_id, options_for_select(@kit_schedule.program.blockable_kits.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+        </div>
+    <% elsif @kit %>
+        <%= hidden_field_tag 'kit_id', @kit.id %>
+        <div class='form-group'>
+          <label for='kit_id'>Kit ID</label>
+          <%= f.text_field :kit_id, :value=> @kit.id, :readonly => true, :class => 'form-control' %>
+          <label for='program_id'>Program</label>
+          <%= f.select :program_id, options_for_select(@kit.blockable_programs.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+        </div>
+    <% end %>
+    <%= f.submit 'Associated Kit with Program', :class => 'btn btn-lg btn-primary' %>
 <% end %>
+
+<script type='text/javascript'>
+    $('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
+</script>

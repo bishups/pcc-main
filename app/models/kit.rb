@@ -97,9 +97,13 @@ class Kit < ActiveRecord::Base
   end
 
   def blockable_programs
-    # TODO - check if the kit is already not blocked for the same program
-    # TODO - also if the schedule of the kit permits the blocking to be done
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
     Program.where('center_id IN (?) AND start_date > ?', self.center_ids, Time.now)
+  end
+
+  def friendly_name
+    ("%s" % [self.name]).parameterize
   end
 
 =begin

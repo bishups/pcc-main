@@ -47,7 +47,7 @@
       </td>
       <% end %>
       <td>
-        <%= link_to "Schedule", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id  %>
+        <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id  %>
         <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if !ts.program_id %>
       </td>
       <td>

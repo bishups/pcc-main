@@ -48,8 +48,6 @@ class Venue < ActiveRecord::Base
   validates :contact_email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}, :allow_blank => true
   validates :contact_phone, :length => { is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
 
-
-
   STATE_PROPOSED  = :proposed
   STATE_APPROVED  = :approved
   STATE_REJECTED  = :rejected
@@ -103,15 +101,9 @@ class Venue < ActiveRecord::Base
   end
 
   def blockable_programs
-    # TODO - check if the venue is already not blocked for the same program
-    # TODO - also if the schedule of the venue permits the blocking to be done
-
-    # join of program, venue, programs_timings, venue_schedules, programs, and program_timings
-    # if there is no other venue_schedule in the same timings as the one for the program
-    # programs => center_id should be venue
-    # programs => (date and timings) should not be in venue_schedule
-
-    Program.joins().joins().where('programs.center_id IN (?) AND programs.start_date > ? ', self.center_ids, Time.now)
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    Program.where('programs.center_id IN (?) AND programs.start_date > ? ', self.center_ids, Time.now)
   end
 
   def paid?
@@ -142,6 +134,10 @@ class Venue < ActiveRecord::Base
 
   def has_commercial?
     self.errors.add(:commercial, "should be selected for venue with per day price.") if self.commercial.blank? && !self.per_day_price.blank?
+  end
+
+  def friendly_name
+    ("%s" % [self.name]).parameterize
   end
 
   rails_admin do

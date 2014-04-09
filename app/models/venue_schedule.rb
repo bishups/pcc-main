@@ -23,9 +23,13 @@ class VenueSchedule < ActiveRecord::Base
 
   # Overlap validation
   validates_with VenueScheduleValidator
-  validates_uniqueness_of :program_id
+  #validates_uniqueness_of :program_id
 
   belongs_to :venue
+  validates :venue_id, :presence => true
+  attr_accessible :venue_id
+  validates_uniqueness_of :program_id, :scope => "venue_id"
+
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
 
@@ -33,6 +37,13 @@ class VenueSchedule < ActiveRecord::Base
 
   #before_create :assign_details!
   #after_create :connect_program!
+
+  # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
+  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id != ? AND venue_schedules.state != ?', vs.id, ::VenueSchedule::STATE_CANCELLED) }
+
+  # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
+  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id != ? AND venue_schedules.state != ?', vs.id, ::VenueSchedule::STATE_CANCELLED) }
+
 
   PROCESSABLE_EVENTS = [
     :block, :request_approval, :authorize_for_payment, :request_payment, :process_payment, :cancel

@@ -26,8 +26,8 @@ class KitSchedule < ActiveRecord::Base
   
   belongs_to :kit
   belongs_to :program
-  belongs_to :issued_to_person, :class_name => User
-  belongs_to :blocked_by_person, :class_name => User
+  belongs_to :issued_to_user, :class_name => User
+  belongs_to :blocked_by_user, :class_name => User
 
   attr_accessible :program_id, :kit_id,:end_date, :start_date,:state
 
@@ -36,7 +36,8 @@ class KitSchedule < ActiveRecord::Base
   validates :kit_id , :presence => true
   validates :state , :presence => true
   validates :program_id, :presence => true
-  
+  validates_uniqueness_of :program_id, :scope => "kit_id"
+
   before_create :assign_start_date_end_date!, :assign_person_ids!
   #after_create :connect_program!
   
@@ -109,9 +110,9 @@ class KitSchedule < ActiveRecord::Base
       return
     end
     if self.state == BLOCKED
-      self.blocked_by_person_id = current_user.id
+      self.blocked_by_user_id = current_user.id
     elsif self.state == ISSUED
-       self.issued_to_person_id = current_user.id 
+       self.issued_to_user_id = current_user.id
     end 
   end
 

@@ -41,7 +41,7 @@ class Program < ActiveRecord::Base
   has_many :teachers, :through => :teacher_schedules
   attr_accessible :teachers, :teacher_ids
 
-  has_and_belongs_to_many :timings
+  has_and_belongs_to_many :timings, :join_table => :programs_timings
   attr_accessible :timing_ids, :timings
 
   STATE_PROPOSED = :proposed
@@ -55,6 +55,16 @@ class Program < ActiveRecord::Base
   PROCESSABLE_EVENTS = [
     :announce, :registration_open, :start, :finish, :close, :cancel
   ]
+
+  # timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
+  # given a program, returns a relation with other non-overlapping program(s)
+  scope :available, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('(programs.start_date NOT BETWEEN ? AND ?) AND (programs.end_date NOT BETWEEN ? AND ?) AND NOT (programs.start_date <= ? AND programs.end_date >= ?) AND programs_timings.timing_id NOT IN (?) AND programs.id != ? ',
+                                                                             program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
+
+  # given a program, returns a relation with other overlapping program(s)
+  scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('(programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?) AND programs_timings.timing_id IN (?) AND programs.id != ? ',
+                                                                               program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
+
 
   def initialize(*args)
     super(*args)
@@ -138,12 +148,29 @@ class Program < ActiveRecord::Base
   #  self.save!
   #end
 
+
+  def blockable_venues
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ?', self.center_id)
+  end
+
+  def blockable_kits
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    Kit.joins("JOIN centers_kits ON kits.id = centers_kits.kit_id").where('centers_kits.center_id = ?', self.center_id)
+  end
+
   def assign_dates!
     self.end_date = self.start_date + self.program_type.no_of_days.to_i.days
   end
 
+  def teachers_connected
+    self.teachers.uniq.count
+  end
+
   def minimum_teachers_connected?
-    self.teachers.uniq >= self.program_type.minimum_no_of_teacher
+    self.teachers_connected >= self.program_type.minimum_no_of_teacher
   end
 
   def ready_for_announcement?

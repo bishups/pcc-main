@@ -4,7 +4,7 @@ class Timing < ActiveRecord::Base
   has_and_belongs_to_many :program_types
   attr_accessible :program_type_ids, :program_types
 
-  has_and_belongs_to_many :programs
+  has_and_belongs_to_many :programs, :join_table => :programs_timings
   attr_accessible :program_ids, :programs
 
   validates :name, :start_time, :end_time, :presence => true
