@@ -3,7 +3,7 @@
     <h2>
       Program-Teacher Schedule Detail <br/>
       <small><%= @program_teacher_schedule.program.name %></small>
-      <small><span class='label label-info'><%= @program_teacher_schedule.teacher_schedule.state.to_s.capitalize %></span></small>
+      <small><span class='label label-info'><%= @program_teacher_schedule.teacher_schedule.state %></span></small>
       <small><%= render :partial => 'program_teacher_schedules/state_bar', locals: {pts: @program_teacher_schedule, id: @program_teacher_schedule.teacher_schedule.id } %></small>
     </h2>
   </div>

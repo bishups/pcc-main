@@ -1,4 +1,5 @@
 class Teacher < ActiveRecord::Base
+
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
@@ -27,37 +28,46 @@ class Teacher < ActiveRecord::Base
   attr_accessible :state
   validates :state, :presence => true
 
-  STATE_UNFIT  = :unfit
-  STATE_UNATTACHED  = :unattached
-  STATE_ATTACHED  = :attached
+  STATE_UNFIT       = 'Not Fit'
+  STATE_UNATTACHED  = 'Not Attached'
+  STATE_ATTACHED    = 'Attached'
+
+  EVENT_ATTACH      = 'Attach'
+  EVENT_UNATTACH    = 'UnAttach'
+  EVENT_UNFIT      = 'UnFit'
 
   PROCESSABLE_EVENTS = [
-      :attach, :unattach, :unfit
+      EVENT_ATTACH, EVENT_UNATTACH, EVENT_UNFIT
   ]
 
   state_machine :state, :initial => STATE_UNATTACHED do
-    event :attach do
+    event EVENT_ATTACH do
       transition [STATE_UNATTACHED] => STATE_ATTACHED
     end
 
-    event :unattach do
+    event EVENT_UNATTACH do
       # TODO - if not transitioning in state machine, see if need to pass back some error message
       transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|teacher| !teacher.in_schedule?}
     end
-    after_transition :any => STATE_UNATTACHED, :do => :on_unattach
+    before_transition any => STATE_UNATTACHED, :do => :before_unattach
 
-    event :unfit do
+    event EVENT_UNFIT do
       transition [STATE_ATTACHED, STATE_UNATTACHED] => STATE_UNFIT, :if  => lambda {|teacher| !teacher.in_schedule?}
     end
-    after_transition :any => STATE_UNATTACHED, :do => :on_unfit
+    after_transition any => STATE_UNFIT, :do => :on_unfit
 
   end
 
-  def on_unattach
-    self.zone = ""
+  def before_unattach
+    self.zone_id = 0
   end
 
   def on_unfit
+    # if marked unfit remove all teacher_schedules
+    TeacherSchedule.where(:teacher_id => self.id).delete_all
+
+    # Also remove all attached centers
+    CentersTeachers.where(:teacher_id => self.id).delete_all
   end
 
 
@@ -70,7 +80,7 @@ class Teacher < ActiveRecord::Base
   def in_schedule?
     in_schedule = false
     self.teacher_schedules.each { |ts|
-      if !(ts.state == ::Ontology::Teacher::STATE_AVAILABLE.to_s || ts.state == ::Ontology::Teacher::STATE_UNAVAILABLE.to_s)
+      if !(::TeacherSchedule::STATE_PUBLISHED).include?(ts.state)
         in_schedule = true
         break
       end
@@ -80,7 +90,7 @@ class Teacher < ActiveRecord::Base
 
 
   def has_comments?
-    self.errors.add(:comments, " needed if the teacher is marked unfit.") if (self.state == STATE_UNFIT.to_s) && self.comments.blank?
+    self.errors.add(:comments, " needed if the teacher is marked unfit.") if (self.state == STATE_UNFIT) && self.comments.blank?
   end
 
   def has_centers?
@@ -96,12 +106,54 @@ class Teacher < ActiveRecord::Base
   end
 
   def has_zone?
-    self.errors.add(:zone, " cannot be blank when teacher is attached.") if self.zone.blank? && (self.state == STATE_ATTACHED.to_s)
+    self.errors.add(:zone, " cannot be blank when teacher is attached.") if self.zone.blank? && (self.state == STATE_ATTACHED)
     self.errors.add(:zone, " cannot be marked blank when teacher is in schedule.") if self.zone.blank? && self.in_schedule?
-    self.errors.add(:zone, " need to be blank when teacher is marked unattached.") if !self.zone.blank? && (self.state == STATE_UNATTACHED.to_s)
+    self.errors.add(:zone, " need to be blank when teacher is marked unattached.") if !self.zone.blank? && (self.state == STATE_UNATTACHED)
   end
 
 
+
+  rails_admin do
+    list do
+      field :t_no
+      field :user
+      field :state
+      field :zone
+      field :program_types
+      field :centers
+    end
+    edit do
+      field :user  do
+        inverse_of :teachers
+        inline_edit false
+        inline_add false
+      end
+      field :t_no
+      field :state, :enum do
+        label "Status"
+        # TODO - humanize the strings below, without breaking the state_machine functionality
+        enum do
+          [STATE_UNFIT, STATE_UNATTACHED, STATE_ATTACHED]
+        end
+      end
+      field :zone  do
+        inverse_of :teachers
+        inline_edit false
+        inline_add false
+      end
+      field :program_types  do
+        inverse_of :teachers
+        #inline_edit false
+        inline_add false
+      end
+      field :centers do
+        inverse_of  :teachers
+        #inline_edit false
+        inline_add false
+      end
+      field :comments
+    end
+  end
 
 
 =begin
@@ -126,47 +178,5 @@ class Teacher < ActiveRecord::Base
   end
 =end
 
-
-  rails_admin do
-    list do
-      field :t_no
-      field :user
-      field :state
-      field :zone
-      field :program_types
-      field :centers
-    end
-    edit do
-      field :user  do
-        inverse_of :teachers
-        inline_edit false
-        inline_add false
-      end
-      field :t_no
-      field :state, :enum do
-        label "Status"
-        # TODO - humanize the strings below, without breaking the state_machine functionality
-        enum do
-          [STATE_UNFIT.to_s, STATE_UNATTACHED.to_s, STATE_ATTACHED.to_s]
-        end
-      end
-      field :zone  do
-        inverse_of :teachers
-        inline_edit false
-        inline_add false
-      end
-      field :program_types  do
-        inverse_of :teachers
-        #inline_edit false
-        inline_add false
-      end
-      field :centers do
-        inverse_of  :teachers
-        #inline_edit false
-        inline_add false
-      end
-      field :comments
-    end
-  end
 
 end

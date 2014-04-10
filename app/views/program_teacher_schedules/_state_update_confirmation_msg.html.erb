@@ -1,17 +1,17 @@
-<% unless [:reject, :insufficient_info].include?(@trigger.to_sym) %>
+<% unless [:reject, :insufficient_info].include?(@trigger) %>
 <div class='alert alert-info'>
 <% else %>
 <div class='alert alert-danger'>
 <% end %>
   <h3>Confirmation: </h3>
   <p>
-    <% if @trigger.to_sym == :approve %>
+    <% if @trigger == :approve %>
       Are you sure you want to <strong>approve</strong> this venue?
-    <% elsif @trigger.to_sym == :reject %>
+    <% elsif @trigger == :reject %>
       Are you sure you want to <strong>reject</strong> this venue?
-    <% elsif @trigger.to_sym == :publish%>
+    <% elsif @trigger == :publish%>
       Are you sure you want to <strong>publish</strong> this venue and make it available for programs?
-    <% elsif @trigger.to_sym == :insufficient_info %>
+    <% elsif @trigger == :insufficient_info %>
       This venue will be in pending state and will not be available for association with programs. Do you want to proceed?
     <% end %>
   </p>

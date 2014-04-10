@@ -7,7 +7,7 @@
   <ul class="dropdown-menu" role="menu">
     <% @teacher.state_events.each do |ev| %>
         <li>
-          <%= link_to ev.to_s.humanize, edit_teacher_path(:id => @teacher.id, :trigger => ev) %>
+          <%= link_to ev, edit_teacher_path(:id => @teacher.id, :trigger => ev) %>
         </li>
     <% end %>
   </ul>

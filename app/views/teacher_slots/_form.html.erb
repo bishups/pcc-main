@@ -16,7 +16,7 @@
 
   <div class='form-group'>
     <%= label_tag(:status, "State") %>
-    <%= select_tag (:status), options_for_select(::Ontology::Teacher::STATE_RESERVE), {:class => 'form-control'} %>
+    <%= select_tag (:status), options_for_select(::TeacherSchedule::STATE_PUBLISHED), {:class => 'form-control'} %>
   </div>
 
   <%= submit_tag 'Publish', :class => 'btn btn-lg btn-primary' %>

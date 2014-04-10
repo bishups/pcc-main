@@ -6,6 +6,7 @@
   </div>
 </div>
 <%= form_for(@teacher, :html => {:class => 'form'}) do |f| %>
+<%= resource_error_messages!(@teacher) %>
 <%= hidden_field_tag 'trigger', @trigger %>
 
 <div class='row'>

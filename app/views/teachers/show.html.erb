@@ -3,7 +3,7 @@
     <h2>
       Teacher Detail <br/>
       <small><%= @teacher.user.fullname %></small>
-      <small><span class='label label-info'><%= @teacher.state.to_s.capitalize %></span></small>
+      <small><span class='label label-info'><%= @teacher.state %></span></small>
       <small><%= render :partial => 'teachers/state_bar' %></small>
       <small><%= link_to "View Schedule", teacher_teacher_schedules_path(@teacher) %></small>
     </h2>
@@ -23,7 +23,7 @@
       </tr>
       <tr>
         <td width='20%'><strong>Zone</strong></td>
-        <td><%= @teacher.zone.name %></td>
+        <td><%= @teacher.zone.name rescue '' %></td>
       </tr>
       <tr>
         <td width='20%'><strong>Center(s)</strong></td>

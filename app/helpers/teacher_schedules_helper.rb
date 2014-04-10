@@ -5,14 +5,15 @@ module TeacherSchedulesHelper
 
     proc do
       # TODO - change this once state machine is added to teacher schedule
-      if ts.state == ::Ontology::Teacher::STATE_AVAILABLE  #ts.available?
+      case ts.state
+      when ::TeacherSchedule::STATE_AVAILABLE
         '<span class="label label-info">Available</span>'
-      elsif ts.state == ::Ontology::Teacher::STATE_BLOCKED  #ts.blocked?
+      when ::ProgramTeacherSchedule::STATE_BLOCKED
         '<span class="label label-danger">Blocked</span>'
-      elsif ts.state == ::Ontology::Teacher::STATE_ASSIGNED  #ts.assigned?
+      when ::ProgramTeacherSchedule::STATE_ASSIGNED
         '<span class="label label-success">Assigned</span>'
-      elsif ts.state == ::Ontology::Teacher::STATE_UNAVAILABLE  #ts.unavailable?
-        '<span class="label label-default">unavailable</span>'
+      when ::TeacherSchedule::STATE_UNAVAILABLE
+        '<span class="label label-default">Not Available</span>'
       else
         ""
       end

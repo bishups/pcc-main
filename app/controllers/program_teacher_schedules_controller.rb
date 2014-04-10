@@ -1,10 +1,9 @@
 class ProgramTeacherSchedulesController < ApplicationController
   before_filter :authenticate_user!
+  #before_filter :load_program_teacher_schedule!
 
   def new
-    @program_teacher_schedule = ProgramTeacherSchedule.new
-    @program_teacher_schedule.program_id = params[:program_id]
-    @program_teacher_schedule.program = ::Program.find(params[:program_id])
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
     @teachers = load_relevant_teachers()
 
     # @program_teacher_schedule.program = ::Program.find(params[:program_id])
@@ -22,7 +21,7 @@ class ProgramTeacherSchedulesController < ApplicationController
   def create
     # TODO - add the logic for saving the program with the schedule, and splitting the teacher schedule
 
-    error = block_teacher_schedule(params[:program_teacher_schedule])
+    error = block_teacher_schedule!(params[:program_teacher_schedule])
     program = Program.find(params[:program_teacher_schedule][:program_id])
     respond_to do |format|
       if !error.empty?
@@ -40,7 +39,7 @@ class ProgramTeacherSchedulesController < ApplicationController
   # GET /program_teacher_schedules/1
   # GET /program_teacher_schedules/1.json
   def show
-    @program_teacher_schedule = program_teacher_schedule(params)
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
     respond_to do |format|
       format.html # show.html.erb
       format.json { render json: @program_teacher_schedule }
@@ -50,7 +49,7 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   # GET /venues/1/edit
   def edit
-    @program_teacher_schedule = program_teacher_schedule(params)
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
     @trigger = params[:trigger]
   end
 
@@ -58,18 +57,13 @@ class ProgramTeacherSchedulesController < ApplicationController
   # PUT /venues/1
   # PUT /venues/1.json
   def update
-    @program_teacher_schedule = program_teacher_schedule(params)
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
     @trigger = params[:trigger]
 
     state_update(@program_teacher_schedule, @trigger)
 
     respond_to do |format|
-      # TODO -
-      # 1. update the state of all teacher_schedule(s) for a teacher, and program.
-      # 2. if they have been marked Available or unavailable, then check if combine_consecutive_slots
-      # 3. if marked unfit, then mark it again the teacher also, and remove all teacher_schedules. Don't allow to create new schedules?
-
-      if 1 #@venue.update_attributes(params[:venue])
+      if @program_teacher_schedule.save
         format.html { redirect_to @program_teacher_schedule, notice: 'Program Teacher Schedule was successfully updated.' }
         format.json { head :no_content }
       else
@@ -85,42 +79,52 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   private
 
-  def program_teacher_schedule(params)
+  #:blocked_by_user_id
+  def load_program_teacher_schedule!(params)
     pts = ProgramTeacherSchedule.new
-    pts.teacher_schedule = TeacherSchedule.find(params[:id])
-    pts.program = Program.find(pts.teacher_schedule.program_id)
-    pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
+    if params.has_key?(:id)
+      pts.teacher_schedule = TeacherSchedule.find(params[:id])
+      pts.teacher_schedule_id = params[:id]
+      pts.state = pts.teacher_schedule.state
+      pts.program_id = pts.teacher_schedule.program_id
+      pts.program = Program.find(pts.teacher_schedule.program_id)
+      pts.teacher_id = pts.teacher_schedule.teacher_id
+      pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
+      pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
+    elsif params.has_key?(:program_id)
+      pts.program = ::Program.find(params[:program_id])
+    end
     pts
   end
 
+
   def state_update(pts, trig)
-    #if ::ProgramTeacherSchedule::PROCESSABLE_EVENTS.include?(@trigger.to_sym)
-    #  pts.send(trig.to_sym)
-    #end
+    if ::ProgramTeacherSchedule::PROCESSABLE_EVENTS.include?(@trigger)
+      pts.send(trig)
+    end
   end
 
   # Incoming params - params => {"program_id"=>"3", "teacher_id"=>"1"}
   # 1. given the teacher_id, find the schedules relevant for the program_id
   # 2. split the schedule, marking the one against program - with program_id and state
-  def block_teacher_schedule(params)
+  def block_teacher_schedule!(params)
     program = Program.find(params[:program_id])
     teacher = Teacher.find(params[:teacher_id])
     error = []
     program.timings.each {|t|
       ts = teacher.teacher_schedules.where('start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ?',
                              program.start_date.to_date, program.end_date.to_date, t.id,
-                             Ontology::Teacher::STATE_AVAILABLE, program.center_id).first
-      #ts = ts_s[0]
+                             ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
       # split this schedule as per program dates
-      puts ts.class
-      ts.split_schedule(program.start_date.to_date, program.end_date.to_date)
+      ts.split_schedule!(program.start_date.to_date, program.end_date.to_date)
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         error << ts.errors.full_messages
         break
       end
-      ts.state = Ontology::Teacher::STATE_BLOCKED
+      ts.state = ::Teacher::STATE_BLOCKED
       ts.program_id = program.id
+      ts.blocked_by_user_id = current_user.id
       ts.save(:validate => false)
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
@@ -141,7 +145,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       # if teacher is available for each of timing specified in the program for the specified center
       teacher_ids &= TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ?',
                                          program.start_date.to_date, program.end_date.to_date, t.id,
-                                         Ontology::Teacher::STATE_AVAILABLE, program.center_id]).pluck(:teacher_id)
+                                         ::TeacherSchedule::STATE_AVAILABLE, program.center_id]).pluck(:teacher_id)
     }
     teachers = Teacher.find(teacher_ids)
   end

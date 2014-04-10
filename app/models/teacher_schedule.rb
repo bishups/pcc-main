@@ -21,6 +21,8 @@ class TeacherSchedule < ActiveRecord::Base
 
   attr_accessible :start_date, :end_date, :state
   attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
+  belongs_to :blocked_by_user, :class_name => User
+  validates :blocked_by_user_id, :presence => true
 
   #has_many :program_teacher_schedules
 
@@ -30,17 +32,23 @@ class TeacherSchedule < ActiveRecord::Base
   validate :start_and_end_dates, :scheduleOverlapNotAllowed
   validate :teacher_enabled?
 
+  STATE_AVAILABLE = 'Available'
+  STATE_UNAVAILABLE = 'Not Available'
+  STATE_PUBLISHED = [
+      STATE_AVAILABLE, STATE_UNAVAILABLE
+  ]
+
   #validates_with TeacherScheduleValidator
 
 #  def teacher
 #    self.teacher.user
 #  end
   def teacher_enabled?
-    self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED.to_s
-    self.errors.add("Not enabled to publish schedule. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNFIT.to_s
+    self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED
+    self.errors.add("Not enabled to publish schedule. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNFIT
   end
 
-  def split_schedule(start_date, end_date)
+  def split_schedule!(start_date, end_date)
     if self.start_date < start_date
       ts = self.dup
       ts.end_date = start_date - 1.day
@@ -63,7 +71,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   def combine_consecutive_schedules?
     additional_days = 0
-    if (state == ::Ontology::Teacher::STATE_AVAILABLE || state == ::Ontology::Teacher::STATE_UNAVAILABLE)
+    if (::TeacherSchedule::STATE_PUBLISHED).include?(state)
       ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
                                   start_date - 1.day, timing_id, state, teacher_id, center_id]).first
       if ts
@@ -81,7 +89,7 @@ class TeacherSchedule < ActiveRecord::Base
 
 
   def combine_consecutive_schedules()
-    if (state == ::Ontology::Teacher::STATE_AVAILABLE || state == ::Ontology::Teacher::STATE_UNAVAILABLE)
+    if (::TeacherSchedule::STATE_PUBLISHED).include?(state)
       ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
                                   start_date - 1.day, timing_id, state, teacher_id, center_id]).first
       if ts

@@ -38,7 +38,11 @@ class TeachersController < ApplicationController
 
   # GET /teachers/1/edit
   def edit
-    @teacher = Teacher.find(params[:id])
+    if flash[:teacher]
+      @teacher = flash[:teacher]
+    else
+      @teacher = Teacher.find(params[:id])
+    end
     @trigger = params[:trigger]
   end
 
@@ -63,19 +67,26 @@ class TeachersController < ApplicationController
   def update
     @teacher = Teacher.find(params[:id])
     @trigger = params[:trigger]
+    @teacher.comments = params[:comments] if params.has_key?(:comments)
 
     state_update(@teacher, @trigger)
-
     respond_to do |format|
-      if @teacher.update_attributes(params[:teacher])
-        format.html { redirect_to @teacher, notice: 'Teacher was successfully updated.' }
-        format.json { head :no_content }
-      else
-        format.html { render action: "edit" }
-        format.json { render json: @teacher.errors, status: :unprocessable_entity }
+      format.html do
+        if @teacher.errors.empty? && @teacher.save!
+          redirect_to [@teacher]
+          #format.html { redirect_to @teacher, notice: 'Teacher was successfully updated.' }
+          #format.json { head :no_content }
+        else
+          #format.html { render action: "edit" }
+          #format.json { render json: @teacher.errors, status: :unprocessable_entity }
+          flash[:teacher] = @teacher
+          redirect_to :action => :edit, :trigger => params[:trigger]
+        end
       end
     end
+
   end
+
 
   # DELETE /teachers/1
   # DELETE /teachers/1.json
@@ -92,8 +103,8 @@ class TeachersController < ApplicationController
   private
 
   def state_update(vs, trig)
-    if ::Teacher::PROCESSABLE_EVENTS.include?(@trigger.to_sym)
-      vs.send(trig.to_sym)
+    if ::Teacher::PROCESSABLE_EVENTS.include?(@trigger)
+      vs.send(trig)
     end
   end
 end

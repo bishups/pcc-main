@@ -8,7 +8,7 @@
       <% @program_teacher_schedule = pts %>
       <% @program_teacher_schedule.state_events.each do |ev| %>
       <li>
-        <%= link_to ev.to_s.humanize, edit_program_teacher_schedule_path(:id => id, :trigger => ev) %>
+        <%= link_to ev, edit_program_teacher_schedule_path(:id => id, :trigger => ev) %>
       </li>
       <% end %>
     </ul>

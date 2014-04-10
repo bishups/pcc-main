@@ -4,10 +4,10 @@ class TeacherSlotsController < ApplicationController
 
   def index
 
-    @teacher_slots_av = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::Ontology::Teacher::STATE_AVAILABLE)
-    @teacher_slots_unav = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::Ontology::Teacher::STATE_UNAVAILABLE)
-    @teacher_slots_bl = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::Ontology::Teacher::STATE_BLOCKED)
-    @teacher_slots_as = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::Ontology::Teacher::STATE_ASSIGNED)
+    @teacher_slots_av = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::TeacherSchedule::STATE_AVAILABLE)
+    @teacher_slots_unav = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::TeacherSchedule::STATE_UNAVAILABLE)
+    @teacher_slots_bl = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::ProgramTeacherSchedule::STATE_BLOCKED)
+    @teacher_slots_as = @teacher.teacher_slots.where("user_id = ? AND status = ?", @teacher.id, ::ProgramTeacherSchedule::STATE_ASSIGNED)
 
     respond_to do |format|
       format.html
