@@ -4,7 +4,7 @@
       Teacher Schedule
       <small><%= @teacher.user.name %></small>
       <span class='pull-right'>
-        <% if @teacher.user_id == current_user.id %>
+        <%  if 1  # TODO - commenting out this check for now for testing #if @teacher.user_id == current_user.id %>
         <%= link_to "New Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' %>
         <% end %>
       </span>      

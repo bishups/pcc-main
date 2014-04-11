@@ -1,11 +1,10 @@
 class TeacherSchedulesController < ApplicationController
   before_filter :authenticate_user!
-  before_filter :load_teacher!
+  #before_filter :load_teacher!
 
   # GET /teacher_schedules
   # GET /teacher_schedules.json
   def index
-    #@teacher = Teacher.find(params[:teacher_id])
     @teacher = Teacher.find(params[:teacher_id])
     @teacher_schedules = TeacherSchedule.where("teacher_id = ?", @teacher.id).group("coalesce(program_id, created_at)")
 
@@ -17,6 +16,7 @@ class TeacherSchedulesController < ApplicationController
   # GET /teacher_schedules/new
   # GET /teacher_schedules/new.json
   def new
+    @teacher = Teacher.find(params[:teacher_id])
     @teacher_schedule = TeacherSchedule.new
 
     respond_to do |format|
@@ -27,6 +27,7 @@ class TeacherSchedulesController < ApplicationController
   # GET /teacher_schedules/1
   # GET /teacher_schedules/1.json
   def show
+    @teacher = Teacher.find(params[:teacher_id])
     @teacher_schedule = TeacherSchedule.find(params[:id])
 
     respond_to do |format|
@@ -37,6 +38,7 @@ class TeacherSchedulesController < ApplicationController
   # POST /teacher_schedules
   # POST /teacher_schedules.json
   def create
+    @teacher = Teacher.find(params[:teacher_id])
     @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
     @teacher_schedule.teacher_id = params[:teacher_id]
 
@@ -65,7 +67,6 @@ class TeacherSchedulesController < ApplicationController
 
   # GET /teacher_schedules/1/edit
   def edit
-    #@teacher_schedule = @teacher.teacher_schedules.find(params[:id])
     @teacher_schedule = TeacherSchedule.find(params[:id])
 
     respond_to do |format|
@@ -76,7 +77,6 @@ class TeacherSchedulesController < ApplicationController
   # PUT /teacher_schedules/1
   # PUT /teacher_schedules/1.json
   def update
-    #@teacher_schedule = @teacher.teacher_schedules.find(params[:id])
     @teacher_schedule = TeacherSchedule.find(params[:id])
     @teacher_schedule.assign_attributes(params[:teacher_schedule])
 
@@ -101,7 +101,6 @@ class TeacherSchedulesController < ApplicationController
   # DELETE /teacher_schedules/1
   # DELETE /teacher_schedules/1.json
   def destroy
-    # @teacher_schedule = @teacher.teacher_schedules.find(params[:id])
     @teacher_schedule = TeacherSchedule.find(params[:id])
 
     @teacher_schedule.destroy()
@@ -114,9 +113,9 @@ class TeacherSchedulesController < ApplicationController
 private
   
   # TODO: Enforce role
-  def load_teacher!
-    @teacher = Teacher.find_by_user_id(current_user.id)
-  end
+  #def load_teacher!
+  #  @teacher = Teacher.find_by_user_id(current_user.id)
+  #end
 
 
 end

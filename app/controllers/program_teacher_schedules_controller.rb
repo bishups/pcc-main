@@ -21,17 +21,24 @@ class ProgramTeacherSchedulesController < ApplicationController
   def create
     # TODO - add the logic for saving the program with the schedule, and splitting the teacher schedule
 
-    error = block_teacher_schedule!(params[:program_teacher_schedule])
-    program = Program.find(params[:program_teacher_schedule][:program_id])
-    respond_to do |format|
-      if !error.empty?
-        format.html { 
-          #redirect_to program_teacher_schedule_path(@program_teacher_schedule)
-          redirect_to program_path(program)
-        }
-      else
-        format.html { render(:action => 'new') }
+    if !params.has_key?(:program_teacher_schedule)
+      # this was an update, which came to create, because of all the activerecord non-sense
+      _update
+    else
+      error = block_teacher_schedule!(params[:program_teacher_schedule])
+      @program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
+
+      respond_to do |format|
+        if error.empty?
+          format.html {
+            #redirect_to program_teacher_schedule_path(@program_teacher_schedule)
+            redirect_to program_path(@program_teacher_schedule.program)
+          }
+        else
+          format.html { render(:action => 'new') }
+        end
       end
+
     end
   end
 
@@ -49,28 +56,20 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   # GET /venues/1/edit
   def edit
-    @program_teacher_schedule = load_program_teacher_schedule!(params)
+    if flash[:program_teacher_schedule]
+      @program_teacher_schedule = flash[:program_teacher_schedule]
+    else
+      @program_teacher_schedule = load_program_teacher_schedule!(params)
+    end
     @trigger = params[:trigger]
+
   end
 
 
   # PUT /venues/1
   # PUT /venues/1.json
   def update
-    @program_teacher_schedule = load_program_teacher_schedule!(params)
-    @trigger = params[:trigger]
-
-    state_update(@program_teacher_schedule, @trigger)
-
-    respond_to do |format|
-      if @program_teacher_schedule.save
-        format.html { redirect_to @program_teacher_schedule, notice: 'Program Teacher Schedule was successfully updated.' }
-        format.json { head :no_content }
-      else
-        format.html { render action: "edit" }
-        format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
-      end
-    end
+    _update
   end
 
 
@@ -79,12 +78,53 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   private
 
+  def _update
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
+    @trigger = params[:trigger]
+
+=begin
+    state_update(@program_teacher_schedule, @trigger)
+    respond_to do |format|
+      # need to go to the custom save
+      if @program_teacher_schedule.update
+        format.html { redirect_to @program_teacher_schedule, notice: 'Program Teacher Schedule was successfully updated.' }
+        format.json { head :no_content }
+      else
+        format.html { render action: "edit" }
+        format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
+      end
+    end
+=end
+    state_update(@program_teacher_schedule, @trigger)
+    respond_to do |format|
+      format.html do
+        if @program_teacher_schedule.errors.empty? && @program_teacher_schedule.update
+          if @program_teacher_schedule.program_id
+            redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id)
+          else
+            redirect_to  teacher_teacher_schedules_path(@program_teacher_schedule.teacher)
+          end
+          #format.html { redirect_to @teacher, notice: 'Teacher was successfully updated.' }
+          #format.json { head :no_content }
+        else
+          #format.html { render action: "edit" }
+          #format.json { render json: @teacher.errors, status: :unprocessable_entity }
+          flash[:program_teacher_schedule] = @program_teacher_schedule
+          redirect_to :action => :edit, :trigger => params[:trigger]
+        end
+      end
+    end
+
+
+  end
+
   #:blocked_by_user_id
   def load_program_teacher_schedule!(params)
     pts = ProgramTeacherSchedule.new
+    pts.current_user = current_user
     if params.has_key?(:id)
-      pts.teacher_schedule = TeacherSchedule.find(params[:id])
-      pts.teacher_schedule_id = params[:id]
+      pts.teacher_schedule_id = (params[:id]).to_i
+      pts.teacher_schedule = TeacherSchedule.find(pts.teacher_schedule_id)
       pts.state = pts.teacher_schedule.state
       pts.program_id = pts.teacher_schedule.program_id
       pts.program = Program.find(pts.teacher_schedule.program_id)
@@ -92,7 +132,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
       pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
     elsif params.has_key?(:program_id)
-      pts.program = ::Program.find(params[:program_id])
+      pts.program = ::Program.find((params[:program_id]).to_i)
     end
     pts
   end
@@ -122,7 +162,7 @@ class ProgramTeacherSchedulesController < ApplicationController
         error << ts.errors.full_messages
         break
       end
-      ts.state = ::Teacher::STATE_BLOCKED
+      ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
       ts.program_id = program.id
       ts.blocked_by_user_id = current_user.id
       ts.save(:validate => false)

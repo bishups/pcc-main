@@ -100,11 +100,12 @@ class User < ActiveRecord::Base
   end
 
   # usage -- check if user has role for specific resource
-  # if user.is? :zone_coordinator, :center_id => 10
-  # if user.is? :zone_coordinator, :center_id => [1,2,3]
-  # if user.is? :zone_coordinator
+  # if user.is? :zonal_coordinator, :center_id => 10
+  # if user.is? :zonal_coordinator, :center_id => [1,2,3]
+  # if user.is? :zonal_coordinator
 
   def is?(role, options={})
+    # TODO - hack, for now returning true in all cases
     center_ids = options[:center_ids] || [options[:center_id]]
     self.access_privileges.each do |ap|
       accessisble_centers = []

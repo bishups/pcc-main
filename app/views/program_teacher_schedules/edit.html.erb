@@ -6,21 +6,23 @@
   </div>
 </div>
 <%= form_for(@program_teacher_schedule, :html => {:class => 'form'}) do |f| %>
+<%= resource_error_messages!(@program_teacher_schedule) %>
 <%= hidden_field_tag 'trigger', @trigger %>
+<%= hidden_field_tag 'id', @program_teacher_schedule.teacher_schedule_id %>
 
 <div class='row'>
   <div class='col-md-12'>
-    <%= render :partial => 'program_teacher_schedule/state_update_confirmation_msg' %>
+    <%= render :partial => 'program_teacher_schedules/state_update_confirmation_msg' %>
   </div>
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <%= render :partial => 'program_teacher_schedule/state_additional_data' %>
+    <%= render :partial => 'program_teacher_schedules/state_additional_data' %>
   </div>
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <%= render :partial => 'program_teacher_schedule/state_update_comment' %>
+    <%= render :partial => 'program_teacher_schedules/state_update_comment' %>
   </div>
 </div>
 <div class='row'>
@@ -29,3 +31,4 @@
   </div>
 </div>
 <% end %>
+

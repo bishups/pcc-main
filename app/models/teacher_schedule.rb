@@ -22,7 +22,7 @@ class TeacherSchedule < ActiveRecord::Base
   attr_accessible :start_date, :end_date, :state
   attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
   belongs_to :blocked_by_user, :class_name => User
-  validates :blocked_by_user_id, :presence => true
+  #validates :blocked_by_user_id, :presence => true
 
   #has_many :program_teacher_schedules
 

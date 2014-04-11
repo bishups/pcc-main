@@ -10,6 +10,7 @@ class Teacher < ActiveRecord::Base
 
   belongs_to :user
   attr_accessible :user_id, :user
+  validates :user_id, :uniqueness => true
 
   belongs_to :zone
   attr_accessible :zone_id, :zone
@@ -27,42 +28,62 @@ class Teacher < ActiveRecord::Base
 
   attr_accessible :state
   validates :state, :presence => true
+  validate :invalid_state?
 
   STATE_UNFIT       = 'Not Fit'
   STATE_UNATTACHED  = 'Not Attached'
   STATE_ATTACHED    = 'Attached'
 
-  EVENT_ATTACH      = 'Attach'
-  EVENT_UNATTACH    = 'UnAttach'
-  EVENT_UNFIT      = 'UnFit'
+  # The attach functionality need to be exercised through the admin interface only,
+  # since zone(s) and center(s) need to be linked again
+  # EVENT_ATTACH      = 'Attach '
+
+  EVENT_UNATTACH    = 'Unattach from Zone'
+  EVENT_UNFIT       = 'Mark as UnFit'
 
   PROCESSABLE_EVENTS = [
-      EVENT_ATTACH, EVENT_UNATTACH, EVENT_UNFIT
+      EVENT_UNATTACH, EVENT_UNFIT
   ]
 
   state_machine :state, :initial => STATE_UNATTACHED do
-    event EVENT_ATTACH do
-      transition [STATE_UNATTACHED] => STATE_ATTACHED
-    end
 
     event EVENT_UNATTACH do
       # TODO - if not transitioning in state machine, see if need to pass back some error message
-      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|teacher| !teacher.in_schedule?}
+      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED #, :if => lambda {|teacher| !teacher.in_schedule?}
     end
     before_transition any => STATE_UNATTACHED, :do => :before_unattach
+    after_transition any => STATE_UNATTACHED, :do => :after_unattach
 
     event EVENT_UNFIT do
-      transition [STATE_ATTACHED, STATE_UNATTACHED] => STATE_UNFIT, :if  => lambda {|teacher| !teacher.in_schedule?}
+      transition [STATE_ATTACHED] => STATE_UNFIT #, :if  => lambda {|teacher| !teacher.in_schedule?}
     end
-    after_transition any => STATE_UNFIT, :do => :on_unfit
+    #before_transition any => STATE_UNFIT, :do => :before_mark_unfit
+    after_transition any => STATE_UNFIT, :do => :after_unfit
 
   end
 
   def before_unattach
-    self.zone_id = 0
+    if self.in_schedule?
+      self.errors.add(:state, " cannot unattach from zone when teacher is linked to a program.")
+      return false
+    end
+    if self.comments.blank?
+      self.errors.add(:comments, " needed if the teacher is marked unattached.")
+      return false
+    end
+
+    self.zone_id = nil
+    # Also remove all attached centers
+    CentersTeachers.where(:teacher_id => self.id).delete_all
+    # FIXME - deleting the centers here can be an issue if the transaction fails ...
   end
 
-  def on_unfit
+  def after_unattach
+    # if marked unfit remove all teacher_schedules
+    TeacherSchedule.where(:teacher_id => self.id).delete_all
+  end
+
+  def after_unfit
     # if marked unfit remove all teacher_schedules
     TeacherSchedule.where(:teacher_id => self.id).delete_all
 
@@ -70,12 +91,6 @@ class Teacher < ActiveRecord::Base
     CentersTeachers.where(:teacher_id => self.id).delete_all
   end
 
-
-  def clear_schedules
-    self.teacher_schedules.each { |ts|
-      ts.delete
-    }
-  end
 
   def in_schedule?
     in_schedule = false
@@ -107,10 +122,13 @@ class Teacher < ActiveRecord::Base
 
   def has_zone?
     self.errors.add(:zone, " cannot be blank when teacher is attached.") if self.zone.blank? && (self.state == STATE_ATTACHED)
-    self.errors.add(:zone, " cannot be marked blank when teacher is in schedule.") if self.zone.blank? && self.in_schedule?
+    self.errors.add(:zone, " cannot be marked blank when teacher is linked to a program.") if self.zone.blank? && self.in_schedule?
     self.errors.add(:zone, " need to be blank when teacher is marked unattached.") if !self.zone.blank? && (self.state == STATE_UNATTACHED)
   end
 
+  def invalid_state?
+    self.errors.add(:state, " cannot be marked unfit when teacher is linked to a program.") if (self.state == STATE_UNFIT) && self.in_schedule?
+  end
 
 
   rails_admin do
