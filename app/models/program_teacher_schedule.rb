@@ -80,7 +80,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       transition STATE_ASSIGNED => ::TeacherSchedule::STATE_AVAILABLE #, :if => lambda {|pts| pts.current_user.is? :zonal_coordinator, :center_id => pts.program.center_id}
       transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE #, :if => lambda {|pts| pts.current_user.is? :zonal_coordinator, :center_id => pts.program.center_id}
     end
-    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
+    before_transition any => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
+#    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
     after_transition any => ::TeacherSchedule::STATE_AVAILABLE, :do => :on_available
 
 
@@ -98,7 +99,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def can_unblock?
     ### TODO - set validations if user can unblock, CS and SC on venue conditions
-    #self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
+    if !self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    else
+      true
+    end
   end
 
 

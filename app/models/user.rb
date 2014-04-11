@@ -101,12 +101,12 @@ class User < ActiveRecord::Base
 
   # usage -- check if user has role for specific resource
   # if user.is? :zonal_coordinator, :center_id => 10
-  # if user.is? :zonal_coordinator, :center_id => [1,2,3]
+  # if user.is? :zonal_coordinator, :center_ids => [1,2,3]
   # if user.is? :zonal_coordinator
 
   def is?(role, options={})
-    # TODO - hack, for now returning true in all cases
-    center_ids = options[:center_ids] || [options[:center_id]]
+    # convert to i
+    center_ids = (options[:center_ids] || [options[:center_id]]).map(&:to_i)
     self.access_privileges.each do |ap|
       accessisble_centers = []
       if ap.resource.class.name.demodulize == "Center"
@@ -116,10 +116,11 @@ class User < ActiveRecord::Base
       end
       # if for given ap, self has >= centers than asked for
       if (center_ids.compact - accessisble_centers.collect(&:id)).empty?
-        self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
+        #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
+        self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
         ah =  ROLE_ACCESS_HIERARCHY[role]
-        # if for given ap, self has >= access_level than asked for
-        if (self_ah[:access_level] and self_ah[:access_level] >= ah[:access_level]) # && (ah[:hierarchy].all? { |h| self_ah[:hierarchy].include?(h)})
+        # if for given ap, self has >= access_level than asked for in all the hierarchies
+        if (self_ah[:access_level] and self_ah[:access_level] >= ah[:access_level])  && (ah[:in_hierarchy] - self_ah[:in_hierarchy]).empty?
           return true
         end
       end

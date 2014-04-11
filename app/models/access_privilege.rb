@@ -20,6 +20,7 @@ class AccessPrivilege < ActiveRecord::Base
   validates :role,:resource, :presence => true
 
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role
+  validate :is_role_valid?
 
   def role_name=(role_name)
     Role.where(:name => role_name ).first
@@ -27,6 +28,27 @@ class AccessPrivilege < ActiveRecord::Base
 
   def center_name=(center_name)
     Center.where(:name => center_name).first
+  end
+
+  def is_role_valid?
+    role = self.role.name.parameterize.underscore.to_sym
+    resource_type = self.resource.class.name.demodulize
+
+    valid_roles =
+    case resource_type
+      when "Zone"
+        [:zonal_coordinator, :zao]
+      when "Sector"
+        [:sector_coordinator]
+      when "Center"
+        [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer]
+      else
+        # teacher should not be set be set from here, TODO - remove it completely later
+        []
+    end
+    if !valid_roles.include?(role)
+      self.errors[:resource] << " does not match the specified role."
+    end
   end
 
   rails_admin do

@@ -110,7 +110,7 @@ class ProgramTeacherSchedulesController < ApplicationController
           #format.html { render action: "edit" }
           #format.json { render json: @teacher.errors, status: :unprocessable_entity }
           flash[:program_teacher_schedule] = @program_teacher_schedule
-          redirect_to :action => :edit, :trigger => params[:trigger]
+          redirect_to :action => :edit, :trigger => params[:trigger], :id => params[:id]
         end
       end
     end
