@@ -96,7 +96,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     super(*args)
   end
 
-
+  # these calls will go in the lambda function, so that relevant menu items can be disabled.
   def can_unblock?
     ### TODO - set validations if user can unblock, CS and SC on venue conditions
     if !self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id

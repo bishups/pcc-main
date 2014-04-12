@@ -19,7 +19,7 @@ class AccessPrivilege < ActiveRecord::Base
 
   validates :role,:resource, :presence => true
 
-  attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role
+  attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role, :user, :user_id
   validate :is_role_valid?
 
   def role_name=(role_name)
@@ -52,19 +52,28 @@ class AccessPrivilege < ActiveRecord::Base
   end
 
   rails_admin do
-    visible false
-    object_label_method do
-      :role_name
+    navigation_label 'Access Privilege'
+    weight 1
+    #visible false
+    #object_label_method do
+    #  :role_name
+    #end
+    list do
+      field :user
+      field :role
+      field :resource
     end
-    field :role do
-      inline_edit do
-        false
+    edit do
+      field :user do
+        inline_edit false
+        inline_add false
       end
-      inline_add do
-        false
+      field :role do
+        inline_edit false
+        inline_add false
       end
+      field :resource
     end
-    field :resource
   end
 
   def role_name
