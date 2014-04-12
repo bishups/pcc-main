@@ -72,12 +72,14 @@ class AccessPrivilege < ActiveRecord::Base
         inline_edit false
         inline_add false
         # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
-        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_cache_all false  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           role = bindings[:object]
           Proc.new { |scope|
             # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
             scope = scope.where("name IS NOT ?", ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]) #if role.present?
+            # sorting over association does not work for now -- see open issue  https://github.com/sferik/rails_admin/issues/1395
+            scope = scope.reorder("role.name ASC")
           }
         end
       end
