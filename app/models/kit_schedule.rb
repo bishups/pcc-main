@@ -17,13 +17,20 @@
 
 class KitSchedule < ActiveRecord::Base
 
-  BLOCKED = :blocked
-  ISSUED = :issued
-  ASSIGNED = :assigned
-  OVERDUE = :over_due
-  CANCELLLED = :cancel
-  CLOSED = :closed
-  
+  STATE_BLOCKED     = "Blocked"
+  STATE_ISSUED      = "Issued"
+  STATE_ASSIGNED    = "Assigned"
+  STATE_OVERDUE     = "Overdue"
+  STATE_CANCELLED  = "Cancelled"
+  STATE_CLOSED      = "Closed"
+
+  EVENT_BLOCK      = "Block"
+  EVENT_ISSUE      = "Issue"
+  EVENT_ASSIGN     = "Assign"
+  EVENT_OVERDUE    = "Overdue"
+  EVENT_CANCEL     = "Cancel"
+  EVENT_CLOSE      = "Close"
+
   belongs_to :kit
   belongs_to :program
   belongs_to :issued_to_user, :class_name => User
@@ -44,17 +51,8 @@ class KitSchedule < ActiveRecord::Base
   #checking for overlap validation 
   validates_with KitScheduleValidator
 
-  EVENT_STATE_MAP = {
-                      BLOCKED => "block",
-                      ISSUED => "issue",
-                      ASSIGNED => "assign",
-                      OVERDUE => OVERDUE.to_s,
-                      CANCELLLED => CANCELLLED.to_s,
-                      CLOSED => CLOSED.to_s
-                    }
-
   PROCESSABLE_EVENTS = [
-    BLOCKED, ASSIGNED, ISSUED, OVERDUE,CLOSED, CANCELLLED
+      EVENT_BLOCK, EVENT_ASSIGN, EVENT_ISSUE, EVENT_OVERDUE, EVENT_CLOSE, EVENT_CANCEL
   ]
 
   
@@ -62,26 +60,26 @@ class KitSchedule < ActiveRecord::Base
     super(*args)
   end
    
-  state_machine :state , :initial => BLOCKED do
+  state_machine :state , :initial => STATE_BLOCKED do
 
-    event :assign do
-      transition [BLOCKED] => ASSIGNED, :if => :canChangeState?
+    event EVENT_ASSIGN do
+      transition [STATE_BLOCKED] => STATE_ASSIGNED, :if => :canChangeState?
     end
     
-    event :issue do
-      transition [ASSIGNED] => ISSUED, :if => :canChangeState?
+    event EVENT_ISSUE do
+      transition [STATE_ASSIGNED] => STATE_ISSUED, :if => :canChangeState?
     end
     
-    event :closed do 
-      transition [ISSUED] => CLOSED , :if => :canChangeState?
+    event EVENT_CLOSE do
+      transition [STATE_ISSUED] => STATE_CLOSED , :if => :canChangeState?
     end
     
-    event :over_due do
-      transition [BLOCKED,ISSUED,ASSIGNED] => OVERDUE 
+    event EVENT_OVERDUE do
+      transition [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED] => STATE_OVERDUE
     end
 
-    event :cancel do
-      transition [BLOCKED,ASSIGNED] => CANCELLLED
+    event EVENT_CANCEL do
+      transition [STATE_BLOCKED, STATE_ASSIGNED] => STATE_CANCELLED
     end
   end
 
@@ -109,9 +107,9 @@ class KitSchedule < ActiveRecord::Base
     if self.state.nil?
       return
     end
-    if self.state == BLOCKED
+    if self.state == STATE_BLOCKED
       self.blocked_by_user_id = current_user.id
-    elsif self.state == ISSUED
+    elsif self.state == STATE_ISSUED
        self.issued_to_user_id = current_user.id
     end 
   end
@@ -121,7 +119,7 @@ class KitSchedule < ActiveRecord::Base
   #end
 
   def canChangeState?
-    if self.kit.state != ::Kit::AVAILABLE.to_s
+    if self.kit.state != ::Kit::STATE_AVAILABLE
       return false
     else
       return true  
@@ -129,7 +127,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def can_assign?
-    if self.kit.state != ::Kit::AVAILABLE.to_s
+    if self.kit.state != ::Kit::STATE_AVAILABLE
       return false
     else
       return true  
@@ -137,7 +135,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def assigned!
-    self.state = ASSIGNED    
+    self.state = STATE_ASSIGNED
   end
   
 end

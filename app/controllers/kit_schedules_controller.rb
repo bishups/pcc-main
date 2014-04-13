@@ -128,14 +128,14 @@ class KitSchedulesController < ApplicationController
   #end
 
    def state_update(ks, trig)
-    if trig == ::KitSchedule::CANCELLLED.to_s
+    if trig == ::KitSchedule::STATE_CANCELLED
       if ks.comments.empty?
         ks.errors[:comments] << "Cannot be left empty"
         return false
       end
     end
 
-    if trig == ::KitSchedule::ISSUED.to_s
+    if trig == ::KitSchedule::STATE_ISSUED
       if ks.issued_to_user_id.nil?
         ks.errors[:issued_to_user_id] << "-- Cannot be left Blank"
         return false
@@ -148,9 +148,8 @@ class KitSchedulesController < ApplicationController
       end  
     end
 
-    
-    if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig.to_sym)
-      ks.send(::KitSchedule::EVENT_STATE_MAP[trig.to_sym].to_sym)
+    if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig)
+      ks.send(trig)
     end
   end
 end

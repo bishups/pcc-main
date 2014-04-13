@@ -56,7 +56,7 @@ class Role < ActiveRecord::Base
 
   rails_admin do
     navigation_label 'Access Privilege'
-    weight 1
+    weight 2
     list do
       field :name
       field :permissions

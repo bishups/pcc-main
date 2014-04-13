@@ -90,22 +90,22 @@ class KitsController < ApplicationController
   end
 
   def state_update(kit, trig)
-    if trig != ::Kit::AVAILABLE.to_s
+    if trig != ::Kit::STATE_AVAILABLE
       assigned_kit_schedules = kit.kit_schedules.where("state NOT IN (?) and start_date <= ? and end_date >= ?",
                                                     ['closed','cancel'],Date.today,Date.today)
         if( !assigned_kit_schedules.nil? && assigned_kit_schedules.count > 0 )
           kit.errors[:error] << "-- An Open Kit Schedule is there CANNOT change Kit State"
           return false
         end
-       if trig == ::Kit::UNDER_REPAIR.to_s || trig == ::Kit::UNAVAILABLE.to_s
+       if trig == ::Kit::STATE_UNDER_REPAIR || trig == ::Kit::STATE_UNAVAILABLE
           if kit.condition_comments.empty? || kit.condition_comments == ""
             kit.errors[:condition_comments] << "-- Cannot Leave Empty"
             return false
           end  
        end
     end
-    if ::Kit::PROCESSABLE_EVENTS.include?(trig.to_sym)
-      kit.send(::Kit::EVENT_STATE_MAP[trig.to_sym].to_sym)
+    if ::Kit::PROCESSABLE_EVENTS.include?(trig)
+      kit.send(trig)
     end
   end
 end

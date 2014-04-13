@@ -1,18 +1,17 @@
-<% unless [:reject, :insufficient_info].include?(@trigger.to_sym) %>
-<div class='alert alert-info'>
+<% if (!@trigger.nil? && ::Teacher::PROCESSABLE_EVENTS.include?(@trigger)) %>
+    <div class='alert alert-warning'>
 <% else %>
-<div class='alert alert-danger'>
+    <div class='alert-alert-danger'>
 <% end %>
-  <h3>Confirmation: </h3>
-  <p>
-    <% if @trigger.to_sym == :approve %>
-      Are you sure you want to <strong>approve</strong> this venue?
-    <% elsif @trigger.to_sym == :reject %>
-      Are you sure you want to <strong>reject</strong> this venue?
-    <% elsif @trigger.to_sym == :publish%>
-      Are you sure you want to <strong>publish</strong> this venue and make it available for programs?
-    <% elsif @trigger.to_sym == :insufficient_info %>
-      This venue will be in pending state and will not be available for association with programs. Do you want to proceed?
-    <% end %>
-  </p>
+<h3>Confirmation: </h3>
+<p>
+  <% if @trigger.nil? %>
+  <%else%>
+      <% if @trigger == ::Teacher::EVENT_UNATTACH %>
+          <strong>WARNING: </strong> This will remove the teacher from all center(s) and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
+      <% elsif @trigger == ::Teacher::EVENT_UNFIT %>
+          <strong>WARNING: </strong> This will mark teacher as unfit and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
+      <% end %>
+  <%end%>
+</p>
 </div>

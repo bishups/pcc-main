@@ -5,30 +5,10 @@
     <span class="sr-only">Toggle Dropdown</span>
   </button>
   <ul class="dropdown-menu" role="menu">
-    <% if @program.can_registration_open? %>
-    <li>
-      <%= link_to 'Open Registration', edit_program_path(@program, :trigger => :registration_open) %>
-    </li>
-    <% end %>
-    <% if @program.can_cancel? %>
-    <li>
-      <%= link_to 'Cancel', edit_program_path(@program, :trigger => :cancel) %>
-    </li>
-    <% end %>
-    <% if @program.can_start? %>
-    <li>
-      <%= link_to 'Start (In-Progress)', edit_program_path(@program, :trigger => :start) %>
-    </li>
-    <% end %>
-    <% if @program.can_finish? %>
-    <li>
-      <%= link_to 'Finish (Conducted)', edit_program_path(@program, :trigger => :finish) %>
-    </li>
-    <% end %>
-    <% if @program.can_close? %>
-    <li>
-      <%= link_to 'Close', edit_program_path(@program, :trigger => :close) %>
-    </li>
+    <% @program.state_events.each do |ev| %>
+        <li>
+          <%= link_to ev, edit_program_path(@program, :trigger => ev) %>
+        </li>
     <% end %>
   </ul>
 </div>

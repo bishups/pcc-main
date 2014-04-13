@@ -1,6 +1,6 @@
 class KitValidator < ActiveModel::Validator
     def validate(record)
-      if record.state == 'under_repair'
+      if record.state == ::Kit::STATE_UNDER_REPAIR
         assigned_kit_schedules = record.kit_schedules.where("state NOT IN (?)",['blocked','closed','cancel'])
         if( !assigned_kit_schedules.nil? && assigned_kit_schedules.count > 0 )
           record.errors[:state] << "Cannot be Left blank To make a Kit unavailable"

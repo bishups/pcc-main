@@ -48,20 +48,27 @@ class Venue < ActiveRecord::Base
   validates :contact_email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}, :allow_blank => true
   validates :contact_phone, :length => { is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
 
-  STATE_PROPOSED  = :proposed
-  STATE_APPROVED  = :approved
-  STATE_REJECTED  = :rejected
-  STATE_POSSIBLE  = :possible
-  STATE_PENDING_FINANCE_APPROVAL = :pending_finance_approval
-  STATE_INSUFFICIENT_INFO = :insufficient_info
-  STATE_PUBLISHED = :published
+  STATE_PROPOSED        = "Proposed"
+  STATE_APPROVED        = "Approved"
+  STATE_REJECTED        = "Rejected"
+  STATE_POSSIBLE        = "Possible"
+  STATE_PENDING_FINANCE_APPROVAL = "Pending Finance Approval"
+  STATE_INSUFFICIENT_INFO = "Insufficient Info"
+  STATE_PUBLISHED       = "Published"
+
+  EVENT_APPROVE         = "Approve"
+  EVENT_REJECT          = "Reject"
+  EVENT_PUBLISH         = "Publish"
+  EVENT_POSSIBLE        = "Possible"
+  EVENT_INSUFFICIENT_INFO = "Insufficient Info"
+  EVENT_FINANCE_APPROVAL  = "Finance Approval"
 
   PROCESSABLE_EVENTS = [
-    :approve, :reject, :publish, :possible, :insufficient_info, :finance_approval
+    EVENT_APPROVE, EVENT_REJECT, EVENT_PUBLISH, EVENT_POSSIBLE, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL
   ]
 
   state_machine :state, :initial => STATE_PROPOSED do
-    event :approve do
+    event EVENT_APPROVE do
       transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED
     end
 
@@ -74,23 +81,23 @@ class Venue < ActiveRecord::Base
       end
     end
 
-    event :finance_approval do
+    event EVENT_FINANCE_APPROVAL do
       transition [STATE_APPROVED, STATE_INSUFFICIENT_INFO] => STATE_PENDING_FINANCE_APPROVAL
     end
 
-    event :possible do
+    event EVENT_POSSIBLE do
       transition [STATE_APPROVED, STATE_PENDING_FINANCE_APPROVAL] => STATE_POSSIBLE
     end
 
-    event :reject do
+    event EVENT_REJECT do
       transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED
     end
 
-    event :publish do
+    event EVENT_PUBLISH do
       transition [STATE_POSSIBLE] => STATE_PUBLISHED
     end
 
-    event :insufficient_info do
+    event EVENT_INSUFFICIENT_INFO do
       transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO
     end
 
@@ -111,7 +118,7 @@ class Venue < ActiveRecord::Base
   end
 
   def published?
-    self.state.to_sym == STATE_PUBLISHED
+    self.state == STATE_PUBLISHED
   end
 
   def current_schedule

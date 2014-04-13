@@ -43,7 +43,7 @@ class KitScheduleValidator < ActiveModel::Validator
     end
 
     kit = Kit.find(record.kit_id)
-    if kit.state != ::Kit::AVAILABLE.to_s
+    if kit.state != ::Kit::STATE_AVAILABLE
       record.errors[:kit_id] << "Kit state is #{kit.state} , cannot be blocked until Available"
     end
 

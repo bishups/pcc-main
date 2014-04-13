@@ -7,23 +7,11 @@
       <span class="sr-only">Toggle Dropdown</span>
     </button>
     <ul class="dropdown-menu" role="menu">
-     
-       <% if @kit.can_under_repair? %>
-        <li>
-          <%= link_to "Under Repair", edit_kit_path(@kit, :trigger => :under_repair) %>
-        </li>
-      <% end %>
-      <% if @kit.can_unavailable? %>
-        <li>
-          <%= link_to "Unavailable", edit_kit_path(@kit, :trigger => :unavailable) %>
-        </li>
-      <% end %>
-      <% if @kit.can_available? %>
-        <li>
-          <%= link_to "Available", edit_kit_path(@kit, :trigger => :available) %>
-        </li>
-      <% end %>
-      
+        <% @kit.state_events.each do |ev| %>
+            <li>
+              <%= link_to ev, edit_kit_path(@kit, :trigger => ev) %>
+            </li>
+        <% end %>
     </ul>
   </div>
 

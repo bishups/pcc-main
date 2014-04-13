@@ -44,17 +44,43 @@ class Program < ActiveRecord::Base
   has_and_belongs_to_many :timings, :join_table => :programs_timings
   attr_accessible :timing_ids, :timings
 
-  STATE_PROPOSED = :proposed
-  STATE_ANNOUNCED = :announced
-  STATE_REGISTRATION_OPEN = :registration_open
-  STATE_CANCELLED = :cancelled
-  STATE_IN_PROGRESS = :in_progress
-  STATE_CONDUCTED = :conducted
-  STATE_CLOSED = :closed
+  STATE_PROPOSED      = "Proposed"
+  STATE_ANNOUNCED     = "Announced"
+  STATE_REGISTRATION_OPEN = "Registration Open"
+  STATE_DROPPED       = "Dropped"
+  STATE_CANCELLED     = "Cancelled"
+  STATE_IN_PROGRESS   = "In Progress"
+  STATE_CONDUCTED     = "Conducted"
+  STATE_CLOSED        = "Closed"
+
+  EVENT_ANNOUNCE      = "Announce"
+  EVENT_REGISTRATION_OPEN = "Registration Open"
+  EVENT_START         = "Start"
+  EVENT_FINISH        = "Finish"
+  EVENT_CLOSE         = "Close"
+  EVENT_CANCEL        = "Cancel"
 
   PROCESSABLE_EVENTS = [
-    :announce, :registration_open, :start, :finish, :close, :cancel
+      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_START, EVENT_FINISH, EVENT_CLOSE, EVENT_CANCEL
   ]
+
+  ### TODO -
+  # http://www.sitepoint.com/comparing-ruby-background-processing-libraries-delayed-job/
+  # Program will be sending four notifications - two on timers, two on user action
+  # timer can be set using the delayed action for the program state machine
+  ###
+  # these are program events which are sent to other state machines
+  # adding program in the string, to avoid clash with any other event string in other state machines
+  CANCELLED  = 'Program Cancelled'    # -> after_transition any => STATE_CANCELLED
+  DROPPED    = 'Program Dropped'      # -> after_transition any => STATE_DROPPED
+  ANNOUNCED  = 'Program Announced'    # -> after_transition any => STATE_ANNOUNCED
+  STARTED    = 'Program Started'      # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
+  COMPLETED  = 'Program Completed'    # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
+  CLOSED     = 'Program Closed'       # -> after_transition any => STATE_CLOSED
+  NOTIFICATIONS = [
+      CANCELLED, DROPPED, ANNOUNCED, STARTED, COMPLETED, CLOSED
+  ]
+
 
   # timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
   # given a program, returns a relation with other non-overlapping program(s)
@@ -75,27 +101,27 @@ class Program < ActiveRecord::Base
       program.generate_program_id!
     end
 
-    event :announce do
+    event EVENT_ANNOUNCE do
       transition STATE_PROPOSED => STATE_ANNOUNCED
     end
 
-    event :registration_open do
+    event EVENT_REGISTRATION_OPEN do
       transition STATE_ANNOUNCED => STATE_REGISTRATION_OPEN
     end
 
-    event :start do
+    event EVENT_START do
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_IN_PROGRESS
     end
 
-    event :finish do
+    event EVENT_FINISH do
       transition [STATE_IN_PROGRESS] => STATE_CONDUCTED
     end
 
-    event :close do
+    event EVENT_CLOSE do
       transition STATE_CONDUCTED => STATE_CLOSED
     end
 
-    event :cancel do
+    event EVENT_CANCEL do
       transition [STATE_PROPOSED, STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED
     end
 
@@ -106,7 +132,7 @@ class Program < ActiveRecord::Base
   end
 
   def is_announced?
-    ! [STATE_PROPOSED.to_s, ''].include?(self.state.to_s)
+    ! [STATE_PROPOSED, ''].include?(self.state)
   end
 
   def generate_program_id!
@@ -169,8 +195,26 @@ class Program < ActiveRecord::Base
     self.teachers.uniq.count
   end
 
+  def minimum_no_of_teacher
+    self.program_type.minimum_no_of_teacher
+  end
+
   def minimum_teachers_connected?
-    self.teachers_connected >= self.program_type.minimum_no_of_teacher
+    self.teachers_connected >= self.minimum_no_of_teacher
+  end
+
+  def venue_approval_requested?
+    self.venue_schedules.each { |vs|
+      return true if vs.approval_requested?
+    }
+    false
+  end
+
+  def venue_approved?
+    self.venue_schedules.each { |v|
+      return true if vs.approved?
+    }
+    false
   end
 
   def ready_for_announcement?

@@ -1,4 +1,4 @@
-<% if @kit_schedule.kit.state != ::Kit::AVAILABLE.to_s%>
+<% if @kit_schedule.kit.state != ::Kit::STATE_AVAILABLE%>
   <div class="alert alert-danger"> You cannot change the state of Schedule as Kit is 
     <%=@kit_schedule.kit.state%> 
     <%= link_to "Update Kit", kit_path(@kit_schedule.kit), :class => 'alert-link' %> 
@@ -13,28 +13,11 @@
       <span class="sr-only">Toggle Dropdown</span>
     </button>
     <ul class="dropdown-menu" role="menu">
-     
-       <% if @kit_schedule.can_assign? %>
-        <li>
-          <%= link_to "Assign", edit_kit_schedule_path( @kit_schedule, :trigger => :assigned) %>
-        </li>
+      <% @kit_schedule.state_events.each do |ev| %>
+          <li>
+            <%= link_to ev, edit_kit_schedule_path(@kit_schedule, :trigger => ev) %>
+          </li>
       <% end %>
-      <% if @kit_schedule.can_issue? %>
-        <li>
-          <%= link_to "Issued", edit_kit_schedule_path(@kit_schedule, :trigger => :issued) %>
-        </li>
-      <% end %>
-      <% if @kit_schedule.can_closed? %>
-        <li>
-          <%= link_to "Close", edit_kit_schedule_path(@kit_schedule, :trigger => :closed) %>
-        </li>
-      <% end %>
-      <% if @kit_schedule.can_cancel? %>
-         <li class="divider"></li>
-        <li>
-          <%= link_to "Cancel", edit_kit_schedule_path(@kit_schedule, :trigger => :cancel) %>
-        </li>
-      <% end %>    
     </ul>
   </div>
 

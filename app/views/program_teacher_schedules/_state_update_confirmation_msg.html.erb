@@ -1,18 +1,21 @@
-<% unless [:reject, :insufficient_info].include?(@trigger) %>
-<div class='alert alert-info'>
+<% if (@trigger.nil? || !::ProgramTeacherSchedule::PROCESSABLE_EVENTS.include?(@trigger)) %>
+    <div class='alert alert-danger'>
+<% elsif [::ProgramTeacherSchedule::EVENT_RELEASE, ::ProgramTeacherSchedule::EVENT_WITHDRAW].include?(@trigger)%>
+    <div class='alert alert-warning'>
 <% else %>
-<div class='alert alert-danger'>
+    <div class='alert alert-info'>
 <% end %>
-  <h3>Confirmation: </h3>
-  <p>
-    <% if @trigger == :approve %>
-      Are you sure you want to <strong>approve</strong> this venue?
-    <% elsif @trigger == :reject %>
-      Are you sure you want to <strong>reject</strong> this venue?
-    <% elsif @trigger == :publish%>
-      Are you sure you want to <strong>publish</strong> this venue and make it available for programs?
-    <% elsif @trigger == :insufficient_info %>
-      This venue will be in pending state and will not be available for association with programs. Do you want to proceed?
-    <% end %>
-  </p>
+<h3>Confirmation: </h3>
+<p>
+  <% if @trigger.nil? %>
+  <%else%>
+      <% if @trigger == ::ProgramTeacherSchedule::EVENT_RELEASE %>
+          <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
+      <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE %>
+          Are you sure you want to change state of teacher to<strong> Request Release </strong> for this Program?
+      <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_WITHDRAW %>
+          <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
+      <% end %>
+  <%end%>
+</p>
 </div>

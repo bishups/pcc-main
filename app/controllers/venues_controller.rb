@@ -91,8 +91,8 @@ class VenuesController < ApplicationController
   private
 
   def state_update(vs, trig)
-    if ::Venue::PROCESSABLE_EVENTS.include?(@trigger.to_sym)
-      vs.send(trig.to_sym)
+    if ::Venue::PROCESSABLE_EVENTS.include?(@trigger)
+      vs.send(trig)
     end
   end
 end

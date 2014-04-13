@@ -17,9 +17,15 @@
 #
 
 class Kit < ActiveRecord::Base
-  AVAILABLE = :available
-  UNDER_REPAIR = :under_repair
-  UNAVAILABLE = :unavailable
+
+
+  STATE_AVAILABLE     = 'Available'
+  STATE_UNDER_REPAIR  = 'Under Repair'
+  STATE_UNAVAILABLE   = 'Unavailable'
+
+  EVENT_AVAILABLE     = 'Available'
+  EVENT_UNDER_REPAIR  = 'Under Repair'
+  EVENT_UNAVAILABLE   = 'Not Available'
 
   attr_accessible :condition,:condition_comments,
                   :general_comments, :name,
@@ -47,15 +53,10 @@ class Kit < ActiveRecord::Base
   #after_create :generateKitNameStringAfterCreate
   #before_update :generateKitNameString
 
-  EVENT_STATE_MAP = {
-                      AVAILABLE => AVAILABLE.to_s,
-                      UNDER_REPAIR => UNDER_REPAIR.to_s,
-                      UNAVAILABLE => UNAVAILABLE.to_s
-                    }
 
 
   PROCESSABLE_EVENTS = [
-    AVAILABLE, UNDER_REPAIR, UNAVAILABLE
+    EVENT_AVAILABLE, EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE
   ]
 
   validates_with KitValidator
@@ -70,27 +71,27 @@ class Kit < ActiveRecord::Base
     self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
-  state_machine :state, :initial => :available do
-    event :under_repair do
-      transition [AVAILABLE,UNAVAILABLE] => :under_repair
+  state_machine :state, :initial => EVENT_AVAILABLE do
+    event EVENT_UNDER_REPAIR do
+      transition [STATE_AVAILABLE, STATE_UNAVAILABLE] => STATE_UNDER_REPAIR
     end
-    event :unavailable do
-      transition [UNDER_REPAIR,AVAILABLE] => :unavailable
+    event EVENT_UNAVAILABLE do
+      transition [STATE_UNDER_REPAIR, STATE_AVAILABLE] => STATE_UNAVAILABLE
     end
-    event :available do 
-      transition any => :available
+    event EVENT_AVAILABLE do
+      transition any => STATE_AVAILABLE
     end
   end
 
   def getState
-    if (self.state == UNDER_REPAIR.to_s || self.state == UNAVAILABLE.to_s)
+    if (self.state == STATE_UNDER_REPAIR || self.state == STATE_UNAVAILABLE)
       return self.state
     end
     #get the current schedule if any for the kit
     kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.now, Time.now).order("start_date ASC")
 
     if( kitSchedule[0].nil? )
-      return AVAILABLE
+      return STATE_AVAILABLE
     else
       return kitSchedule[0].state
     end  

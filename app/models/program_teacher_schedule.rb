@@ -48,57 +48,133 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   #STATE_UNKNOWN  = :unknown
   STATE_BLOCKED             = 'Blocked'
   STATE_ASSIGNED            = 'Assigned'
-  STATE_REQUESTED_RELEASE   = 'Requested Release'
+  STATE_RELEASE_REQUESTED   = 'Release Requested'
   STATE_IN_CLASS            = 'In Class'
   STATE_COMPLETED_CLASS     = 'Completed Class'
   STATE_WITHDRAWN           = 'Withdrawn'
 
-  ### TODO -
-  # http://www.sitepoint.com/comparing-ruby-background-processing-libraries-delayed-job/
-  # Program will be sending four notifications - two on timers, two on user action
-  # timer can be set using the delayed action for the program state machine
-  ###
-  EVENT_AVAILABLE          = 'Available'
-  EVENT_UNAVAILABLE        = 'Not Available'
-  EVENT_ASSIGN             = 'Assign'
+  # Events
   EVENT_REQUEST_RELEASE    = 'Request Release'
-  EVENT_PROGRAM_CANCELLED  = 'Program Cancelled'
-  EVENT_PROGRAM_DROPPED    = 'Program Dropped'
-  EVENT_PROGRAM_STARTED    = 'Program Started'
-  EVENT_PROGRAM_COMPLETED  = 'Program Completed'
+  EVENT_RELEASE            = 'Release'
   EVENT_WITHDRAW           = 'Withdraw'
 
 
   PROCESSABLE_EVENTS = [
-      EVENT_AVAILABLE, EVENT_UNAVAILABLE, EVENT_ASSIGN, EVENT_REQUEST_RELEASE,
-      EVENT_PROGRAM_CANCELLED, EVENT_PROGRAM_DROPPED, EVENT_PROGRAM_STARTED, EVENT_PROGRAM_COMPLETED, EVENT_WITHDRAW
+      EVENT_REQUEST_RELEASE, EVENT_RELEASE, EVENT_WITHDRAW
   ]
 
   state_machine :state, :initial => STATE_BLOCKED do
-    event EVENT_AVAILABLE do
-      # TODO - add the lambdas for all role and can checks
-      transition STATE_ASSIGNED => ::TeacherSchedule::STATE_AVAILABLE #, :if => lambda {|pts| pts.current_user.is? :zonal_coordinator, :center_id => pts.program.center_id}
+    event EVENT_RELEASE do
       transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE #, :if => lambda {|pts| pts.current_user.is? :zonal_coordinator, :center_id => pts.program.center_id}
+      transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE
+      transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE
     end
-    before_transition any => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
-#    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
-    after_transition any => ::TeacherSchedule::STATE_AVAILABLE, :do => :on_available
+    # move the before transition, privilege part of the check to :if condition of the transition
+    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
+    before_transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_mark_assign_to_unavailable?
+    before_transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_approve_release?
 
+    event EVENT_REQUEST_RELEASE do
+      transition STATE_BLOCKED => STATE_RELEASE_REQUESTED
+      transition STATE_ASSIGNED => STATE_RELEASE_REQUESTED
+    end
+    before_transition any => STATE_RELEASE_REQUESTED, :do => :is_teacher?
+
+    # Done
+    event ::Program::CANCELLED do
+      transition STATE_ASSIGNED => ::TeacherSchedule::STATE_AVAILABLE
+    end
+
+    # Done
+    event ::Program::DROPPED do
+      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE
+    end
+
+    # Done
+    event ::Program::ANNOUNCED do
+      transition STATE_BLOCKED => STATE_ASSIGNED
+    end
+
+    # Done
+    event ::Program::STARTED do
+      transition STATE_ASSIGNED => STATE_IN_CLASS
+    end
+
+    # Done
+    event ::Program::COMPLETED do
+      transition STATE_IN_CLASS => STATE_COMPLETED_CLASS
+    end
+
+    # Done
+    event EVENT_WITHDRAW do
+      transition STATE_IN_CLASS => STATE_WITHDRAWN
+    end
+    before_transition STATE_IN_CLASS => STATE_WITHDRAWN, :do => :can_withdraw?
 
 
   end
 
-  def on_available
-    ### we will remove the program_id later, during update
-  end
 
-  def initialize(*args)
-    super(*args)
-  end
-
-  # these calls will go in the lambda function, so that relevant menu items can be disabled.
   def can_unblock?
-    ### TODO - set validations if user can unblock, CS and SC on venue conditions
+    # to prevent too many error messages on console return early
+    return false if !self.is_center_scheduler?
+
+    return true if (self.is_center_scheduler? && !self.program.venue_approval_requested?)
+    return true if (self.is_sector_coordinator? && !self.program.venue_approved?)
+
+    if (self.is_center_scheduler? && (self.program.teachers_connected <= self.program.minimum_no_of_teacher))
+        self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
+    end
+
+    false
+  end
+
+  def can_approve_release?
+    if !is_sector_coordinator?
+      return false
+    end
+
+    if ((self.program.teachers_connected <= self.program.minimum_no_of_teacher) && self.program.venue_approved?)
+      self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
+      return false
+    end
+
+    true
+  end
+
+
+  def can_mark_assign_to_unavailable?
+    if !is_sector_coordinator?
+      return false
+    end
+    if self.program.teachers_connected <= self.program.minimum_no_of_teacher
+      self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
+      false
+    end
+    true
+  end
+
+  def can_withdraw?
+    if !is_zonal_coordinator?
+      return false
+    end
+
+    if self.program.teachers_connected <= self.program.minimum_no_of_teacher
+      self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
+      false
+    end
+    true
+  end
+
+  def is_teacher?
+    if self.current_user.id != self.teacher_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    end
+    true
+  end
+
+  def is_zonal_coordinator?
     if !self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
       self.errors[:base] << "Insufficient privileges to update the state."
       false
@@ -107,10 +183,34 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
   end
 
+  def is_sector_coordinator?
+    if !self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    else
+      true
+    end
+  end
 
-  # NOTE: ProgramTeacherSchedule is **NOT** inherited from the ActiveRecord class
+  def is_center_scheduler?
+    if !self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    else
+      true
+    end
+  end
+
+
+  def initialize(*args)
+    super(*args)
+  end
+
+
+
+  # NOTE: ProgramTeacherSchedule is **NOT** using ActiveRecord class functions like save
   def update
-
+    # if the state was updated to ::TeacherSchedule::STATE_AVAILABLE or ::TeacherSchedule::STATE_UNAVAILABLE
     if (::TeacherSchedule::STATE_PUBLISHED).include?(self.state)
       program_id = nil
       blocked_by_user_id = nil
@@ -136,7 +236,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
 
       # 2. if they have been marked Available or unavailable, then check if combine_consecutive_slots
-      if (::TeacherSchedule::STATE_PUBLISHED).include?(ts.state) && ts.combine_consecutive_schedules?
+      if ((::TeacherSchedule::STATE_PUBLISHED).include?(ts.state)) && ts.combine_consecutive_schedules?
         ts.combine_consecutive_schedules
         # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
         if !ts.save
@@ -145,11 +245,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         end
       end
       self.program_id = program_id
-
     }
   end
-
-
 
 end
 

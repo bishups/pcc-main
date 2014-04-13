@@ -54,7 +54,7 @@ class User < ActiveRecord::Base
           :zao                  => {:text => "ZAO", :access_level => 4},
           :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2},
-          :volunteer_committee  => {:text => "Volunteer Coordinator", :access_level => 1},
+          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 1},
           :center_scheduler     => {:text => "Center Scheduler", :access_level => 0},
           :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0},
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0},
@@ -103,9 +103,11 @@ class User < ActiveRecord::Base
   # if user.is? :zonal_coordinator, :center_id => 10
   # if user.is? :zonal_coordinator, :center_ids => [1,2,3]
   # if user.is? :zonal_coordinator
-
+  # NOTE: 12 Apr 14 - From rails_admin :teacher role cannot be associated with users via access_privileges
+  # 1. because teacher checks can be handled simply by checking with current_user.teacher.id, rather than
+  # going through the more complicated is? routine.
+  # 2. teachers are associated separately with center(s) through the teacher admin interface.
   def is?(for_role, options={})
-    # convert to i
     for_center_ids = (options[:center_ids] || [options[:center_id]]).map(&:to_i)
     self.access_privileges.each do |ap|
       self_centers = []
@@ -127,6 +129,9 @@ class User < ActiveRecord::Base
     end
     return false
   end
+
+
+
 
   def fullname
     "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]

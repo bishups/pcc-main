@@ -92,8 +92,8 @@ class ProgramsController < ApplicationController
   private
 
   def state_update(prog, trig)
-    if Program::PROCESSABLE_EVENTS.include?(trig.to_sym)
-      prog.send(trig.to_sym)
+    if Program::PROCESSABLE_EVENTS.include?(trig)
+      prog.send(trig)
     end
   end
 end

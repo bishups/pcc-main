@@ -6,7 +6,7 @@
     </button>
     <ul class="dropdown-menu" role="menu">
       <% @program_teacher_schedule = pts %>
-      <% @program_teacher_schedule.state_events.each do |ev| %>
+      <% (@program_teacher_schedule.state_events - ::Program::NOTIFICATIONS).each do |ev| %>
       <li>
         <%= link_to ev, edit_program_teacher_schedule_path(:id => id, :trigger => ev) %>
       </li>

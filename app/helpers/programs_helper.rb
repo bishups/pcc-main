@@ -1,19 +1,19 @@
 module ProgramsHelper
   def program_state_tag(prog)
     proc do
-      if prog.proposed?
+      if prog.state == ::Program::STATE_PROPOSED
         '<span class="label label-warning">Proposed</span>'
-      elsif prog.announced?
+      elsif prog.state == ::Program::STATE_ANNOUNCED
         '<span class="label label-success">Announced</span>'
-      elsif prog.registration_open?
+      elsif prog.state == ::Program::STATE_REGISTRATION_OPEN
         '<span class="label label-success">Registration Open</span>'
-      elsif prog.cancelled?
+      elsif prog.state == ::Program::STATE_CANCELLED
         '<span class="label label-danger">Cancelled</span>'
-      elsif prog.in_progress?
+      elsif prog.state == ::Program::STATE_IN_PROGRESS
         '<span class="label label-info">In-Progress</span>'
-      elsif prog.conducted?
+      elsif prog.state == ::Program::STATE_CONDUCTED
         '<span class="label label-info">Conducted</span>'
-      elsif prog.closed?
+      elsif prog.state == ::Program::STATE_CLOSED
         '<span class="label label-info">Closed</span>'
       else
         '<span class="label label-default">Unknown</span>'
@@ -21,3 +21,4 @@ module ProgramsHelper
     end.call().html_safe
   end
 end
+

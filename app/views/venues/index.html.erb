@@ -26,7 +26,7 @@
       <td><%= venue.pin_code %></td>
       <td><%= venue.capacity %></td>
       <td><%= venue.contact_name %></td>
-      <td><span class='label label-warning'><%= venue.state.to_s.humanize %></span></td>
+      <td><span class='label label-warning'><%= venue.state %></span></td>
       <td>
         <%= link_to "Show", venue_path(venue), :class => 'btn btn-primary btn-sm' %> 
         <% if venue.published? %>

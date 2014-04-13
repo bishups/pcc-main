@@ -45,21 +45,29 @@ class VenueSchedule < ActiveRecord::Base
   scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id != ? AND venue_schedules.state != ?', vs.id, ::VenueSchedule::STATE_CANCELLED) }
 
 
-  PROCESSABLE_EVENTS = [
-    :block, :request_approval, :authorize_for_payment, :request_payment, :process_payment, :cancel
-  ]
+  STATE_BLOCK_REQUESTED           = "Block Requested"
+  STATE_BLOCKED                   = "Blocked"
+  STATE_BLOCK_REQUEST_WITHDRAWN   = "Block Request Withdrawn"
+  STATE_APPROVAL_REQUESTED        = "Approval Requested"
+  STATE_AUTHORIZED_FOR_PAYMENT    = "Authorized for Payment"
+  STATE_PAYMENT_PENDING           = "Payment Pending"
+  STATE_PAID                      = "Paid"
+  STATE_ASSIGNED                  = "Assigned"
+  STATE_IN_PROGRESS               = "In Progress"
+  STATE_CONDUCTED                 = "Conducted"
+  STATE_CLOSED                    = "Closed"
+  STATE_CANCELLED                 = "Cancelled"
 
-  STATE_BLOCK_REQUESTED = :block_requested
-  STATE_BLOCKED = :blocked
-  STATE_APPROVAL_REQUESTED = :approval_requested
-  STATE_AUTHORIZED_FOR_PAYMENT = :authorized_for_payment
-  STATE_PAYMENT_PENDING = :payment_pending
-  STATE_PAID = :paid
-  STATE_ASSIGNED = :assigned
-  STATE_IN_PROGRESS = :in_progress
-  STATE_CONDUCTED = :conducted
-  STATE_CLOSED = :closed
-  STATE_CANCELLED = :cancelled
+  EVENT_BLOCK             = "Block"
+  EVENT_REQUEST_APPROVAL  = "Request Approval"
+  EVENT_AUTHORIZE_FOR_PAYMENT = "Authorize for Payment"
+  EVENT_REQUEST_PAYMENT   = "Request Payment"
+  EVENT_PROCESS_PAYMENT   = "Process Payment"
+  EVENT_CANCEL            = "Cancel"
+
+  PROCESSABLE_EVENTS = [
+    EVENT_BLOCK, EVENT_REQUEST_APPROVAL, EVENT_AUTHORIZE_FOR_PAYMENT, EVENT_REQUEST_PAYMENT, EVENT_PROCESS_PAYMENT, EVENT_CANCEL
+  ]
 
   def initialize(*args)
     super(*args)
@@ -70,25 +78,25 @@ class VenueSchedule < ActiveRecord::Base
   #end
 
   state_machine :state, :initial => STATE_BLOCK_REQUESTED do
-    after_transition any => :blocked do |venue_schedule, transition|
+    after_transition any => STATE_BLOCKED do |venue_schedule, transition|
       # Check if zero payment, trigger to paid else payment pending
     end
-    after_transition any => :paid do |venue_schedule, transition|
+    after_transition any => STATE_PAID do |venue_schedule, transition|
       # TODO ready for assignment
     end
 
     ## State and Trigger names are referred in view
 
-    event :block do
+    event EVENT_BLOCK do
       transition STATE_BLOCK_REQUESTED => STATE_BLOCKED
     end
-    event :request_approval do
+    event EVENT_REQUEST_APPROVAL do
       transition STATE_BLOCKED => STATE_APPROVAL_REQUESTED
     end
-    event :authorize_for_payment do
+    event EVENT_AUTHORIZE_FOR_PAYMENT do
       transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT
     end
-    event :request_payment do
+    event EVENT_REQUEST_PAYMENT do
       transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING
     end
 
@@ -98,33 +106,44 @@ class VenueSchedule < ActiveRecord::Base
       end
     end
 
-    event :process_payment do
+    event EVENT_PROCESS_PAYMENT do
       transition [STATE_PAYMENT_PENDING] => STATE_PAID
     end
 
-    event :assign do
+    event EVENT_CANCEL do
       transition STATE_PAID => STATE_ASSIGNED
     end
 
-    event :program_in_progress do
+    event ::Program::STARTED do
       transition STATE_ASSIGNED => STATE_IN_PROGRESS
     end
 
-    event :program_finish do
+    event ::Program::COMPLETED do
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
 
-    event :program_close do
+    event ::Program::CLOSED do
       transition STATE_CONDUCTED => STATE_CLOSED
     end
 
-    event :cancel do
-      transition any => STATE_CANCELLED
+    event ::Program::CANCELLED do
+      transition STATE_BLOCK_REQUESTED => STATE_CANCELLED
     end
 
     def on_block
     end
   end
+
+  # have we requested the approval for the venue?
+  def approval_requested?
+    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_BLOCK_REQUEST_WITHDRAWN, STATE_CANCELLED].include?(self.state))
+  end
+
+  # has the payment been approved for the venue?
+  def approved?
+    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_BLOCK_REQUEST_WITHDRAWN, STATE_APPROVAL_REQUESTED, STATE_CANCELLED].include?(self.state))
+  end
+
 
   private
 

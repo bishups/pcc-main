@@ -108,8 +108,8 @@ class VenueSchedulesController < ApplicationController
   #end
 
   def state_update(vs, trig)
-    if ::VenueSchedule::PROCESSABLE_EVENTS.include?(@trigger.to_sym)
-      vs.send(trig.to_sym)
+    if ::VenueSchedule::PROCESSABLE_EVENTS.include?(@trigger)
+      vs.send(trig)
     end
   end
 
