@@ -34,6 +34,7 @@ class Sector < ActiveRecord::Base
     list do
       field :name
       field :zone
+      field :centers
     end
     edit do
       field :name

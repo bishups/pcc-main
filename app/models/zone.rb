@@ -18,7 +18,7 @@ class Zone < ActiveRecord::Base
   attr_accessible :name, :sector_ids, :sectors
 
   # usage -> ::Zone::all_sectors_in_one_zone? [sector1, sector2, sector3]
-  def self.all_sectors_in_one_zone(sectors)
+  def self.all_sectors_in_one_zone?(sectors)
     if !sectors.empty?
       zone_id = sectors[0].zone_id
       sectors.each {|c| return false if zone_id != c.zone_id }

@@ -87,28 +87,58 @@ class User < ActiveRecord::Base
     self.roles.exists?(:name => "Super Admin")
   end
 
+
   def accessible_centers
     self.centers+self.sector_centers+self.zone_centers
   end
+
 
   def accessible_sectors
     self.sectors+self.zone_sectors
   end
 
+
   def accessible_zones
     self.zones
   end
 
+=begin
+  def accessible_center_ids(role)
+    sector_center_ids = []
+    self.accessible_sectors_ids(role).each { |sid|
+      sector_center_ids += Center.where(:sector_id => sid).pluck(:id)
+    }
+
+    sector_center_ids +
+        AccessPrivilege.where(:user_id => self.id, :role_id => role.id, :resource_type => 'Center').pluck(:resource_id)
+  end
+
+
+  def accessible_sectors_ids(role)
+    zone_sector_ids = []
+    self.accessible_zone_ids(role).each { |zid|
+      zone_sector_ids += Sector.where(:zone_id => zid).pluck(:id)
+    }
+    zone_sector_ids +
+        AccessPrivilege.where(:user_id => self.id, :role_id => role.id, :resource_type => 'Sector').pluck(:resource_id)
+  end
+
+  def accessible_zone_ids(role)
+    AccessPrivilege.where(:user_id => self.id, :role_id => role.id, :resource_type => 'Zone').pluck(:resource_id)
+  end
+=end
+
+
   # usage -- check if user has role for specific resource
   # if user.is? :zonal_coordinator, :center_id => 10
-  # if user.is? :zonal_coordinator, :center_ids => [1,2,3]
+  # if user.is? :zonal_coordinator, :center_id => [1,2,3]
   # if user.is? :zonal_coordinator
   # NOTE: 12 Apr 14 - From rails_admin :teacher role cannot be associated with users via access_privileges
   # 1. because teacher checks can be handled simply by checking with current_user.teacher.id, rather than
   # going through the more complicated is? routine.
   # 2. teachers are associated separately with center(s) through the teacher admin interface.
   def is?(for_role, options={})
-    for_center_ids = (options[:center_ids] || [options[:center_id]]).map(&:to_i)
+    for_center_ids = options[:center_id].class == Array ? (options[:center_id]).map(&:to_i) : ([options[:center_id]]).map(&:to_i)
     self.access_privileges.each do |ap|
       self_centers = []
       if ap.resource.class.name.demodulize == "Center"

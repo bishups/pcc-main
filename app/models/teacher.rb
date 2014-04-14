@@ -1,6 +1,6 @@
 class Teacher < ActiveRecord::Base
 
-  has_and_belongs_to_many :centers
+  has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
   validate :has_centers?
 
@@ -112,7 +112,7 @@ class Teacher < ActiveRecord::Base
     self.errors.add(:centers, " needed if teacher attached to a zone.") if !self.zone.blank? && self.centers.blank?
     self.errors.add(:zone, " needed if teacher attached to center(s). To un-attach from a zone, first remove the center(s).") if self.zone.blank? && !self.centers.blank?
     self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
-    self.errors.add(:centers, " should belong to specified zone.") if self.centers && self.zone && self.centers[0].sector.zone != self.zone
+    self.errors.add(:centers, " should belong to specified zone.") if self.centers && self.zone && (self.centers[0] && self.centers[0].sector.zone != self.zone)
   end
 
 
@@ -128,6 +128,18 @@ class Teacher < ActiveRecord::Base
 
   def invalid_state?
     self.errors.add(:state, " cannot be marked unfit when teacher is linked to a program.") if (self.state == STATE_UNFIT) && self.in_schedule?
+  end
+
+
+  def add_access_privilege(center)
+    role = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
+    AccessPrivilege.create({ :role_id => role.id, :user_id => self.user.id, :resource_id => center.id, :resource_type => "Center" })
+  end
+
+
+  def remove_access_privilege(center)
+    role = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
+    AccessPrivilege.destroy_all({ :role_id => role.id, :user_id => self.user.id, :resource_id => center.id, :resource_type => "Center" })
   end
 
 

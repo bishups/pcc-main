@@ -41,9 +41,8 @@ class AccessPrivilege < ActiveRecord::Base
       when "Sector"
         [:sector_coordinator]
       when "Center"
-        [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer]
+        [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
       else
-        # teacher should not be set be set from here, TODO - remove it completely later
         []
     end
     if !valid_roles.include?(role)
