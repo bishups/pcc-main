@@ -101,7 +101,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     # Done
-    event ::Program::COMPLETED do
+    event ::Program::FINISHED do
       transition STATE_IN_CLASS => STATE_COMPLETED_CLASS
     end
 

@@ -58,10 +58,11 @@ class Program < ActiveRecord::Base
   EVENT_START         = "Start"
   EVENT_FINISH        = "Finish"
   EVENT_CLOSE         = "Close"
+  EVENT_DROP          = "Drop"
   EVENT_CANCEL        = "Cancel"
 
   PROCESSABLE_EVENTS = [
-      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_START, EVENT_FINISH, EVENT_CLOSE, EVENT_CANCEL
+      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL
   ]
 
   ### TODO -
@@ -75,10 +76,10 @@ class Program < ActiveRecord::Base
   DROPPED    = 'Program Dropped'      # -> after_transition any => STATE_DROPPED
   ANNOUNCED  = 'Program Announced'    # -> after_transition any => STATE_ANNOUNCED
   STARTED    = 'Program Started'      # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
-  COMPLETED  = 'Program Completed'    # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
-  CLOSED     = 'Program Closed'       # -> after_transition any => STATE_CLOSED
+  FINISHED   = 'Program Finished'     # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
+  #CLOSED     = 'Program Closed'       # -> after_transition any => STATE_CLOSED
   NOTIFICATIONS = [
-      CANCELLED, DROPPED, ANNOUNCED, STARTED, COMPLETED, CLOSED
+      CANCELLED, DROPPED, ANNOUNCED, STARTED, FINISHED
   ]
 
 
@@ -97,13 +98,15 @@ class Program < ActiveRecord::Base
   end
 
   state_machine :state, :initial => STATE_PROPOSED do
-    after_transition any => STATE_ANNOUNCED do |program, transition|
-      program.generate_program_id!
-    end
-
     event EVENT_ANNOUNCE do
       transition STATE_PROPOSED => STATE_ANNOUNCED
     end
+    after_transition any => STATE_ANNOUNCED, :do => :on_announce
+
+    event EVENT_DROP do
+      transition STATE_PROPOSED => STATE_DROPPED
+    end
+    after_transition any => STATE_DROPPED, :do => :on_drop
 
     event EVENT_REGISTRATION_OPEN do
       transition STATE_ANNOUNCED => STATE_REGISTRATION_OPEN
@@ -112,20 +115,65 @@ class Program < ActiveRecord::Base
     event EVENT_START do
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_IN_PROGRESS
     end
+    after_transition any => STATE_IN_PROGRESS, :do => :on_start
 
     event EVENT_FINISH do
       transition [STATE_IN_PROGRESS] => STATE_CONDUCTED
     end
+    after_transition any => STATE_CONDUCTED, :do => :on_finish
 
     event EVENT_CLOSE do
       transition STATE_CONDUCTED => STATE_CLOSED
     end
+    # TODO - enable or disable the button based on whether conditions are met
 
     event EVENT_CANCEL do
-      transition [STATE_PROPOSED, STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED
     end
+    after_transition any => STATE_CANCELLED, :do => :on_cancel
 
   end
+
+  def trigger_program_start
+    if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
+      prog.send(EVENT_START)
+    end
+  end
+
+  def trigger_program_finish
+    if [STATE_IN_PROGRESS].include?(self.state)
+      prog.send(EVENT_FINISH)
+    end
+  end
+
+  def on_announce
+    program.generate_program_id!
+    program.notify(ANNOUNCED)
+    # start the timer for start of class notification
+    # TODO - check if the start_date take the correct time slot also
+    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.start_date}
+  end
+
+  def on_drop
+    program.notify(DROPPED)
+  end
+
+  def on_start
+    program.notify(STARTED)
+    # start the timer for close of class notification
+    # TODO - check if the close_date take the correct time slot also
+    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.end_date}
+  end
+
+  def on_finish
+    program.notify(FINISHED)
+  end
+
+  def on_cancel
+    program.notify(CANCELLED)
+    # TODO - cancel the timer for start of the class, no need for now, we will just ignore it once the timer comes
+  end
+
 
   def friendly_name
     ("%s %s %s" % [self.center.name, self.start_date.strftime('%d-%m-%Y'), self.program_type.name]).parameterize
@@ -149,6 +197,21 @@ class Program < ActiveRecord::Base
   def venue_connected?
     !self.venue_schedules.empty?
   end
+
+  def notify(event)
+    # send the event to each of the state machines
+    # ideally we can register the state machine and the specific callback they want to be called
+    self.teacher_schedules.each{|ts|
+      ts.on_program_event(event)
+    }
+    self.venue_schedules.each{|vs|
+      vs.on_program_event(event)
+    }
+    self.kit_schedules.each{|ks|
+      ks.on_program_event(event)
+    }
+  end
+
 
   #def connect_venue(venue)
   #  self.venue_schedule_id = venue.id

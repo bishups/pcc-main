@@ -42,8 +42,8 @@ class Permission < ActiveRecord::Base
   end
 
   rails_admin do
-    navigation_label 'Access Privilege'
-    weight 3
+    navigation_label 'Admin'
+    weight 0
     list do
       field :name
       field :cancan_action

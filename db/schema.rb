@@ -49,6 +49,14 @@ ActiveRecord::Schema.define(:version => 201404121216518) do
     t.integer "venue_id"
   end
 
+  create_table "comments", :force => true do |t|
+    t.string   "model"
+    t.string   "action"
+    t.string   "text"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
   create_table "delayed_jobs", :force => true do |t|
     t.integer  "priority",   :default => 0, :null => false
     t.integer  "attempts",   :default => 0, :null => false

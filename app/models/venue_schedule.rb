@@ -118,7 +118,7 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_ASSIGNED => STATE_IN_PROGRESS
     end
 
-    event ::Program::COMPLETED do
+    event ::Program::FINISHED do
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
 
