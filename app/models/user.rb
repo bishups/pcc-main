@@ -270,9 +270,10 @@ class User < ActiveRecord::Base
         pretty_value do
           ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
           if ap_str.empty?
-            ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
+            #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
             #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
-            %{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
+            #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
+            %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-danger" :hover> + Add New </button></a>}
           else
             %{<div class="access_privilege_ap"> #{ap_str} </div >}
           end

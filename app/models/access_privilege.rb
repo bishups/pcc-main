@@ -21,6 +21,7 @@ class AccessPrivilege < ActiveRecord::Base
 
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role, :user, :user_id
   validate :is_role_valid?
+  before_destroy :is_teacher_attached?
 
   def role_name=(role_name)
     Role.where(:name => role_name ).first
@@ -47,6 +48,17 @@ class AccessPrivilege < ActiveRecord::Base
     end
     if !valid_roles.include?(role)
       self.errors[:resource] << " does not match the specified role."
+    end
+  end
+
+  def is_teacher_attached?
+    teacher_role = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
+    if self.role.id == teacher_role.id && self.resource_type == "Center"
+      teacher = Teacher.find_by_user_id(self.user_id)
+      if CentersTeachers.where('teacher_id = ? AND center_id = ?', teacher.id, self.resource_id).count > 0
+        self.errors[:base] << "Cannot delete access privilege for teacher when attached to the center. Please unattach from center."
+        return false
+      end
     end
   end
 
