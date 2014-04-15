@@ -140,5 +140,9 @@ class KitSchedule < ActiveRecord::Base
   def assigned!
     self.state = STATE_ASSIGNED
   end
+
+  def on_program_event(event)
+
+  end
   
 end

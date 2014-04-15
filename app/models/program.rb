@@ -136,39 +136,39 @@ class Program < ActiveRecord::Base
 
   def trigger_program_start
     if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
-      prog.send(EVENT_START)
+      self.send(EVENT_START)
     end
   end
 
   def trigger_program_finish
     if [STATE_IN_PROGRESS].include?(self.state)
-      prog.send(EVENT_FINISH)
+      self.send(EVENT_FINISH)
     end
   end
 
   def on_announce
-    program.generate_program_id!
-    program.notify(ANNOUNCED)
+    self.generate_program_id!
+    self.notify(ANNOUNCED)
     # start the timer for start of class notification
-    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.start_date_time}
+    self.delay(:run_at => program.start_date_time).trigger_program_start
   end
 
   def on_drop
-    program.notify(DROPPED)
+    self..notify(DROPPED)
   end
 
   def on_start
-    program.notify(STARTED)
+    self.notify(STARTED)
     # start the timer for close of class notification
-    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.end_date_time}
+    self.delay(:run_at => program.end_date_time).trigger_program_finish
   end
 
   def on_finish
-    program.notify(FINISHED)
+    self.notify(FINISHED)
   end
 
   def on_cancel
-    program.notify(CANCELLED)
+    self.notify(CANCELLED)
     # TODO - cancel the timer for start of the class, no need for now, we will just ignore it once the timer comes
   end
 

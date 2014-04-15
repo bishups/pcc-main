@@ -44,7 +44,7 @@ class ProgramsController < ApplicationController
 
   def announce
     @program = Program.find(params[:id])
-    @program.announce! if @program.ready_for_announcement?
+    @program.send(::Program::EVENT_ANNOUNCE) if @program.ready_for_announcement?
 
     respond_to do |format|
       format.html { redirect_to @program }

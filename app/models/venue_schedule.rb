@@ -144,6 +144,9 @@ class VenueSchedule < ActiveRecord::Base
     !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_BLOCK_REQUEST_WITHDRAWN, STATE_APPROVAL_REQUESTED, STATE_CANCELLED].include?(self.state))
   end
 
+  def on_program_event(event)
+
+  end
 
   private
 

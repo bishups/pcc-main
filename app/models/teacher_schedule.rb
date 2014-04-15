@@ -112,6 +112,9 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
 
+  def on_program_event(event)
+
+  end
 
     private
 
