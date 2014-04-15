@@ -53,6 +53,8 @@ class Program < ActiveRecord::Base
   STATE_CONDUCTED     = "Conducted"
   STATE_CLOSED        = "Closed"
 
+  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CONDUCTED, STATE_CLOSED]
+
   EVENT_ANNOUNCE      = "Announce"
   EVENT_REGISTRATION_OPEN = "Registration Open"
   EVENT_START         = "Start"

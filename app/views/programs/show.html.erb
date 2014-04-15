@@ -106,7 +106,7 @@
       <h3>
         Venue Details
       <span class='pull-right'>
-        <%= link_to 'Assign Venue', new_venue_schedule_path(:program_id => @program.id), :class => 'btn btn-info' %>
+        <%= link_to 'Assign Venue', new_venue_schedule_path(:program_id => @program.id), :class => 'btn btn-info'  unless ::Program::FINAL_STATES.include?(@program.state) %>
       </span>
       </h3>
     </div>
@@ -133,7 +133,7 @@
     <h3>
       Kit Details
       <span class='pull-right'>
-        <%= link_to 'Assign Kit', new_kit_schedule_path(:program_id => @program.id), :class => 'btn btn-info' %>
+        <%= link_to 'Assign Kit', new_kit_schedule_path(:program_id => @program.id), :class => 'btn btn-info'  unless ::Program::FINAL_STATES.include?(@program.state) %>
       </span>
     </h3>
   </div>
@@ -159,7 +159,7 @@
     <h3>
       Teacher Details
       <span class='pull-right'>
-        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-info' %>
+        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-info' unless ::Program::FINAL_STATES.include?(@program.state) %>
       </span>
     </h3>
   </div>
