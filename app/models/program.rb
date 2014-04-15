@@ -154,7 +154,7 @@ class Program < ActiveRecord::Base
   end
 
   def on_drop
-    self..notify(DROPPED)
+    self.notify(DROPPED)
   end
 
   def on_start

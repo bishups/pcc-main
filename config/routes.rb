@@ -15,6 +15,7 @@ PccMain::Application.routes.draw do
   resources :programs do
     member do
       get 'announce'
+      get 'drop'
     end
   end
   resources :program_teacher_schedules

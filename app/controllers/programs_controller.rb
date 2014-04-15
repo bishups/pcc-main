@@ -51,6 +51,15 @@ class ProgramsController < ApplicationController
     end
   end
 
+  def drop
+    @program = Program.find(params[:id])
+    @program.send(::Program::EVENT_DROP)
+
+    respond_to do |format|
+      format.html { redirect_to @program }
+    end
+  end
+
   def edit
     @program = Program.find(params[:id])
     @trigger = params[:trigger]
