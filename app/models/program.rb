@@ -152,7 +152,7 @@ class Program < ActiveRecord::Base
     self.generate_program_id!
     self.notify(ANNOUNCED)
     # start the timer for start of class notification
-    self.delay(:run_at => program.start_date_time).trigger_program_start
+    self.delay(:run_at => self.start_date_time).trigger_program_start
   end
 
   def on_drop
@@ -162,7 +162,7 @@ class Program < ActiveRecord::Base
   def on_start
     self.notify(STARTED)
     # start the timer for close of class notification
-    self.delay(:run_at => program.end_date_time).trigger_program_finish
+    self.delay(:run_at => self.end_date_time).trigger_program_finish
   end
 
   def on_finish

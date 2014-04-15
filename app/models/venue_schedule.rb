@@ -47,7 +47,6 @@ class VenueSchedule < ActiveRecord::Base
 
   STATE_BLOCK_REQUESTED           = "Block Requested"
   STATE_BLOCKED                   = "Blocked"
-  STATE_BLOCK_REQUEST_WITHDRAWN   = "Block Request Withdrawn"
   STATE_APPROVAL_REQUESTED        = "Approval Requested"
   STATE_AUTHORIZED_FOR_PAYMENT    = "Authorized for Payment"
   STATE_PAYMENT_PENDING           = "Payment Pending"
@@ -110,7 +109,7 @@ class VenueSchedule < ActiveRecord::Base
       transition [STATE_PAYMENT_PENDING] => STATE_PAID
     end
 
-    event EVENT_CANCEL do
+    event ::Program::ANNOUNCED do
       transition STATE_PAID => STATE_ASSIGNED
     end
 
@@ -126,8 +125,16 @@ class VenueSchedule < ActiveRecord::Base
    #   transition STATE_CONDUCTED => STATE_CLOSED
    # end
 
-    event ::Program::CANCELLED do
+    event EVENT_CANCEL do
       transition STATE_BLOCK_REQUESTED => STATE_CANCELLED
+    end
+
+    event ::Program::DROPPED do
+      transition [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED] => STATE_CANCELLED
+    end
+
+    event ::Program::CANCELLED do
+      transition [STATE_PAID, STATE_ASSIGNED] => STATE_CANCELLED
     end
 
     def on_block
@@ -136,16 +143,33 @@ class VenueSchedule < ActiveRecord::Base
 
   # have we requested the approval for the venue?
   def approval_requested?
-    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_BLOCK_REQUEST_WITHDRAWN, STATE_CANCELLED].include?(self.state))
+    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_CANCELLED].include?(self.state))
   end
 
   # has the payment been approved for the venue?
   def approved?
-    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_BLOCK_REQUEST_WITHDRAWN, STATE_APPROVAL_REQUESTED, STATE_CANCELLED].include?(self.state))
+    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_CANCELLED].include?(self.state))
   end
 
   def on_program_event(event)
+    valid_states = {
+        ::Program::CANCELLED => [STATE_PAID, STATE_ASSIGNED],
+        ::Program::DROPPED => [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED],
+        ::Program::ANNOUNCED => [STATE_PAID],
+        ::Program::STARTED => [STATE_ASSIGNED],
+        ::Program::FINISHED => [STATE_IN_PROGRESS],
 
+    }
+
+    # verify when all the events can come
+    if valid_states[event].include?(self.state)
+      self.send(event)
+      # also call save on the model
+      # TODO - check if this is really needed
+      self.save if self.errors.empty?
+    else
+      # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
+    end
   end
 
   private

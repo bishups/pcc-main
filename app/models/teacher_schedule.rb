@@ -113,7 +113,36 @@ class TeacherSchedule < ActiveRecord::Base
 
 
   def on_program_event(event)
+    valid_states = {
+            ::Program::CANCELLED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
+            ::Program::DROPPED => [::ProgramTeacherSchedule::STATE_BLOCKED],
+            ::Program::ANNOUNCED => [::ProgramTeacherSchedule::STATE_BLOCKED],
+            ::Program::STARTED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
+            ::Program::FINISHED => [::ProgramTeacherSchedule::STATE_IN_CLASS],
 
+    }
+
+    # first create the temporary object
+    pts = ProgramTeacherSchedule.new
+    pts.teacher_schedule = self
+    pts.teacher_schedule_id = pts.teacher_schedule.id
+    pts.state = pts.teacher_schedule.state
+    pts.program_id = pts.teacher_schedule.program_id
+    pts.program = Program.find(pts.teacher_schedule.program_id)
+    pts.teacher_id = pts.teacher_schedule.teacher_id
+    pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
+    pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
+
+
+    # verify when all the events can come
+    if valid_states[event].include?(pts.state)
+      pts.send(event)
+      # also call update on the model
+      pts.update if pts.errors.empty?
+    else
+      # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
+    end
+    self.errors[:base] << pts.errors.full_messages unless pts.errors.empty?
   end
 
     private
