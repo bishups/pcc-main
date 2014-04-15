@@ -150,8 +150,7 @@ class Program < ActiveRecord::Base
     program.generate_program_id!
     program.notify(ANNOUNCED)
     # start the timer for start of class notification
-    # TODO - check if the start_date take the correct time slot also
-    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.start_date}
+    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.start_date_time}
   end
 
   def on_drop
@@ -161,8 +160,7 @@ class Program < ActiveRecord::Base
   def on_start
     program.notify(STARTED)
     # start the timer for close of class notification
-    # TODO - check if the close_date take the correct time slot also
-    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.end_date}
+    handle_asynchronously :trigger_program_start, :run_at => Proc.new {program.end_date_time}
   end
 
   def on_finish
@@ -251,7 +249,7 @@ class Program < ActiveRecord::Base
   end
 
   def assign_dates!
-    self.end_date = self.start_date + self.program_type.no_of_days.to_i.days
+    self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
   end
 
   def teachers_connected
@@ -264,6 +262,16 @@ class Program < ActiveRecord::Base
 
   def minimum_teachers_connected?
     self.teachers_connected >= self.minimum_no_of_teacher
+  end
+
+  def start_date_time
+    timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('start_time ASC').first
+    self.start_date.advance(:hours => timing.start_time.hour, :minutes => timing.start_time.min, :minutes => timing.start_time.sec)
+  end
+
+  def end_date_time
+    timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('end_time DESC').first
+    self.end_date.advance(:hours => timing.end_time.hour, :minutes => timing.end_time.min, :minutes => timing.end_time.sec)
   end
 
   def venue_approval_requested?

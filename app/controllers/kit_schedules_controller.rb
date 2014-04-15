@@ -7,7 +7,7 @@ class KitSchedulesController < ApplicationController
   
   def index
     @kit = ::Kit.find(params[:kit_id].to_i)
-    @kit_schedules = @kit.kit_schedules.where(['start_date > ?', DateTime.now])
+    @kit_schedules = @kit.kit_schedules.where(['start_date > ?', Time.zone.now])
     respond_to do |format|
       format.html # index.html.erb
       format.json { render json: @kit_schedules }

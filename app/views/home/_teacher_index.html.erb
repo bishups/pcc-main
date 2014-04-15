@@ -17,7 +17,7 @@
           <td></td>
           <td><%= link_to teacher.user.firstname, teacher_path(teacher)%> </td>
           <% if false %>
-          <td><%=  teacher.teacher_schedules.where('end_date > ?', Time.now).count() %></td>
+          <td><%=  teacher.teacher_schedules.where('end_date > ?', Time.zone.now).count() %></td>
           <td>
             <%=  link_to "Schedule", teacher_teacher_schedules_path(teacher), :class => 'btn btn-primary btn-sm' %>
           </td>

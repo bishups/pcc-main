@@ -30,11 +30,11 @@
       </tr>
       <tr>
         <td><strong>Start Date</strong></td>
-        <td><%= @program_teacher_schedule.program.start_date %></td>
+        <td><%= @program_teacher_schedule.program.start_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>End Date</strong></td>
-        <td><%= @program_teacher_schedule.program.end_date %></td>
+        <td><%= @program_teacher_schedule.program.end_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>Timing</strong></td>

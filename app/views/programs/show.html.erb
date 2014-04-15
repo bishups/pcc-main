@@ -85,11 +85,11 @@
       </tr>
       <tr>
         <td><strong>Start Date</strong></td>
-        <td><%= @program.start_date %></td>
+        <td><%= @program.start_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>End Date</strong></td>
-        <td><%= @program.end_date %></td>
+        <td><%= @program.end_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>Timing</strong></td>
@@ -105,7 +105,7 @@
       <h3>
         Venue Details
       <span class='pull-right'>
-        <%= link_to 'Assign Venue', new_venue_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
+        <%= link_to 'Assign Venue', new_venue_schedule_path(:program_id => @program.id), :class => 'btn btn-info' %>
       </span>
       </h3>
     </div>
@@ -132,7 +132,7 @@
     <h3>
       Kit Details
       <span class='pull-right'>
-        <%= link_to 'Assign Kit', new_kit_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
+        <%= link_to 'Assign Kit', new_kit_schedule_path(:program_id => @program.id), :class => 'btn btn-info' %>
       </span>
     </h3>
   </div>
@@ -158,7 +158,7 @@
     <h3>
       Teacher Details
       <span class='pull-right'>
-        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
+        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-info' %>
       </span>
     </h3>
   </div>

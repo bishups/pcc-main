@@ -110,7 +110,7 @@ class Venue < ActiveRecord::Base
   def blockable_programs
     # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
     # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('programs.center_id IN (?) AND programs.start_date > ? ', self.center_ids, Time.now)
+    Program.where('programs.center_id IN (?) AND programs.start_date > ? ', self.center_ids, Time.zone.now)
   end
 
   def paid?
@@ -122,7 +122,7 @@ class Venue < ActiveRecord::Base
   end
 
   def current_schedule
-    self.venue_schedules.where('start_date < ? AND end_date > ?', Time.now, Time.now).first()
+    self.venue_schedules.where('start_date < ? AND end_date > ?', Time.zone.now, Time.zone.now).first()
   end
 
   def current_state

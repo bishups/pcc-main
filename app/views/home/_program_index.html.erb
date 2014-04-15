@@ -28,7 +28,7 @@
               <% end %>
             </td>
             <td><%= (program.program_type.name rescue '')%></td>
-            <td><%= program.start_date %></td>
+            <td><%= program.start_date.strftime('%d %B %Y') %></td>
             <td><%= (program.timings.map {|c| c[:name]}).join(", ") %></td>
             <td><%= program_state_tag(program) %></td>
           </tr>

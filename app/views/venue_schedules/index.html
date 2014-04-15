@@ -26,8 +26,8 @@
             <td><%= vs.program_id %></td>
             <td><%= venue_schedule_state_tag(vs) %>
             <td><%= vs.program.start_date.strftime('%B') + ' ' + vs.program.start_date.strftime('%Y') %></td>
-            <td><%= vs.program.start_date.strftime('%d/%m/%Y') %></td>
-            <td><%= vs.program.end_date.strftime('%d/%m/%Y') %></td>
+            <td><%= vs.program.start_date.strftime('%d %B %Y') %></td>
+            <td><%= vs.program.end_date.strftime('%d %B %Y') %></td>
             <td><%= (vs.program.timings.map {|c| c[:name]}).join(", ") %></td>
             <td><%= vs.blocked_by_user.fullname %></td>
             <td><%= link_to "Open", venue_schedule_path(vs), :class => 'btn btn-primary btn-sm' %></td>

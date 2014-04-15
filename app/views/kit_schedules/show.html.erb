@@ -23,11 +23,15 @@
       </tr>
       <tr>
         <td><strong>Booking Start Date</strong></td>
-        <td><%= @kit_schedule.start_date %></td>
+        <td><%= @kit_schedule.start_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>Booking End Date</strong></td>
-        <td><%= @kit_schedule.end_date %></td>
+        <td><%= @kit_schedule.end_date.strftime('%d %B %Y') %></td>
+      </tr>
+      <tr>
+        <td><strong>Timing (s)</strong></td>
+        <td><%= (@kit_schedule.program.timings.map {|c| c[:name]}).join(", ") if @kit_schedule.program %></td>
       </tr>
       <tr>
         <td><strong>Comments</strong></td>

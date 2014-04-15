@@ -13,7 +13,7 @@ class TeacherSlot < ActiveRecord::Base
   # Validator
   def start_and_end_dates
     if self.date
-      errors.add(:date, "- Start date must be in the future") if self.date < Time.now
+      errors.add(:date, "- Start date must be in the future") if self.date < Time.zone.now
     end
   end
 

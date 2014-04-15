@@ -88,7 +88,7 @@ class Kit < ActiveRecord::Base
       return self.state
     end
     #get the current schedule if any for the kit
-    kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.now, Time.now).order("start_date ASC")
+    kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.zone.now, Time.zone.now).order("start_date ASC")
 
     if( kitSchedule[0].nil? )
       return STATE_AVAILABLE
@@ -100,7 +100,7 @@ class Kit < ActiveRecord::Base
   def blockable_programs
     # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
     # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('center_id IN (?) AND start_date > ?', self.center_ids, Time.now)
+    Program.where('center_id IN (?) AND start_date > ?', self.center_ids, Time.zone.now)
   end
 
   def friendly_name

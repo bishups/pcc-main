@@ -4,7 +4,7 @@ class VenueScheduleValidator < ActiveModel::Validator
 
     program = record.program
 
-    if program.start_date < Time.now
+    if program.start_date < Time.zone.now
       record.errors[:start_date] << "cannot be in the past"
     elsif program.end_date < program.start_date
       record.errors[:end_date] << "cannot be before start date"

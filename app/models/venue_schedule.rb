@@ -122,9 +122,9 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
 
-    event ::Program::CLOSED do
-      transition STATE_CONDUCTED => STATE_CLOSED
-    end
+   # event ::Program::CLOSED do
+   #   transition STATE_CONDUCTED => STATE_CLOSED
+   # end
 
     event ::Program::CANCELLED do
       transition STATE_BLOCK_REQUESTED => STATE_CANCELLED

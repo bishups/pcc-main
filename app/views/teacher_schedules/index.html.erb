@@ -24,8 +24,8 @@
     <% @teacher_schedules.each do |ts| %>
     <tr>
       <td><%= ts.start_date.strftime("%B %Y") %></td>
-      <td><%= ts.start_date %></td>
-      <td><%= ts.end_date %></td>
+      <td><%= ts.start_date.strftime('%d %B %Y') %></td>
+      <td><%= ts.end_date.strftime('%d %B %Y') %></td>
       <td>
         <% if ts.program_id %>
             <%=  (ts.program.timings.map {|c| c[:name]}).join(", ") %>
@@ -49,6 +49,8 @@
       <td>
         <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id  %>
         <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if !ts.program_id %>
+
+        <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-danger btn-sm' if !ts.program_id %>
       </td>
       <td>
         <%# <%= link_to "Block", edit_teacher_teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>

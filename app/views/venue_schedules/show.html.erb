@@ -24,11 +24,11 @@
       </tr>
       <tr>
         <td><strong>Booking Start Date</strong></td>
-        <td><%= @venue_schedule.program.start_date %></td>
+        <td><%= @venue_schedule.program.start_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>Booking End Date</strong></td>
-        <td><%= @venue_schedule.program.end_date %></td>
+        <td><%= @venue_schedule.program.end_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>Timing (s)</strong></td>

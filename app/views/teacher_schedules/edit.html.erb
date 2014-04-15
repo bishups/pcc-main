@@ -8,8 +8,10 @@
     <div class='page-body'>
       <div class='row'>
         <div class='col-md-6'>
-          
+
+
 <%= form_tag("/teachers/#{@teacher.id}/teacher_schedules/#{@teacher_schedule.id}", :method => 'put', :class => 'form') do |f| %>
+
   <%= resource_error_messages!(@teacher_schedule) %>
 
   <div class="form-group">

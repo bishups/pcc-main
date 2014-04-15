@@ -45,7 +45,7 @@ class KitSchedule < ActiveRecord::Base
   validates :program_id, :presence => true
   validates_uniqueness_of :program_id, :scope => "kit_id"
 
-  before_create :assign_start_date_end_date!, :assign_person_ids!
+  before_create :assign_start_date_end_date!#, :assign_person_ids!
   #after_create :connect_program!
   
   #checking for overlap validation 
@@ -85,7 +85,8 @@ class KitSchedule < ActiveRecord::Base
 
   def set_up_details!
     assign_start_date_end_date!
-    assign_person_ids!
+    # TODO - this will anyway be called during the save
+    #assign_person_ids!
   end
   
   def assign_start_date_end_date!
@@ -94,15 +95,17 @@ class KitSchedule < ActiveRecord::Base
     end    
     prog = Program.find_by_id(self.program_id)
     if prog
-      self.start_date = prog.start_date - 1
-      self.end_date = prog.end_date + 1 
+      self.start_date = prog.start_date - 1.day
+      self.end_date = prog.end_date + 1.day
     else
-      self.start_date = Date.today
-      self.end_date = Date.today
+      # http://www.elabs.se/blog/36-working-with-time-zones-in-ruby-on-rails
+      self.start_date = Date.current
+      self.end_date = Date.current
     end
 
   end
 
+  # TODO - need to fix this
   def assign_person_ids!
     if self.state.nil?
       return

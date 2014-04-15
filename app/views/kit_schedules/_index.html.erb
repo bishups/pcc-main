@@ -14,8 +14,8 @@
     <td><%= ks.kit.name %></td>
     <td><%= kit_schedule_state_tag(ks) %></td>
     <td><%= ks.program.name rescue nil%></td>
-    <td><%= ks.start_date.strftime('%d/%m/%Y') rescue nil%></td>
-    <td><%= ks.end_date.strftime('%d/%m/%Y') rescue nil%></td>
+    <td><%= ks.start_date.strftime('%d %B %Y') rescue nil%></td>
+    <td><%= ks.end_date.strftime('%d %B %Y') rescue nil%></td>
     <td> <%= link_to "Open", kit_schedule_path(ks), :class => 'btn btn-primary btn-sm' %> </td>
   </tr>
 <% end %>

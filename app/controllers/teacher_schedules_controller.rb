@@ -68,7 +68,7 @@ class TeacherSchedulesController < ApplicationController
   # GET /teacher_schedules/1/edit
   def edit
     @teacher_schedule = TeacherSchedule.find(params[:id])
-
+    @teacher = @teacher_schedule.teacher
     respond_to do |format|
       format.html
     end
@@ -102,7 +102,7 @@ class TeacherSchedulesController < ApplicationController
   # DELETE /teacher_schedules/1.json
   def destroy
     @teacher_schedule = TeacherSchedule.find(params[:id])
-
+    @teacher = @teacher_schedule.teacher
     @teacher_schedule.destroy()
 
     respond_to do |format|

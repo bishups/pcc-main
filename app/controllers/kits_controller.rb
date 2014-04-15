@@ -92,7 +92,7 @@ class KitsController < ApplicationController
   def state_update(kit, trig)
     if trig != ::Kit::STATE_AVAILABLE
       assigned_kit_schedules = kit.kit_schedules.where("state NOT IN (?) and start_date <= ? and end_date >= ?",
-                                                    ['closed','cancel'],Date.today,Date.today)
+                                                    ['closed','cancel'],Date.current,Date.current)
         if( !assigned_kit_schedules.nil? && assigned_kit_schedules.count > 0 )
           kit.errors[:error] << "-- An Open Kit Schedule is there CANNOT change Kit State"
           return false

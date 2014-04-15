@@ -7,7 +7,7 @@ class VenueSchedulesController < ApplicationController
   # GET /venue_schedules.json
   def index
     @venue = ::Venue.find(params[:venue_id].to_i)
-    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.start_date > ?', DateTime.now])
+    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.start_date > ?', Time.zone.now])
 
     respond_to do |format|
       format.html
