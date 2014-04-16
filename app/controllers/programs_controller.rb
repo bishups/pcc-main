@@ -94,10 +94,6 @@ class ProgramsController < ApplicationController
     # @timings = program_type.timings.map{|a| [a.name, a.id]}.insert(0, "Select a Slot Time")
   end
 
-  def count_teachers
-    @program.teacher_schedules.group("teacher_id").count
-  end
-
   private
 
   def state_update(prog, trig)

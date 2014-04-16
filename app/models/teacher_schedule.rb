@@ -68,6 +68,9 @@ class TeacherSchedule < ActiveRecord::Base
     end
   end
 
+  def is_connected?
+    ::ProgramTeacherSchedule::CONNECTED_STATES.include?(self.state)
+  end
 
   def combine_consecutive_schedules?
     additional_days = 0

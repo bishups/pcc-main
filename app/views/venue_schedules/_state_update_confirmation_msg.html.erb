@@ -1,4 +1,7 @@
-<% if [::VenueSchedule::EVENT_BLOCK, ::VenueSchedule::EVENT_REQUEST_PAYMENT, ::VenueSchedule::EVENT_PROCESS_PAYMENT].include?(@trigger) %>
+<% if @trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL && @venue_schedule.approval_requested_for_other_venue? %>
+<div class='alert alert-danger'> <strong> WARNING </strong> Approval has already been requested for another venue. </div>
+<% end %>
+<% if [::VenueSchedule::EVENT_BLOCK, ::VenueSchedule::EVENT_REQUEST_PAYMENT].include?(@trigger) %>
 <div class='alert alert-info'>
 <% else %>
 <div class='alert alert-danger'>
@@ -11,7 +14,7 @@
       Are you sure you want to <strong>Authorize</strong> this venue for payment processing?
     <% elsif @trigger == ::VenueSchedule::EVENT_REQUEST_PAYMENT %>
       Are you sure you want to send this venue schedule to <strong>Finance Department</strong> for processing of payment?
-    <% elsif @trigger == ::VenueSchedule::EVENT_PROCESS_PAYMENT %>
+    <% elsif @trigger == ::VenueSchedule::EVENT_PAID %>
       This venue will be assigned and made available for use in the associated <strong>Program</strong> once payment processing is complete. Are you sure you want to proceed?
     <% elsif @trigger == ::VenueSchedule::EVENT_CANCEL %>
       This will cancel the venue booking associated with the program. Are you sure you want to proceed?

@@ -6,10 +6,7 @@
         <%= program_state_tag(@program) %>
       </small>
       <span class='pull-right'>
-        <% if false %>
-        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
-        <% end %>
-        <% unless @program.is_announced? %>
+        <% unless (@program.is_announced? || ::Program::FINAL_STATES.include?(@program.state)) %>
           <%= link_to 'Drop Program', drop_program_path, :class => 'btn btn-warning' %>
           <%= link_to 'Announce Program', announce_program_path, :class => 'btn btn-danger', :disabled => (! @program.ready_for_announcement? ) %>
         <% else %>
@@ -24,7 +21,7 @@
 <div class='alert alert-success'>
   <strong>This program is ready for announcement.</strong>
 </div>
-<% else %>
+<% elsif !::Program::FINAL_STATES.include?(@program.state) %>
 <div class='alert alert-danger'>
   This program is not yet ready for announcement.
   <small><%= link_to "[Why?]", '#', :id => 'prog-why-a' %></small>
@@ -35,8 +32,8 @@
       <tr>
         <td width='25%'><strong>Venue Status</strong></td>
         <td>
-          <% if @program.venue_connected? %>
-            Venue State: <%= (@program.venue_schedules.map {|vs| "#{vs.venue[:name]} => #{vs[:state]}"}).join(", ") %>
+          <% if @program.no_of_venues_connected %>
+            Venue State: <%= (@program.venue_schedules.map {|vs| "#{vs.venue[:name]} => #{vs[:state]}" if vs.is_connected?}).join(", ") %>
           <% else %>
             Venue is not associated with this program.
           <% end %>
@@ -45,8 +42,8 @@
       <tr>
         <td><strong>Kit Status</strong></td>
         <td>
-          <% if @program.kit_connected? %>
-            Kit State: <%= (@program.kit_schedules.map {|ks| "#{ks.kit[:name]} => #{ks[:state]}"}).join(", ") %>
+          <% if @program.no_of_kits_connected %>
+            Kit State: <%= (@program.kit_schedules.map {|ks| "#{ks.kit[:name]} => #{ks[:state]}" if ks.is_connected?}).join(", ") %>
           <% else %>
             Kit is not associated with this program.
           <% end %>
@@ -56,7 +53,7 @@
         <td><strong>Teacher Status</strong></td>
         <td>
           Teacher Required: <%= @program.program_type.minimum_no_of_teacher %> <br/>
-          Teacher Associated: <%= @program.teachers_connected %>
+          Teacher Associated: <%= @program.no_of_teachers_connected %>
         </td>
       </tr>
     </table>
@@ -106,7 +103,7 @@
       <h3>
         Venue Details
       <span class='pull-right'>
-        <%= link_to 'Assign Venue', new_venue_schedule_path(:program_id => @program.id), :class => 'btn btn-info'  unless ::Program::FINAL_STATES.include?(@program.state) %>
+        <%= link_to 'Add Venue', new_venue_schedule_path(:program_id => @program.id), :class => 'btn btn-primary'  unless ::Program::FINAL_STATES.include?(@program.state) %>
       </span>
       </h3>
     </div>
@@ -114,10 +111,12 @@
 
   <div class='row'>
   <div class='col-md-12'>
-    <% if @program.venue_connected? %>
+    <% if @program.no_of_venues_connected %>
         <% @program.venue_schedules.each do |vs| %>
             <div class='alert alert-success'>
-              Venue  <%= link_to "#{vs.venue.name}", venue_schedule_path(vs) %> is linked to the program.
+              <% if vs.is_connected? %>
+                Venue  <%= link_to "#{vs.venue.name}", venue_schedule_path(vs) %> is linked to the program.
+              <% end %>
             </div>
         <% end %>
     <% else %>
@@ -133,17 +132,19 @@
     <h3>
       Kit Details
       <span class='pull-right'>
-        <%= link_to 'Assign Kit', new_kit_schedule_path(:program_id => @program.id), :class => 'btn btn-info'  unless ::Program::FINAL_STATES.include?(@program.state) %>
+        <%= link_to 'Add Kit', new_kit_schedule_path(:program_id => @program.id), :class => 'btn btn-primary'  unless ::Program::FINAL_STATES.include?(@program.state) %>
       </span>
     </h3>
   </div>
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <% if @program.kit_connected? %>
+    <% if @program.no_of_kits_connected %>
         <% @program.kit_schedules.each do |ks| %>
             <div class='alert alert-success'>
-              Kit  <%= link_to "#{ks.kit.name}", kit_schedule_path(ks) %> is linked to the program.
+              <% if ks.is_connected? %>
+                  Kit  <%= link_to "#{ks.kit.name}", kit_schedule_path(ks) %> is linked to the program.
+              <% end %>
             </div>
         <% end %>
     <% else %>
@@ -159,17 +160,17 @@
     <h3>
       Teacher Details
       <span class='pull-right'>
-        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-info' unless ::Program::FINAL_STATES.include?(@program.state) %>
+        <%= link_to 'Add Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-primary' unless ::Program::FINAL_STATES.include?(@program.state) %>
       </span>
     </h3>
   </div>
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <% if @program.teachers_connected > 0 %>
-      <% @program.teachers.uniq.each do |t| %>
+    <% if @program.no_of_teachers_connected > 0 %>
+      <% @program.teachers_connected.each do |ts| %>
       <div class='alert alert-success'>
-        Teacher  <%= link_to "#{t.user.firstname}", teacher_teacher_schedules_path(t) %> is linked to the program.
+        Teacher  <%= link_to "#{ts.teacher.user.firstname}", teacher_teacher_schedules_path(ts.teacher) %> is linked to the program.
       </div>
       <% end %>
     <% else %>

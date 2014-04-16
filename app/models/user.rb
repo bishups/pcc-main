@@ -273,7 +273,7 @@ class User < ActiveRecord::Base
             #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
             #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
             #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
-            %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-danger" :hover> + Add New </button></a>}
+            %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a>}
           else
             %{<div class="access_privilege_ap"> #{ap_str} </div >}
           end

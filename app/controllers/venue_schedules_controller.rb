@@ -87,12 +87,23 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule =::VenueSchedule.find(params[:id].to_i)
     @trigger = params[:trigger]
     #authorize! :update, @venue
-    state_update(@venue_schedule, @trigger)
+    @venue_schedule.blocked_for = params[:blocked_for] if params.has_key?(:blocked_for)
 
     respond_to do |format|
-      format.html { redirect_to [@venue, @venue_schedule] }
+      format.html do
+        if state_update(@venue_schedule, @trigger)
+          if @venue_schedule.save!
+            #redirect_to action: "edit" , :trigger => params[:trigger]
+            redirect_to [@venue,@venue_schedule]
+          end
+        else
+          render :action => 'edit'
+        end
+      end
       format.json { render :json => @venue_schedule }
     end
+
+
   end
 
   # DELETE /venue_schedules/1
@@ -108,7 +119,7 @@ class VenueSchedulesController < ApplicationController
   #end
 
   def state_update(vs, trig)
-    if ::VenueSchedule::PROCESSABLE_EVENTS.include?(@trigger)
+    if ::VenueSchedule::PROCESSABLE_EVENTS.include?(trig)
       vs.send(trig)
     end
   end

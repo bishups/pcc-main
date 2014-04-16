@@ -113,8 +113,8 @@ class Venue < ActiveRecord::Base
     Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
   end
 
-  def paid?
-    self.per_day_price.to_i > 0
+  def free?
+    self.per_day_price.to_i == 0
   end
 
   def published?

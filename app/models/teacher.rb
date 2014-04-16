@@ -62,6 +62,11 @@ class Teacher < ActiveRecord::Base
 
   end
 
+  def is_connected?(program)
+
+    ::ProgramTeacherSchedule::CONNECTED_STATES.include?(self.state)
+  end
+
   def before_unattach
     if self.in_schedule?
       self.errors.add(:state, " cannot unattach from zone when teacher is linked to a program.")

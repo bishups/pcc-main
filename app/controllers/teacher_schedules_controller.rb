@@ -79,7 +79,7 @@ class TeacherSchedulesController < ApplicationController
   def update
     @teacher_schedule = TeacherSchedule.find(params[:id])
     @teacher_schedule.assign_attributes(params[:teacher_schedule])
-
+    @teacher = @teacher_schedule.teacher
     respond_to do |format|
       additional_days = @teacher_schedule.combine_consecutive_schedules?
       if (additional_days + @teacher_schedule.no_of_days < 3)

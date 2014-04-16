@@ -162,7 +162,7 @@ class ProgramTeacherSchedulesController < ApplicationController
         error << ts.errors.full_messages
         break
       end
-      ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
+      ts.state = program.is_announced? ? (::ProgramTeacherSchedule::STATE_ASSIGNED) : (::ProgramTeacherSchedule::STATE_BLOCKED)
       ts.program_id = program.id
       ts.blocked_by_user_id = current_user.id
       ts.save(:validate => false)

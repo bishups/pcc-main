@@ -7,7 +7,7 @@
       <span class="sr-only">Toggle Dropdown</span>
     </button>
     <ul class="dropdown-menu" role="menu">
-      <% @venue_schedule.state_events.each do |ev| %>
+      <% (@venue_schedule.state_events - ::Program::NOTIFICATIONS).each do |ev| %>
       <li>
         <%= link_to ev, edit_venue_schedule_path(@venue_schedule, :trigger => ev) %>
       </li>

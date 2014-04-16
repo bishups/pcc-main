@@ -24,6 +24,8 @@ class KitSchedule < ActiveRecord::Base
   STATE_CANCELLED  = "Cancelled"
   STATE_CLOSED      = "Closed"
 
+  CONNECTED_STATES = [STATE_BLOCKED, STATE_ASSIGNED, STATE_ISSUED]
+
   EVENT_BLOCK      = "Block"
   EVENT_ISSUE      = "Issue"
   EVENT_ASSIGN     = "Assign"
@@ -81,6 +83,10 @@ class KitSchedule < ActiveRecord::Base
     event EVENT_CANCEL do
       transition [STATE_BLOCKED, STATE_ASSIGNED] => STATE_CANCELLED
     end
+  end
+
+  def is_connected?
+    CONNECTED_STATES.include?(self.state)
   end
 
   def set_up_details!

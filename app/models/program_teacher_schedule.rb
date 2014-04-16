@@ -53,6 +53,10 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   STATE_COMPLETED_CLASS     = 'Completed Class'
   STATE_WITHDRAWN           = 'Withdrawn'
 
+  CONNECTED_STATES = [STATE_BLOCKED, STATE_RELEASE_REQUESTED, STATE_ASSIGNED, STATE_IN_CLASS, STATE_COMPLETED_CLASS]
+  FINAL_STATES = [STATE_COMPLETED_CLASS, STATE_WITHDRAWN]
+
+
   # Events
   EVENT_REQUEST_RELEASE    = 'Request Release'
   EVENT_RELEASE            = 'Release'
@@ -122,7 +126,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     return true if (self.is_center_scheduler? && !self.program.venue_approval_requested?)
     return true if (self.is_sector_coordinator? && !self.program.venue_approved?)
 
-    if (self.is_center_scheduler? && (self.program.teachers_connected <= self.program.minimum_no_of_teacher))
+    if (self.is_center_scheduler? && (self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher))
         self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
     end
 
@@ -134,7 +138,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       return false
     end
 
-    if ((self.program.teachers_connected <= self.program.minimum_no_of_teacher) && self.program.venue_approved?)
+    if ((self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher) && self.program.venue_approved?)
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
       return false
     end
@@ -147,7 +151,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     if !is_sector_coordinator?
       return false
     end
-    if self.program.teachers_connected <= self.program.minimum_no_of_teacher
+    if self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
       false
     end
@@ -159,7 +163,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       return false
     end
 
-    if self.program.teachers_connected <= self.program.minimum_no_of_teacher
+    if self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
       false
     end

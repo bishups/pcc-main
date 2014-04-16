@@ -174,13 +174,16 @@ class Program < ActiveRecord::Base
     # TODO - cancel the timer for start of the class, no need for now, we will just ignore it once the timer comes
   end
 
+  def in_final_state?
+    ::Program::FINAL_STATES.include?(self.state)
+  end
 
   def friendly_name
     ("%s %s %s" % [self.center.name, self.start_date.strftime('%d-%m-%Y'), self.program_type.name]).parameterize
   end
 
   def is_announced?
-    ! [STATE_PROPOSED, ''].include?(self.state)
+    self.announce_program_id && !self.announce_program_id.empty?
   end
 
   def generate_program_id!
@@ -224,7 +227,7 @@ class Program < ActiveRecord::Base
   #end
 
   def kit_connected?
-    !self.kit_schedules.empty?
+    self.kit_schedules && !self.kit_schedules.empty?
   end
 
   #def connect_kit(kit)
@@ -254,8 +257,15 @@ class Program < ActiveRecord::Base
     self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
   end
 
+  def no_of_teachers_connected
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
   def teachers_connected
-    self.teachers.uniq.count
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
   def minimum_no_of_teacher
@@ -263,7 +273,23 @@ class Program < ActiveRecord::Base
   end
 
   def minimum_teachers_connected?
-    self.teachers_connected >= self.minimum_no_of_teacher
+    self.no_of_teachers_connected >= self.minimum_no_of_teacher
+  end
+
+
+  def no_of_kits_connected
+    return 0 if !self.kit_schedules
+    self.kit_schedules.where('state IN (?)', ::KitSchedule::CONNECTED_STATES).count
+  end
+
+  def no_of_venues_connected
+    return 0 if !self.venue_schedules
+    self.venue_schedules.where('state IN (?)', ::VenueSchedule::CONNECTED_STATES).count
+  end
+
+  def no_of_venues_paid
+    return 0 if !self.venue_schedules
+    self.venue_schedules.where('state IN (?)', ::VenueSchedule::PAID_STATES).count
   end
 
   def start_date_time
@@ -284,17 +310,16 @@ class Program < ActiveRecord::Base
   end
 
   def venue_approved?
-    self.venue_schedules.each { |v|
+    self.venue_schedules.each { |vs|
       return true if vs.approved?
     }
     false
   end
 
   def ready_for_announcement?
-    return false unless self.venue_connected?
-    return false unless self.kit_connected?
+    return false unless self.no_of_venues_paid > 0
+    return false unless self.no_of_kits_connected > 0
     return false unless self.minimum_teachers_connected?
-
     true
   end
 end
