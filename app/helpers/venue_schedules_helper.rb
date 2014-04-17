@@ -6,8 +6,8 @@ module VenueSchedulesHelper
         '<span class="label label-info">Blocked Requested</span>'
       elsif vs.state == ::VenueSchedule::STATE_BLOCKED
         '<span class="label label-info">Blocked</span>'
-      elsif vs.state == ::VenueSchedule::STATE_DROPPED
-        '<span class="label label-default">Dropped</span>'
+      elsif vs.state == ::VenueSchedule::STATE_UNAVAILABLE
+        '<span class="label label-default">Unavailable</span>'
       elsif vs.state == ::VenueSchedule::STATE_APPROVAL_REQUESTED
         '<span class="label label-info">Approval Requested</span>'
       elsif vs.state == ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT
