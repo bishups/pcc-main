@@ -187,6 +187,11 @@ class VenueSchedule < ActiveRecord::Base
     CONNECTED_STATES.include?(self.state)
   end
 
+  def is_active?
+    return false if FINAL_STATES.include?(self.state)
+    return false if !self.program.is_active?
+    true
+  end
 
   def on_authorization_for_payment?
     if self.errors.empty?

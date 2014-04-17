@@ -1,4 +1,4 @@
-<% unless [EVENT_REJECT, EVENT_INSUFFICIENT_INFO].include?(@trigger) %>
+<% unless [::Venue::EVENT_INSUFFICIENT_INFO].include?(@trigger) %>
 <div class='alert alert-info'>
 <% else %>
 <div class='alert alert-danger'>
@@ -9,8 +9,6 @@
       Are you sure you want to <strong>approve</strong> this venue?
     <% elsif @trigger == ::Venue::EVENT_REJECT %>
       Are you sure you want to <strong>reject</strong> this venue?
-    <% elsif @trigger == ::Venue::EVENT_PUBLISH%>
-      Are you sure you want to <strong>publish</strong> this venue and make it available for programs?
     <% elsif @trigger == ::Venue::EVENT_INSUFFICIENT_INFO %>
       This venue will be in pending state and will not be available for association with programs. Do you want to proceed?
     <% end %>

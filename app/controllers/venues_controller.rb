@@ -63,16 +63,19 @@ class VenuesController < ApplicationController
     @venue = Venue.find(params[:id])
     @trigger = params[:trigger]
 
-    state_update(@venue, @trigger)
 
     respond_to do |format|
-      if @venue.update_attributes(params[:venue])
-        format.html { redirect_to @venue, notice: 'Venue was successfully updated.' }
-        format.json { head :no_content }
-      else
-        format.html { render action: "edit" }
-        format.json { render json: @venue.errors, status: :unprocessable_entity }
+      format.html do
+        if state_update(@venue, @trigger)
+          if @venue.save!
+            format.html { redirect_to @venue, notice: 'Venue was successfully updated.' }
+            format.json { head :no_content }
+          end
+        else
+          render :action => 'edit'
+        end
       end
+      format.json { render :json => @venue }
     end
   end
 
