@@ -7,16 +7,12 @@
   <p>
     <% if @trigger == ::KitSchedule::EVENT_BLOCK %>
         Are you sure you want to <strong>block</strong> this kit for program <strong><%= @kit_schedule.program.name%> </strong>for the specified dates?
-    <% elsif @trigger == ::KitSchedule::EVENT_ASSIGN %>
-        Are you sure you want to <strong>Assign</strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
     <% elsif @trigger == ::KitSchedule::EVENT_ISSUE %>
         Are you sure you want to <strong> Issue </strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
-    <% elsif @trigger == ::KitSchedule::EVENT_CLOSE %>
-        Are you sure you want to change state to <strong> Closed </strong> for this kit?
+    <% elsif @trigger == ::KitSchedule::EVENT_RETURNED %>
+        Are you sure you want to change state to <strong> Returned </strong> for this kit?
     <% elsif @trigger == ::KitSchedule::EVENT_CANCEL %>
         Are you sure you want to change state to <strong> Cancelled </strong> for this kit?
-    <% elsif @trigger == ::KitSchedule::EVENT_OVERDUE %>
-        Are you sure you want to change state to <strong> Over Due </strong> for this kit?
     <% end %>
   </p>
 </div>
