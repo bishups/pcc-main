@@ -39,30 +39,41 @@ class TeacherSchedulesController < ApplicationController
   # POST /teacher_schedules.json
   def create
     @teacher = Teacher.find(params[:teacher_id])
-    @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
-    @teacher_schedule.teacher_id = params[:teacher_id]
 
+    timing_arr = params[:teacher_schedule][:timing_id]
     respond_to do |format|
-      if @teacher_schedule.valid?
-        additional_days = @teacher_schedule.combine_consecutive_schedules?
-        if (additional_days + @teacher_schedule.no_of_days < 3)
-          @teacher_schedule.errors[:end_date] << "cannot be less than 2 days after start date."
-          format.html { render action: "new" }
-          format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
-        else
-          @teacher_schedule.combine_consecutive_schedules if additional_days != 0
-          if !@teacher_schedule.save
+      if (timing_arr)
+        timing_arr.each { |timing_id|
+          @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
+          @teacher_schedule.teacher_id = params[:teacher_id]
+          @teacher_schedule.timing_id = timing_id
+          if @teacher_schedule.valid?
+            additional_days = @teacher_schedule.combine_consecutive_schedules?
+            if (additional_days + @teacher_schedule.no_of_days < 3)
+              @teacher_schedule.errors[:end_date] << "cannot be less than 2 days after start date."
+              format.html { render action: "new" }
+              format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
+            else
+              @teacher_schedule.combine_consecutive_schedules if additional_days != 0
+              if !@teacher_schedule.save
+                format.html { render action: "new" }
+                format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
+              else
+                format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
+              end
+            end
+          else
             format.html { render action: "new" }
             format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
-          else
-            format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
           end
-        end
+        }
       else
+        @teacher_schedule.errors[:timing] << "At least one Slot must be selected."
         format.html { render action: "new" }
         format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
       end
     end
+
   end
 
   # GET /teacher_schedules/1/edit
