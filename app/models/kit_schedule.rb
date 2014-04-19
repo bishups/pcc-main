@@ -162,7 +162,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def comments_present?
-    if self.comments.empty?
+    if self.comments.nil? || self.comments.empty?
       self.errors[:comments] << " cannot be blank."
       return false
     end
@@ -171,7 +171,20 @@ class KitSchedule < ActiveRecord::Base
 
   def before_issue
     return false unless self.comments_present?
-    return true unless self.issue_for_schedules.nil?
+    unless self.issue_for_schedules.nil?
+      self.issue_for_schedules.each { |ks_id|
+        ks = KitSchedule.find(ks_id.to_i)
+        next unless ks  # something might have changed - not flagging any error
+        next unless ks.state == STATE_ASSIGNED # something might have changed - not flagging any error
+        ks.issue_for_schedules = []
+        ks.due_date_time = self.due_date_time
+        ks.comments = self.comments
+        ks.issued_to = self.issued_to
+        ks.send(EVENT_ISSUE)
+        # TODO - check if we need to do any error handling error
+      }
+      return true
+    end
 
     if self.issued_to.nil?
       self.errors[:issued_to] << " cannot be blank."
@@ -236,7 +249,7 @@ class KitSchedule < ActiveRecord::Base
 
       # for other overlap - confirm once - start delay_job on last program, pass kit_schedule list as parameter to delay_job
       if additional_kit_schedules
-        self.issue_for_schedules = additional_kit_schedules.class == Array ? additional_kit_schedules : [additional_kit_schedules]
+        self.issue_for_schedules = additional_kit_schedules.collect(&:id)
         self.errors[:base] << "Due Date overlaps with other schedules where kit is assigned. Do you want to issue the kit for all the schedules?"
         return false
       end
@@ -254,26 +267,15 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def trigger_overdue(kit_schedules)
-    kit_schedules.each { |ks|
-      next if !ks.reloaded?
-      if [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED].include?(ks.state)
-        ks.send(EVENT_OVERDUE)
-        ks.save if ks.errors.empty?
-      end
-    }
+    return if !self.reloaded?
+    if [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED].include?(ks.state)
+      self.send(EVENT_OVERDUE)
+      self.save if self.errors.empty?
+    end
   end
 
   def after_issue
-    if !self.issue_for_schedules.nil?
-      if self.issue_for_schedules.type == Array
-        self.issue_for_schedules << self
-      else
-        self.issue_for_schedules = [self.issue_for_schedules, self]
-      end
-      self.delay(:run_at => self.due_date_time).trigger_overdue(self.issue_for_schedules)
-    else
-      self.delay(:run_at => self.due_date_time).trigger_overdue([self])
-    end
+    self.delay(:run_at => self.due_date_time).trigger_overdue
     self.issue_for_schedules = NIL
     true
   end

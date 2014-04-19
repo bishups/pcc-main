@@ -142,7 +142,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.issued_to = params[:issued_to] unless params[:issued_to].nil?
     @kit_schedule.due_date_time = params[:due_date_time] unless params[:due_date_time].nil?
     @kit_schedule.comments = params[:comments] unless params[:comments].nil?
-    @kit_schedule.issue_for_schedules = params[:issue_for_schedules] unless params[:issue_for_schedules].nil?
+    @kit_schedule.issue_for_schedules = params[:issue_for_schedules].split(' ').map(&:to_i) unless params[:issue_for_schedules].nil?
     @kit_schedule.current_user = current_user
 
     respond_to do |format|
