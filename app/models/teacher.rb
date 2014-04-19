@@ -21,6 +21,7 @@ class Teacher < ActiveRecord::Base
   #validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
 
   has_many :teacher_schedules
+  has_many :timings, through: :teacher_schedules
   attr_accessible :teacher_schedules, :teacher_schedule_ids
 
   attr_accessible :comments
