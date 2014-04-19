@@ -18,7 +18,6 @@
 
 class Kit < ActiveRecord::Base
 
-
   STATE_AVAILABLE     = 'Available'
   STATE_UNDER_REPAIR  = 'Under Repair'
   STATE_UNAVAILABLE   = 'Unavailable'

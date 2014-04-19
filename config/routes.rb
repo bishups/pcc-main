@@ -27,7 +27,11 @@ PccMain::Application.routes.draw do
   resources :venues
   resources :kits
   resources :venue_schedules
-  resources :kit_schedules
+  resources :kit_schedules do
+    member do
+      get 'reserve'
+    end
+  end
 
   resources :teachers do
     resources :teacher_schedules

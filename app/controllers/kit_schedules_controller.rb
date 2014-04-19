@@ -41,6 +41,18 @@ class KitSchedulesController < ApplicationController
     end
   end
 
+  def reserve
+    @kit = Kit.find(params[:id].to_i)
+    @trigger = params[:trigger]
+    @kit_schedule = KitSchedule.new
+    @kit_schedule.kit_id = @kit.id
+
+    respond_to do |format|
+      format.html { render action: "reserve" }
+      format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+    end
+  end
+
   # GET /kit_schedules/1/edit
   def edit
     @kit_schedule = KitSchedule.find(params[:id])
@@ -53,9 +65,37 @@ class KitSchedulesController < ApplicationController
     end
   end
 
+
+  def create_on_trigger
+    @kit_schedule = KitSchedule.new(params[:kit_schedule])
+    @kit = @kit_schedule.kit
+    @trigger = params[:trigger]
+
+    respond_to do |format|
+      format.html do
+        if @kit_schedule.send(@trigger)
+          if @kit_schedule.save!
+            redirect_to kit_schedules_path(:kit_id => @kit.id)
+          end
+        else
+          render :action => 'reserve'
+        end
+      end
+
+      format.json { render :json => @kit_schedule }
+    end
+  end
+
+
+
   # POST /kit_schedules
   # POST /kit_schedules.json
   def create
+    # In case it is a reserve/ overdue/ or under-repair schedule, call relevant handler
+    if params.has_key?('trigger')
+      return create_on_trigger
+    end
+
     # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
     if params.has_key?(:kit_id)
       kit_id = params[:kit_id].to_i
@@ -77,6 +117,9 @@ class KitSchedulesController < ApplicationController
       end
     end
   end
+
+
+
 
   # PUT /kit_schedules/1
   # PUT /kit_schedules/1.json
@@ -114,10 +157,11 @@ class KitSchedulesController < ApplicationController
   # DELETE /kit_schedules/1.json
   def destroy
     @kit_schedule = KitSchedule.find(params[:id])
+    kit_id = @kit_schedule.kit_id
     @kit_schedule.destroy
 
     respond_to do |format|
-      format.html 
+      format.html { redirect_to kit_schedules_path(:kit_id => kit_id) }
       format.json { head :no_content }
     end
   end

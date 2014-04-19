@@ -1,0 +1,21 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <div class='page-header'>
+      <% case @trigger %>
+      <% when ::KitSchedule::EVENT_RESERVE %>
+        <h2> Reserve Kit </h2>
+      <% when ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE %>
+          <h2> Kit Overdue </h2>
+      <% when ::KitSchedule::EVENT_UNDER_REPAIR %>
+          <h2> Kit Under Repair </h2>
+      <% end %>
+    </div>
+    <div class='page-body'>
+      <div class='row'>
+        <div class='col-md-6'>
+          <%= render 'reserve_form' %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

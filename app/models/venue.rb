@@ -54,17 +54,16 @@ class Venue < ActiveRecord::Base
   STATE_POSSIBLE        = "Possible"
   STATE_PENDING_FINANCE_APPROVAL = "Pending Finance Approval"
   STATE_INSUFFICIENT_INFO = "Insufficient Info"
-  STATE_PUBLISHED       = "Published"
 
-  EVENT_APPROVE         = "Approve"
-  EVENT_REJECT          = "Reject"
-  EVENT_PUBLISH         = "Publish"
+  EVENT_APPROVE          = "Approve"
+  EVENT_REJECT           = "Reject"
   EVENT_POSSIBLE        = "Possible"
   EVENT_INSUFFICIENT_INFO = "Insufficient Info"
+  EVENT_REQUEST_FINANCE_APPROVAL = "Request Finance Approval"
   EVENT_FINANCE_APPROVAL  = "Finance Approval"
 
   PROCESSABLE_EVENTS = [
-    EVENT_APPROVE, EVENT_REJECT, EVENT_PUBLISH, EVENT_POSSIBLE, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL
+    EVENT_APPROVE, EVENT_REJECT, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL, EVENT_REQUEST_FINANCE_APPROVAL
   ]
 
   state_machine :state, :initial => STATE_PROPOSED do
@@ -74,28 +73,31 @@ class Venue < ActiveRecord::Base
 
     after_transition any => STATE_APPROVED do |venue, transition|
       # TODO: check if paid venue or not
-      if venue.paid?
-        venue.finance_approval()
+      if venue.free?
+        venue.send(EVENT_POSSIBLE)
       else
-        venue.possible()
+        venue.send(EVENT_REQUEST_FINANCE_APPROVAL)
       end
     end
 
-    event EVENT_FINANCE_APPROVAL do
+    event EVENT_REQUEST_FINANCE_APPROVAL do
       transition [STATE_APPROVED, STATE_INSUFFICIENT_INFO] => STATE_PENDING_FINANCE_APPROVAL
+    end
+    after_transition any => STATE_PENDING_FINANCE_APPROVAL, :do => :notify_finance
+
+    event EVENT_FINANCE_APPROVAL do
+      transition [STATE_PENDING_FINANCE_APPROVAL] => STATE_POSSIBLE
     end
 
     event EVENT_POSSIBLE do
-      transition [STATE_APPROVED, STATE_PENDING_FINANCE_APPROVAL] => STATE_POSSIBLE
+      transition [STATE_APPROVED] => STATE_POSSIBLE
     end
+    after_transition any => STATE_POSSIBLE, :do => :notify_all
 
     event EVENT_REJECT do
       transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED
     end
-
-    event EVENT_PUBLISH do
-      transition [STATE_POSSIBLE] => STATE_PUBLISHED
-    end
+    before_transition STATE_POSSIBLE => STATE_REJECTED, :do => :can_reject?
 
     event EVENT_INSUFFICIENT_INFO do
       transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO
@@ -113,12 +115,36 @@ class Venue < ActiveRecord::Base
     Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
   end
 
+  def notify_finance
+    # TODO - notify finance
+  end
+
+  def notify_all
+    # TODO - notify the relevant people
+  end
+
+  def can_reject?
+    if self.is_active?
+      self.errors[:base] << "Cannot reject the venue, it has active schedules. Please close the schedules and try again."
+      return false
+    end
+    true
+  end
+
+  def is_active?
+    return false if !self.venue_schedules
+    self.venue_schedules.each { |vs|
+      return true if vs.is_active?
+    }
+    false
+  end
+
   def free?
     self.per_day_price.to_i == 0
   end
 
-  def published?
-    self.state == STATE_PUBLISHED
+  def possible?
+    self.state == STATE_POSSIBLE
   end
 
   def current_schedule
