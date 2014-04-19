@@ -32,7 +32,7 @@ class User < ActiveRecord::Base
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable,
-         :recoverable, :rememberable, :trackable, :registerable
+         :recoverable, :rememberable, :trackable, :registerable, :omniauthable, :omniauth_providers => [:google_oauth2]
 
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
@@ -64,9 +64,12 @@ class User < ActiveRecord::Base
 
 
   # Setup accessible (or protected) attributes for your model
+  attr_accessor :username, :provider, :uid, :avatar
   attr_accessible :email, :password, :password_confirmation, :remember_me
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
+  attr_accessible :username, :provider, :uid, :avatar
+
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
   validates :firstname,:email, :mobile, :presence => true
@@ -74,6 +77,17 @@ class User < ActiveRecord::Base
   validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
   validates :phone, :length => { is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
   validates :mobile, :length => { is: 10}, :numericality => {:only_integer => true }
+
+
+  def self.from_omniauth(auth)
+    if user = User.find_by_email(auth.info.email)
+      user.provider = auth.provider
+      user.uid = auth.uid
+      user
+    else
+      User.new(:email=>auth.info.email)
+    end
+  end
 
   def access_privilege_names=(names)
     names.collect do |n|
@@ -217,6 +231,7 @@ class User < ActiveRecord::Base
     }
     role_str
   end
+
 
   rails_admin do
 =begin

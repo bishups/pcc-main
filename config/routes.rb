@@ -3,7 +3,7 @@ PccMain::Application.routes.draw do
   #mount RailsAdminImport::Engine => '/rails_admin_import', :as => 'rails_admin_import'
   mount RailsAdmin::Engine => '/admin', :as => 'rails_admin'
 
-  devise_for :users, :controllers => { :registrations => 'registrations' }
+  devise_for :users, :controllers => { :registrations => 'registrations', :omniauth_callbacks => "omniauth_callbacks" }
 
   # Misc. static pages
   get '/about'                            => 'home#about'
