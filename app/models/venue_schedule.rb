@@ -42,10 +42,10 @@ class VenueSchedule < ActiveRecord::Base
   #after_create :connect_program!
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
-  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?)', vs.id, ::VenueSchedule::FINAL_STATES) }
+  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
-  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?)', vs.id, ::VenueSchedule::FINAL_STATES) }
+  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
 
   STATE_BLOCK_REQUESTED           = "Block Requested"
@@ -159,7 +159,16 @@ class VenueSchedule < ActiveRecord::Base
 
   end
 
+  def reloaded?
+    self.reload
+    return true
+  rescue ActiveRecord::RecordNotFound
+    # TODO - check if to log any error
+    return false
+  end
+
   def trigger_block_expire
+    return if !self.reloaded?
     if [STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING].include?(self.state)
       self.send(EVENT_BLOCK_EXPIRED)
       self.save if self.errors.empty?

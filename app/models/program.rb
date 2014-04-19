@@ -94,6 +94,10 @@ class Program < ActiveRecord::Base
   scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND programs.id IS NOT ? ',
                                                                                program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
 
+  # given a program, returns a relation with other overlapping program(s)
+  scope :overlapping_date_time, lambda { |start_date, end_date| Program.where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?))',
+                                                                                                                                   start_date, end_date, start_date, end_date, start_date, end_date) }
+
   def initialize(*args)
     super(*args)
   end
@@ -135,13 +139,23 @@ class Program < ActiveRecord::Base
 
   end
 
+  def reloaded?
+    self.reload
+    return true
+  rescue ActiveRecord::RecordNotFound
+    # TODO - check if to log any error
+    return false
+  end
+
   def trigger_program_start
+    return if !self.reloaded?
     if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
       self.send(EVENT_START)
     end
   end
 
   def trigger_program_finish
+    return if !self.reloaded?
     if [STATE_IN_PROGRESS].include?(self.state)
       self.send(EVENT_FINISH)
     end
@@ -151,7 +165,7 @@ class Program < ActiveRecord::Base
     self.generate_program_id!
     self.notify(ANNOUNCED)
     # start the timer for start of class notification
-    self.delay(:run_at => self.start_date_time).trigger_program_start
+    self.delay(:run_at => self.start_date).trigger_program_start
   end
 
   def on_drop
@@ -161,7 +175,7 @@ class Program < ActiveRecord::Base
   def on_start
     self.notify(STARTED)
     # start the timer for close of class notification
-    self.delay(:run_at => self.end_date_time).trigger_program_finish
+    self.delay(:run_at => self.end_date).trigger_program_finish
   end
 
   def on_finish
@@ -297,12 +311,12 @@ class Program < ActiveRecord::Base
 
   def start_date_time
     timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('start_time ASC').first
-    self.start_date.advance(:hours => timing.start_time.hour, :minutes => timing.start_time.min, :minutes => timing.start_time.sec)
+    self.start_date.advance(:hours => timing.start_time.hour, :minutes => timing.start_time.min, :seconds => timing.start_time.sec)
   end
 
   def end_date_time
     timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('end_time DESC').first
-    self.end_date.advance(:hours => timing.end_time.hour, :minutes => timing.end_time.min, :minutes => timing.end_time.sec)
+    self.end_date.advance(:hours => timing.end_time.hour, :minutes => timing.end_time.min, :seconds => timing.end_time.sec)
   end
 
   def venue_approval_requested?

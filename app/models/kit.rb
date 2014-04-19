@@ -18,13 +18,7 @@
 
 class Kit < ActiveRecord::Base
 
-  STATE_AVAILABLE     = 'Available'
-  STATE_UNDER_REPAIR  = 'Under Repair'
-  STATE_UNAVAILABLE   = 'Unavailable'
 
-  EVENT_AVAILABLE     = 'Available'
-  EVENT_UNDER_REPAIR  = 'Under Repair'
-  EVENT_UNAVAILABLE   = 'Not Available'
 
   attr_accessible :condition,:condition_comments,
                   :general_comments, :name,
@@ -53,10 +47,7 @@ class Kit < ActiveRecord::Base
   #before_update :generateKitNameString
 
 
-
-  PROCESSABLE_EVENTS = [
-    EVENT_AVAILABLE, EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE
-  ]
+  STATE_AVAILABLE     = 'Available'
 
   validates_with KitValidator
 
@@ -70,31 +61,9 @@ class Kit < ActiveRecord::Base
     self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
-  state_machine :state, :initial => EVENT_AVAILABLE do
-    event EVENT_UNDER_REPAIR do
-      transition [STATE_AVAILABLE, STATE_UNAVAILABLE] => STATE_UNDER_REPAIR
-    end
-    event EVENT_UNAVAILABLE do
-      transition [STATE_UNDER_REPAIR, STATE_AVAILABLE] => STATE_UNAVAILABLE
-    end
-    event EVENT_AVAILABLE do
-      transition any => STATE_AVAILABLE
-    end
+  state_machine :state, :initial => STATE_AVAILABLE do
   end
 
-  def getState
-    if (self.state == STATE_UNDER_REPAIR || self.state == STATE_UNAVAILABLE)
-      return self.state
-    end
-    #get the current schedule if any for the kit
-    kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.zone.now, Time.zone.now).order("start_date ASC")
-
-    if( kitSchedule[0].nil? )
-      return STATE_AVAILABLE
-    else
-      return kitSchedule[0].state
-    end  
-  end
 
   def blockable_programs
     # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
@@ -122,7 +91,6 @@ class Kit < ActiveRecord::Base
   end
 =end
 
-#canBeBlocked
 
   rails_admin do
     navigation_label 'Kit Management'

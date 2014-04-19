@@ -31,9 +31,11 @@ class ProgramsController < ApplicationController
   def create
     @program = Program.new(params[:program])
     @program.proposer_id = current_user.id
+    # Also update the start_date and end_date to start_date_time and end_date_time
 
     respond_to do |format|
       if @program.save
+        @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
         format.html { redirect_to @program, :notice => 'Program created successfully' }
       else
         format.html { render action: "new" }

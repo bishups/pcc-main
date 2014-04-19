@@ -1,19 +1,5 @@
 <h2>
   <small><%= kit_state_tag(@kit) %></small> Kit  <small><%= @kit.name %> </small>
-  <div class='btn-group'>
-    <button type="button" class="btn btn-danger">Update State</button>
-    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-      <span class="caret"></span>
-      <span class="sr-only">Toggle Dropdown</span>
-    </button>
-    <ul class="dropdown-menu" role="menu">
-        <% @kit.state_events.each do |ev| %>
-            <li>
-              <%= link_to ev, edit_kit_path(@kit, :trigger => ev) %>
-            </li>
-        <% end %>
-    </ul>
-  </div>
 
    <span class='pull-right'>
     <%= link_to "Back to Kits", kits_path, :class => 'btn btn-primary' %>

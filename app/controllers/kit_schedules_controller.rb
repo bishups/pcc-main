@@ -105,15 +105,25 @@ class KitSchedulesController < ApplicationController
 
     @kit = ::Kit.find(kit_id)
     @kit_schedule = @kit.kit_schedules.new(params[:kit_schedule])
-    @kit_schedule.set_up_details!
+    @kit_schedule.current_user = current_user
 
     respond_to do |format|
-      if @kit_schedule.save
-        format.html { redirect_to [@kit_schedule], notice: 'Kit schedule was successfully created.' }
-        format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
-      else
-        format.html { render action: "new" }
-        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      format.html do
+        # also block the kit
+        if @kit_schedule.send(::KitSchedule::EVENT_BLOCK)
+          if @kit_schedule.save
+            redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.'
+            format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
+          else
+            render :action => 'new'
+            #format.html { render action: "new" }
+            format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+          end
+        else
+          render :action => 'new'
+          #format.html { render action: "new" }
+          format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+        end
       end
     end
   end
@@ -129,13 +139,11 @@ class KitSchedulesController < ApplicationController
     @trigger = params[:trigger]
     @kit_schedule.comments = params[:comment]
 
-    if !params[:issued_to_user_id].nil?
-      @kit_schedule.issued_to_user_id = params[:issued_to_user_id]
-    end
-
-    if @trigger == "blocked"
-      @kit_schedule.blocked_by_user_id = current_user.id
-    end
+    @kit_schedule.issued_to = params[:issued_to] unless params[:issued_to].nil?
+    @kit_schedule.due_date_time = params[:due_date_time] unless params[:due_date_time].nil?
+    @kit_schedule.comments = params[:comments] unless params[:comments].nil?
+    @kit_schedule.issue_for_schedules = params[:issue_for_schedules] unless params[:issue_for_schedules].nil?
+    @kit_schedule.current_user = current_user
 
     respond_to do |format|
       format.html do
@@ -172,28 +180,12 @@ class KitSchedulesController < ApplicationController
   #end
 
    def state_update(ks, trig)
-    if trig == ::KitSchedule::STATE_CANCELLED
-      if ks.comments.empty?
-        ks.errors[:comments] << "Cannot be left empty"
-        return false
-      end
-    end
-
-    if trig == ::KitSchedule::STATE_ISSUED
-      if ks.issued_to_user_id.nil?
-        ks.errors[:issued_to_user_id] << "-- Cannot be left Blank"
-        return false
-      else
-        user = User.find_by_id(ks.issued_to_user_id)
-        if user.nil?
-          ks.errors[:issued_to_user_id] << "-- User Id does not exist"
-          return false
-        end
-      end  
-    end
 
     if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig)
       ks.send(trig)
+    else
+      ks.errors[:base] << "Received invalid event - #{trig}."
+      return false
     end
   end
 end

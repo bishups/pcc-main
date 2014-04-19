@@ -5,15 +5,15 @@ module KitSchedulesHelper
       if ks.state == ::KitSchedule::STATE_BLOCKED
         '<span class="label label-info">Blocked</span>'
       elsif ks.state == ::KitSchedule::STATE_ISSUED
-        '<span class="label label-info">Issued</span>'
+        '<span class="label label-warning">Issued</span>'
        elsif ks.state == ::KitSchedule::STATE_ASSIGNED
-        '<span class="label label-info">Assigned</span>'  
+        '<span class="label label-success">Assigned</span>'
       elsif ks.state == ::KitSchedule::STATE_OVERDUE
         '<span class="label label-danger">Overdue</span>'
       elsif ks.state == ::KitSchedule::STATE_CANCELLED
         '<span class="label label-danger">Cancelled</span>'
       elsif ks.state == ::KitSchedule::STATE_RETURNED
-        '<span class="label label-info">Returned</span>'
+        '<span class="label label-success">Returned</span>'
       elsif ks.state == ::KitSchedule::STATE_RESERVED
         '<span class="label label-warning">Reserved</span>'
       elsif ks.state == ::KitSchedule::STATE_UNAVAILABLE_OVERDUE

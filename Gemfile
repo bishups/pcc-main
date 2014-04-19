@@ -23,6 +23,7 @@ end
 gem 'jquery-rails'
 
 gem 'delayed_job_active_record'
+gem 'bootstrap-datetime-picker-for-rails'
 
 # To use ActiveModel has_secure_password
 # gem 'bcrypt-ruby', '~> 3.0.0'
