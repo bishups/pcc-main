@@ -59,7 +59,7 @@ class KitSchedule < ActiveRecord::Base
   validates :kit_id , :presence => true
   validates :state , :presence => true
   validates :program_id, :presence => true, :unless => :kit_reserved?
-  validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_reserved_or_cancelled?
+  validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_reserved_or_cancelled?, :message => " is already associated with the Kit."
 
   #checking for overlap validation
   validates_with KitScheduleValidator
@@ -154,11 +154,7 @@ class KitSchedule < ActiveRecord::Base
 
   def kit_reserved_or_cancelled?
     return true if kit_reserved?
-    KitSchedule.find_all_by_program_id_and_kit_id(self.program_id, self.kit_id).each{ |ks|
-      next if ks.id == self.id
-      return false unless FINAL_STATES.include?(ks.state)
-    }
-    true
+    KitSchedule.where('program_id IS ? AND kit_id IS ? AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
   end
 
   def comments_present?
@@ -174,14 +170,15 @@ class KitSchedule < ActiveRecord::Base
     unless self.issue_for_schedules.nil?
       self.issue_for_schedules.each { |ks_id|
         ks = KitSchedule.find(ks_id.to_i)
-        next unless ks  # something might have changed - not flagging any error
-        next unless ks.state == STATE_ASSIGNED # something might have changed - not flagging any error
-        ks.issue_for_schedules = []
-        ks.due_date_time = self.due_date_time
-        ks.comments = self.comments
-        ks.issued_to = self.issued_to
-        ks.send(EVENT_ISSUE)
-        # TODO - check if we need to do any error handling error
+        # something might have changed - not flagging any error
+        if ks && ks.state == STATE_ASSIGNED
+          ks.issue_for_schedules = []
+          ks.due_date_time = self.due_date_time
+          ks.comments = self.comments
+          ks.issued_to = self.issued_to
+          ks.send(EVENT_ISSUE)
+          # TODO - check if we need to do any error handling error
+        end
       }
       return true
     end

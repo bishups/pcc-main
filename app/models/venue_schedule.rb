@@ -31,7 +31,8 @@ class VenueSchedule < ActiveRecord::Base
   belongs_to :venue
   validates :venue_id, :presence => true
   attr_accessible :venue_id
-  validates_uniqueness_of :program_id, :scope => "venue_id"
+  validates_uniqueness_of :program_id, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
+
 
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
@@ -165,6 +166,10 @@ class VenueSchedule < ActiveRecord::Base
   rescue ActiveRecord::RecordNotFound
     # TODO - check if to log any error
     return false
+  end
+
+  def venue_schedule_cancelled?
+    VenueSchedule.where('program_id IS ? AND venue_id IS ? AND state NOT IN (?)', self.program_id, self.venue_id, FINAL_STATES).count == 0
   end
 
   def trigger_block_expire
