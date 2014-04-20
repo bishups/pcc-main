@@ -74,7 +74,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE
     end
     # move the before transition, privilege part of the check to :if condition of the transition
-    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
+    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE do |pts, transition|
+        pts.can_unblock?(transition.event) unless transition.event == ::Program::DROPPED
+    end
     before_transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_mark_assign_to_unavailable?
     before_transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_approve_release?
 

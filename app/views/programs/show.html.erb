@@ -1,24 +1,11 @@
 <div class='row'>
-  <div class='page-header'>
-    <h2>
-      Program Details 
-      <small>
-        <%= program_state_tag(@program) %>
-      </small>
-      <span class='pull-right'>
-        <% unless (@program.is_announced? || ::Program::FINAL_STATES.include?(@program.state)) %>
-          <%= link_to 'Drop Program', drop_program_path, :class => 'btn btn-warning' %>
-          <%= link_to 'Announce Program', announce_program_path, :class => 'btn btn-danger', :disabled => (! @program.ready_for_announcement? ) %>
-        <% else %>
-          <%= render :partial => 'programs/state_bar' %>
-        <% end %>
-      </span>
-    </h2>
+  <div class='col-md-12'>
+    <%= render :partial => 'programs/state_bar' %>
   </div>
 </div>
-
-<% if @program.ready_for_announcement? && @program.state == ::Program::STATE_PROPOSED %>
+<% if @program.can_announce? && @program.state == ::Program::STATE_PROPOSED %>
 <div class='alert alert-success'>
+  <br>
   <strong>This program is ready for announcement.</strong>
 </div>
 <% elsif !::Program::FINAL_STATES.include?(@program.state) %>
@@ -72,6 +59,10 @@
       <tr>
         <td><strong>Announced Program Id</strong></td>
         <td><%= @program.announce_program_id %></td>
+      </tr>
+      <tr>
+        <td><strong> Name </strong></td>
+        <td><%= @program.name %></td>
       </tr>
       <tr>
         <td width='20%'><strong>Center</strong></td>

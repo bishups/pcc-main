@@ -139,6 +139,7 @@ class ProgramTeacherSchedulesController < ApplicationController
 
 
   def state_update(pts, trig)
+    pts.current_user = current_user
     if ::ProgramTeacherSchedule::PROCESSABLE_EVENTS.include?(@trigger)
       pts.send(trig)
     end

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404192110520) do
+ActiveRecord::Schema.define(:version => 201404202110720) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -211,6 +211,8 @@ ActiveRecord::Schema.define(:version => 201404192110520) do
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
     t.integer  "last_updated_by_user_id"
+    t.text     "feedback"
+    t.text     "comments"
   end
 
   create_table "programs_timings", :force => true do |t|

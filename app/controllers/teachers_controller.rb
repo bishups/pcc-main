@@ -50,6 +50,7 @@ class TeachersController < ApplicationController
   # POST /teachers.json
   def create
     @teacher = Teacher.new(params[:teacher])
+    @teacher.current_user = current_user
 
     respond_to do |format|
       if @teacher.save
@@ -102,9 +103,10 @@ class TeachersController < ApplicationController
 
   private
 
-  def state_update(vs, trig)
+  def state_update(ts, trig)
+    ts.current_user = current_user
     if ::Teacher::PROCESSABLE_EVENTS.include?(@trigger)
-      vs.send(trig)
+      ts.send(trig)
     end
   end
 end

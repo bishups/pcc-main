@@ -39,12 +39,14 @@ class TeacherSchedulesController < ApplicationController
   # POST /teacher_schedules.json
   def create
     @teacher = Teacher.find(params[:teacher_id])
+    @teacher.current_user = current_user
 
     timing_arr = params[:teacher_schedule][:timing_id]
     respond_to do |format|
       if (timing_arr)
         timing_arr.each { |timing_id|
           @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
+          @teacher_schedule.current_user = current_user
           @teacher_schedule.teacher_id = params[:teacher_id]
           @teacher_schedule.timing_id = timing_id
           if @teacher_schedule.valid?
@@ -90,6 +92,7 @@ class TeacherSchedulesController < ApplicationController
   def update
     @teacher_schedule = TeacherSchedule.find(params[:id])
     @teacher_schedule.assign_attributes(params[:teacher_schedule])
+    @teacher_schedule.current_user = current_user
     @teacher = @teacher_schedule.teacher
     respond_to do |format|
       additional_days = @teacher_schedule.combine_consecutive_schedules?

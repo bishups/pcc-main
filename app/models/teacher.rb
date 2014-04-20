@@ -1,5 +1,7 @@
 class Teacher < ActiveRecord::Base
 
+  attr_accessor :current_user
+
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
   validate :has_centers?

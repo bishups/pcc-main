@@ -44,6 +44,7 @@ class KitsController < ApplicationController
   # POST /kits.json
   def create
     @kit = Kit.new(params[:kit])
+    @kit.current_user = current_user
 
     respond_to do |format|
       if @kit.save
@@ -90,6 +91,7 @@ class KitsController < ApplicationController
   end
 
   def state_update(kit, trig)
+    kit.current_user = current_user
     if ::Kit::PROCESSABLE_EVENTS.include?(trig)
       kit.send(trig)
     end

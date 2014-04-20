@@ -70,6 +70,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule = KitSchedule.new(params[:kit_schedule])
     @kit = @kit_schedule.kit
     @trigger = params[:trigger]
+    @kit_schedule.current_user = current_user
 
     respond_to do |format|
       format.html do
@@ -181,6 +182,7 @@ class KitSchedulesController < ApplicationController
 
    def state_update(ks, trig)
 
+    ks.current_user = current_user
     if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig)
       ks.send(trig)
     else

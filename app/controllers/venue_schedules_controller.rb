@@ -43,6 +43,7 @@ class VenueSchedulesController < ApplicationController
     @venue = ::Venue.find(venue_id)
 
     @venue_schedule = VenueSchedule.new(params[:venue_schedule])
+    @venue_schedule.current_user = current_user
     @venue_schedule.venue_id = @venue.id
 
     @venue_schedule.blocked_by_user_id = current_user.id
@@ -119,6 +120,7 @@ class VenueSchedulesController < ApplicationController
   #end
 
   def state_update(vs, trig)
+    vs.current_user = current_user
     if ::VenueSchedule::PROCESSABLE_EVENTS.include?(trig)
       vs.send(trig)
     end

@@ -52,7 +52,7 @@ class KitSchedule < ActiveRecord::Base
   belongs_to :blocked_by_user, :class_name => User
 
   attr_accessor :current_user, :issue_for_schedules
-  attr_accessible :program_id, :kit_id,:end_date, :start_date, :state, :comments, :issued_to, :due_date_time, :current_user, :issue_for_schedules
+  attr_accessible :program_id, :kit_id,:end_date, :start_date, :state, :comments, :issued_to, :due_date_time, :issue_for_schedules
 
   validates :start_date, :presence => true
   validates :end_date, :presence => true

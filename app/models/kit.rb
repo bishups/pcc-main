@@ -26,6 +26,7 @@ class Kit < ActiveRecord::Base
 
   has_many :kit_items
   attr_accessible :kit_items
+  attr_accessor :current_user
 
   has_many :kit_item_names, :through => :kit_items
 

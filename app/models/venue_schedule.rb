@@ -25,7 +25,7 @@ class VenueSchedule < ActiveRecord::Base
   validates_with VenueScheduleValidator
   #validates_uniqueness_of :program_id
 
-  attr_accessor :blocked_for
+  attr_accessor :blocked_for, :current_user
   #attr_accessible :blocked_for
 
   belongs_to :venue

@@ -26,7 +26,8 @@ class Program < ActiveRecord::Base
   validates :center_id, :presence => true
   validates :proposer_id, :presence => true
 
-  attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date
+  attr_accessor :current_user
+  attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date, :feedback
 
   before_create :assign_dates!
 
@@ -64,7 +65,7 @@ class Program < ActiveRecord::Base
   EVENT_CANCEL        = "Cancel"
 
   PROCESSABLE_EVENTS = [
-      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL
+      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP
   ]
 
   ### TODO -
@@ -104,18 +105,21 @@ class Program < ActiveRecord::Base
 
   state_machine :state, :initial => STATE_PROPOSED do
     event EVENT_ANNOUNCE do
-      transition STATE_PROPOSED => STATE_ANNOUNCED
+      transition STATE_PROPOSED => STATE_ANNOUNCED, :if => lambda {|p| p.can_announce?}
     end
+    before_transition any => STATE_ANNOUNCED, :do => :can_announce?
     after_transition any => STATE_ANNOUNCED, :do => :on_announce
 
     event EVENT_DROP do
       transition STATE_PROPOSED => STATE_DROPPED
     end
+    before_transition any => STATE_DROPPED, :do => :can_drop?
     after_transition any => STATE_DROPPED, :do => :on_drop
 
     event EVENT_REGISTRATION_OPEN do
       transition STATE_ANNOUNCED => STATE_REGISTRATION_OPEN
     end
+    before_transition any => STATE_REGISTRATION_OPEN, :do => :can_open_registration?
 
     event EVENT_START do
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_IN_PROGRESS
@@ -130,11 +134,13 @@ class Program < ActiveRecord::Base
     event EVENT_CLOSE do
       transition STATE_CONDUCTED => STATE_CLOSED
     end
+    before_transition any => STATE_CLOSED, :do => :can_close?
     # TODO - enable or disable the button based on whether conditions are met
 
     event EVENT_CANCEL do
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED
     end
+    before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
 
   end
@@ -161,12 +167,51 @@ class Program < ActiveRecord::Base
     end
   end
 
+  def can_announce?
+    if ready_for_announcement?
+      return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    else
+      self.errors[:base] << "Program cannot be announced yet."
+      false
+    end
+  end
+
   def on_announce
     self.generate_program_id!
     self.notify(ANNOUNCED)
     # start the timer for start of class notification
     self.delay(:run_at => self.start_date).trigger_program_start
   end
+
+  def can_open_registration?
+    return true if (self.current_user.is? :center_treasurer, :center_id => self.program.center_id)
+    self.errors[:base] << "Insufficient privileges to update the state."
+    false
+  end
+
+  def can_drop?
+    if (self.current_user.is? :sector_coordinator, :center_id => self.center_id)
+      if !self.venue_approved?
+        self.errors[:base] << "Cannot drop program. Venue linked to the program has already gone for payment request."
+        return false
+      end
+      return true
+    end
+
+    if (self.current_user.is? :center_scheduler, :center_id => self.center_id)
+      if !self.venue_approval_requested?
+        self.errors[:base] << "Cannot drop program. Venue linked to the program has already gone for sector coordinator approval."
+        return false
+      end
+      return true
+    end
+
+    self.errors[:base] << "Insufficient privileges to update the state."
+    false
+  end
+
 
   def on_drop
     self.notify(DROPPED)
@@ -184,6 +229,23 @@ class Program < ActiveRecord::Base
 
   def is_active?
     !(self.end_date < Time.zone.now || FINAL_STATES.include?(self.state))
+  end
+
+  def can_close?
+    if ready_for_close?
+      return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    else
+      self.errors[:base] << "Program cannot be closed yet."
+      false
+    end
+  end
+
+  def can_cancel?
+    return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
+    self.errors[:base] << "Insufficient privileges to update the state."
+    false
   end
 
   def on_cancel
@@ -222,12 +284,15 @@ class Program < ActiveRecord::Base
     # send the event to each of the state machines
     # ideally we can register the state machine and the specific callback they want to be called
     self.teacher_schedules.each{|ts|
+      ts.current_user = self.current_user
       ts.on_program_event(event)
     }
     self.venue_schedules.each{|vs|
+      vs.current_user = self.current_user
       vs.on_program_event(event)
     }
     self.kit_schedules.each{|ks|
+      ks.current_user = self.current_user
       ks.on_program_event(event)
     }
   end
@@ -331,6 +396,36 @@ class Program < ActiveRecord::Base
       return true if vs.approved?
     }
     false
+  end
+
+  def ready_for_close?
+    # TODO - add condition here that teacher adds program feedback,
+    if (self.no_of_venues_connected > 0)
+      self.errors[:base] << "Cannot close program, linked venue is not closed. Please close it and try again."
+      return false
+    end
+
+    if (self.no_of_kits_connected > 0)
+      self.errors[:base] << "Cannot close program, linked kit is not closed. Please close it and try again."
+      return false
+    end
+
+    if (self.no_of_teachers_connected > 0)
+      self.errors[:base] << "Cannot close program, teacher(s) are still linked to the program."
+      return false
+    end
+
+    if (self.no_of_teachers_connected > 0)
+      self.errors[:base] << "Cannot close program, teacher(s) are still linked to the program."
+      return false
+    end
+
+    if (self.feedback.nil?)
+      self.errors[:feedback] << " is needed before closing program."
+      return false
+    end
+
+    true
   end
 
   def ready_for_announcement?

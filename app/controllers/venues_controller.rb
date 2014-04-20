@@ -45,6 +45,7 @@ class VenuesController < ApplicationController
   # POST /venues.json
   def create
     @venue = Venue.new(params[:venue])
+    @venue.current_user = current_user
 
     respond_to do |format|
       if @venue.save
@@ -94,8 +95,10 @@ class VenuesController < ApplicationController
   private
 
   def state_update(vs, trig)
+    vs.current_user = current_user
     if ::Venue::PROCESSABLE_EVENTS.include?(@trigger)
       vs.send(trig)
     end
   end
+
 end
