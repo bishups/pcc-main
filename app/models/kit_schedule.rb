@@ -287,7 +287,7 @@ class KitSchedule < ActiveRecord::Base
       return true
     end
 
-    if (self.current_user.is? :volunteer_committee, :center_id => self.program.center_id)
+    if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id)
       if !self.program.venue_approval_requested?
         self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for sector coordinator approval."
         return false
