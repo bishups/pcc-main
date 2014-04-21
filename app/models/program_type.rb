@@ -23,6 +23,9 @@ class ProgramType < ActiveRecord::Base
   rails_admin do
     navigation_label 'Program'
     weight 0
+    visible do
+      bindings[:controller].current_user.is?(:super_admin)
+    end
     list do
       field :name
       field :language

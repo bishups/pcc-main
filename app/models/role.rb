@@ -57,6 +57,9 @@ class Role < ActiveRecord::Base
   rails_admin do
     navigation_label 'Access Privilege'
     weight 2
+    visible do
+      bindings[:controller].current_user.is?(:super_admin)
+    end
     list do
       field :name
       field :permissions

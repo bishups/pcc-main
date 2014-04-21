@@ -10,6 +10,9 @@ class KitItem < ActiveRecord::Base
   rails_admin do
     navigation_label 'Kit Management'
     weight 1
+    visible do
+      bindings[:controller].current_user.is?(:kit_coordinator)
+    end
     list do
       field :kit
       field :kit_item_name
