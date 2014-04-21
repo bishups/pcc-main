@@ -21,6 +21,7 @@ RailsAdmin.config do |config|
     edit
     delete do
       except [Role]
+      except [Comment]
     end
     history_show
    # show_in_app

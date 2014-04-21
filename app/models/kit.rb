@@ -20,8 +20,7 @@ class Kit < ActiveRecord::Base
 
 
 
-  attr_accessible :condition,:condition_comments,
-                  :general_comments, :name,
+  attr_accessible :condition,:comments, :name,
                   :state,:capacity
 
   has_many :kit_items

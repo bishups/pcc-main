@@ -66,7 +66,7 @@ class KitsController < ApplicationController
     @kit = Kit.find(params[:id])
     @kit.current_user = current_user
     @trigger = params[:trigger]
-    @kit.condition_comments = params[:condition_comments]
+    @kit.comments = params[:comments]
 
     respond_to do |format|
       format.html do
