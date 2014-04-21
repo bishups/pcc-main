@@ -58,13 +58,14 @@ class VenueSchedule < ActiveRecord::Base
   STATE_ASSIGNED                  = "Assigned"
   STATE_IN_PROGRESS               = "In Progress"
   STATE_CONDUCTED                 = "Conducted"
+  STATE_SECURITY_REFUNDED         = "Security Refunded"
   STATE_CLOSED                    = "Closed"
   STATE_CANCELLED                 = "Cancelled"
   STATE_UNAVAILABLE               = "Unavailable"
 
   # connected to program
 
-  PAID_STATES = [STATE_PAID, STATE_ASSIGNED, STATE_IN_PROGRESS, STATE_CONDUCTED, STATE_CLOSED]
+  PAID_STATES = [STATE_PAID, STATE_ASSIGNED, STATE_IN_PROGRESS, STATE_CONDUCTED, STATE_SECURITY_REFUNDED, STATE_CLOSED]
   CONNECTED_STATES = (PAID_STATES + [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING])
   # final states
   FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED]
@@ -77,6 +78,7 @@ class VenueSchedule < ActiveRecord::Base
   EVENT_AUTHORIZE_FOR_PAYMENT = "Authorize for Payment"
   EVENT_REQUEST_PAYMENT   = "Request Payment"
   EVENT_PAID              = "Paid"
+  EVENT_SECURITY_REFUNDED = "Security Refunded"
   EVENT_CLOSE             = "Close"
 
   PROCESSABLE_EVENTS = [
@@ -154,8 +156,13 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
 
+    event EVENT_SECURITY_REFUNDED do
+      transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free?}
+    end
+
     event EVENT_CLOSE do
-      transition STATE_CONDUCTED => STATE_CLOSED
+      transition STATE_CONDUCTED => STATE_CLOSED, :if => lambda {|vs| vs.venue_free?}
+      transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free?}
     end
 
   end

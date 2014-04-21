@@ -6,6 +6,78 @@
 #   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
 #   Mayor.create(name: 'Emanuel', city: cities.first)
 
+  # create comments
+  comments = [
+    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Venue not available'},
+    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Teacher not available'},
+    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Kit not available'},
+    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Volunteers not available'},
+    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Other'},
+    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Venue not available'},
+    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Teacher not available'},
+    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Kit not available'},
+    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Volunteers not available'},
+    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Other'},
+
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Physical ailments'},
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Not suitable'},
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Needs additional training'},
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Other'},
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Unfit'},
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Relocating to other zone'},
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Need retraining'},
+    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Other'},
+
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Teacher requested release'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Needed for other schedule'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Unwell'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Unfit'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Other'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Teacher requested release'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Needed for other schedule'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Unwell'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Unfit'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Other'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Unwell'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Emergency'},
+    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Other'},
+    {:model => 'ProgramTeacherSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
+    {:model => 'ProgramTeacherSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'},
+
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CANCEL, :text => 'Other Kit arranged'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CANCEL, :text => 'Other'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Kit Item under repair'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Kit Item under replacement'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Adding new kit items'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Other'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :text => 'Not returned'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :text => 'Other'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Issued Condition'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Damaged'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Other'},
+    {:model => 'KitSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
+    {:model => 'KitSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'},
+
+    {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Venue not suitable'},
+    {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Rent too high'},
+    {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Other'},
+
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_REJECT, :text => 'Venue not available'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_REJECT, :text => 'Other'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CANCEL, :text => 'Other Venue arranged'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CANCEL, :text => 'Venue not suitable'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CANCEL, :text => 'Other'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_SECURITY_REFUNDED, :text => 'Paid and Security Refunded'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_SECURITY_REFUNDED, :text => 'Other'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CLOSE, :text => 'Venue not suitable'},
+    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CLOSE, :text => 'Other'},
+    {:model => 'VenueSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
+    {:model => 'VenueSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'}
+
+  ]
+  comments.each{|c| Comment.create(c) }
+
+
 #  create_default_permissions
   permissions = [
       { :name => "Program Management", :cancan_action => "manage", :subject => "Program"},
@@ -37,6 +109,7 @@
     puts "####### #{name} --> #{permissions}"
     Role.create(:name=>name.to_s,:permissions=>Permission.find_all_by_name(permissions))
   end
+
 
   ### Add a dummy user
   user=User.find_or_initialize_by_email("test@ishadb.com")

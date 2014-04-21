@@ -11,6 +11,7 @@ class ProgramsController < ApplicationController
 
   def new
     @program = Program.new
+    @program.current_user = current_user
 
     #@program_types = ProgramType.all
     #@timings = []
@@ -22,6 +23,7 @@ class ProgramsController < ApplicationController
 
   def show
     @program = Program.find(params[:id].to_i)
+    @program.current_user = current_user
     respond_to do |format|
       format.html
     end
@@ -46,6 +48,7 @@ class ProgramsController < ApplicationController
 
   def edit
     @program = Program.find(params[:id])
+    @program.current_user = current_user
     @trigger = params[:trigger]
 
     respond_to do |format|
@@ -55,6 +58,7 @@ class ProgramsController < ApplicationController
 
   def update
     @program = Program.find(params[:id])
+    @program.current_user = current_user
     @trigger = params[:trigger]
     @program.feedback = params[:feedback] if params.has_key?(:feedback)
     @program.comments = params[:comments] if params.has_key?(:comments)
@@ -90,7 +94,6 @@ class ProgramsController < ApplicationController
   private
 
   def state_update(prog, trig)
-    prog.current_user = current_user
     if Program::PROCESSABLE_EVENTS.include?(trig)
       prog.send(trig)
     end

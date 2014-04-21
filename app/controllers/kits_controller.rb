@@ -15,6 +15,7 @@ class KitsController < ApplicationController
   # GET /kits/1.json
   def show
     @kit = Kit.find(params[:id])
+    @kit.current_user = current_user
 
     respond_to do |format|
       format.html # show.html.erb
@@ -26,6 +27,7 @@ class KitsController < ApplicationController
   # GET /kits/new.json
   def new
     @kit = Kit.new
+    @kit.current_user = current_user
 
     respond_to do |format|
       format.html # new.html.erb
@@ -36,7 +38,8 @@ class KitsController < ApplicationController
   # GET /kits/1/edit
   def edit
     @kit = Kit.find(params[:id])
-        @trigger = params[:trigger]
+    @kit.current_user = current_user
+    @trigger = params[:trigger]
 
   end
 
@@ -61,6 +64,7 @@ class KitsController < ApplicationController
   # PUT /kits/1.json
   def update
     @kit = Kit.find(params[:id])
+    @kit.current_user = current_user
     @trigger = params[:trigger]
     @kit.condition_comments = params[:condition_comments]
 
@@ -82,6 +86,7 @@ class KitsController < ApplicationController
   # DELETE /kits/1.json
   def destroy
     @kit = Kit.find(params[:id])
+    @kit.current_user = current_user
     @kit.destroy
 
     respond_to do |format|
@@ -91,7 +96,6 @@ class KitsController < ApplicationController
   end
 
   def state_update(kit, trig)
-    kit.current_user = current_user
     if ::Kit::PROCESSABLE_EVENTS.include?(trig)
       kit.send(trig)
     end

@@ -18,6 +18,7 @@ class TeacherSchedulesController < ApplicationController
   def new
     @teacher = Teacher.find(params[:teacher_id])
     @teacher_schedule = TeacherSchedule.new
+    @teacher_schedule.current_user = current_user
 
     respond_to do |format|
       format.html
@@ -28,7 +29,9 @@ class TeacherSchedulesController < ApplicationController
   # GET /teacher_schedules/1.json
   def show
     @teacher = Teacher.find(params[:teacher_id])
+    @teacher.current_user = current_user
     @teacher_schedule = TeacherSchedule.find(params[:id])
+    @teacher_schedule.current_user = current_user
 
     respond_to do |format|
       format.html
@@ -94,6 +97,7 @@ class TeacherSchedulesController < ApplicationController
     @teacher_schedule.assign_attributes(params[:teacher_schedule])
     @teacher_schedule.current_user = current_user
     @teacher = @teacher_schedule.teacher
+    @teacher.current_user = current_user
     respond_to do |format|
       additional_days = @teacher_schedule.combine_consecutive_schedules?
       if (additional_days + @teacher_schedule.no_of_days < 3)
@@ -116,7 +120,9 @@ class TeacherSchedulesController < ApplicationController
   # DELETE /teacher_schedules/1.json
   def destroy
     @teacher_schedule = TeacherSchedule.find(params[:id])
+    @teacher_schedule.current_user = current_user
     @teacher = @teacher_schedule.teacher
+    @teacher.current_user = current_user
     @teacher_schedule.destroy()
 
     respond_to do |format|

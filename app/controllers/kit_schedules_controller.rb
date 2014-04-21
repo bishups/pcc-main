@@ -18,6 +18,7 @@ class KitSchedulesController < ApplicationController
   # GET /kit_schedules/1.json
   def show
     @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
 
     respond_to do |format|
       format.html # show.html.erb
@@ -30,6 +31,7 @@ class KitSchedulesController < ApplicationController
   def new
     @kit = ::Kit.find(params[:kit_id].to_i) if params.has_key?(:kit_id)
     @kit_schedule = KitSchedule.new
+    @kit_schedule.current_user = current_user
 
     @kit_schedule.program_id = params[:program_id] if params.has_key?(:program_id)
     @kit_schedule.kit_id = params[:venue_id] if params.has_key?(:kit_id)
@@ -45,6 +47,7 @@ class KitSchedulesController < ApplicationController
     @kit = Kit.find(params[:id].to_i)
     @trigger = params[:trigger]
     @kit_schedule = KitSchedule.new
+    @kit_schedule.current_user = current_user
     @kit_schedule.kit_id = @kit.id
 
     respond_to do |format|
@@ -56,6 +59,7 @@ class KitSchedulesController < ApplicationController
   # GET /kit_schedules/1/edit
   def edit
     @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
 
     @trigger = params[:trigger]
 
@@ -105,6 +109,7 @@ class KitSchedulesController < ApplicationController
     end
 
     @kit = ::Kit.find(kit_id)
+    @kit.current_user = current_user
     @kit_schedule = @kit.kit_schedules.new(params[:kit_schedule])
     @kit_schedule.current_user = current_user
 
@@ -137,6 +142,7 @@ class KitSchedulesController < ApplicationController
   def update
 
     @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
     @trigger = params[:trigger]
     @kit_schedule.comments = params[:comment]
 
@@ -144,7 +150,6 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.due_date_time = params[:due_date_time] unless params[:due_date_time].nil?
     @kit_schedule.comments = params[:comments] unless params[:comments].nil?
     @kit_schedule.issue_for_schedules = params[:issue_for_schedules].split(' ').map(&:to_i) unless params[:issue_for_schedules].nil?
-    @kit_schedule.current_user = current_user
 
     respond_to do |format|
       format.html do
@@ -166,6 +171,7 @@ class KitSchedulesController < ApplicationController
   # DELETE /kit_schedules/1.json
   def destroy
     @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
     kit_id = @kit_schedule.kit_id
     @kit_schedule.destroy
 
@@ -181,8 +187,6 @@ class KitSchedulesController < ApplicationController
   #end
 
    def state_update(ks, trig)
-
-    ks.current_user = current_user
     if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig)
       ks.send(trig)
     else

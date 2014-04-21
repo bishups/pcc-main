@@ -52,6 +52,7 @@ class Program < ActiveRecord::Base
   STATE_CANCELLED     = "Cancelled"
   STATE_IN_PROGRESS   = "In Progress"
   STATE_CONDUCTED     = "Conducted"
+  STATE_TEACHER_CLOSED = "Teacher Closed"
   STATE_CLOSED        = "Closed"
 
   FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CONDUCTED, STATE_CLOSED]
@@ -63,9 +64,10 @@ class Program < ActiveRecord::Base
   EVENT_CLOSE         = "Close"
   EVENT_DROP          = "Drop"
   EVENT_CANCEL        = "Cancel"
+  EVENT_TEACHER_CLOSE = "Teacher Close"
 
   PROCESSABLE_EVENTS = [
-      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP
+      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE
   ]
 
   ### TODO -
@@ -111,7 +113,7 @@ class Program < ActiveRecord::Base
     after_transition any => STATE_ANNOUNCED, :do => :on_announce
 
     event EVENT_DROP do
-      transition STATE_PROPOSED => STATE_DROPPED
+      transition STATE_PROPOSED => STATE_DROPPED, :if => lambda {|p| p.current_user.is? :center_scheduler}
     end
     before_transition any => STATE_DROPPED, :do => :can_drop?
     after_transition any => STATE_DROPPED, :do => :on_drop
@@ -131,14 +133,19 @@ class Program < ActiveRecord::Base
     end
     after_transition any => STATE_CONDUCTED, :do => :on_finish
 
+    event EVENT_TEACHER_CLOSE do
+      transition STATE_CONDUCTED => STATE_TEACHER_CLOSED
+    end
+    before_transition any => STATE_TEACHER_CLOSED, :do => :can_teacher_close?
+
     event EVENT_CLOSE do
-      transition STATE_CONDUCTED => STATE_CLOSED
+      transition STATE_TEACHER_CLOSED => STATE_CLOSED
     end
     before_transition any => STATE_CLOSED, :do => :can_close?
     # TODO - enable or disable the button based on whether conditions are met
 
     event EVENT_CANCEL do
-      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zonal_coordinator?}
     end
     before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
@@ -208,6 +215,11 @@ class Program < ActiveRecord::Base
       return true
     end
 
+    if (self.comments.nil?)
+      self.errors[:comments] << " is mandatory field."
+      return false
+    end
+
     self.errors[:base] << "Insufficient privileges to update the state."
     false
   end
@@ -231,6 +243,14 @@ class Program < ActiveRecord::Base
     !(self.end_date < Time.zone.now || FINAL_STATES.include?(self.state))
   end
 
+  def can_teacher_close?
+    if (self.feedback.nil?)
+      self.errors[:feedback] << " is mandatory field."
+      return false
+    end
+    true
+  end
+
   def can_close?
     if ready_for_close?
       return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
@@ -243,6 +263,10 @@ class Program < ActiveRecord::Base
   end
 
   def can_cancel?
+    if (self.comments.nil?)
+      self.errors[:comments] << " is mandatory field."
+      return false
+    end
     return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
     self.errors[:base] << "Insufficient privileges to update the state."
     false
@@ -344,9 +368,20 @@ class Program < ActiveRecord::Base
     self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
+  def no_of_teachers_connected_or_conducted
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS])).group('teacher_id').length
+  end
+
   def teachers_connected
     return 0 if !self.teacher_schedules
     self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
+  def teachers_conducted_class
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
 #    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
@@ -417,11 +452,6 @@ class Program < ActiveRecord::Base
 
     if (self.no_of_teachers_connected > 0)
       self.errors[:base] << "Cannot close program, teacher(s) are still linked to the program."
-      return false
-    end
-
-    if (self.feedback.nil?)
-      self.errors[:feedback] << " is needed before closing program."
       return false
     end
 
