@@ -1,3 +1,7 @@
+<div class='row'>
+  <div class='page-header'>
+<h2>
+  <small><%= program_state_tag(@program) %></small> Program Details <small><%= @program.name %> | <%= @program.center.name %></small>
 <% unless ::Program::FINAL_STATES.include?(@program.state) %>
     <div class='btn-group'>
   <button type="button" class="btn btn-danger">Update State</button>
@@ -13,4 +17,22 @@
      <% end %>
   </ul>
 </div>
+  <% if current_user.is? :center_scheduler, :center_id => @program.center_id %>
+    <!-- Single button -->
+    <div class="btn-group">
+      <button type="button" class="btn btn-primary"> Add New </button>
+      <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+        <span class="caret"></span>
+        <span class="sr-only">Toggle Dropdown</span>
+      </button>
+      <ul class="dropdown-menu" role="menu">
+        <li> <%= link_to 'Add Venue', new_venue_schedule_path(:program_id => @program.id)  %> </li>
+        <li><%= link_to 'Add Kit', new_kit_schedule_path(:program_id => @program.id) %></li>
+        <li><%= link_to 'Add Teacher', new_program_teacher_schedule_path(:program_id => @program.id) %></li>
+      </ul>
+    </div>
+  <% end %>
 <% end %>
+</h2>
+  </div>
+</div>

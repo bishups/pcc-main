@@ -20,6 +20,7 @@ class VenueSchedulesController < ApplicationController
   def new
     @venue = ::Venue.find(params[:venue_id].to_i) if params.has_key?(:venue_id)
     @venue_schedule = VenueSchedule.new
+    @venue_schedule.current_user = current_user
 
     @venue_schedule.program_id = params[:program_id] if params.has_key?(:program_id)
     @venue_schedule.venue_id = params[:venue_id] if params.has_key?(:venue_id)
@@ -43,6 +44,7 @@ class VenueSchedulesController < ApplicationController
     @venue = ::Venue.find(venue_id)
 
     @venue_schedule = VenueSchedule.new(params[:venue_schedule])
+    @venue_schedule.current_user = current_user
     @venue_schedule.venue_id = @venue.id
 
     @venue_schedule.blocked_by_user_id = current_user.id
@@ -63,6 +65,7 @@ class VenueSchedulesController < ApplicationController
   # GET /venue_schedules/1.json
   def show
     @venue_schedule = ::VenueSchedule.find(params[:id].to_i)
+    @venue_schedule.current_user = current_user
 
     respond_to do |format|
       format.html
@@ -73,6 +76,7 @@ class VenueSchedulesController < ApplicationController
   # GET /venue_schedules/1/edit
   def edit
     @venue_schedule = ::VenueSchedule.find(params[:id].to_i)
+    @venue_schedule.current_user = current_user
     @trigger = params[:trigger]
     #authorize! :update, @venue
     respond_to do |format|
@@ -85,6 +89,7 @@ class VenueSchedulesController < ApplicationController
   # PUT /venue_schedules/1.json
   def update
     @venue_schedule =::VenueSchedule.find(params[:id].to_i)
+    @venue_schedule.current_user = current_user
     @trigger = params[:trigger]
     #authorize! :update, @venue
     @venue_schedule.blocked_for = params[:blocked_for] if params.has_key?(:blocked_for)

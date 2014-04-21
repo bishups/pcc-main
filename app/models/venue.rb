@@ -24,6 +24,7 @@
 
 class Venue < ActiveRecord::Base
   # attr_accessible :title, :body
+  attr_accessor :current_user
   attr_accessible :name, :description, :address, :pin_code, :capacity, :seats, :contact_name, :contact_phone,
   :contact_mobile, :contact_email, :contact_address, :commercial, :payment_contact_name,
   :payment_contact_address,:payment_contact_mobile,:per_day_price

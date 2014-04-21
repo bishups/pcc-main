@@ -18,6 +18,7 @@ class TeachersController < ApplicationController
   # GET /teachers/1.json
   def show
     @teacher = Teacher.find(params[:id])
+    @teacher.current_user = current_user
 
     respond_to do |format|
       format.html # show.html.erb
@@ -29,6 +30,7 @@ class TeachersController < ApplicationController
   # GET /teachers/new.json
   def new
     @teacher = Teacher.new
+    @teacher.current_user = current_user
 
     respond_to do |format|
       format.html # new.html.erb
@@ -50,6 +52,7 @@ class TeachersController < ApplicationController
   # POST /teachers.json
   def create
     @teacher = Teacher.new(params[:teacher])
+    @teacher.current_user = current_user
 
     respond_to do |format|
       if @teacher.save
@@ -66,6 +69,7 @@ class TeachersController < ApplicationController
   # PUT /teachers/1.json
   def update
     @teacher = Teacher.find(params[:id])
+    @teacher.current_user = current_user
     @trigger = params[:trigger]
     @teacher.comments = params[:comments] if params.has_key?(:comments)
 
@@ -92,6 +96,7 @@ class TeachersController < ApplicationController
   # DELETE /teachers/1.json
   def destroy
     @teacher = Teacher.find(params[:id])
+    @teacher.current_user = current_user
     @teacher.destroy
 
     respond_to do |format|
@@ -102,9 +107,9 @@ class TeachersController < ApplicationController
 
   private
 
-  def state_update(vs, trig)
+  def state_update(ts, trig)
     if ::Teacher::PROCESSABLE_EVENTS.include?(@trigger)
-      vs.send(trig)
+      ts.send(trig)
     end
   end
 end

@@ -13,6 +13,7 @@
 
 class TeacherSchedule < ActiveRecord::Base
   # attr_accessible :title, :body
+  attr_accessor :current_user
 
   belongs_to :timing
   belongs_to :teacher
@@ -135,7 +136,7 @@ class TeacherSchedule < ActiveRecord::Base
     pts.teacher_id = pts.teacher_schedule.teacher_id
     pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
     pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
-
+    pts.current_user = self.current_user
 
     # verify when all the events can come
     if valid_states[event].include?(pts.state)

@@ -53,7 +53,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   STATE_COMPLETED_CLASS     = 'Completed Class'
   STATE_WITHDRAWN           = 'Withdrawn'
 
-  CONNECTED_STATES = [STATE_BLOCKED, STATE_RELEASE_REQUESTED, STATE_ASSIGNED, STATE_IN_CLASS, STATE_COMPLETED_CLASS]
+  CONNECTED_STATES = [STATE_BLOCKED, STATE_RELEASE_REQUESTED, STATE_ASSIGNED, STATE_IN_CLASS]
+  COMPLETED_STATES = [STATE_COMPLETED_CLASS]
   FINAL_STATES = [STATE_COMPLETED_CLASS, STATE_WITHDRAWN]
 
 
@@ -74,7 +75,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE
     end
     # move the before transition, privilege part of the check to :if condition of the transition
-    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :do => :can_unblock?
+    before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE do |pts, transition|
+        pts.can_unblock?(transition.event) unless transition.event == ::Program::DROPPED
+    end
     before_transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_mark_assign_to_unavailable?
     before_transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_approve_release?
 

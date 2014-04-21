@@ -17,6 +17,7 @@ class VenuesController < ApplicationController
   # GET /venues/1.json
   def show
     @venue = Venue.find(params[:id])
+    @venue.current_user = current_user
 
     respond_to do |format|
       format.html # show.html.erb
@@ -28,6 +29,7 @@ class VenuesController < ApplicationController
   # GET /venues/new.json
   def new
     @venue = Venue.new
+    @venue.current_user = current_user
 
     respond_to do |format|
       format.html # new.html.erb
@@ -38,6 +40,7 @@ class VenuesController < ApplicationController
   # GET /venues/1/edit
   def edit
     @venue = Venue.find(params[:id])
+    @venue.current_user = current_user
     @trigger = params[:trigger]
   end
 
@@ -45,6 +48,7 @@ class VenuesController < ApplicationController
   # POST /venues.json
   def create
     @venue = Venue.new(params[:venue])
+    @venue.current_user = current_user
 
     respond_to do |format|
       if @venue.save
@@ -61,6 +65,7 @@ class VenuesController < ApplicationController
   # PUT /venues/1.json
   def update
     @venue = Venue.find(params[:id])
+    @venue.current_user = current_user
     @trigger = params[:trigger]
 
 
@@ -83,6 +88,7 @@ class VenuesController < ApplicationController
   # DELETE /venues/1.json
   def destroy
     @venue = Venue.find(params[:id])
+    @venue.current_user = current_user
     @venue.destroy
 
     respond_to do |format|
@@ -98,4 +104,5 @@ class VenuesController < ApplicationController
       vs.send(trig)
     end
   end
+
 end

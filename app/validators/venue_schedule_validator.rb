@@ -8,10 +8,9 @@ class VenueScheduleValidator < ActiveModel::Validator
       record.errors[:start_date] << "cannot be in the past"
     elsif program.end_date < program.start_date
       record.errors[:end_date] << "cannot be before start date"
-    elsif
-      if VenueSchedule.overlapping(record).count() > 0
+    elsif VenueSchedule.overlapping(record).count() > 0
         record.errors[:start_date] << "timing overlaps with existing schedule."
-      end
+    end
 
 =begin
       timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
@@ -34,6 +33,5 @@ class VenueScheduleValidator < ActiveModel::Validator
         return
       end
 =end
-    end
   end
 end

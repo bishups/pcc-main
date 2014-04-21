@@ -15,6 +15,7 @@ class KitsController < ApplicationController
   # GET /kits/1.json
   def show
     @kit = Kit.find(params[:id])
+    @kit.current_user = current_user
 
     respond_to do |format|
       format.html # show.html.erb
@@ -26,6 +27,7 @@ class KitsController < ApplicationController
   # GET /kits/new.json
   def new
     @kit = Kit.new
+    @kit.current_user = current_user
 
     respond_to do |format|
       format.html # new.html.erb
@@ -36,7 +38,8 @@ class KitsController < ApplicationController
   # GET /kits/1/edit
   def edit
     @kit = Kit.find(params[:id])
-        @trigger = params[:trigger]
+    @kit.current_user = current_user
+    @trigger = params[:trigger]
 
   end
 
@@ -44,6 +47,7 @@ class KitsController < ApplicationController
   # POST /kits.json
   def create
     @kit = Kit.new(params[:kit])
+    @kit.current_user = current_user
 
     respond_to do |format|
       if @kit.save
@@ -60,8 +64,9 @@ class KitsController < ApplicationController
   # PUT /kits/1.json
   def update
     @kit = Kit.find(params[:id])
+    @kit.current_user = current_user
     @trigger = params[:trigger]
-    @kit.condition_comments = params[:condition_comments]
+    @kit.comments = params[:comments]
 
     respond_to do |format|
       format.html do
@@ -81,6 +86,7 @@ class KitsController < ApplicationController
   # DELETE /kits/1.json
   def destroy
     @kit = Kit.find(params[:id])
+    @kit.current_user = current_user
     @kit.destroy
 
     respond_to do |format|
@@ -90,20 +96,6 @@ class KitsController < ApplicationController
   end
 
   def state_update(kit, trig)
-    if trig != ::Kit::STATE_AVAILABLE
-      assigned_kit_schedules = kit.kit_schedules.where("state NOT IN (?) and start_date <= ? and end_date >= ?",
-                                                    ['closed','cancel'],Date.current,Date.current)
-        if( !assigned_kit_schedules.nil? && assigned_kit_schedules.count > 0 )
-          kit.errors[:error] << "-- An Open Kit Schedule is there CANNOT change Kit State"
-          return false
-        end
-       if trig == ::Kit::STATE_UNDER_REPAIR || trig == ::Kit::STATE_UNAVAILABLE
-          if kit.condition_comments.empty? || kit.condition_comments == ""
-            kit.errors[:condition_comments] << "-- Cannot Leave Empty"
-            return false
-          end  
-       end
-    end
     if ::Kit::PROCESSABLE_EVENTS.include?(trig)
       kit.send(trig)
     end

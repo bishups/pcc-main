@@ -253,7 +253,40 @@ class User < ActiveRecord::Base
       field :email do
         help "Required"
       end
-      field :access_privileges
+      #field :type do
+      #  label "Teacher"
+      #  def render
+      #    bindings[:view].render :partial => "user_type_checkbox", :locals => {:field => self, :f => bindings[:form]}
+      #  end
+      # end
+
+      #field :access_privileges do
+      #  children_fields [:role, :resource]
+      #end
+      field :custom_access_privileges do
+        pretty_value do
+          ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
+          if ap_str.empty?
+            #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
+            #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
+            #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
+            %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a>}
+          else
+            %{<div class="access_privilege_ap"> #{ap_str} </div >}
+          end
+        end
+        read_only true # won't be editable in forms (alternatively, hide it in edit section)
+
+        label "Access Privileges"
+        help ""
+      end
+      #field :access_privileges  do
+      #  def value
+      #    bindings[:object].access_privileges #.each do {|ap| ap.role.name}
+      #  end
+      #end
+
+
     end
   end
 end

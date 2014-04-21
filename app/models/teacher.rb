@@ -1,5 +1,7 @@
 class Teacher < ActiveRecord::Base
 
+  attr_accessor :current_user
+
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
   validate :has_centers?
@@ -39,8 +41,8 @@ class Teacher < ActiveRecord::Base
   # since zone(s) and center(s) need to be linked again
   # EVENT_ATTACH      = 'Attach '
 
-  EVENT_UNATTACH    = 'Unattach from Zone'
-  EVENT_UNFIT       = 'Mark as UnFit'
+  EVENT_UNATTACH    = 'Unattach'
+  EVENT_UNFIT       = 'Unfit'
 
   PROCESSABLE_EVENTS = [
       EVENT_UNATTACH, EVENT_UNFIT
@@ -63,11 +65,6 @@ class Teacher < ActiveRecord::Base
 
   end
 
-  def is_connected?(program)
-
-    ::ProgramTeacherSchedule::CONNECTED_STATES.include?(self.state)
-  end
-
   def before_unattach
     if self.in_schedule?
       self.errors.add(:state, " cannot unattach from zone when teacher is linked to a program.")
@@ -85,13 +82,13 @@ class Teacher < ActiveRecord::Base
   end
 
   def after_unattach
-    # if marked unfit remove all teacher_schedules
-    TeacherSchedule.where(:teacher_id => self.id).delete_all
+    # if marked unfit remove all published teacher_schedules
+    TeacherSchedule.where('teacher_id IS AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
   end
 
   def after_unfit
-    # if marked unfit remove all teacher_schedules
-    TeacherSchedule.where(:teacher_id => self.id).delete_all
+    # if marked unfit remove all published teacher_schedules
+    TeacherSchedule.where('teacher_id IS AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
 
     # Also remove all attached centers
     CentersTeachers.where(:teacher_id => self.id).delete_all
@@ -99,14 +96,10 @@ class Teacher < ActiveRecord::Base
 
 
   def in_schedule?
-    in_schedule = false
     self.teacher_schedules.each { |ts|
-      if !(::TeacherSchedule::STATE_PUBLISHED).include?(ts.state)
-        in_schedule = true
-        break
-      end
+      return true if (::ProgramTeacherSchedule::CONNECTED_STATES).include?(ts.state)
     }
-    in_schedule
+    false
   end
 
 
@@ -115,9 +108,9 @@ class Teacher < ActiveRecord::Base
   end
 
   def has_centers?
-    self.errors.add(:centers, " needed if teacher attached to a zone.") if !self.zone.blank? && self.centers.blank?
-    self.errors.add(:zone, " needed if teacher attached to center(s). To un-attach from a zone, first remove the center(s).") if self.zone.blank? && !self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " needed if teacher attached to a zone.") if !self.zone.blank? && self.centers.blank? && (self.state != STATE_UNFIT)
+    self.errors.add(:zone, " needed if teacher attached to center(s). To un-attach from a zone, first remove the center(s).") if self.zone.blank? && !self.centers.blank? && (self.state != STATE_UNFIT)
+    self.errors.add(:centers, " should belong to one sector.") if self.centers && !::Sector::all_centers_in_one_sector?(self.centers)
     self.errors.add(:centers, " should belong to specified zone.") if self.centers && self.zone && (self.centers[0] && self.centers[0].sector.zone != self.zone)
   end
 

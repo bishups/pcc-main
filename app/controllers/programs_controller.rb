@@ -11,6 +11,7 @@ class ProgramsController < ApplicationController
 
   def new
     @program = Program.new
+    @program.current_user = current_user
 
     #@program_types = ProgramType.all
     #@timings = []
@@ -22,7 +23,7 @@ class ProgramsController < ApplicationController
 
   def show
     @program = Program.find(params[:id].to_i)
-    
+    @program.current_user = current_user
     respond_to do |format|
       format.html
     end
@@ -30,10 +31,13 @@ class ProgramsController < ApplicationController
 
   def create
     @program = Program.new(params[:program])
+    @program.current_user = current_user
     @program.proposer_id = current_user.id
+    # Also update the start_date and end_date to start_date_time and end_date_time
 
     respond_to do |format|
       if @program.save
+        @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
         format.html { redirect_to @program, :notice => 'Program created successfully' }
       else
         format.html { render action: "new" }
@@ -42,26 +46,9 @@ class ProgramsController < ApplicationController
     end
   end
 
-  def announce
-    @program = Program.find(params[:id])
-    @program.send(::Program::EVENT_ANNOUNCE) if @program.ready_for_announcement?
-
-    respond_to do |format|
-      format.html { redirect_to @program }
-    end
-  end
-
-  def drop
-    @program = Program.find(params[:id])
-    @program.send(::Program::EVENT_DROP)
-
-    respond_to do |format|
-      format.html { redirect_to @program }
-    end
-  end
-
   def edit
     @program = Program.find(params[:id])
+    @program.current_user = current_user
     @trigger = params[:trigger]
 
     respond_to do |format|
@@ -71,12 +58,22 @@ class ProgramsController < ApplicationController
 
   def update
     @program = Program.find(params[:id])
+    @program.current_user = current_user
     @trigger = params[:trigger]
-
-    state_update(@program, @trigger)
+    @program.feedback = params[:feedback] if params.has_key?(:feedback)
+    @program.comments = params[:comments] if params.has_key?(:comments)
 
     respond_to do |format|
-      format.html { redirect_to @program }
+      format.html do
+        if state_update(@program, @trigger)
+          if @program.save!
+            #redirect_to action: "edit" , :trigger => params[:trigger]
+            redirect_to [@program]
+          end
+        else
+          render :action => 'edit'
+        end
+      end
     end
   end
 
@@ -101,4 +98,5 @@ class ProgramsController < ApplicationController
       prog.send(trig)
     end
   end
+
 end

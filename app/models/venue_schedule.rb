@@ -25,13 +25,14 @@ class VenueSchedule < ActiveRecord::Base
   validates_with VenueScheduleValidator
   #validates_uniqueness_of :program_id
 
-  attr_accessor :blocked_for
+  attr_accessor :blocked_for, :current_user
   #attr_accessible :blocked_for
 
   belongs_to :venue
   validates :venue_id, :presence => true
   attr_accessible :venue_id
-  validates_uniqueness_of :program_id, :scope => "venue_id"
+  validates_uniqueness_of :program_id, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
+
 
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
@@ -42,10 +43,10 @@ class VenueSchedule < ActiveRecord::Base
   #after_create :connect_program!
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
-  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?)', vs.id, ::VenueSchedule::FINAL_STATES) }
+  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
-  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?)', vs.id, ::VenueSchedule::FINAL_STATES) }
+  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
 
   STATE_BLOCK_REQUESTED           = "Block Requested"
@@ -57,13 +58,14 @@ class VenueSchedule < ActiveRecord::Base
   STATE_ASSIGNED                  = "Assigned"
   STATE_IN_PROGRESS               = "In Progress"
   STATE_CONDUCTED                 = "Conducted"
+  STATE_SECURITY_REFUNDED         = "Security Refunded"
   STATE_CLOSED                    = "Closed"
   STATE_CANCELLED                 = "Cancelled"
   STATE_UNAVAILABLE               = "Unavailable"
 
   # connected to program
 
-  PAID_STATES = [STATE_PAID, STATE_ASSIGNED, STATE_IN_PROGRESS, STATE_CONDUCTED, STATE_CLOSED]
+  PAID_STATES = [STATE_PAID, STATE_ASSIGNED, STATE_IN_PROGRESS, STATE_CONDUCTED, STATE_SECURITY_REFUNDED, STATE_CLOSED]
   CONNECTED_STATES = (PAID_STATES + [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING])
   # final states
   FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED]
@@ -76,6 +78,7 @@ class VenueSchedule < ActiveRecord::Base
   EVENT_AUTHORIZE_FOR_PAYMENT = "Authorize for Payment"
   EVENT_REQUEST_PAYMENT   = "Request Payment"
   EVENT_PAID              = "Paid"
+  EVENT_SECURITY_REFUNDED = "Security Refunded"
   EVENT_CLOSE             = "Close"
 
   PROCESSABLE_EVENTS = [
@@ -153,13 +156,31 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
 
+    event EVENT_SECURITY_REFUNDED do
+      transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free?}
+    end
+
     event EVENT_CLOSE do
-      transition STATE_CONDUCTED => STATE_CLOSED
+      transition STATE_CONDUCTED => STATE_CLOSED, :if => lambda {|vs| vs.venue_free?}
+      transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free?}
     end
 
   end
 
+  def reloaded?
+    self.reload
+    return true
+  rescue ActiveRecord::RecordNotFound
+    # TODO - check if to log any error
+    return false
+  end
+
+  def venue_schedule_cancelled?
+    VenueSchedule.where('program_id IS ? AND venue_id IS ? AND state NOT IN (?)', self.program_id, self.venue_id, FINAL_STATES).count == 0
+  end
+
   def trigger_block_expire
+    return if !self.reloaded?
     if [STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING].include?(self.state)
       self.send(EVENT_BLOCK_EXPIRED)
       self.save if self.errors.empty?

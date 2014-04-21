@@ -18,6 +18,7 @@ class TeacherSchedulesController < ApplicationController
   def new
     @teacher = Teacher.find(params[:teacher_id])
     @teacher_schedule = TeacherSchedule.new
+    @teacher_schedule.current_user = current_user
 
     respond_to do |format|
       format.html
@@ -28,7 +29,9 @@ class TeacherSchedulesController < ApplicationController
   # GET /teacher_schedules/1.json
   def show
     @teacher = Teacher.find(params[:teacher_id])
+    @teacher.current_user = current_user
     @teacher_schedule = TeacherSchedule.find(params[:id])
+    @teacher_schedule.current_user = current_user
 
     respond_to do |format|
       format.html
@@ -39,12 +42,14 @@ class TeacherSchedulesController < ApplicationController
   # POST /teacher_schedules.json
   def create
     @teacher = Teacher.find(params[:teacher_id])
+    @teacher.current_user = current_user
 
     timing_arr = params[:teacher_schedule][:timing_id]
     respond_to do |format|
       if (timing_arr)
         timing_arr.each { |timing_id|
           @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
+          @teacher_schedule.current_user = current_user
           @teacher_schedule.teacher_id = params[:teacher_id]
           @teacher_schedule.timing_id = timing_id
           if @teacher_schedule.valid?
@@ -90,7 +95,9 @@ class TeacherSchedulesController < ApplicationController
   def update
     @teacher_schedule = TeacherSchedule.find(params[:id])
     @teacher_schedule.assign_attributes(params[:teacher_schedule])
+    @teacher_schedule.current_user = current_user
     @teacher = @teacher_schedule.teacher
+    @teacher.current_user = current_user
     respond_to do |format|
       additional_days = @teacher_schedule.combine_consecutive_schedules?
       if (additional_days + @teacher_schedule.no_of_days < 3)
@@ -113,7 +120,9 @@ class TeacherSchedulesController < ApplicationController
   # DELETE /teacher_schedules/1.json
   def destroy
     @teacher_schedule = TeacherSchedule.find(params[:id])
+    @teacher_schedule.current_user = current_user
     @teacher = @teacher_schedule.teacher
+    @teacher.current_user = current_user
     @teacher_schedule.destroy()
 
     respond_to do |format|

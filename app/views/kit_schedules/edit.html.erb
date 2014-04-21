@@ -26,8 +26,15 @@
   </div>
 </div>
 <div class='row'>
-  <div class='col-md-12'>
-    <%= submit_tag "Update", :class => 'btn btn-primary btn-lg' %>
-  </div>
+ <% if @trigger == ::KitSchedule::EVENT_ISSUE && !@kit_schedule.issue_for_schedules.nil? %>
+      <div class='col-md-12'>
+        <%= submit_tag "Yes, Issue Kit for Multiple Programs", :class => 'btn btn-danger btn-lg' %>
+        <%= link_to "Cancel", kit_schedules_path(@kit_schedule), :class => 'btn btn-primary btn-lg' %>
+      </div>
+ <% else %>
+      <div class='col-md-12'>
+        <%= submit_tag "Update", :class => 'btn btn-primary btn-lg' %>
+      </div>
+ <% end %>
 </div>
 <% end %>
