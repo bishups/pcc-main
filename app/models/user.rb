@@ -27,6 +27,18 @@
 #  updated_at             :datetime         not null
 #
 
+module UserExtension
+  def by_role(role_name)
+    role=Role.where(:name => role_name).first
+    if role
+      find(:all, :conditions => ["access_privileges.role_id = ?", role.id])
+    else
+      find(:all)
+    end
+  end
+end
+
+
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
@@ -38,29 +50,31 @@ class User < ActiveRecord::Base
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
 
-  has_many :centers, :through => :access_privileges, :source => :resource, :source_type => 'Center'
-  has_many :sectors, :through => :access_privileges, :source => :resource, :source_type => 'Sector'
-  has_many :zones, :through => :access_privileges, :source => :resource, :source_type => 'Zone'
+  has_many :centers, :through => :access_privileges, :source => :resource, :source_type => 'Center', :extend => UserExtension
+  has_many :sectors, :through => :access_privileges, :source => :resource, :source_type => 'Sector', :extend => UserExtension
+  has_many :zones, :through => :access_privileges, :source => :resource, :source_type => 'Zone', :extend => UserExtension
 
-  has_many :sector_centers, :through => :sectors, :source => :centers
-  has_many :zone_centers, :through => :sectors, :source => :centers
-  has_many :zone_sectors, :through => :zones, :source => :sectors
+  has_many :sector_centers, :through => :sectors, :source => :centers, :extend => UserExtension
+  has_many :zone_centers, :through => :sectors, :source => :centers, :extend => UserExtension
+  has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
   #has_many :teacher_schedules
   #has_many :teacher_slots
 
   ROLE_ACCESS_HIERARCHY =
-        {:zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5},
-          :zao                  => {:text => "ZAO", :access_level => 4},
-          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3},
-          :center_coordinator   => {:text => "Center Coordinator", :access_level => 2},
-          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 1},
-          :center_scheduler     => {:text => "Center Scheduler", :access_level => 0},
-          :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0},
-          :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0},
-          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0},
-          :teacher              => {:text => "Teacher", :access_level => 0}
-  }
+      {
+          :super_admin => {:text => "Super Admin", :access_level => 6},
+          :zonal_coordinator => {:text => "Zonal Coordinator", :access_level => 5},
+          :zao => {:text => "ZAO", :access_level => 4},
+          :sector_coordinator => {:text => "Sector Coordinator", :access_level => 3},
+          :center_coordinator => {:text => "Center Coordinator", :access_level => 2},
+          :volunteer_committee => {:text => "Volunteer Committee", :access_level => 1},
+          :center_scheduler => {:text => "Center Scheduler", :access_level => 0},
+          :kit_coordinator => {:text => "Kit Coordinator", :access_level => 0},
+          :venue_coordinator => {:text => "Venue Coordinator", :access_level => 0},
+          :center_treasurer => {:text => "Center Treasurer", :access_level => 0},
+          :teacher => {:text => "Teacher", :access_level => 0}
+      }
 
 
   # Setup accessible (or protected) attributes for your model
@@ -72,11 +86,11 @@ class User < ActiveRecord::Base
 
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
-  validates :firstname,:email, :mobile, :presence => true
+  validates :firstname, :email, :mobile, :presence => true
 
   validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
-  validates :phone, :length => { is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
-  validates :mobile, :length => { is: 10}, :numericality => {:only_integer => true }
+  validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
+  validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
 
 
   def self.from_omniauth(auth)
@@ -85,63 +99,33 @@ class User < ActiveRecord::Base
       user.uid = auth.uid
       user
     else
-      User.new(:email=>auth.info.email)
+      User.new(:email => auth.info.email)
     end
   end
 
   def access_privilege_names=(names)
     names.collect do |n|
       ap=self.access_privileges.new
-      ap.role=Role.where(:name => n[:role_name] ).first
-      ap.resource=Center.where(:name => n[:center_name] ).first
+      ap.role=Role.where(:name => n[:role_name]).first
+      ap.resource=Center.where(:name => n[:center_name]).first
     end
   end
 
   def is_super_admin?
-    self.roles.exists?(:name => "Super Admin")
+    self.roles.exists?(:name => ROLE_ACCESS_HIERARCHY[:super_admin][:text])
   end
 
-
-  def accessible_centers
-    self.centers+self.sector_centers+self.zone_centers
+  def accessible_centers(role_name=nil)
+    self.centers.by_role(role_name) + self.sector_centers.by_role(role_name) +self.zone_centers.by_role(role_name)
   end
 
-
-  def accessible_sectors
-    self.sectors+self.zone_sectors
+  def accessible_sectors(role_name=nil)
+    self.sectors.by_role(role_name)+self.zone_sectors.by_role(role_name)
   end
 
-
-  def accessible_zones
-    self.zones
+  def accessible_zones(role_name=nil)
+    self.zones.by_role(role_name)
   end
-
-=begin
-  def accessible_center_ids(role)
-    sector_center_ids = []
-    self.accessible_sectors_ids(role).each { |sid|
-      sector_center_ids += Center.where(:sector_id => sid).pluck(:id)
-    }
-
-    sector_center_ids +
-        AccessPrivilege.where(:user_id => self.id, :role_id => role.id, :resource_type => 'Center').pluck(:resource_id)
-  end
-
-
-  def accessible_sectors_ids(role)
-    zone_sector_ids = []
-    self.accessible_zone_ids(role).each { |zid|
-      zone_sector_ids += Sector.where(:zone_id => zid).pluck(:id)
-    }
-    zone_sector_ids +
-        AccessPrivilege.where(:user_id => self.id, :role_id => role.id, :resource_type => 'Sector').pluck(:resource_id)
-  end
-
-  def accessible_zone_ids(role)
-    AccessPrivilege.where(:user_id => self.id, :role_id => role.id, :resource_type => 'Zone').pluck(:resource_id)
-  end
-=end
-
 
   # usage -- check if user has role for specific resource
   # if user.is? :zonal_coordinator, :center_id => 10
@@ -152,6 +136,7 @@ class User < ActiveRecord::Base
   # going through the more complicated is? routine.
   # 2. teachers are associated separately with center(s) through the teacher admin interface.
   def is?(for_role, options={})
+    return true if self.is_super_admin?
     for_center_ids = options[:center_id].class == Array ? (options[:center_id]).map(&:to_i) : ([options[:center_id]]).map(&:to_i)
     self.access_privileges.each do |ap|
       self_centers = []
@@ -164,7 +149,7 @@ class User < ActiveRecord::Base
       if (for_center_ids.compact - self_centers.collect(&:id)).empty?
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
-        for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
+        for_ah = ROLE_ACCESS_HIERARCHY[for_role]
         # if for given ap, self has same role, or access_level > access_level than asked for
         if ((self_ah == for_ah) || self_ah[:access_level] > for_ah[:access_level])
           return true
@@ -174,15 +159,12 @@ class User < ActiveRecord::Base
     return false
   end
 
-
-
-
   def fullname
     "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]
   end
 
   def access_to_resource?(resource)
-    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s,resource.id)
+    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s, resource.id)
   end
 
   def name
@@ -222,7 +204,7 @@ class User < ActiveRecord::Base
 
   def access_privileges_str(rails_admin)
     role_str = ""
-    self.access_privileges.each {|ap|
+    self.access_privileges.each { |ap|
       #role_path = rails_admin.show_path(:model_name => 'role', :id => ap.role.id)
       resource_path = rails_admin.show_path(:model_name => 'access_privilege', :id => ap.id)
       #role_str << %{ #{ap.role.name} => #{ap.resource.class.name.demodulize} (#{ap.resource.name}) <br>}
@@ -275,3 +257,5 @@ class User < ActiveRecord::Base
     end
   end
 end
+
+
