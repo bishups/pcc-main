@@ -11,7 +11,7 @@ module TeachersHelper
         when ::Teacher::STATE_UNATTACHED
           '<span class="label label-default">Not Attached</span>'
         else
-          ""
+          '<span class="label label-default">Unknown</span>'
       end
     end.call().html_safe
   end

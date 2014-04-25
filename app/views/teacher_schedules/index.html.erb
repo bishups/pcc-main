@@ -4,25 +4,31 @@
       Teacher Schedule
       <small><%= @teacher.user.name %></small>
       <span class='pull-right'>
-        <%  if 1  # TODO - commenting out this check for now for testing #if @teacher.user_id == current_user.id %>
-        <%= link_to "New Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' %>
+        <%  if @teacher.is_current_user? %>
+            <%= link_to "New Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' if @teacher.can_create_schedule? %>
         <% end %>
-      </span>      
+        <%# TODO - put the block teacher here, with the suitable check %>
+      </span>
+      <span class='pull-right'>
+        <%= render :partial => 'shared/resource_inline_search' %>
+      </span>
     </h2>
   </div>
   <table class='table table-condensed table-hover table-bordered'>
     <tr>
+      <th>ID #</th>
       <th>Month</th>
       <th>Start Date</th>
       <th>End Date</th>
       <th>Timing(s)</th>
-      <th>State</th>
       <th>Center</th>
-      <!-- <th>Engagements</th> -->
-      <th width='15%'></th>
+      <th>State</th>
+      <th></th>
     </tr>
     <% @teacher_schedules.each do |ts| %>
+    <% ts.current_user = current_user %>
     <tr>
+      <td><%= ts.id %></td>
       <td><%= ts.start_date.strftime("%B %Y") %></td>
       <td><%= ts.start_date.strftime('%d %B %Y') %></td>
       <td><%= ts.end_date.strftime('%d %B %Y') %></td>
@@ -33,29 +39,14 @@
             <%= ts.timing.name %>
         <% end %>
       </td>
-      <td><%= teacher_schedule_state_tag(ts) %></td>
       <td><%= ts.center.name %></td>
-      <% if false %>
-      <td><%= ts.program_teacher_schedules.count %></td>
+      <td><%= teacher_schedule_state_tag(ts) %></td>
       <td>
-        <%= link_to edit_teacher_teacher_schedule_path(@teacher, ts) do %>
-          <i class='icon-edit'></i> Edit
-        <% end %> |
-        <%= link_to teacher_teacher_schedule_path(@teacher, ts), :method => :show, :confirm => 'Are you sure you want to delete this schedule?' do %>
-          <i class='icon-edit'></i> Show
+        <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id && ts.can_view_schedule? %>
+        <% if ts.can_update? %>
+            <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if !ts.program_id %>
+            <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if !ts.program_id %>
         <% end %>
-      </td>
-      <% end %>
-      <td>
-        <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id  %>
-        <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if !ts.program_id %>
-
-        <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if !ts.program_id %>
-      </td>
-      <td>
-        <%# <%= link_to "Block", edit_teacher_teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>
-        <%# <%= link_to "Show", teacher_schedule_path(ts), :class => 'btn btn-primary btn-sm' %>
-        <%# <%= link_to "Schedule", kit_schedules_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
       </td>
     </tr>
     <% end %>

@@ -8,31 +8,33 @@
   </div>
   <table class='table table-condensed table-hover table-bordered'>
   <tr>
+    <th>ID #</th>
     <th>Name</th>
-    <th>State</th>
     <th>Center</th>
-    <th>Max Participants </th>
-    <th> Condition </th>
-    <th> Condition Comments </th>
-    <th> General Comments </th>
-    <th></th>
+    <th>Condition</th>
+    <th>Capacity </th>
+    <th>Contact </th>
+    <th>State</th>
+    <th width='14%'></th>
   </tr>
 
 <% @kits.each do |kit| %>
+<% kit.current_user = current_user %>
   <tr>
+    <td><%= kit.id %></td>
     <td> <%=kit.name%></td>
-    <td> <%=  kit_state_tag(kit) %> </td>
     <td> <%=  (kit.centers.map {|c| c[:name]}).join(", ") %> </td>
-    <%-# kit.center.name rescue '' -%>
-    <td> <%=  kit.capacity %> </td>
     <td> <%=  kit.condition %> </td>
-    <td> <%=  kit.comments %> </td>
-    <td> <%= link_to "Block", new_kit_schedule_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
-        <%= link_to "Show", kit_path(kit), :class => 'btn btn-primary btn-sm' %> 
-        <%= link_to "Schedule", kit_schedules_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
+    <td> <%=  kit.capacity %> </td>
+    <td><%= kit.guardian.fullname rescue '' %></td>
+    <td> <%=  kit_state_tag(kit) %> </td>
+    <td> <%#= link_to "Block", new_kit_schedule_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
+        <%= link_to "Show", kit_path(kit), :class => 'btn btn-primary btn-sm' if kit.can_view? %>
+        <%= link_to "Schedule", kit_schedules_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' if kit.can_view_schedule? %>
     </td> 
   </tr>
 <% end %>
 </table>
-<br />
+
+
 

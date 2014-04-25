@@ -7,28 +7,32 @@
       </span>
     </h2>
   </div>
-  <div class='col-md-2'>
-    <h2>
-      <span>
-        <%= link_to "Propose Program", new_program_path, :class => 'btn btn-primary' %>
-      </span>
-    </h2>
-  </div>
+  <% if current_user.is? :center_scheduler %>
+      <div class='col-md-2'>
+        <h2>
+          <span>
+            <%= link_to "Propose Program", new_program_path, :class => 'btn btn-primary btn-sm' %>
+          </span>
+        </h2>
+      </div>
+  <% end %>
 </div>
 <div class='row'>
   <div class='col-md-12'>
     <table class='table table-condensed table-hover table-bordered'>
       <tr>
-        <th>#</th>
+        <th>Program #</th>
         <th>Announced Id</th>
+        <th>Center</th>
         <th>Type</th>
-        <th>Start</th>
-        <th>End</th>
+        <th>Start Date</th>
+        <th>End Date</th>
         <th>Timings</th>
         <th>State</th>
         <th></th>
       </tr>
       <% @programs.each do |program| %>
+      <% program.current_user = current_user %>
       <tr>
         <td><%= program.id %></td>
         <td>
@@ -41,14 +45,17 @@
             <%= program.announce_program_id.to_s %>
           <% end %>
         </td>
-        <td><%= (program.program_type.name rescue '')%></td>
+        <td><%= (program.center.name)%></td>
+        <td><%= (program.program_type.name)%></td>
         <td><%= program.start_date.strftime('%d %B %Y') %></td>
         <td><%= program.end_date.strftime('%d %B %Y') %></td>
         <td><%= (program.timings.map {|c| c[:name]}).join(", ") %></td>
         <td><%= program_state_tag(program) %></td>
         <td>
           <!-- Options -->
-          <%= link_to "Open", program_path(program), :class => 'btn btn-primary btn-sm' %>
+         <% if program.can_view? %>
+            <%= link_to "Open", program_path(program), :class => 'btn btn-primary btn-sm' %>
+         <% end %>
         </td>
       </tr>
       <% end %>

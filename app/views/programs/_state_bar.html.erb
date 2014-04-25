@@ -2,7 +2,7 @@
   <div class='page-header'>
 <h2>
   <small><%= program_state_tag(@program) %></small> Program Details <small><%= @program.name %> | <%= @program.center.name %></small>
-<% unless ::Program::FINAL_STATES.include?(@program.state) %>
+<% if @program.can_update? && !(::Program::FINAL_STATES.include?(@program.state)) %>
     <div class='btn-group'>
   <button type="button" class="btn btn-danger">Update State</button>
   <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
@@ -17,7 +17,7 @@
      <% end %>
   </ul>
 </div>
-  <% if current_user.is? :center_scheduler, :center_id => @program.center_id %>
+  <% if @program.can_create? %>
     <!-- Single button -->
     <div class="btn-group">
       <button type="button" class="btn btn-primary"> Add New </button>

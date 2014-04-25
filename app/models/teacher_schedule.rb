@@ -20,6 +20,9 @@ class TeacherSchedule < ActiveRecord::Base
   belongs_to :program
   belongs_to :center
 
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
+
   attr_accessible :start_date, :end_date, :state
   attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
   belongs_to :blocked_by_user, :class_name => User
@@ -149,6 +152,25 @@ class TeacherSchedule < ActiveRecord::Base
     self.errors[:base] << pts.errors.full_messages unless pts.errors.empty?
   end
 
+
+  def can_create?
+    return true if self.current_user == self.teacher.user
+    return false
+  end
+
+  def can_update?
+    return true if self.current_user == self.teacher.user
+    return false
+  end
+
+  # This is a hack - this needs to be in sync with can_view? of program_teacher_schedule
+  # GOTCHA - make usre current user is initialized for self
+  def can_view_schedule?
+    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if self.current_user == self.teacher.user
+    return false
+  end
+
     private
 
   # Validator
@@ -183,5 +205,7 @@ class TeacherSchedule < ActiveRecord::Base
        return
     end
   end
+
+
 
 end

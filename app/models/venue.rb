@@ -37,6 +37,9 @@ class Venue < ActiveRecord::Base
 
   has_many :venue_schedules
 
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
+
   validates_presence_of :address
   #validates_presence_of :center_id
   validates :name, :presence => true, :uniqueness => true
@@ -49,6 +52,7 @@ class Venue < ActiveRecord::Base
   validates :contact_email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}, :allow_blank => true
   validates :contact_phone, :length => { is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
 
+  STATE_UNKNOWN         = "Unknown"
   STATE_PROPOSED        = "Proposed"
   STATE_APPROVED        = "Approved"
   STATE_REJECTED        = "Rejected"
@@ -56,6 +60,7 @@ class Venue < ActiveRecord::Base
   STATE_PENDING_FINANCE_APPROVAL = "Pending Finance Approval"
   STATE_INSUFFICIENT_INFO = "Insufficient Info"
 
+  EVENT_PROPOSE          = "Propose"
   EVENT_APPROVE          = "Approve"
   EVENT_REJECT           = "Reject"
   EVENT_POSSIBLE        = "Possible"
@@ -67,7 +72,12 @@ class Venue < ActiveRecord::Base
     EVENT_APPROVE, EVENT_REJECT, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL, EVENT_REQUEST_FINANCE_APPROVAL
   ]
 
-  state_machine :state, :initial => STATE_PROPOSED do
+  state_machine :state, :initial => STATE_UNKNOWN do
+
+    event EVENT_PROPOSE do
+      transition STATE_UNKNOWN => STATE_PROPOSED
+    end
+
     event EVENT_APPROVE do
       transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED
     end
@@ -168,6 +178,45 @@ class Venue < ActiveRecord::Base
 
   def has_commercial?
     self.errors.add(:commercial, "should be selected for venue with per day price.") if self.commercial.blank? && !self.per_day_price.blank?
+  end
+
+  def can_view?
+    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+  # Usage --
+  # 1. can_create?
+  # 2. can_create? :any => true
+  # if note specific default value of :any is false
+  def can_create?(options={})
+    if options.has_key?(:any) && options[:any] == true
+       center_ids = []
+    else
+      center_ids = self.center_ids
+    end
+
+    return true if self.current_user.is? :venue_coordinator, :for => :any, :center_id => center_ids
+    return false
+  end
+
+  def can_update?
+    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+  def can_view_schedule?
+    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :venue_coordinator, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+  # TODO - this is a hack, to route the call through venue object from the UI.
+  def can_create_schedule?
+    venue_schedule = VenueSchedule.new
+    venue_schedule.current_user = self.current_user
+    return venue_schedule.can_create?(self.center_ids)
   end
 
   def friendly_name

@@ -7,11 +7,17 @@ class VenueSchedulesController < ApplicationController
   # GET /venue_schedules.json
   def index
     @venue = ::Venue.find(params[:venue_id].to_i)
-    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.start_date > ?', Time.zone.now])
+    @venue.current_user = current_user
+    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.end_date > ?', Time.zone.now - 15.days.from_now])
 
     respond_to do |format|
-      format.html
-      format.json { render json: @venue_schedules }
+      if @venue.can_view_schedule?
+        format.html
+        format.json { render json: @venue_schedules }
+      else
+        format.html { redirect_to @venue, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -22,14 +28,31 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule = VenueSchedule.new
     @venue_schedule.current_user = current_user
 
-    @venue_schedule.program_id = params[:program_id] if params.has_key?(:program_id)
-    @venue_schedule.venue_id = params[:venue_id] if params.has_key?(:venue_id)
+    if params.has_key?(:venue_id)
+      @venue_schedule.venue_id = params[:venue_id]
+      center_ids = @venue_schedule.venue.center_ids
+    end
+
+    if params.has_key?(:program_id)
+      @venue_schedule.program_id = params[:program_id]
+      center_ids = @venue_schedule.program.center_id
+    end
 
     respond_to do |format|
-      format.html
-      format.json { render json: @venue_schedule }
+      if @venue_schedule.can_create?(center_ids)
+        format.html
+        format.json { render json: @venue_schedule }
+      else
+        if @venue_schedule.venue_id.nil?
+          format.html { redirect_to program_path(params[:program_id]), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        else
+          format.html { redirect_to venue_schedules_path(:venue_id => @venue), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        end
+        format.json { render json: @venue_schedule.errors, status: :unprocessable_entity }
+      end
     end
   end
+
 
   # POST /venue_schedules
   # POST /venue_schedules.json
@@ -51,11 +74,16 @@ class VenueSchedulesController < ApplicationController
     #@venue_schedule.setup_details!
 
     respond_to do |format|
-      if @venue_schedule.save
-        format.html { redirect_to @venue_schedule, notice: 'Venue Schedule was successfully created.' }
-        format.json { render json: @venue_schedule, status: :created, location: @venue_schedule }
+      if @venue_schedule.can_create?
+        if @venue_schedule.send(::VenueSchedule::EVENT_BLOCK) && @venue_schedule.save
+          format.html { redirect_to @venue_schedule, notice: 'Venue Schedule was successfully created.' }
+          format.json { render json: @venue_schedule, status: :created, location: @venue_schedule }
+        else
+          format.html { render action: "new" }
+          format.json { render json: @venue_schedule.errors, status: :unprocessable_entity }
+        end
       else
-        format.html { render action: "new" }
+        format.html { redirect_to venue_schedules_path(:venue_id => @venue), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @venue_schedule.errors, status: :unprocessable_entity }
       end
     end
@@ -68,8 +96,13 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule.current_user = current_user
 
     respond_to do |format|
-      format.html
-      format.json { render json: @venue_schedule }
+      if @venue_schedule.can_update?
+        format.html
+        format.json { render json: @venue_schedule }
+      else
+        format.html { redirect_to venue_schedules_path(:venue_id => @venue_schedule.venue), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue_schedule.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -80,8 +113,13 @@ class VenueSchedulesController < ApplicationController
     @trigger = params[:trigger]
     #authorize! :update, @venue
     respond_to do |format|
-      format.html
-      format.json { render json: @venue_schedule }
+      if @venue_schedule.can_update?
+        format.html
+        format.json { render json: @venue_schedule }
+      else
+        format.html { redirect_to venue_schedules_path(:venue_id => @venue_schedule.venue), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue_schedule.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -95,20 +133,19 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule.blocked_for = params[:blocked_for] if params.has_key?(:blocked_for)
 
     respond_to do |format|
-      format.html do
-        if state_update(@venue_schedule, @trigger)
-          if @venue_schedule.save!
-            #redirect_to action: "edit" , :trigger => params[:trigger]
-            redirect_to [@venue,@venue_schedule]
-          end
+      if @venue_schedule.can_update?
+        if state_update(@venue_schedule, @trigger) &&  @venue_schedule.save!
+          format.html { redirect_to [@venue, @venue_schedule], notice: 'Venue Schedule was successfully updated.' }
+          format.json { render :json => @venue_schedule }
         else
-          render :action => 'edit'
+          format.html { render :action => 'edit' }
+          format.json { render json: @venue_schedule.errors, status: :unprocessable_entity }
         end
+      else
+        format.html { redirect_to venue_schedules_path(:venue_id => @venue_schedule.venue), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue_schedule.errors, status: :unprocessable_entity }
       end
-      format.json { render :json => @venue_schedule }
     end
-
-
   end
 
   # DELETE /venue_schedules/1

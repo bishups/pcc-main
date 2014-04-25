@@ -6,7 +6,14 @@ class TeachersController < ApplicationController
   # GET /teachers
   # GET /teachers.json
   def index
-    @teachers = Teacher.all   # TODO: Filter by role
+    center_ids = current_user.accessible_center_ids
+    @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).uniq.all
+    # any teachers who are attached to zones, but not to the centers
+    zone_ids = current_user.accessible_zone_ids
+    if !zone_ids.empty?
+      @teachers_in_zones = Teacher.where("zone_id IN (?)", zone_ids).uniq.all
+      @teachers = @teachers + (@teachers_in_zones - @teachers)
+    end
 
     respond_to do |format|
       format.html # index.html.erb
@@ -21,8 +28,13 @@ class TeachersController < ApplicationController
     @teacher.current_user = current_user
 
     respond_to do |format|
-      format.html # show.html.erb
-      format.json { render json: @teacher }
+      if @teacher.can_view?
+        format.html # show.html.erb
+        format.json { render json: @teacher }
+      else
+        format.html { redirect_to teachers_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @teacher.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -33,8 +45,13 @@ class TeachersController < ApplicationController
     @teacher.current_user = current_user
 
     respond_to do |format|
-      format.html # new.html.erb
-      format.json { render json: @teacher }
+      if @teacher.can_create? :any => true
+        format.html # new.html.erb
+        format.json { render json: @teacher }
+      else
+        format.html { redirect_to teachers_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @teacher.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -44,8 +61,19 @@ class TeachersController < ApplicationController
       @teacher = flash[:teacher]
     else
       @teacher = Teacher.find(params[:id])
+      @teacher.current_user = current_user
     end
     @trigger = params[:trigger]
+
+    respond_to do |format|
+      if @teacher.can_update?
+        format.html
+        format.json { render json: @teacher }
+      else
+        format.html { redirect_to teachers_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @teacher.errors, status: :unprocessable_entity }
+      end
+    end
   end
 
   # POST /teachers
@@ -55,11 +83,16 @@ class TeachersController < ApplicationController
     @teacher.current_user = current_user
 
     respond_to do |format|
-      if @teacher.save
-        format.html { redirect_to @teacher, notice: 'Teacher was successfully created.' }
-        format.json { render json: @teacher, status: :created, location: @teacher }
+      if @teacher.can_create?
+        if @venue.send(::Venue::EVENT_PROPOSE) && @teacher.save
+          format.html { redirect_to @teacher, notice: 'Teacher was successfully created.' }
+          format.json { render json: @teacher, status: :created, location: @teacher }
+        else
+          format.html { render action: "new" }
+          format.json { render json: @teacher.errors, status: :unprocessable_entity }
+        end
       else
-        format.html { render action: "new" }
+        format.html { redirect_to teachers_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @teacher.errors, status: :unprocessable_entity }
       end
     end
@@ -73,28 +106,32 @@ class TeachersController < ApplicationController
     @trigger = params[:trigger]
     @teacher.comments = params[:comments] if params.has_key?(:comments)
 
-    state_update(@teacher, @trigger)
     respond_to do |format|
-      format.html do
-        if @teacher.errors.empty? && @teacher.save!
-          redirect_to [@teacher]
-          #format.html { redirect_to @teacher, notice: 'Teacher was successfully updated.' }
-          #format.json { head :no_content }
+      if @teacher.can_update?
+        if state_update(@teacher, @trigger) &&  @teacher.save!
+          format.html { redirect_to @teacher, notice: 'Teacher was successfully updated.' }
+          format.json { render json: @venue }
+          # redirect_to [@teacher]
         else
-          #format.html { render action: "edit" }
-          #format.json { render json: @teacher.errors, status: :unprocessable_entity }
           flash[:teacher] = @teacher
-          redirect_to :action => :edit, :trigger => params[:trigger]
+          format.html { redirect_to :action => :edit, :trigger => params[:trigger] }
+          format.json { render json: @teacher.errors, status: :unprocessable_entity }
+          # flash[:teacher] = @teacher
+          # redirect_to :action => :edit, :trigger => params[:trigger]
         end
+      else
+        format.html { redirect_to teachers_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @teacher.errors, status: :unprocessable_entity }
       end
     end
-
   end
 
 
   # DELETE /teachers/1
   # DELETE /teachers/1.json
   def destroy
+    # not allowing for now
+=begin
     @teacher = Teacher.find(params[:id])
     @teacher.current_user = current_user
     @teacher.destroy
@@ -103,6 +140,7 @@ class TeachersController < ApplicationController
       format.html { redirect_to teachers_url }
       format.json { head :no_content }
     end
+=end
   end
 
   private
@@ -112,4 +150,7 @@ class TeachersController < ApplicationController
       ts.send(trig)
     end
   end
+
+
+
 end

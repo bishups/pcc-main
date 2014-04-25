@@ -1,63 +1,94 @@
-<div class='row'>
-  <div class='col-md-12'>
-    <h2>
-      Program-Teacher Schedule Detail <br/>
-      <small><%= @program_teacher_schedule.program.name %></small>
-      <small><span class='label label-info'><%= @program_teacher_schedule.teacher_schedule.state %></span></small>
-      <small><%= render :partial => 'program_teacher_schedules/state_bar', locals: {pts: @program_teacher_schedule, id: @program_teacher_schedule.teacher_schedule.id } %></small>
-    </h2>
-  </div>
-</div>
-<div class='row'>
-  <h3>Program Details</h3>
-  <div class='col-md-12'>
-    <table class='table table-bordered'>
-      <tr>
-        <td width='20%'><strong>Internal Id</strong></td>
-        <td><%= @program_teacher_schedule.program.id %></td>
-      </tr>
-      <tr>
-        <td><strong>Announced Program Id</strong></td>
-        <td><%= @program_teacher_schedule.program.announce_program_id %></td>
-      </tr>
-      <tr>
-        <td width='20%'><strong>Center</strong></td>
-        <td><%= @program_teacher_schedule.program.center.name %></td>
-      </tr>
-      <tr>
-        <td><strong>Proposed By</strong></td>
-        <td><%= @program_teacher_schedule.program.proposer.fullname %></td>
-      </tr>
-      <tr>
-        <td><strong>Start Date</strong></td>
-        <td><%= @program_teacher_schedule.program.start_date.strftime('%d %B %Y') %></td>
-      </tr>
-      <tr>
-        <td><strong>End Date</strong></td>
-        <td><%= @program_teacher_schedule.program.end_date.strftime('%d %B %Y') %></td>
-      </tr>
-      <tr>
-        <td><strong>Timing</strong></td>
-        <td><%= (@program_teacher_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
-      </tr>
-    </table>
-  </div>
-</div>
-<div class='row'>
-  <h3>Teacher Details</h3>
-  <div class='col-md-12'>
-    <table class='table table-bordered'>
-      <tr>
-        <td width='20%'><strong>T No</strong></td>
-        <td><%= @program_teacher_schedule.teacher.t_no %></td>
-      </tr>
-      <tr>
-        <td><strong>Name</strong></td>
-        <td><%= @program_teacher_schedule.teacher.user.fullname %></td>
-      </tr>
-    </table>
-  </div>
-</div>
+<% if @program_teacher_schedule.can_update? %>
+    <div class='row'>
+      <div class='col-md-12'>
+        <%= render :partial => 'program_teacher_schedules/state_bar', locals: {pts: @program_teacher_schedule, id: @program_teacher_schedule.teacher_schedule.id } %>
+      </div>
+    </div>
+    <% teacher_schedule = @program_teacher_schedule.teacher_schedule %>
+    <div class='row'>
+      <div class='col-md-12'>
+        <h3>Last Update</h3>
+        <small><%= teacher_schedule.last_update %></small>
+        <div class = 'row'>
+          <div class='col-md-12'>
+            <table class='table table-bordered'>
+              <tr>
+                <td width='20%'><strong> Updated By </strong></td>
+                <td>
+                  <address>
+                    <%= teacher_schedule.last_updated_by_user.fullname rescue ' ' %>
+                  </address>
+                </td>
+              </tr>
+              <tr>
+                <td width='20%'><strong> Comments </strong></td>
+                <td>
+                  <address>
+                    <%= teacher_schedule.comment_type rescue ' ' %>
+                  </address>
+                </td>
+              </tr>
+              <tr>
+                <td><strong> Details </strong></td>
+                <td><%= teacher_schedule.comments %></td>
+              </tr>
+              <% if current_user.is? :zonal_coordinator, :center_id => teacher_schedule.program.center_id %>
+                  <% unless teacher_schedule.feedback.nil? %>
+                      <tr>
+                        <td><strong> Feedback </strong></td>
+                        <td><%= teacher_schedule.feedback %></td>
+                      </tr>
+                  <% end %>
+              <% end %>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class='row'>
+      <div class='col-md-12'>
+        <h3>Details</h3>
+        <div class='row'>
+          <div class='col-md-12'>
+            <table class='table table-bordered'>
+              <tr>
+                <td width='20%'><strong>ID #</strong></td>
+                <td><%= teacher_schedule.id %></td>
+              </tr>
+              <tr>
+                <td><strong>Program</strong></td>
+                <td><%= link_to "#{teacher_schedule.program.name}", program_path(teacher_schedule.program) %></td>
+              </tr>
+              <tr>
+                <td><strong>Teacher</strong></td>
+                <td><%= link_to "#{teacher_schedule.teacher.user.fullname}", teacher_path(teacher_schedule.teacher) %></td>
+              </tr>
+              <tr>
+                <td><strong>Center</strong></td>
+                <td><%= teacher_schedule.program.center.name %></td>
+              </tr>
+              <tr>
+                <td><strong>Booking Start Date</strong></td>
+                <td><%= teacher_schedule.program.start_date.strftime('%d %B %Y') %></td>
+              </tr>
+              <tr>
+                <td><strong>Booking End Date</strong></td>
+                <td><%= teacher_schedule.program.end_date.strftime('%d %B %Y') %></td>
+              </tr>
+              <tr>
+                <td><strong>Timing (s)</strong></td>
+                <td><%= (teacher_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
+              </tr>
+              <tr>
+                <td><strong>Blocked By</strong></td>
+                <td><%= teacher_schedule.blocked_by_user.fullname rescue ' '%></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+<% end %>
 
 
 

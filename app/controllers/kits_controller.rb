@@ -3,8 +3,8 @@ class KitsController < ApplicationController
   # GET /kits.json
   before_filter :authenticate_user!
   def index
-    @kits = Kit.all
-
+    center_ids = current_user.accessible_center_ids
+    @kits = Kit.joins("JOIN centers_kits ON centers_kits.kit_id = kits.id").where('centers_kits.center_id IN (?)', center_ids).uniq.all
     respond_to do |format|
       format.html # index.html.erb
       format.json { render json: @kits }
@@ -18,8 +18,13 @@ class KitsController < ApplicationController
     @kit.current_user = current_user
 
     respond_to do |format|
-      format.html # show.html.erb
-      format.json { render json: @kit }
+      if @kit.can_view?
+        format.html # show.html.erb
+        format.json { render json: @kit }
+      else
+        format.html { redirect_to kits_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -30,8 +35,13 @@ class KitsController < ApplicationController
     @kit.current_user = current_user
 
     respond_to do |format|
-      format.html # new.html.erb
-      format.json { render json: @kit }
+      if @kit.can_create? :any => true
+        format.html # new.html.erb
+        format.json { render json: @kit }
+      else
+        format.html { redirect_to kits_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -41,6 +51,15 @@ class KitsController < ApplicationController
     @kit.current_user = current_user
     @trigger = params[:trigger]
 
+    respond_to do |format|
+      if @kit.can_update?
+        format.html
+        format.json { render json: @kit }
+      else
+        format.html { redirect_to kits_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit.errors, status: :unprocessable_entity }
+      end
+    end
   end
 
   # POST /kits
@@ -50,11 +69,16 @@ class KitsController < ApplicationController
     @kit.current_user = current_user
 
     respond_to do |format|
-      if @kit.save
-        format.html { redirect_to @kit, notice: 'Kit was successfully created.' }
-        format.json { render json: @kit, status: :created, location: @kit }
+      if @kit.can_create?
+        if @kit.save
+          format.html { redirect_to @kit, notice: 'Kit was successfully created.' }
+          format.json { render json: @kit, status: :created, location: @kit }
+        else
+          format.html { render action: "new" }
+          format.json { render json: @kit.errors, status: :unprocessable_entity }
+        end
       else
-        format.html { render action: "new" }
+        format.html { redirect_to kits_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @kit.errors, status: :unprocessable_entity }
       end
     end
@@ -69,15 +93,17 @@ class KitsController < ApplicationController
     @kit.comments = params[:comments]
 
     respond_to do |format|
-      format.html do
-        if state_update(@kit, @trigger)
-          if @kit.save!
-            #redirect_to action: "edit" , :trigger => params[:trigger]
-            redirect_to [@kit]
-          end
+      if @kit.can_update?
+        if state_update(@kit, @trigger) &&  @kit.save!
+          format.html { redirect_to @kit, notice: 'Kit was successfully updated.' }
+          format.json { render :json => @kit }
         else
-            render :action => 'edit'
+          format.html { render :action => 'edit' }
+          format.json { render json: @kit.errors, status: :unprocessable_entity }
         end
+      else
+        format.html { redirect_to kits_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit.errors, status: :unprocessable_entity }
       end
     end
   end
@@ -85,6 +111,8 @@ class KitsController < ApplicationController
   # DELETE /kits/1
   # DELETE /kits/1.json
   def destroy
+    # cannot delete kit for now
+=begin
     @kit = Kit.find(params[:id])
     @kit.current_user = current_user
     @kit.destroy
@@ -93,6 +121,7 @@ class KitsController < ApplicationController
       format.html { redirect_to kits_url }
       format.json { head :no_content }
     end
+=end
   end
 
   def state_update(kit, trig)
@@ -100,4 +129,5 @@ class KitsController < ApplicationController
       kit.send(trig)
     end
   end
+
 end

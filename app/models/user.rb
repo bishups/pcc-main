@@ -43,24 +43,28 @@ class User < ActiveRecord::Base
   has_many :zones, :through => :access_privileges, :source => :resource, :source_type => 'Zone'
 
   has_many :sector_centers, :through => :sectors, :source => :centers
-  has_many :zone_centers, :through => :sectors, :source => :centers
+  has_many :zone_centers, :through => :zones, :source => :centers
   has_many :zone_sectors, :through => :zones, :source => :sectors
 
   #has_many :teacher_schedules
   #has_many :teacher_slots
 
   ROLE_ACCESS_HIERARCHY =
-        {:zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5},
-          :zao                  => {:text => "ZAO", :access_level => 4},
-          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3},
-          :center_coordinator   => {:text => "Center Coordinator", :access_level => 2},
-          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 1},
-          :center_scheduler     => {:text => "Center Scheduler", :access_level => 0},
-          :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0},
-          :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0},
-          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0},
-          :teacher              => {:text => "Teacher", :access_level => 0}
-  }
+        {:zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
+          :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
+          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
+          :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
+          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 1, :group => [:geography]},
+          :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
+          :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
+          :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
+          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
+          :teacher              => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
+          # NOTE: when creating user-id corresponding to pcc_accounts/ finance_department, they need to be added to relevant zones.
+          :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
+          :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :any                  => {:text => "Teacher", :access_level => -1, :group => []}
+    }
 
 
   # Setup accessible (or protected) attributes for your model
@@ -101,9 +105,14 @@ class User < ActiveRecord::Base
     self.roles.exists?(:name => "Super Admin")
   end
 
+  def accessible_center_ids
+    centers = self.accessible_centers
+    centers = [centers] unless centers.class == Array
+    centers.collect(&:id)
+  end
 
   def accessible_centers
-    self.centers+self.sector_centers+self.zone_centers
+    (self.centers+self.sector_centers+self.zone_centers).uniq
   end
 
 
@@ -111,6 +120,11 @@ class User < ActiveRecord::Base
     self.sectors+self.zone_sectors
   end
 
+  def accessible_zone_ids
+    zones = self.accessible_zones
+    zones = [zones] unless zones.class == Array
+    zones.collect(&:id)
+  end
 
   def accessible_zones
     self.zones
@@ -143,16 +157,29 @@ class User < ActiveRecord::Base
 =end
 
 
-  # usage -- check if user has role for specific resource
-  # if user.is? :zonal_coordinator, :center_id => 10
-  # if user.is? :zonal_coordinator, :center_id => [1,2,3]
-  # if user.is? :zonal_coordinator
+  # usage -- checks if
+  # 1. user has a specific role
+  # --  if user.is? :zonal_coordinator
+  # --  if user.is? :zonal_coordinator, :center_id => []
+  # 2. user has a specific role for specified center(s)
+  # --  if user.is? :zonal_coordinator, :center_id => 10
+  # --  if user.is? :zonal_coordinator, :center_id => [1,2,3]
+  # 3. user has a specific role for any (or all) of the specified center(s)
+  # --  if user.is? :zonal_coordinator, :for => :any, :center_id => [1,2,3]
+  # --  if user.is? :zonal_coordinator, :for => :all, :center_id => [1,2,3]
+  # if :for option is not specified, be default it is assumed to be :for => :all
+  #
   # NOTE: 12 Apr 14 - From rails_admin :teacher role cannot be associated with users via access_privileges
   # 1. because teacher checks can be handled simply by checking with current_user.teacher.id, rather than
   # going through the more complicated is? routine.
   # 2. teachers are associated separately with center(s) through the teacher admin interface.
   def is?(for_role, options={})
-    for_center_ids = options[:center_id].class == Array ? (options[:center_id]).map(&:to_i) : ([options[:center_id]]).map(&:to_i)
+    for_center_ids = []
+    if options.has_key?(:center_id)
+      for_center_ids = options[:center_id].class == Array ? options[:center_id] : [options[:center_id]]
+      for_center_ids = for_center_ids.map(&:to_i).compact
+    end
+    for_all = (options.has_key?(:for) && options[:for] == :any) ? false : true
     self.access_privileges.each do |ap|
       self_centers = []
       if ap.resource.class.name.demodulize == "Center"
@@ -160,13 +187,17 @@ class User < ActiveRecord::Base
       elsif ap.resource.class.name.demodulize == "Sector" || ap.resource.class.name.demodulize == "Zone"
         self_centers = ap.resource.centers
       end
-      # if for given ap, self has >= centers than asked for
-      if (for_center_ids.compact - self_centers.collect(&:id)).empty?
+      # if for given ap,
+      # a. for_all if self has >= centers than asked for
+      # b. for_any if self has any center that was asked for
+      self_center_ids = self_centers.collect(&:id)
+      if (for_all && (for_center_ids - self_center_ids).empty?) ||
+         (!for_all && (for_center_ids - self_center_ids) != for_center_ids )
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
         for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
-        # if for given ap, self has same role, or access_level > access_level than asked for
-        if ((self_ah == for_ah) || self_ah[:access_level] > for_ah[:access_level])
+        # if for given ap, self has same role, or access_level > access_level than asked for, and part of all groups
+        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level])  &&  (for_ah[:group] - self_ah[:group]).empty?)
           return true
         end
       end

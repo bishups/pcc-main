@@ -13,6 +13,8 @@
           <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
       <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE %>
           Are you sure you want to change state of teacher to<strong> Request Release </strong> for this Program?
+      <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_ASSIGN %>
+          Are you sure you want to change state of teacher to<strong> Assign </strong> for this Program?
       <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_WITHDRAW %>
           <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
       <% end %>

@@ -16,10 +16,11 @@
 #
 
 class KitSchedule < ActiveRecord::Base
+  before_destroy :can_delete?
 
   STATE_RESERVED    = "Reserved"
   STATE_UNDER_REPAIR = "Under Repair"
-  STATE_UNAVAILABLE_OVERDUE = "Overdue"
+  STATE_UNAVAILABLE_OVERDUE = "Kit Overdue"
 
   STATE_BLOCKED     = "Blocked"
   STATE_ISSUED      = "Issued"
@@ -33,9 +34,9 @@ class KitSchedule < ActiveRecord::Base
   RESERVED_STATES = [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE]
   ALL_STATES = RESERVED_STATES + FINAL_STATES + CONNECTED_STATES
 
-  EVENT_RESERVE    = "Reserve"
-  EVENT_UNDER_REPAIR = "Under Repair"
-  EVENT_UNAVAILABLE_OVERDUE = "Overdue"
+  EVENT_RESERVE    = "Reserve Kit"
+  EVENT_UNDER_REPAIR = "Kit Under Repair"
+  EVENT_UNAVAILABLE_OVERDUE = "Kit Overdue"
 
   EVENT_BLOCK      = "Block"
   EVENT_ISSUE      = "Issue"
@@ -50,6 +51,9 @@ class KitSchedule < ActiveRecord::Base
   belongs_to :kit
   belongs_to :program
   belongs_to :blocked_by_user, :class_name => User
+
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
 
   attr_accessor :current_user, :issue_for_schedules
   attr_accessible :program_id, :kit_id,:end_date, :start_date, :state, :comments, :issued_to, :due_date_time, :issue_for_schedules
@@ -134,6 +138,7 @@ class KitSchedule < ActiveRecord::Base
       transition [::Kit::STATE_AVAILABLE] => STATE_UNAVAILABLE_OVERDUE
     end
     before_transition ::Kit::STATE_AVAILABLE => [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :reserve_fields_present?
+    after_transition ::Kit::STATE_AVAILABLE => [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :after_reserve!
 
   end
 
@@ -146,6 +151,7 @@ class KitSchedule < ActiveRecord::Base
   def on_block
     self.blocked_by_user = current_user
     self.issue_for_schedules = NIL
+    self.send(::Program::ANNOUNCED) if self.program.is_announced? && self.program.is_active?
   end
 
   def kit_reserved?
@@ -280,7 +286,7 @@ class KitSchedule < ActiveRecord::Base
   def can_unblock?
     # to prevent too many error messages on console return early
     if (self.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
-      if !self.program.venue_approved?
+      if self.program.venue_approved?
         self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for payment request."
         return false
       end
@@ -288,7 +294,7 @@ class KitSchedule < ActiveRecord::Base
     end
 
     if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id)
-      if !self.program.venue_approval_requested?
+      if self.program.venue_approval_requested?
         self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for sector coordinator approval."
         return false
       end
@@ -305,6 +311,10 @@ class KitSchedule < ActiveRecord::Base
       return false
     end
     true
+  end
+
+  def after_reserve!
+    self.blocked_by_user = self.current_user
   end
 
   def is_connected?
@@ -329,5 +339,58 @@ class KitSchedule < ActiveRecord::Base
       # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
     end
   end
-  
+
+  def can_delete?
+    unless self.program_id.nil?
+      self.errors[:base] << "Cannot delete a kit schedule linked to a program"
+      return false
+    end
+    unless self.can_create_on_trigger?
+      self.errors[:base] << "Insufficient privileges to complete the operation"
+      return false
+    end
+
+    return true
+  end
+
+  def can_update?
+    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if self.current_user.is? :kit_coordinator, :center_id => self.program.center_id
+    return false
+  end
+
+  def can_create?(center_ids = self.program.center_id)
+    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
+    return false
+  end
+
+  def can_create_on_trigger?
+    return true if self.can_create_reserve? || self.can_create_overdue_or_under_repair?
+    return false
+  end
+
+  def can_create_reserve?(center_ids = self.kit.center_ids, scope = :any)
+    return true if self.current_user.is? :sector_coordinator, :for => scope, :center_id => center_ids
+    return false
+  end
+
+  def can_create_overdue_or_under_repair?(center_ids = self.kit.center_ids, scope = :any)
+    return true if self.current_user.is? :kit_coordinator, :for => scope, :center_id => center_ids
+    return false
+  end
+
+  def can_delete?
+    if (self.state == STATE_RESERVED)
+      return true if (self.blocked_by_user == self.current_user) && self.can_create_reserve?
+      return true if self.can_create_reserve?(self.kit.center_ids, :all)
+    end
+
+    if [STATE_UNAVAILABLE_OVERDUE, STATE_UNDER_REPAIR].include?(self.state)
+      return true if (self.blocked_by_user == self.current_user) && self.can_create_overdue_or_under_repair?
+      return true if can_create_overdue_or_under_repair?(self.kit.center_ids, :all)
+    end
+
+    return false
+  end
+
 end

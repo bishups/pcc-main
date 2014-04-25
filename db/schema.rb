@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404212110930) do
+ActiveRecord::Schema.define(:version => 201404242110930) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -55,6 +55,8 @@ ActiveRecord::Schema.define(:version => 201404212110930) do
     t.string   "text"
     t.datetime "created_at",                    :null => false
     t.datetime "updated_at",                    :null => false
+    t.boolean  "disabled",   :default => false
+    t.boolean  "enabled",    :default => true
     t.boolean  "active",     :default => true
   end
 
@@ -132,19 +134,22 @@ ActiveRecord::Schema.define(:version => 201404212110930) do
     t.integer  "comment_id"
     t.text     "comments"
     t.text     "feedback"
+    t.string   "last_update"
   end
 
   create_table "kits", :force => true do |t|
     t.string   "state"
     t.integer  "guardian_id"
     t.string   "condition"
-    t.datetime "created_at",   :null => false
-    t.datetime "updated_at",   :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.integer  "requester_id"
     t.string   "name"
     t.integer  "capacity"
     t.integer  "comment_id"
     t.text     "comments"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
   end
 
   create_table "permissions", :force => true do |t|
@@ -217,6 +222,7 @@ ActiveRecord::Schema.define(:version => 201404212110930) do
     t.text     "feedback"
     t.text     "comments"
     t.integer  "comment_id"
+    t.string   "last_update"
   end
 
   create_table "programs_timings", :force => true do |t|
@@ -288,6 +294,7 @@ ActiveRecord::Schema.define(:version => 201404212110930) do
     t.text     "comments"
     t.text     "teacher_comments"
     t.text     "feedback"
+    t.string   "last_update"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -304,10 +311,12 @@ ActiveRecord::Schema.define(:version => 201404212110930) do
     t.string   "state"
     t.integer  "zone_id"
     t.integer  "user_id"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.text     "comments"
     t.integer  "comment_id"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
   end
 
   create_table "timings", :force => true do |t|
@@ -358,6 +367,7 @@ ActiveRecord::Schema.define(:version => 201404212110930) do
     t.integer  "comment_id"
     t.text     "comments"
     t.text     "feedback"
+    t.string   "last_update"
   end
 
   create_table "venues", :force => true do |t|
@@ -382,6 +392,8 @@ ActiveRecord::Schema.define(:version => 201404212110930) do
     t.integer  "per_day_price"
     t.integer  "comment_id"
     t.text     "comments"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
   end
 
   create_table "versions", :force => true do |t|
