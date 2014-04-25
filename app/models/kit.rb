@@ -153,6 +153,9 @@ class Kit < ActiveRecord::Base
   rails_admin do
     navigation_label 'Kit Management'
     weight 0
+    visible do
+      bindings[:controller].current_user.is?(:kit_coordinator)
+    end
     list do
       field :name
       field :capacity
@@ -174,7 +177,7 @@ class Kit < ActiveRecord::Base
         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           # bindings[:object] & bindings[:controller] are available, but not in scope's block!
-          accessible_centers = bindings[:controller].current_user.accessible_centers
+          accessible_centers = bindings[:controller].current_user.accessible_centers(:kit_coordinator)
           Proc.new { |scope|
             # scoping all Players currently, let's limit them to the team's league
             # Be sure to limit if there are a lot of Players and order them by position

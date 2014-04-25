@@ -27,6 +27,18 @@
 #  updated_at             :datetime         not null
 #
 
+module UserExtension
+  def by_role(role_name)
+    role=Role.where(:name => role_name).first
+    if role
+      find(:all, :conditions => ["access_privileges.role_id = ?", role.id])
+    else
+      find(:all)
+    end
+  end
+end
+
+
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
@@ -38,19 +50,21 @@ class User < ActiveRecord::Base
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
 
-  has_many :centers, :through => :access_privileges, :source => :resource, :source_type => 'Center'
-  has_many :sectors, :through => :access_privileges, :source => :resource, :source_type => 'Sector'
-  has_many :zones, :through => :access_privileges, :source => :resource, :source_type => 'Zone'
+  has_many :centers, :through => :access_privileges, :source => :resource, :source_type => 'Center', :extend => UserExtension
+  has_many :sectors, :through => :access_privileges, :source => :resource, :source_type => 'Sector', :extend => UserExtension
+  has_many :zones, :through => :access_privileges, :source => :resource, :source_type => 'Zone', :extend => UserExtension
 
-  has_many :sector_centers, :through => :sectors, :source => :centers
-  has_many :zone_centers, :through => :zones, :source => :centers
-  has_many :zone_sectors, :through => :zones, :source => :sectors
+  has_many :sector_centers, :through => :sectors, :source => :centers, :extend => UserExtension
+  has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
+  has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
   #has_many :teacher_schedules
   #has_many :teacher_slots
 
   ROLE_ACCESS_HIERARCHY =
-        {:zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
+      {
+          :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:pcc, :geography, :finance]},
+          :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
           :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
           :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
@@ -105,29 +119,28 @@ class User < ActiveRecord::Base
     self.roles.exists?(:name => "Super Admin")
   end
 
-  def accessible_center_ids
-    centers = self.accessible_centers
+  def accessible_center_ids(role_name=nil)
+    centers = self.accessible_centers(role_name)
     centers = [centers] unless centers.class == Array
     centers.collect(&:id)
   end
 
-  def accessible_centers
-    (self.centers+self.sector_centers+self.zone_centers).uniq
+  def accessible_centers(role_name=nil)
+    self.centers.by_role(role_name) + self.sector_centers.by_role(role_name) +self.zone_centers.by_role(role_name)
   end
 
-
-  def accessible_sectors
-    self.sectors+self.zone_sectors
+  def accessible_sectors(role_name=nil)
+    self.sectors.by_role(role_name)+self.zone_sectors.by_role(role_name)
   end
 
-  def accessible_zone_ids
-    zones = self.accessible_zones
+  def accessible_zone_ids(role_name=nil)
+    zones = self.accessible_zones(role_name)
     zones = [zones] unless zones.class == Array
     zones.collect(&:id)
   end
 
-  def accessible_zones
-    self.zones
+  def accessible_zones(role_name=nil)
+    self.zones.by_role(role_name)
   end
 
 =begin

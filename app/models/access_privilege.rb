@@ -23,6 +23,8 @@ class AccessPrivilege < ActiveRecord::Base
   validate :is_role_valid?
   before_destroy :is_teacher_attached?
 
+  scope :by_role,lambda { |role_name| joins(:role).where('roles.name = ?', role_name) }
+
   def role_name=(role_name)
     Role.where(:name => role_name ).first
   end
