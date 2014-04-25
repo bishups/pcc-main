@@ -68,7 +68,7 @@ class User < ActiveRecord::Base
           :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
           :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
-          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 1, :group => [:geography]},
+          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 0, :group => [:geography]},
           :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
           :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},

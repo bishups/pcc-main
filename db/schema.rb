@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404242110930) do
+ActiveRecord::Schema.define(:version => 201404252110930) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -150,6 +150,19 @@ ActiveRecord::Schema.define(:version => 201404242110930) do
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+  end
+
+  create_table "notifications", :force => true do |t|
+    t.string   "model"
+    t.string   "from_state"
+    t.string   "to_state"
+    t.string   "on_event"
+    t.integer  "role_id"
+    t.boolean  "send_sms"
+    t.boolean  "send_email"
+    t.text     "additional_text"
+    t.datetime "created_at",      :null => false
+    t.datetime "updated_at",      :null => false
   end
 
   create_table "permissions", :force => true do |t|

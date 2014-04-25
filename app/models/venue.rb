@@ -29,6 +29,7 @@ class Venue < ActiveRecord::Base
   :contact_mobile, :contact_email, :contact_address, :commercial, :payment_contact_name,
   :payment_contact_address,:payment_contact_mobile,:per_day_price
 
+  after_create :mark_as_proposed!
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
@@ -118,6 +119,10 @@ class Venue < ActiveRecord::Base
 
   def initialize(*args)
     super(*args)
+  end
+
+  def mark_as_proposed!
+     self.send(::Venue::EVENT_PROPOSE)
   end
 
   def blockable_programs

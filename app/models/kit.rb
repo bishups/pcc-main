@@ -33,6 +33,7 @@ class Kit < ActiveRecord::Base
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
+  after_create :mark_as_available!
 
   belongs_to :requester, :class_name => "User"
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
@@ -49,14 +50,27 @@ class Kit < ActiveRecord::Base
   #after_create :generateKitNameStringAfterCreate
   #before_update :generateKitNameString
 
-
+  STATE_UNKNOWN       = 'Unknown'
   STATE_AVAILABLE     = 'Available'
 
+  EVENT_AVAILABLE     = 'Available'
   validates_with KitValidator
 
-  
+
+  state_machine :state, :initial => STATE_UNKNOWN do
+
+    event EVENT_AVAILABLE do
+      transition STATE_UNKNOWN => STATE_AVAILABLE
+    end
+  end
+
+
   def initialize(*args)
     super(*args)
+  end
+
+  def mark_as_available!
+    self.send(EVENT_AVAILABLE)
   end
 
   def has_centers?
@@ -64,8 +78,7 @@ class Kit < ActiveRecord::Base
     self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
-  state_machine :state, :initial => STATE_AVAILABLE do
-  end
+
 
 
   def blockable_programs

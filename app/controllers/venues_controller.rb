@@ -72,7 +72,7 @@ class VenuesController < ApplicationController
 
     respond_to do |format|
       if @venue.can_create?
-        if @venue.send(::Venue::EVENT_PROPOSE) && @venue.save
+        if  @venue.save
           format.html { redirect_to @venue, notice: 'Venue was successfully created.' }
           format.json { render json: @venue, status: :created, location: @venue }
         else

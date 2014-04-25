@@ -84,7 +84,7 @@ class TeachersController < ApplicationController
 
     respond_to do |format|
       if @teacher.can_create?
-        if @venue.send(::Venue::EVENT_PROPOSE) && @teacher.save
+        if @teacher.save
           format.html { redirect_to @teacher, notice: 'Teacher was successfully created.' }
           format.json { render json: @teacher, status: :created, location: @teacher }
         else

@@ -4,6 +4,10 @@ class Teacher < ActiveRecord::Base
   attr_accessor :current_user
   attr_accessible :current_user
 
+  # There two are hacks, since rails_admin is updating the state of the teacher, instead of the regular controller route
+  attr_accessor :last_state
+  attr_accessible :last_state
+
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
   validate :has_centers?
@@ -38,6 +42,9 @@ class Teacher < ActiveRecord::Base
   validates :state, :presence => true
   validate :invalid_state?
 
+  before_save :load_last_state
+  after_save  :send_notification
+
   STATE_UNFIT       = 'Not Fit'
   STATE_UNATTACHED  = 'Not Attached'
   STATE_ATTACHED    = 'Attached'
@@ -68,6 +75,22 @@ class Teacher < ActiveRecord::Base
     before_transition any => STATE_UNFIT, :do => :can_mark_unfit?
     after_transition any => STATE_UNFIT, :do => :on_unfit
 
+  end
+
+
+  def load_last_state
+    self.last_state = Teacher.find(self.id).state
+  rescue ActiveRecord::RecordNotFound
+    self.last_state = STATE_UNATTACHED
+  end
+
+  def send_notification
+    if self.last_state != STATE_ATTACHED && self.state == STATE_ATTACHED
+      # TODO - send a notification for teacher attach from here
+    end
+    if self.last_state == STATE_ATTACHED && self.state != STATE_ATTACHED
+      # TODO - send a notification for teacher attach from here
+    end
   end
 
   def before_unattach!
