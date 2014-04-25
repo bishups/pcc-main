@@ -15,7 +15,7 @@
         <tr>
           <td><%= teacher.id %></td>
           <td></td>
-          <td><%= link_to teacher.user.firstname, teacher_path(teacher)%> </td>
+          <td><%= link_to teacher.user.fullname, teacher_path(teacher)%> </td>
           <% if false %>
           <td><%=  teacher.teacher_schedules.where('end_date > ?', Time.zone.now).count() %></td>
           <td>

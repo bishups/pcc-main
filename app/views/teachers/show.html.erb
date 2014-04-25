@@ -1,14 +1,49 @@
+<% if @teacher.can_view? %>
 <div class='row'>
   <div class='col-md-12'>
     <h2>
-      Teacher Detail <br/>
-      <small><%= @teacher.user.fullname %></small>
       <small><span class='label label-info'><%= @teacher.state %></span></small>
+      Teacher
+      <small><%= @teacher.user.fullname %></small>
       <small><%= render :partial => 'teachers/state_bar' %></small>
-      <small><%= link_to "View Schedule", teacher_teacher_schedules_path(@teacher) %></small>
     </h2>
   </div>
 </div>
+<% if @teacher.can_update? %>
+    <div class='row'>
+      <div class='col-md-12'>
+        <h3>Last Update</h3>
+        <small><%= @teacher.last_update %></small>
+        <div class = 'row'>
+          <div class='col-md-12'>
+            <table class='table table-bordered'>
+              <tr>
+                <td width='20%'><strong> Updated By </strong></td>
+                <td>
+                  <address>
+                    <%= @teacher.last_updated_by_user.fullname rescue ' ' %>
+                  </address>
+                </td>
+              </tr>
+              <tr>
+                <td width='20%'><strong> Comments </strong></td>
+                <td>
+                  <address>
+                    <%= @teacher.comment_type rescue ' ' %>
+                  </address>
+                </td>
+              </tr>
+              <tr>
+                <td><strong> Details </strong></td>
+                <td><%= @teacher.comments %></td>
+              </tr>
+              <tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+<% end %>
 <div class='row'>
   <h3>Details</h3>
   <div class='col-md-12'>
@@ -55,3 +90,4 @@
     </table>
   </div>
 </div>
+<% end %>

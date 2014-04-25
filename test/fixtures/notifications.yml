@@ -1,0 +1,21 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  model: MyString
+  from_state: MyString
+  to_state: MyString
+  on_event: MyString
+  role_id: 1
+  send_sms: false
+  send_email: false
+  additional_text: MyText
+
+two:
+  model: MyString
+  from_state: MyString
+  to_state: MyString
+  on_event: MyString
+  role_id: 1
+  send_sms: false
+  send_email: false
+  additional_text: MyText

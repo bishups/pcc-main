@@ -18,6 +18,7 @@
       <th width='15%'></th>
     </tr>
     <% @teachers.each do |teacher| %>
+    <% teacher.current_user = current_user %>
     <tr>
       <td><%= teacher.t_no %></td>
       <td><%= teacher.user.fullname %></td>
@@ -26,12 +27,10 @@
       <td><%= (teacher.centers.map {|c| c[:name]}).join(", ") %></td>
       <td><%= teacher_state_tag(teacher) %></td>
       <td>
-        <div class="span7 text-center">
-        <%= link_to "Show", teacher_path(teacher), :class => 'btn btn-primary btn-sm' %>
+        <%= link_to "Show", teacher_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view? || teacher.is_current_user? %>
         <% if teacher.state == Teacher::STATE_ATTACHED %>
-            <%= link_to "Schedule", teacher_teacher_schedules_path(teacher), :class => 'btn btn-primary btn-sm' %>
+            <%= link_to "Schedule", teacher_teacher_schedules_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view_schedule?  %>
         <% end %>
-        </div>
       </td>
     </tr>
     <% end %>

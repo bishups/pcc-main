@@ -1,39 +1,88 @@
-<div class='row'>
+<% if @venue_schedule.can_update? %>
+    <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'venue_schedules/state_bar' %>
   </div>
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <table class='table table-bordered'>
-      <tr>
-        <td width='20%'><strong>Name</strong></td>
-        <td><%= @venue_schedule.venue.name %></td>
-      </tr>
-      <tr>
-        <td><strong>Center</strong></td>
-        <td><%= @venue_schedule.program.center.name %></td>
-      </tr>
-      <tr>
-        <td><strong>Address</strong></td>
-        <td>
-          <address>
-            <%= @venue_schedule.address rescue '' %>
-          </address>
-        </td>
-      </tr>
-      <tr>
-        <td><strong>Booking Start Date</strong></td>
-        <td><%= @venue_schedule.program.start_date.strftime('%d %B %Y') %></td>
-      </tr>
-      <tr>
-        <td><strong>Booking End Date</strong></td>
-        <td><%= @venue_schedule.program.end_date.strftime('%d %B %Y') %></td>
-      </tr>
-      <tr>
-        <td><strong>Timing (s)</strong></td>
-        <td><%= (@venue_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
-      </tr>
-    </table>
+    <h3>Last Update</h3>
+    <small><%= @venue_schedule.last_update %></small>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong> Updated By </strong></td>
+            <td>
+              <address>
+                <%= @venue_schedule.last_updated_by_user.fullname rescue ' ' %>
+              </address>
+            </td>
+          </tr>
+          <tr>
+            <td width='20%'><strong> Comments </strong></td>
+            <td>
+              <address>
+                <%= @venue_schedule.comment_type rescue ' ' %>
+              </address>
+            </td>
+          </tr>
+          <tr>
+            <td><strong> Details </strong></td>
+            <td><%= @venue_schedule.comments %></td>
+          </tr>
+          <% unless @venue_schedule.feedback.nil? %>
+          <tr>
+            <td><strong> Feedback </strong></td>
+            <td><%= @venue_schedule.feedback %></td>
+          </tr>
+          <% end %>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Details</h3>
+     <div class='row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong>ID #</strong></td>
+            <td><%= @venue_schedule.id %></td>
+          </tr>
+          <tr>
+            <td><strong>Venue</strong></td>
+            <td><%= link_to "#{@venue_schedule.venue.name}", venue_path(@venue_schedule.venue) %></td>
+          </tr>
+          <tr>
+            <td><strong>Program</strong></td>
+            <td><%= link_to "#{@venue_schedule.program.name}", program_path(@venue_schedule.program) %></td>
+          </tr>
+          <tr>
+            <td><strong>Center</strong></td>
+            <td><%= @venue_schedule.program.center.name %></td>
+          </tr>
+          <tr>
+            <td><strong>Booking Start Date</strong></td>
+            <td><%= @venue_schedule.program.start_date.strftime('%d %B %Y') %></td>
+          </tr>
+          <tr>
+            <td><strong>Booking End Date</strong></td>
+            <td><%= @venue_schedule.program.end_date.strftime('%d %B %Y') %></td>
+          </tr>
+          <tr>
+            <td><strong>Timing (s)</strong></td>
+            <td><%= (@venue_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
+          </tr>
+          <tr>
+            <td><strong>Blocked By</strong></td>
+            <td><%= @venue_schedule.blocked_by_user.fullname rescue ' '%></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<% end %>

@@ -30,12 +30,15 @@ class VenueSchedule < ActiveRecord::Base
 
   belongs_to :venue
   validates :venue_id, :presence => true
-  attr_accessible :venue_id
+  attr_accessible :venue_id, :venue
   validates_uniqueness_of :program_id, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
 
 
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
+
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
 
   has_many :timings, :through => :program
 
@@ -48,7 +51,7 @@ class VenueSchedule < ActiveRecord::Base
   # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
   scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
-
+  STATE_UNKNOWN                   = "Unknown"
   STATE_BLOCK_REQUESTED           = "Block Requested"
   STATE_BLOCKED                   = "Blocked"
   STATE_APPROVAL_REQUESTED        = "Approval Requested"
@@ -70,6 +73,7 @@ class VenueSchedule < ActiveRecord::Base
   # final states
   FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED]
 
+  EVENT_BLOCK_REQUEST     = "Block Request"
   EVENT_BLOCK             = "Block"
   EVENT_REJECT            = "Reject"
   EVENT_BLOCK_EXPIRED     = "Block Expired"
@@ -80,6 +84,9 @@ class VenueSchedule < ActiveRecord::Base
   EVENT_PAID              = "Paid"
   EVENT_SECURITY_REFUNDED = "Security Refunded"
   EVENT_CLOSE             = "Close"
+
+  EVENTS_WITH_COMMENT_TYPE = [EVENT_REJECT, EVENT_CANCEL, EVENT_SECURITY_REFUNDED, EVENT_CLOSE, ::Program::DROPPED, ::Program::CANCELLED]
+  EVENTS_WITH_ONLY_COMMENTS = []
 
   PROCESSABLE_EVENTS = [
     EVENT_BLOCK, EVENT_REJECT, EVENT_REQUEST_APPROVAL, EVENT_AUTHORIZE_FOR_PAYMENT, EVENT_REQUEST_PAYMENT, EVENT_PAID, EVENT_CANCEL, EVENT_CLOSE
@@ -95,7 +102,11 @@ class VenueSchedule < ActiveRecord::Base
   #  assign_details!
   #end
 
-  state_machine :state, :initial => STATE_BLOCK_REQUESTED do
+  state_machine :state, :initial => STATE_UNKNOWN do
+
+    event EVENT_BLOCK_REQUEST do
+      transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED
+    end
 
     event EVENT_REJECT do
       transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE
@@ -290,6 +301,18 @@ class VenueSchedule < ActiveRecord::Base
     else
       # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
     end
+  end
+
+  def can_create?(center_ids = self.program.center_id)
+    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
+    return false
+  end
+
+  def can_update?
+    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+    return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+    return false
   end
 
   private

@@ -1,5 +1,8 @@
 PccMain::Application.routes.draw do
 
+  resources :notifications
+
+
   #mount RailsAdminImport::Engine => '/rails_admin_import', :as => 'rails_admin_import'
   mount RailsAdmin::Engine => '/admin', :as => 'rails_admin'
 

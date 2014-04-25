@@ -8,10 +8,10 @@ module KitsHelper
       elsif  ks.state == ::Kit::STATE_UNDER_REPAIR
         '<span class="label label-danger">Under Repair</span>'
       elsif ks.state == ::Kit::STATE_UNAVAILABLE
-        '<span class="label label-info">unavailable</span>'  
+        '<span class="label label-info">Unavailable</span>'
        else
-        "" 
-      end
+        '<span class="label label-default">Unknown</span>'
+       end
     end.call().html_safe
   end
 end

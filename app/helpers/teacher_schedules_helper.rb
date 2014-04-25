@@ -15,7 +15,7 @@ module TeacherSchedulesHelper
       when ::TeacherSchedule::STATE_UNAVAILABLE
         '<span class="label label-default">Not Available</span>'
       else
-        ""
+        '<span class="label label-default">Unknown</span>'
       end
     end.call().html_safe
   end

@@ -1,6 +1,12 @@
 class Teacher < ActiveRecord::Base
+  include CommonFunctions
 
   attr_accessor :current_user
+  attr_accessible :current_user
+
+  # There two are hacks, since rails_admin is updating the state of the teacher, instead of the regular controller route
+  attr_accessor :last_state
+  attr_accessible :last_state
 
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
@@ -18,6 +24,9 @@ class Teacher < ActiveRecord::Base
   attr_accessible :zone_id, :zone
 #  validate :has_zone?
 
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
+
   attr_accessible :t_no
 #  validates :t_no, :presence => true, :length => { :in => 1..9}
   #validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
@@ -32,6 +41,9 @@ class Teacher < ActiveRecord::Base
   attr_accessible :state
  # validates :state, :presence => true
  # validate :invalid_state?
+
+  before_save :load_last_state
+  after_save  :send_notification
 
   STATE_UNFIT       = 'Not Fit'
   STATE_UNATTACHED  = 'Not Attached'
@@ -52,41 +64,78 @@ class Teacher < ActiveRecord::Base
 
     event EVENT_UNATTACH do
       # TODO - if not transitioning in state machine, see if need to pass back some error message
-      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED #, :if => lambda {|teacher| !teacher.in_schedule?}
+      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|t| t.current_user.is? :zonal_coordinator, :center_id => t.center_ids }
     end
-    before_transition any => STATE_UNATTACHED, :do => :before_unattach
+    before_transition any => STATE_UNATTACHED, :do => :before_unattach!
     after_transition any => STATE_UNATTACHED, :do => :after_unattach
 
     event EVENT_UNFIT do
-      transition [STATE_ATTACHED] => STATE_UNFIT #, :if  => lambda {|teacher| !teacher.in_schedule?}
+      transition [STATE_ATTACHED] => STATE_UNFIT, :if => lambda {|t| t.current_user.is? :zonal_coordinator, :center_id => t.center_ids }
     end
-    #before_transition any => STATE_UNFIT, :do => :before_mark_unfit
-    after_transition any => STATE_UNFIT, :do => :after_unfit
+    before_transition any => STATE_UNFIT, :do => :can_mark_unfit?
+    after_transition any => STATE_UNFIT, :do => :on_unfit
 
   end
 
-  def before_unattach
+
+  def load_last_state
+    self.last_state = Teacher.find(self.id).state
+  rescue ActiveRecord::RecordNotFound
+    self.last_state = STATE_UNATTACHED
+  end
+
+  def send_notification
+    if self.last_state != STATE_ATTACHED && self.state == STATE_ATTACHED
+      # TODO - send a notification for teacher attach from here
+    end
+    if self.last_state == STATE_ATTACHED && self.state != STATE_ATTACHED
+      # TODO - send a notification for teacher attach from here
+    end
+  end
+
+  def before_unattach!
+    center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
+    if !self.current_user.is? :zonal_coordinator, :center_id => center_ids
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    end
+
     if self.in_schedule?
-      self.errors.add(:state, " cannot unattach from zone when teacher is linked to a program.")
+      self.errors.add(:state, " cannot unattach from zone when teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
       return false
     end
-    if self.comments.blank?
-      self.errors.add(:comments, " needed if the teacher is marked unattached.")
-      return false
-    end
+
+    return false unless self.has_comments?
 
     self.zone_id = nil
     # Also remove all attached centers
     CentersTeachers.where(:teacher_id => self.id).delete_all
     # FIXME - deleting the centers here can be an issue if the transaction fails ...
+    true
   end
 
   def after_unattach
     # if marked unfit remove all published teacher_schedules
-    TeacherSchedule.where('teacher_id IS AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
+    TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
   end
 
-  def after_unfit
+  def can_mark_unfit?
+    center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
+    if !self.current_user.is? :zonal_coordinator, :center_id => center_ids
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    end
+
+    if self.in_schedule?
+      self.errors.add(:state, " cannot mark unfit when teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
+      return false
+    end
+
+    return false unless self.has_comments?
+    true
+  end
+
+  def on_unfit
     # if marked unfit remove all published teacher_schedules
     TeacherSchedule.where('teacher_id IS AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
 
@@ -104,7 +153,11 @@ class Teacher < ActiveRecord::Base
 
 
   def has_comments?
-    self.errors.add(:comments, " needed if the teacher is marked unfit.") if (self.state == STATE_UNFIT) && self.comments.blank?
+    if (self.state == STATE_UNFIT) && self.comments.blank?
+      self.errors.add(:comments, " needed if the teacher is marked unfit.")
+      return false
+    end
+    true
   end
 
   def has_centers?
@@ -142,6 +195,47 @@ class Teacher < ActiveRecord::Base
   end
 
 
+  def can_view?
+    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if self.is_current_user?
+    return false
+  end
+
+  def can_view_schedule?
+    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if self.is_current_user?
+    return false
+  end
+
+  # TODO - this is a hack, to route the call through teacher object from the UI.
+  def can_create_schedule?
+    teacher_schedule = TeacherSchedule.new
+    teacher_schedule.teacher = self
+    teacher_schedule.current_user = self.current_user
+    return teacher_schedule.can_create?
+  end
+
+  def can_update?
+    center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
+    return true if self.current_user.is? :zonal_coordinator, :center_id => center_ids
+    return false
+  end
+
+  def is_current_user?
+    self.current_user == self.user
+  end
+
+  def can_create(options={})
+    if options.has_key?(:any) && options[:any] == true
+      center_ids = []
+    else
+      center_ids = self.center_ids
+    end
+
+    return false
+    #return true if self.current_user.is? :venue_coordinator, :center_id => center_ids
+  end
+
   rails_admin do
     list do
       field :t_no
@@ -152,6 +246,13 @@ class Teacher < ActiveRecord::Base
       field :centers
     end
     edit do
+      # to get the current user from the rails-admin view
+      field :current_user, :hidden do
+        read_only true
+        default_value do
+          bindings[:object].current_user = bindings[:view].current_user
+        end
+      end
       field :user  do
         inverse_of :teachers
         inline_edit false

@@ -2,8 +2,8 @@ class ProgramsController < ApplicationController
   before_filter :authenticate_user!
 
   def index
-    @programs = Program.all
-
+    center_ids = current_user.accessible_center_ids
+    @programs = Program.where("center_id IN (?) AND end_date > ?", center_ids, (Time.zone.now - 15.days.from_now)).all
     respond_to do |format|
       format.html
     end
@@ -12,20 +12,35 @@ class ProgramsController < ApplicationController
   def new
     @program = Program.new
     @program.current_user = current_user
-
+    center_ids = current_user.accessible_center_ids(:center_scheduler)
+    # TODO - sort it
+    @centers = Center.where("id IN (?)", center_ids)
     #@program_types = ProgramType.all
     #@timings = []
 
     respond_to do |format|
-      format.html
+      if @program.can_create? :any => true
+        format.html # new.html.erb
+        format.json { render json: @program }
+      else
+        format.html { redirect_to programs_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      end
     end
   end
 
   def show
     @program = Program.find(params[:id].to_i)
     @program.current_user = current_user
+
     respond_to do |format|
-      format.html
+      if @program.can_view?
+        format.html # show.html.erb
+        format.json { render json: @program }
+      else
+        format.html { redirect_to programs_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -36,11 +51,16 @@ class ProgramsController < ApplicationController
     # Also update the start_date and end_date to start_date_time and end_date_time
 
     respond_to do |format|
-      if @program.save
-        @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
-        format.html { redirect_to @program, :notice => 'Program created successfully' }
+      if @program.can_create?
+        if @program.send(::Venue::EVENT_PROPOSE) && @program.save
+          @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
+          format.html { redirect_to @program, :notice => 'Program created successfully' }
+        else
+          format.html { render action: "new" }
+          format.json { render json: @program.errors, status: :unprocessable_entity }
+        end
       else
-        format.html { render action: "new" }
+        format.html { redirect_to programs_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @program.errors, status: :unprocessable_entity }
       end
     end
@@ -51,8 +71,9 @@ class ProgramsController < ApplicationController
     @program.current_user = current_user
     @trigger = params[:trigger]
 
-    respond_to do |format|
-      format.html
+    if !@program.can_update?
+      format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+      format.json { render json: @program.errors, status: :unprocessable_entity }
     end
   end
 
@@ -64,15 +85,17 @@ class ProgramsController < ApplicationController
     @program.comments = params[:comments] if params.has_key?(:comments)
 
     respond_to do |format|
-      format.html do
-        if state_update(@program, @trigger)
-          if @program.save!
-            #redirect_to action: "edit" , :trigger => params[:trigger]
-            redirect_to [@program]
-          end
+      if @program.can_update?
+        if state_update(@program, @trigger) &&  @program.save!
+          format.html { redirect_to @program, notice: 'Program was successfully updated.' }
+          format.json { render json: @program }
         else
-          render :action => 'edit'
+          format.html { render :action => 'edit' }
+          format.json { render json: @program.errors, status: :unprocessable_entity }
         end
+      else
+        format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
       end
     end
   end
@@ -98,5 +121,9 @@ class ProgramsController < ApplicationController
       prog.send(trig)
     end
   end
+
+
+
+
 
 end

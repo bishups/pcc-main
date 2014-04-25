@@ -5,8 +5,8 @@ class VenuesController < ApplicationController
   # GET /venues.json
   def index
     # TODO: Display venue associated with User's Center/Zone only
-    @venues = Venue.all
-
+    center_ids = current_user.accessible_center_ids
+    @venues = Venue.joins("JOIN centers_venues ON centers_venues.venue_id = venues.id").where('centers_venues.center_id IN (?)', center_ids).uniq.all
     respond_to do |format|
       format.html # index.html.erb
       format.json { render json: @venues }
@@ -20,8 +20,13 @@ class VenuesController < ApplicationController
     @venue.current_user = current_user
 
     respond_to do |format|
-      format.html # show.html.erb
-      format.json { render json: @venue }
+      if @venue.can_view?
+        format.html # show.html.erb
+        format.json { render json: @venue }
+      else
+        format.html { redirect_to venues_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -32,8 +37,13 @@ class VenuesController < ApplicationController
     @venue.current_user = current_user
 
     respond_to do |format|
-      format.html # new.html.erb
-      format.json { render json: @venue }
+      if @venue.can_create? :any => true
+        format.html # new.html.erb
+        format.json { render json: @venue }
+      else
+        format.html { redirect_to venues_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -42,6 +52,16 @@ class VenuesController < ApplicationController
     @venue = Venue.find(params[:id])
     @venue.current_user = current_user
     @trigger = params[:trigger]
+
+    respond_to do |format|
+      if @venue.can_update?
+        format.html
+        format.json { render json: @venue }
+      else
+        format.html { redirect_to venues_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue.errors, status: :unprocessable_entity }
+      end
+    end
   end
 
   # POST /venues
@@ -51,11 +71,16 @@ class VenuesController < ApplicationController
     @venue.current_user = current_user
 
     respond_to do |format|
-      if @venue.save
-        format.html { redirect_to @venue, notice: 'Venue was successfully created.' }
-        format.json { render json: @venue, status: :created, location: @venue }
+      if @venue.can_create?
+        if  @venue.save
+          format.html { redirect_to @venue, notice: 'Venue was successfully created.' }
+          format.json { render json: @venue, status: :created, location: @venue }
+        else
+          format.html { render action: "new" }
+          format.json { render json: @venue.errors, status: :unprocessable_entity }
+        end
       else
-        format.html { render action: "new" }
+        format.html { redirect_to venues_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @venue.errors, status: :unprocessable_entity }
       end
     end
@@ -68,25 +93,27 @@ class VenuesController < ApplicationController
     @venue.current_user = current_user
     @trigger = params[:trigger]
 
-
     respond_to do |format|
-      format.html do
-        if state_update(@venue, @trigger)
-          if @venue.save!
-            format.html { redirect_to @venue, notice: 'Venue was successfully updated.' }
-            format.json { head :no_content }
-          end
-        else
-          render :action => 'edit'
+      if @venue.can_update?
+        if state_update(@venue, @trigger) &&  @venue.save!
+          format.html { redirect_to @venue, notice: 'Venue was successfully updated.' }
+          format.json { render json: @venue }
+         else
+          format.html { render :action => 'edit' }
+          format.json { render json: @venue.errors, status: :unprocessable_entity }
         end
+      else
+        format.html { redirect_to venues_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venue.errors, status: :unprocessable_entity }
       end
-      format.json { render :json => @venue }
     end
   end
 
   # DELETE /venues/1
   # DELETE /venues/1.json
   def destroy
+    # Cannot destroy a venue as of now
+=begin
     @venue = Venue.find(params[:id])
     @venue.current_user = current_user
     @venue.destroy
@@ -95,6 +122,7 @@ class VenuesController < ApplicationController
       format.html { redirect_to venues_url }
       format.json { head :no_content }
     end
+=end
   end
 
   private
@@ -104,5 +132,6 @@ class VenuesController < ApplicationController
       vs.send(trig)
     end
   end
+
 
 end

@@ -33,6 +33,7 @@ class Kit < ActiveRecord::Base
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
+  after_create :mark_as_available!
 
   belongs_to :requester, :class_name => "User"
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
@@ -41,19 +42,35 @@ class Kit < ActiveRecord::Base
   validates :name, :condition, :presence => true
   validates :capacity, :numericality => {:only_integer => true }
 
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
+
   has_paper_trail
-  
+
   #after_create :generateKitNameStringAfterCreate
   #before_update :generateKitNameString
 
-
+  STATE_UNKNOWN       = 'Unknown'
   STATE_AVAILABLE     = 'Available'
 
+  EVENT_AVAILABLE     = 'Available'
   validates_with KitValidator
 
-  
+
+  state_machine :state, :initial => STATE_UNKNOWN do
+
+    event EVENT_AVAILABLE do
+      transition STATE_UNKNOWN => STATE_AVAILABLE
+    end
+  end
+
+
   def initialize(*args)
     super(*args)
+  end
+
+  def mark_as_available!
+    self.send(EVENT_AVAILABLE)
   end
 
   def has_centers?
@@ -61,8 +78,7 @@ class Kit < ActiveRecord::Base
     self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
-  state_machine :state, :initial => STATE_AVAILABLE do
-  end
+
 
 
   def blockable_programs
@@ -73,6 +89,61 @@ class Kit < ActiveRecord::Base
 
   def friendly_name
     ("%s" % [self.name]).parameterize
+  end
+
+
+  def can_view?
+    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+  # Usage --
+  # 1. can_create?
+  # 2. can_create? :any => true
+  # if note specific default value of :any is false
+  def can_create?(options={})
+    if options.has_key?(:any) && options[:any] == true
+      center_ids = []
+    else
+      center_ids = self.center_ids
+    end
+
+    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => center_ids
+    return false
+  end
+
+  def can_update?
+    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+  def can_view_schedule?
+    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+
+  # TODO - this is a hack, to route the call through kit object from the UI.
+  def can_create_schedule?
+    kit_schedule = KitSchedule.new
+    kit_schedule.current_user = self.current_user
+    return kit_schedule.can_create?(self.center_ids)
+  end
+
+  # TODO - this is a hack, to route the call through kit object from the UI.
+  def can_create_reserve_schedule?
+    kit_schedule = KitSchedule.new
+    kit_schedule.current_user = self.current_user
+    return kit_schedule.can_create_reserve?(self.center_ids)
+  end
+
+  # TODO - this is a hack, to route the call through kit object from the UI.
+  def can_create_overdue_or_under_repair_schedule?
+    kit_schedule = KitSchedule.new
+    kit_schedule.current_user = self.current_user
+    return kit_schedule.can_create_overdue_or_under_repair?(self.center_ids)
   end
 
 =begin

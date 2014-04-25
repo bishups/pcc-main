@@ -1,8 +1,8 @@
 RailsAdmin.config do |config|
   # or somethig more dynamic
-  config.main_app_name = Proc.new { |controller| [ "PCC", "Administration BackOffice - #{controller.params[:action].try(:titleize)}" ] }
+  config.main_app_name = Proc.new { |controller| [ "PCC", "Admin - #{controller.params[:action].try(:titleize)}" ] }
   #config.included_models = [Kit, KitItem, User, Zone, Sector, Center, ProgramType, Venue, Permission, Role]
-  config.included_models = [AccessPrivilege, Timing, Kit, KitItem, KitItemName, Teacher, User, Zone, Sector, Venue, Center, ProgramType, Permission, Role, Pincode, Comment]
+  config.included_models = [AccessPrivilege, Timing, Kit, KitItem, KitItemName, Teacher, User, Zone, Sector, Venue, Center, ProgramType, Permission, Role, Pincode, Comment, Notification]
   config.authorize_with :cancan, AdminAbility
   config.audit_with :history, User
   config.actions do
