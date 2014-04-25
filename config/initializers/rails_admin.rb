@@ -3,9 +3,7 @@ RailsAdmin.config do |config|
   config.main_app_name = Proc.new { |controller| [ "PCC", "Administration BackOffice - #{controller.params[:action].try(:titleize)}" ] }
   #config.included_models = [Kit, KitItem, User, Zone, Sector, Center, ProgramType, Venue, Permission, Role]
   config.included_models = [AccessPrivilege, Timing, Kit, KitItem, KitItemName, Teacher, User, Zone, Sector, Venue, Center, ProgramType, Permission, Role, Pincode, Comment]
-  #config.authorize_with do |controller|
-  #  redirect_to main_app.root_path unless current_user.is_super_admin?
-  #end
+  config.authorize_with :cancan, AdminAbility
   config.audit_with :history, User
   config.actions do
     # root actions
@@ -13,7 +11,7 @@ RailsAdmin.config do |config|
     # collection actions
     index                         # mandatory
     new  do
-      except [Role]
+      #except [Role]
     end
     export
     history_index

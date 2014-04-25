@@ -78,28 +78,42 @@ class User < ActiveRecord::Base
 
 
   # Setup accessible (or protected) attributes for your model
-  attr_accessor :username, :provider, :uid, :avatar
+  attr_accessor :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
   attr_accessible :email, :password, :password_confirmation, :remember_me
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
-  attr_accessible :username, :provider, :uid, :avatar
+  attr_accessible :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
 
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
-  validates :firstname, :email, :mobile, :presence => true
+  validates :firstname, :email, :mobile, :approver_email, :message_to_approver, :presence => true
 
   validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
-  validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
-  validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
+#  validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
+#  validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
+ # validate :validate_approver_email, on: :create
 
+  before_create do |user|
+    if user.approver_email
+      UserMailer.approval_email(user).deliver
+    end
+  end
+
+  def validate_approver_email
+    approver = User.where(:email => self.approver_email).first
+    unless approver and (approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
+      errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
+    end
+  end
 
   def self.from_omniauth(auth)
+    logger.debug("auth --> #{auth.inspect}")
     if user = User.find_by_email(auth.info.email)
       user.provider = auth.provider
       user.uid = auth.uid
       user
     else
-      User.new(:email => auth.info.email)
+      User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name)
     end
   end
 
@@ -146,7 +160,7 @@ class User < ActiveRecord::Base
         self_centers = ap.resource.centers
       end
       # if for given ap, self has >= centers than asked for
-      if (for_center_ids.compact - self_centers.collect(&:id)).empty?
+      if for_center_ids or (for_center_ids.compact - self_centers.collect(&:id)).empty?
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
         for_ah = ROLE_ACCESS_HIERARCHY[for_role]
@@ -263,23 +277,23 @@ class User < ActiveRecord::Base
       #field :access_privileges do
       #  children_fields [:role, :resource]
       #end
-      field :custom_access_privileges do
-        pretty_value do
-          ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
-          if ap_str.empty?
-            #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
-            #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
-            #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
-            %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a>}
-          else
-            %{<div class="access_privilege_ap"> #{ap_str} </div >}
-          end
-        end
-        read_only true # won't be editable in forms (alternatively, hide it in edit section)
-
-        label "Access Privileges"
-        help ""
-      end
+      #field :custom_access_privileges do
+      #  pretty_value do
+      #    ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
+      #    if ap_str.empty?
+      #      #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
+      #      #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
+      #      #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
+      #      %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a>}
+      #    else
+      #      %{<div class="access_privilege_ap"> #{ap_str} </div >}
+      #    end
+      #  end
+      #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
+      #
+      #  label "Access Privileges"
+      #  help ""
+      #end
       #field :access_privileges  do
       #  def value
       #    bindings[:object].access_privileges #.each do {|ap| ap.role.name}

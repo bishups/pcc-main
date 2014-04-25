@@ -5,8 +5,8 @@ class OmniauthCallbacksController < Devise::OmniauthCallbacksController
       flash.notice = "Signed in Through Google!"
       sign_in_and_redirect user
     else
-      session["devise.user_attributes"] = user.attributes
-      flash.notice = "You are almost Done! Please provide a password to finish setting up your account"
+      session["devise.user_attributes"] = user.attributes.slice(*User.accessible_attributes)
+      flash.notice = "You don't have account to the system, please fill in the below form and get approval. Please enter proper approver's email."
       redirect_to new_user_registration_url
     end
   end
