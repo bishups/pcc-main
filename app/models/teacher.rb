@@ -10,25 +10,25 @@ class Teacher < ActiveRecord::Base
 
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
-  validate :has_centers?
+ # validate :has_centers?
 
   has_and_belongs_to_many :program_types
   attr_accessible :program_type_ids, :program_types
-  validate :has_program_types?
+ # validate :has_program_types?
 
   belongs_to :user
   attr_accessible :user_id, :user
-  validates :user_id, :uniqueness => true
+#  validates :user_id, :uniqueness => true
 
   belongs_to :zone
   attr_accessible :zone_id, :zone
-  validate :has_zone?
+#  validate :has_zone?
 
   attr_accessor :comment_category
   attr_accessible :comment_category
 
   attr_accessible :t_no
-  validates :t_no, :presence => true, :length => { :in => 1..9}
+#  validates :t_no, :presence => true, :length => { :in => 1..9}
   #validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
 
   has_many :teacher_schedules
@@ -36,11 +36,11 @@ class Teacher < ActiveRecord::Base
   attr_accessible :teacher_schedules, :teacher_schedule_ids
 
   attr_accessible :comments
-  validate :has_comments?
+#  validate :has_comments?
 
   attr_accessible :state
-  validates :state, :presence => true
-  validate :invalid_state?
+ # validates :state, :presence => true
+ # validate :invalid_state?
 
   before_save :load_last_state
   after_save  :send_notification
@@ -260,17 +260,27 @@ class Teacher < ActiveRecord::Base
         inverse_of :teachers
         inline_edit false
         inline_add false
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
       end
-      field :t_no
+      field :t_no do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
       field :state, :enum do
         label "Status"
         # TODO - humanize the strings below, without breaking the state_machine functionality
         enum do
           [STATE_UNFIT, STATE_UNATTACHED, STATE_ATTACHED]
         end
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
       end
       field :zone  do
-        inverse_of :teachers
+       # inverse_of :teachers
         inline_edit false
         inline_add false
       end
@@ -278,11 +288,25 @@ class Teacher < ActiveRecord::Base
         inverse_of :teachers
         #inline_edit false
         inline_add false
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
       end
       field :centers do
         inverse_of  :teachers
         #inline_edit false
         inline_add false
+        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+          accessible_centers = bindings[:controller].current_user.accessible_centers(:zonal_coordinator)
+          Proc.new { |scope|
+            # scoping all Players currently, let's limit them to the team's league
+            # Be sure to limit if there are a lot of Players and order them by position
+            # scope = scope.where(:id => accessible_centers )
+            scope = scope.where(:id => accessible_centers )
+          }
+        end
       end
       field :comments
     end
