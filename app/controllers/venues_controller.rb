@@ -52,6 +52,7 @@ class VenuesController < ApplicationController
     @venue = Venue.find(params[:id])
     @venue.current_user = current_user
     @trigger = params[:trigger]
+    @comment_category = Comment.where('model IS ? AND action IS ?', 'Venue', @trigger).pluck(:text)
 
     respond_to do |format|
       if @venue.can_update?

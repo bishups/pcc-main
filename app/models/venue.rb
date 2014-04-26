@@ -38,8 +38,8 @@ class Venue < ActiveRecord::Base
 
   has_many :venue_schedules
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   validates_presence_of :address
   #validates_presence_of :center_id
@@ -72,6 +72,9 @@ class Venue < ActiveRecord::Base
   PROCESSABLE_EVENTS = [
     EVENT_APPROVE, EVENT_REJECT, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL, EVENT_REQUEST_FINANCE_APPROVAL
   ]
+
+  EVENTS_WITH_COMMENTS = [EVENT_REJECT]
+  EVENTS_WITH_FEEDBACK = []
 
   state_machine :state, :initial => STATE_UNKNOWN do
 

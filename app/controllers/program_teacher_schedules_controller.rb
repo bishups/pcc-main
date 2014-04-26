@@ -77,6 +77,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       @program_teacher_schedule = load_program_teacher_schedule!(params)
     end
     @trigger = params[:trigger]
+    @comment_category = Comment.where('model IS ? AND action IS ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
 
     unless @program_teacher_schedule.can_update?
       format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }

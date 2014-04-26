@@ -66,15 +66,7 @@
             </td>
           </tr>
           <tr>
-            <td width='20%'><strong> Comments </strong></td>
-            <td>
-              <address>
-                <%= @program.comment_type rescue ' ' %>
-              </address>
-            </td>
-          </tr>
-          <tr>
-            <td><strong> Details </strong></td>
+            <td><strong> Comments </strong></td>
             <td><%= @program.comments %></td>
           </tr>
           <% unless @program.feedback.nil? %>
@@ -140,7 +132,7 @@
 
   <div class='row'>
   <div class='col-md-12'>
-    <% if @program.venue_schedules %>
+    <% if @program.no_of_venues_connected > 0 %>
         <% @program.venue_schedules.each do |vs| %>
             <%  vs.current_user = current_user %>
             <% if vs.is_connected? %>

@@ -42,8 +42,8 @@ class Kit < ActiveRecord::Base
   validates :name, :condition, :presence => true
   validates :capacity, :numericality => {:only_integer => true }
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   has_paper_trail
 

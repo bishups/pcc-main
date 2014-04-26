@@ -5,7 +5,7 @@
     <th>Program</th>
     <th>Start Date</th>
     <th>End Date</th>
-    <th>Timings</th>
+    <!-- <th>Timings</th> -->
     <th>Blocked By</th>
     <th>State</th>
     <th></th>
@@ -17,10 +17,12 @@
     <td><%= link_to ks.program.name,program_path(ks.program_id) rescue 'Not Applicable' %></td>
     <td><%= ks.start_date.strftime('%d %B %Y') %></td>
     <td><%= ks.end_date.strftime('%d %B %Y') %></td>
-    <% if ks.program.nil? %>
-        <td><%= ks.start_date.strftime('%d %B (%I:%M%P)') %> to <%= ks.end_date.strftime('%d %B (%I:%M%P)') %> </td>
-    <% else %>
-        <td><%= (ks.program.timings.map {|c| c[:name]}).join(", ") rescue ' ' %></td>
+    <% if false %>
+        <% if ks.program.nil? %>
+            <td><%= ks.start_date.strftime('%d %B (%I:%M%P)') %> to <%= ks.end_date.strftime('%d %B (%I:%M%P)') %> </td>
+        <% else %>
+            <td><%= (ks.program.timings.map {|c| c[:name]}).join(", ") rescue ' ' %></td>
+        <% end %>
     <% end %>
     <td><%= ks.blocked_by_user.fullname rescue ' ' %></td>
     <td><%= kit_schedule_state_tag(ks) %>

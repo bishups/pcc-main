@@ -19,15 +19,7 @@
           </td>
         </tr>
         <tr>
-          <td width='20%'><strong> Comments </strong></td>
-          <td>
-            <address>
-              <%= @kit_schedule.comment_type rescue ' ' %>
-            </address>
-          </td>
-        </tr>
-        <tr>
-          <td><strong> Details </strong></td>
+          <td><strong> Comments </strong></td>
           <td><%= @kit_schedule.comments %></td>
         </tr>
         <% unless @kit_schedule.feedback.nil? %>
@@ -65,16 +57,18 @@
         </tr>
         <tr>
           <td><strong>Booking Start Date</strong></td>
-          <td><%= @kit_schedule.program.start_date.strftime('%d %B %Y') %></td>
+          <td><%= @kit_schedule.start_date.strftime('%d %B %Y') %></td>
         </tr>
         <tr>
           <td><strong>Booking End Date</strong></td>
-          <td><%= @kit_schedule.program.end_date.strftime('%d %B %Y') %></td>
+          <td><%= @kit_schedule.end_date.strftime('%d %B %Y') %></td>
         </tr>
+        <!--
         <tr>
           <td><strong>Timing (s)</strong></td>
-          <td><%= (@kit_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
+          <td><%#= (@kit_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
         </tr>
+        -->
         <tr>
           <td><strong>Blocked By</strong></td>
           <td><%= @kit_schedule.blocked_by_user.fullname rescue ' '%></td>
@@ -97,7 +91,8 @@
             </tr>
             <tr>
               <td><strong>Due Date</strong></td>
-              <td><%= @kit_schedule.due_date_time.strftime('%d %B %Y (%I:%M%P)') rescue '' %></td>
+              <td><%= @kit_schedule.due_date_time.strftime('%d %B %Y') rescue '' %></td>
+              <td><%#= @kit_schedule.due_date_time.strftime('%d %B %Y (%I:%M%P)') rescue '' %></td>
             </tr>
           </table>
         </div>

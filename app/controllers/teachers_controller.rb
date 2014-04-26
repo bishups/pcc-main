@@ -64,6 +64,7 @@ class TeachersController < ApplicationController
       @teacher.current_user = current_user
     end
     @trigger = params[:trigger]
+    @comment_category = Comment.where('model IS ? AND action IS ?', 'Teacher', @trigger).pluck(:text)
 
     respond_to do |format|
       if @teacher.can_update?

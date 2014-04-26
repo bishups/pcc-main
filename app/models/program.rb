@@ -47,8 +47,8 @@ class Program < ActiveRecord::Base
   has_and_belongs_to_many :timings, :join_table => :programs_timings
   attr_accessible :timing_ids, :timings
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   STATE_UNKNOWN       = "Unknown"
   STATE_PROPOSED      = "Proposed"
@@ -76,6 +76,9 @@ class Program < ActiveRecord::Base
   PROCESSABLE_EVENTS = [
       EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE
   ]
+
+  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_DROP]
+  EVENTS_WITH_FEEDBACK = [EVENT_TEACHER_CLOSE]
 
   ### TODO -
   # http://www.sitepoint.com/comparing-ruby-background-processing-libraries-delayed-job/
@@ -229,16 +232,6 @@ class Program < ActiveRecord::Base
         return false
       end
       return true
-    end
-
-    if (self.comment_type.nil?)
-      self.errors[:comment_type] << " is mandatory field."
-      return false
-    end
-
-    if (self.comment_type.text.casecmp("Other") == 0  && self.comments.nil?)
-      self.errors[:comments] << " is mandatory field."
-      return false
     end
 
     return false unless self.has_comments?
