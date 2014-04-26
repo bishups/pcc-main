@@ -70,6 +70,10 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       EVENT_REQUEST_RELEASE, EVENT_RELEASE, EVENT_WITHDRAW
   ]
 
+  EVENTS_WITH_COMMENTS = [EVENT_RELEASE, EVENT_WITHDRAW, EVENT_REQUEST_RELEASE]
+  EVENTS_WITH_FEEDBACK = []
+
+
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_BLOCK do

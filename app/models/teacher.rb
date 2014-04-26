@@ -24,8 +24,8 @@ class Teacher < ActiveRecord::Base
   attr_accessible :zone_id, :zone
 #  validate :has_zone?
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   attr_accessible :t_no
 #  validates :t_no, :presence => true, :length => { :in => 1..9}
@@ -59,6 +59,9 @@ class Teacher < ActiveRecord::Base
   PROCESSABLE_EVENTS = [
       EVENT_UNATTACH, EVENT_UNFIT
   ]
+
+  EVENTS_WITH_COMMENTS = [EVENT_UNFIT, EVENT_UNATTACH]
+  EVENTS_WITH_FEEDBACK = []
 
   state_machine :state, :initial => STATE_UNATTACHED do
 

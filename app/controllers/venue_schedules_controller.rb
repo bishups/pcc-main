@@ -111,6 +111,7 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule = ::VenueSchedule.find(params[:id].to_i)
     @venue_schedule.current_user = current_user
     @trigger = params[:trigger]
+    @comment_category = Comment.where('model IS ? AND action IS ?', 'VenueSchedule', @trigger).pluck(:text)
     #authorize! :update, @venue
     respond_to do |format|
       if @venue_schedule.can_update?

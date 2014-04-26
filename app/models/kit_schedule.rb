@@ -16,6 +16,8 @@
 #
 
 class KitSchedule < ActiveRecord::Base
+  include CommonFunctions
+
   before_destroy :can_delete?
 
   STATE_RESERVED    = "Reserved"
@@ -27,10 +29,11 @@ class KitSchedule < ActiveRecord::Base
   STATE_ASSIGNED    = "Assigned"
   STATE_OVERDUE     = "Overdue"
   STATE_RETURNED    = "Returned"
-  STATE_CANCELLED  = "Cancelled"
+  STATE_CANCELLED   = "Cancelled"
+  STATE_CLOSED      = "Closed"
 
-  FINAL_STATES = [STATE_RETURNED, STATE_CANCELLED]
-  CONNECTED_STATES = [STATE_BLOCKED, STATE_ASSIGNED, STATE_ISSUED, STATE_OVERDUE]
+  FINAL_STATES = [STATE_CLOSED, STATE_CANCELLED]
+  CONNECTED_STATES = [STATE_BLOCKED, STATE_ASSIGNED, STATE_ISSUED, STATE_OVERDUE, STATE_RETURNED]
   RESERVED_STATES = [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE]
   ALL_STATES = RESERVED_STATES + FINAL_STATES + CONNECTED_STATES
 
@@ -43,17 +46,21 @@ class KitSchedule < ActiveRecord::Base
   EVENT_OVERDUE    = "Overdue"
   EVENT_CANCEL     = "Cancel"
   EVENT_RETURNED   = "Returned"
+  EVENT_CLOSE      = "Close"
 
   NOTIFICATIONS = [EVENT_OVERDUE]
   NON_MENU_EVENTS = [EVENT_BLOCK, EVENT_RESERVE, EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE]
   PROCESSABLE_EVENTS = [EVENT_ISSUE, EVENT_RETURNED, EVENT_CANCEL]
 
+  EVENTS_WITH_COMMENTS = [EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE, EVENT_RESERVE, EVENT_CANCEL, EVENT_RETURNED, EVENT_ISSUE]
+  EVENTS_WITH_FEEDBACK = [EVENT_CLOSE]
+
   belongs_to :kit
   belongs_to :program
   belongs_to :blocked_by_user, :class_name => User
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   attr_accessor :current_user, :issue_for_schedules
   attr_accessible :program_id, :kit_id,:end_date, :start_date, :state, :comments, :issued_to, :due_date_time, :issue_for_schedules
@@ -68,6 +75,7 @@ class KitSchedule < ActiveRecord::Base
   #checking for overlap validation
   validates_with KitScheduleValidator
 
+=begin
   # given a kit_schedule (linked to a program), returns a relation with other overlapping kit_schedule(s) (linked to programs) for the specific kit, not in specified states
   scope :overlapping_blocks, lambda { |ks, states| joins(:program).merge(Program.overlapping(ks.program)).where('kit_schedules.id IS NOT ? AND kit_schedules.state NOT IN (?) AND kit_schedules.kit_id IS ?', ks.id, states, ks.kit_id) }
 
@@ -81,6 +89,11 @@ class KitSchedule < ActiveRecord::Base
   # given end date of a kit_schedule, returns a relation with  kit_schedule(s) where it falls in middle of start and end date, for the specific kit, not in specified states
   scope :end_date_in_middle, lambda { |ks| where('kit_schedules.program_id IS NOT NULL AND kit_schedules.id IS NOT ? AND kit_schedules.state IN (?)  AND kit_schedules.kit_id IS ? AND (? BETWEEN kit_schedules.start_date AND kit_schedules.end_date)',
                                                          ks.id, [STATE_ASSIGNED], ks.kit_id, ks.end_date)}
+=end
+
+  # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit, in specified states
+  scope :overlapping_schedules, lambda { |ks| where('kit_schedules.id IS NOT ? AND kit_schedules.state NOT IN (?) AND kit_schedules.kit_id IS ? AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
+                                                   ks.id, FINAL_STATES, ks.kit_id, ks.start_date, ks.end_date, ks.start_date, ks.end_date, ks.start_date, ks.end_date)}
 
 
   def initialize(*args)
@@ -108,7 +121,11 @@ class KitSchedule < ActiveRecord::Base
     event EVENT_RETURNED do
       transition [STATE_OVERDUE, STATE_ISSUED] => STATE_RETURNED
     end
-    
+
+    event EVENT_CLOSE do
+      transition STATE_RETURNED => STATE_CLOSED
+    end
+
     event EVENT_OVERDUE do
       transition [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED] => STATE_OVERDUE
     end
@@ -124,7 +141,7 @@ class KitSchedule < ActiveRecord::Base
     event ::Program::CANCELLED do
       transition [STATE_ASSIGNED] => STATE_CANCELLED
     end
-    before_transition any => STATE_CANCELLED, :do => :comments_present?
+    before_transition any => STATE_CANCELLED, :do => :has_comments?
 
     event EVENT_RESERVE do
       transition [::Kit::STATE_AVAILABLE] => STATE_RESERVED
@@ -144,8 +161,10 @@ class KitSchedule < ActiveRecord::Base
 
 
   def before_block
-    self.start_date = self.program.start_date
-    self.end_date = self.program.end_date
+    self.start_date = self.program.start_date.to_date - 1.day
+    self.end_date = (self.program.end_date.to_date + 2.day - 1.minute).to_date
+#    self.start_date = self.program.start_date
+#    self.end_date = self.program.end_date
   end
 
   def on_block
@@ -163,14 +182,18 @@ class KitSchedule < ActiveRecord::Base
     KitSchedule.where('program_id IS ? AND kit_id IS ? AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
   end
 
-  def comments_present?
-    if self.comments.nil? || self.comments.empty?
-      self.errors[:comments] << " cannot be blank."
+
+  def before_issue
+    return false unless self.has_comments?
+    if self.issued_to.nil?
+      self.errors[:issued_to] << " cannot be blank."
       return false
     end
+    self.due_date_time = self.end_date
     true
   end
 
+=begin
   def before_issue
     return false unless self.comments_present?
     unless self.issue_for_schedules.nil?
@@ -260,6 +283,7 @@ class KitSchedule < ActiveRecord::Base
 
     true
   end
+=end
 
   def reloaded?
     self.reload
@@ -269,9 +293,10 @@ class KitSchedule < ActiveRecord::Base
     return false
   end
 
-  def trigger_overdue(kit_schedules)
+  def trigger_overdue
     return if !self.reloaded?
-    if [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED].include?(ks.state)
+    #if [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED].include?(ks.state)
+    if ks.state == STATE_ISSUED
       self.send(EVENT_OVERDUE)
       self.save if self.errors.empty?
     end

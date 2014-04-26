@@ -43,8 +43,6 @@
     {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Unwell'},
     {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Emergency'},
     {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Other'},
-    {:model => 'ProgramTeacherSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
-    {:model => 'ProgramTeacherSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'},
 
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CANCEL, :text => 'Other Kit arranged'},
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CANCEL, :text => 'Other'},
@@ -54,11 +52,13 @@
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Other'},
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :text => 'Not returned'},
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :text => 'Other'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RESERVE, :text => 'Reserved for other program'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RESERVE, :text => 'Other'},
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Issued Condition'},
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Damaged'},
     {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Other'},
-    {:model => 'KitSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
-    {:model => 'KitSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CLOSE, :text => 'Kit not suitable'},
+    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CLOSE, :text => 'Other'},
 
     {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Venue not suitable'},
     {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Rent too high'},
@@ -73,8 +73,6 @@
     {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_SECURITY_REFUNDED, :text => 'Other'},
     {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CLOSE, :text => 'Venue not suitable'},
     {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CLOSE, :text => 'Other'},
-    {:model => 'VenueSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
-    {:model => 'VenueSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'}
 
   ]
   comments.each{|c| Comment.create(c) }

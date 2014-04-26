@@ -21,15 +21,7 @@
                 </td>
               </tr>
               <tr>
-                <td width='20%'><strong> Comments </strong></td>
-                <td>
-                  <address>
-                    <%= teacher_schedule.comment_type rescue ' ' %>
-                  </address>
-                </td>
-              </tr>
-              <tr>
-                <td><strong> Details </strong></td>
+                <td><strong> Comments </strong></td>
                 <td><%= teacher_schedule.comments %></td>
               </tr>
               <% if current_user.is? :zonal_coordinator, :center_id => teacher_schedule.program.center_id %>

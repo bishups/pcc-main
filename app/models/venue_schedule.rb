@@ -37,8 +37,8 @@ class VenueSchedule < ActiveRecord::Base
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   has_many :timings, :through => :program
 
@@ -85,12 +85,12 @@ class VenueSchedule < ActiveRecord::Base
   EVENT_SECURITY_REFUNDED = "Security Refunded"
   EVENT_CLOSE             = "Close"
 
-  EVENTS_WITH_COMMENT_TYPE = [EVENT_REJECT, EVENT_CANCEL, EVENT_SECURITY_REFUNDED, EVENT_CLOSE, ::Program::DROPPED, ::Program::CANCELLED]
-  EVENTS_WITH_ONLY_COMMENTS = []
-
   PROCESSABLE_EVENTS = [
     EVENT_BLOCK, EVENT_REJECT, EVENT_REQUEST_APPROVAL, EVENT_AUTHORIZE_FOR_PAYMENT, EVENT_REQUEST_PAYMENT, EVENT_PAID, EVENT_CANCEL, EVENT_CLOSE
   ]
+
+  EVENTS_WITH_COMMENTS = [EVENT_REJECT, EVENT_CANCEL, EVENT_SECURITY_REFUNDED]
+  EVENTS_WITH_FEEDBACK = [EVENT_CLOSE]
 
   NOTIFICATIONS = [EVENT_BLOCK_EXPIRED]
 
@@ -294,6 +294,7 @@ class VenueSchedule < ActiveRecord::Base
 
     # verify when all the events can come
     if valid_states[event].include?(self.state)
+      self.comments = event
       self.send(event)
       # also call save on the model
       # TODO - check if this is really needed
