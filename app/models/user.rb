@@ -117,11 +117,7 @@ class User < ActiveRecord::Base
       user.uid = auth.uid
       user
     else
-<<<<<<< HEAD
       User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name)
-=======
-      User.new(:email=>auth.info.email)
->>>>>>> 5fa620cc1e71de810b46ea1e94ee995f55d4b0eb
     end
   end
 
@@ -218,17 +214,13 @@ class User < ActiveRecord::Base
       elsif ap.resource.class.name.demodulize == "Sector" || ap.resource.class.name.demodulize == "Zone"
         self_centers = ap.resource.centers
       end
-<<<<<<< HEAD
-      # if for given ap, self has >= centers than asked for
-      if for_center_ids or (for_center_ids.compact - self_centers.collect(&:id)).empty?
-=======
+
       # if for given ap,
       # a. for_all if self has >= centers than asked for
       # b. for_any if self has any center that was asked for
       self_center_ids = self_centers.collect(&:id)
       if (for_all && (for_center_ids - self_center_ids).empty?) ||
          (!for_all && (for_center_ids - self_center_ids) != for_center_ids )
->>>>>>> 5fa620cc1e71de810b46ea1e94ee995f55d4b0eb
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
         for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
