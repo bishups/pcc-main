@@ -14,9 +14,14 @@ class Center < ActiveRecord::Base
   has_many :pincodes
   has_one :zone, :through => :sector
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
+  has_and_belongs_to_many :teachers
+  has_and_belongs_to_many :kits
+  has_and_belongs_to_many :venues
   attr_accessible :name, :sector_id, :sector, :pincodes, :pincode_ids
 
   validates :name,:sector, :presence => true
+
+
 
   rails_admin do
     navigation_label 'Geo-graphical informations'
@@ -29,15 +34,11 @@ class Center < ActiveRecord::Base
     end
     edit do
       field :name
-      field :pincodes do
-        inline_add do
-          false
-        end
-      end
       field :sector do
-        inline_edit do
-          false
-        end
+        inline_edit false
+        inline_add false
+      end
+      field :pincodes do
         inline_add do
           false
         end

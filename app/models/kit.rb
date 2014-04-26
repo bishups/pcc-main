@@ -4,7 +4,7 @@
 #
 #  id                     :integer          not null, primary key
 #  state                  :string(255)
-#  max_participant_number :integer
+#  capacity :integer
 #  filling_person_id      :integer
 #  center_id              :integer
 #  guardian_id            :integer
@@ -17,84 +17,188 @@
 #
 
 class Kit < ActiveRecord::Base
-  AVAILABLE = :available
-  UNDER_REPAIR = :under_repair
-  UNAVAILABLE = :unavailable
 
-  attr_accessible :condition,:condition_comments,
-                  :general_comments, :kit_name_string,
-                  :center_id,:state,:max_participant_number
 
-  has_many :kit_item_mappings
+
+  attr_accessible :condition,:comments, :name,
+                  :state,:capacity
+
+  has_many :kit_items
+  attr_accessible :kit_items
+  attr_accessor :current_user
+
+  has_many :kit_item_names, :through => :kit_items
+
   has_many :kit_schedules
-  has_many :kit_items, :through => :kit_item_mappings
-  belongs_to :center
-  
+  has_and_belongs_to_many :centers
+  attr_accessible :center_ids, :centers
+  validate :has_centers?
+  after_create :mark_as_available!
+
+  belongs_to :requester, :class_name => "User"
+  belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
+  attr_accessible :requester_id, :guardian_id, :requester, :guardian
+
+  validates :name, :condition, :presence => true
+  validates :capacity, :numericality => {:only_integer => true }
+
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
+
   has_paper_trail
-  
-  after_create :generateKitNameStringAfterCreate
-  before_update :generateKitNameString
 
-  EVENT_STATE_MAP = {
-                      AVAILABLE => AVAILABLE.to_s,
-                      UNDER_REPAIR => UNDER_REPAIR.to_s,
-                      UNAVAILABLE => UNAVAILABLE.to_s
-                    }
+  #after_create :generateKitNameStringAfterCreate
+  #before_update :generateKitNameString
 
+  STATE_UNKNOWN       = 'Unknown'
+  STATE_AVAILABLE     = 'Available'
 
-  PROCESSABLE_EVENTS = [
-    AVAILABLE, UNDER_REPAIR, UNAVAILABLE
-  ]
-
+  EVENT_AVAILABLE     = 'Available'
   validates_with KitValidator
 
-  
+
+  state_machine :state, :initial => STATE_UNKNOWN do
+
+    event EVENT_AVAILABLE do
+      transition STATE_UNKNOWN => STATE_AVAILABLE
+    end
+  end
+
+
   def initialize(*args)
     super(*args)
   end
-  
-  state_machine :state, :initial => :available do
-    event :under_repair do
-      transition [AVAILABLE,UNAVAILABLE] => :under_repair
-    end
-    event :unavailable do
-      transition [UNDER_REPAIR,AVAILABLE] => :unavailable
-    end
-    event :available do 
-      transition any => :available
-    end
+
+  def mark_as_available!
+    self.send(EVENT_AVAILABLE)
   end
 
-  def getState
-    if (self.state == UNDER_REPAIR.to_s || self.state == UNAVAILABLE.to_s)
-      return self.state
-    end
-    #get the current schedule if any for the kit
-    kitSchedule = self.kit_schedules.where("start_date <= ? AND end_date >= ?",Time.now, Time.now).order("start_date ASC")
+  def has_centers?
+    self.errors.add(:centers, " required field.") if self.centers.blank?
+    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+  end
 
-    if( kitSchedule[0].nil? )
-      return AVAILABLE
+
+
+
+  def blockable_programs
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
+  end
+
+  def friendly_name
+    ("%s" % [self.name]).parameterize
+  end
+
+
+  def can_view?
+    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+  # Usage --
+  # 1. can_create?
+  # 2. can_create? :any => true
+  # if note specific default value of :any is false
+  def can_create?(options={})
+    if options.has_key?(:any) && options[:any] == true
+      center_ids = []
     else
-      return kitSchedule[0].state
-    end  
+      center_ids = self.center_ids
+    end
+
+    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => center_ids
+    return false
   end
 
-  
-  
+  def can_update?
+    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+  def can_view_schedule?
+    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    return false
+  end
+
+
+  # TODO - this is a hack, to route the call through kit object from the UI.
+  def can_create_schedule?
+    kit_schedule = KitSchedule.new
+    kit_schedule.current_user = self.current_user
+    return kit_schedule.can_create?(self.center_ids)
+  end
+
+  # TODO - this is a hack, to route the call through kit object from the UI.
+  def can_create_reserve_schedule?
+    kit_schedule = KitSchedule.new
+    kit_schedule.current_user = self.current_user
+    return kit_schedule.can_create_reserve?(self.center_ids)
+  end
+
+  # TODO - this is a hack, to route the call through kit object from the UI.
+  def can_create_overdue_or_under_repair_schedule?
+    kit_schedule = KitSchedule.new
+    kit_schedule.current_user = self.current_user
+    return kit_schedule.can_create_overdue_or_under_repair?(self.center_ids)
+  end
+
+=begin
   private
   def generateKitNameString
     center = Center.find(self.center_id )
-    name = center.name+"_"+self.max_participant_number.to_s+"_"+self.id.to_s
-    self.kit_name_string = name
+    name = center.name+"_"+self.capacity.to_s+"_"+self.id.to_s
+    self.name = name
   end
 
   def generateKitNameStringAfterCreate
     center = Center.find(self.center_id )
-    name = center.name+"_"+self.max_participant_number.to_s+"_"+self.id.to_s
-    self.kit_name_string = name
+    name = center.name+"_"+self.capacity.to_s+"_"+self.id.to_s
+    self.name = name
     self.save!
-  end  
+  end
+=end
 
-  
-#canBeBlocked
+
+  rails_admin do
+    navigation_label 'Kit Management'
+    weight 0
+    visible do
+      bindings[:controller].current_user.is?(:kit_coordinator)
+    end
+    list do
+      field :name
+      field :capacity
+      field :condition
+      field :centers
+      field :kit_item_names
+    end
+    edit do
+      field :name
+      field :capacity
+      field :condition
+      #field :kit_items do
+      #  help 'Type any character to search for kit item'
+      #  #inline_add false
+      #end
+      field :centers  do
+        help 'Type any character to search for center'
+        inline_add false
+        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+          accessible_centers = bindings[:controller].current_user.accessible_centers(:kit_coordinator)
+          Proc.new { |scope|
+            # scoping all Players currently, let's limit them to the team's league
+            # Be sure to limit if there are a lot of Players and order them by position
+           # scope = scope.where(:id => accessible_centers )
+            scope = scope.where(:id => accessible_centers )
+          }
+        end
+       end
+    end
+  end
 end

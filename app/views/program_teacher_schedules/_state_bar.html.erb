@@ -1,0 +1,23 @@
+<h2>
+  <% @program_teacher_schedule = pts %>
+  <small><span class='label label-info'><%= @program_teacher_schedule.teacher_schedule.state %></span></small>
+  Program-Teacher Schedule
+  <small><%= @program_teacher_schedule.program.name %> | <%= @program_teacher_schedule.teacher.user.fullname %> </small>
+  <div class='btn-group'>
+    <button type="button" class="btn btn-danger">Update State</button>
+    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+      <span class="caret"></span>
+      <span class="sr-only">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu" role="menu">
+      <% (@program_teacher_schedule.state_events - ::Program::NOTIFICATIONS).each do |ev| %>
+          <li>
+            <%= link_to ev, edit_program_teacher_schedule_path(:id => id, :trigger => ev) %>
+          </li>
+      <% end %>
+    </ul>
+  </div>
+<span class='pull-right'>
+    <%= link_to "Back to Schedules", teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :class => 'btn btn-primary' %>
+</span>
+</h2>

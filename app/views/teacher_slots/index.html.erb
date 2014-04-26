@@ -1,0 +1,84 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Teacher Schedule
+      <small><%= @teacher.user.name %></small>
+      <span class='pull-right'>
+        <% if @teacher.user_id == current_user.id %>
+        <%= link_to "New Schedule", new_teacher_teacher_slot_path(@teacher), :class => 'btn btn-primary btn-sm' %>
+        <% end %>
+      </span>      
+    </h2>
+  </div>
+  <table class='table table-condensed table-hover table-bordered'>
+    <tr>
+      <th>Available</th>
+      <th>Unavailable</th>
+    </tr>
+    <tr>
+      <td>
+        <table class='table table-condensed table-hover table-bordered'>
+          <tr>
+            <th>Date</th>
+            <th>Slot</th>
+          </tr>
+          <% @teacher_slots_av.each do |ts| %>
+          <tr>
+            <td><%= ts.date %></td>
+            <td><%= ts.slot %></td>
+          </tr>
+          <% end %>
+        </table>
+      </td>
+      <td>
+        <table class='table table-condensed table-hover table-bordered'>
+          <tr>
+            <th>Date</th>
+            <th>Slot</th>
+          </tr>
+          <% @teacher_slots_unav.each do |ts| %>
+          <tr>
+            <td><%= ts.date %></td>
+            <td><%= ts.slot %></td>
+          </tr>
+          <% end %>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <th>Blocked</th>
+      <th>Assigned</th>
+    </tr>
+    <tr>
+      <td>
+        <table class='table table-condensed table-hover table-bordered'>
+          <tr>
+            <th>Date</th>
+            <th>Slot</th>
+          </tr>
+          <% @teacher_slots_bl.each do |ts| %>
+          <tr>
+            <td><%= ts.date %></td>
+            <td><%= ts.slot %></td>
+          </tr>
+          <% end %>
+        </table>
+      </td>
+      <td>
+        <table class='table table-condensed table-hover table-bordered'>
+          <tr>
+            <th>Date</th>
+            <th>Slot</th>
+          </tr>
+          <% @teacher_slots_as.each do |ts| %>
+          <tr>
+            <td><%= ts.date %></td>
+            <td><%= ts.slot %></td>
+          </tr>
+          <% end %>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+

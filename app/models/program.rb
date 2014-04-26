@@ -21,72 +21,292 @@
 #
 
 class Program < ActiveRecord::Base
-  validates :slot, :presence => true
+  include CommonFunctions
+
   validates :start_date, :presence => true
 #  validates :end_date, :presence => true
   validates :center_id, :presence => true
   validates :proposer_id, :presence => true
 
-  attr_accessible :name
-  attr_accessible :program_type_id
-  attr_accessible :start_date
-  attr_accessible :center_id
-  attr_accessible :slot
-  attr_accessible :end_date
+  attr_accessor :current_user
+  attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date, :feedback
 
   before_create :assign_dates!
 
   belongs_to :center
-  belongs_to :venue_schedule
   belongs_to :program_type
-  belongs_to :kit_schedule
-  has_many :program_teacher_schedules
+  has_many :venue_schedules
+  attr_accessible :venue_schedules, :venue_schedule_ids
+  has_many :kit_schedules
+  attr_accessible :kit_schedules, :kit_schedule_ids
+  has_many :teacher_schedules
+  attr_accessible :teacher_schedules, :teacher_schedule_ids
+  has_many :teachers, :through => :teacher_schedules
+  attr_accessible :teachers, :teacher_ids
 
-  STATE_PROPOSED = :proposed
-  STATE_ANNOUNCED = :announced
-  STATE_REGISTRATION_OPEN = :registration_open
-  STATE_CANCELLED = :cancelled
-  STATE_IN_PROGRESS = :in_progress
-  STATE_CONDUCTED = :conducted
-  STATE_CLOSED = :closed
+  has_and_belongs_to_many :timings, :join_table => :programs_timings
+  attr_accessible :timing_ids, :timings
+
+  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
+  attr_accessible :comment_type
+
+  STATE_UNKNOWN       = "Unknown"
+  STATE_PROPOSED      = "Proposed"
+  STATE_ANNOUNCED     = "Announced"
+  STATE_REGISTRATION_OPEN = "Registration Open"
+  STATE_DROPPED       = "Dropped"
+  STATE_CANCELLED     = "Cancelled"
+  STATE_IN_PROGRESS   = "In Progress"
+  STATE_CONDUCTED     = "Conducted"
+  STATE_TEACHER_CLOSED = "Teacher Closed"
+  STATE_CLOSED        = "Closed"
+
+  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CONDUCTED, STATE_CLOSED]
+
+  EVENT_PROPOSE       = "Propose"
+  EVENT_ANNOUNCE      = "Announce"
+  EVENT_REGISTRATION_OPEN = "Registration Open"
+  EVENT_START         = "Start"
+  EVENT_FINISH        = "Finish"
+  EVENT_CLOSE         = "Close"
+  EVENT_DROP          = "Drop"
+  EVENT_CANCEL        = "Cancel"
+  EVENT_TEACHER_CLOSE = "Teacher Close"
 
   PROCESSABLE_EVENTS = [
-    :announce, :registration_open, :start, :finish, :close, :cancel
+      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE
   ]
+
+  ### TODO -
+  # http://www.sitepoint.com/comparing-ruby-background-processing-libraries-delayed-job/
+  # Program will be sending four notifications - two on timers, two on user action
+  # timer can be set using the delayed action for the program state machine
+  ###
+  # these are program events which are sent to other state machines
+  # adding program in the string, to avoid clash with any other event string in other state machines
+  CANCELLED  = 'Program Cancelled'    # -> after_transition any => STATE_CANCELLED
+  DROPPED    = 'Program Dropped'      # -> after_transition any => STATE_DROPPED
+  ANNOUNCED  = 'Program Announced'    # -> after_transition any => STATE_ANNOUNCED
+  STARTED    = 'Program Started'      # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
+  FINISHED   = 'Program Finished'     # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
+  #CLOSED     = 'Program Closed'       # -> after_transition any => STATE_CLOSED
+  NOTIFICATIONS = [
+      CANCELLED, DROPPED, ANNOUNCED, STARTED, FINISHED
+  ]
+
+
+  # timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
+  # given a program, returns a relation with other non-overlapping program(s)
+  scope :available, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('(programs.start_date NOT BETWEEN ? AND ?) AND (programs.end_date NOT BETWEEN ? AND ?) AND NOT (programs.start_date <= ? AND programs.end_date >= ?) AND programs_timings.timing_id NOT IN (?) AND programs.id IS NOT ? ',
+                                                                             program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
+
+  # given a program, returns a relation with other overlapping program(s)
+  scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND programs.id IS NOT ? ',
+                                                                               program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
+
+  # given a program, returns a relation with other overlapping program(s)
+  scope :overlapping_date_time, lambda { |start_date, end_date| Program.where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?))',
+                                                                                                                                   start_date, end_date, start_date, end_date, start_date, end_date) }
 
   def initialize(*args)
     super(*args)
   end
 
-  state_machine :state, :initial => STATE_PROPOSED do
-    after_transition any => STATE_ANNOUNCED do |program, transition|
-      program.generate_program_id!
+  state_machine :state, :initial => STATE_UNKNOWN do
+
+    event EVENT_PROPOSE do
+      transition STATE_UNKNOWN => STATE_PROPOSED
     end
 
-    event :announce do
-      transition STATE_PROPOSED => STATE_ANNOUNCED
+    event EVENT_ANNOUNCE do
+      transition STATE_PROPOSED => STATE_ANNOUNCED, :if => lambda {|p| p.can_announce?}
     end
+    before_transition any => STATE_ANNOUNCED, :do => :can_announce?
+    after_transition any => STATE_ANNOUNCED, :do => :on_announce
 
-    event :registration_open do
-      transition STATE_ANNOUNCED => STATE_REGISTRATION_OPEN
+    event EVENT_DROP do
+      transition STATE_PROPOSED => STATE_DROPPED, :if => lambda {|p| p.current_user.is? :center_scheduler, :center_id => p.center_id}
     end
+    before_transition any => STATE_DROPPED, :do => :can_drop?
+    after_transition any => STATE_DROPPED, :do => :on_drop
 
-    event :start do
+    event EVENT_REGISTRATION_OPEN do
+      transition STATE_ANNOUNCED => STATE_REGISTRATION_OPEN, :if => lambda {|p| p.current_user.is? :center_treasurer, :center_id => p.center_id}
+    end
+    before_transition any => STATE_REGISTRATION_OPEN, :do => :can_open_registration?
+
+    event EVENT_START do
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_IN_PROGRESS
     end
+    after_transition any => STATE_IN_PROGRESS, :do => :on_start
 
-    event :finish do
+    event EVENT_FINISH do
       transition [STATE_IN_PROGRESS] => STATE_CONDUCTED
     end
+    after_transition any => STATE_CONDUCTED, :do => :on_finish
 
-    event :close do
-      transition STATE_CONDUCTED => STATE_CLOSED
+    event EVENT_TEACHER_CLOSE do
+      transition STATE_CONDUCTED => STATE_TEACHER_CLOSED, :if => lambda {|p| p.is_teacher?(current_user)}
+    end
+    before_transition any => STATE_TEACHER_CLOSED, :do => :can_teacher_close?
+
+    event EVENT_CLOSE do
+      transition STATE_TEACHER_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_scheduler, :center_id => p.center_id}
+    end
+    before_transition any => STATE_CLOSED, :do => :can_close?
+    # TODO - enable or disable the button based on whether conditions are met
+
+    event EVENT_CANCEL do
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zonal_coordinator, :center_id => p.center_id }
+    end
+    before_transition any => STATE_CANCELLED, :do => :can_cancel?
+    after_transition any => STATE_CANCELLED, :do => :on_cancel
+
+  end
+
+  def reloaded?
+    self.reload
+    return true
+  rescue ActiveRecord::RecordNotFound
+    # TODO - check if to log any error
+    return false
+  end
+
+  def trigger_program_start
+    return if !self.reloaded?
+    if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
+      self.send(EVENT_START)
+    end
+  end
+
+  def trigger_program_finish
+    return if !self.reloaded?
+    if [STATE_IN_PROGRESS].include?(self.state)
+      self.send(EVENT_FINISH)
+    end
+  end
+
+  def can_announce?
+    if ready_for_announcement?
+      return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    else
+      self.errors[:base] << "Program cannot be announced yet."
+      false
+    end
+  end
+
+  def on_announce
+    self.generate_program_id!
+    self.notify_schedules(ANNOUNCED)
+    # start the timer for start of class notification
+    self.delay(:run_at => self.start_date).trigger_program_start
+  end
+
+  def can_open_registration?
+    return true if (self.current_user.is? :center_treasurer, :center_id => self.center_id)
+    self.errors[:base] << "Insufficient privileges to update the state."
+    false
+  end
+
+  def before_any
+    puts "I am here"
+  end
+
+  def can_drop?
+    if (self.current_user.is? :sector_coordinator, :center_id => self.center_id)
+      if self.venue_approved?
+        self.errors[:base] << "Cannot drop program. Venue linked to the program has already gone for payment request."
+        return false
+      end
+      return true
     end
 
-    event :cancel do
-      transition [STATE_PROPOSED, STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED
+    if (self.current_user.is? :center_scheduler, :center_id => self.center_id)
+      if self.venue_approval_requested?
+        self.errors[:base] << "Cannot drop program. Venue linked to the program has already gone for sector coordinator approval."
+        return false
+      end
+      return true
     end
 
+    if (self.comment_type.nil?)
+      self.errors[:comment_type] << " is mandatory field."
+      return false
+    end
+
+    if (self.comment_type.text.casecmp("Other") == 0  && self.comments.nil?)
+      self.errors[:comments] << " is mandatory field."
+      return false
+    end
+
+    return false unless self.has_comments?
+
+    self.errors[:base] << "Insufficient privileges to update the state."
+    false
+  end
+
+
+  def on_drop
+    self.notify_schedules(DROPPED)
+  end
+
+  def on_start
+    self.notify_schedules(STARTED)
+    # start the timer for close of class notification
+    self.delay(:run_at => self.end_date).trigger_program_finish
+  end
+
+  def on_finish
+    self.notify_schedules(FINISHED)
+  end
+
+  def is_active?
+    !(self.end_date < Time.zone.now || FINAL_STATES.include?(self.state))
+  end
+
+  def can_teacher_close?
+    if !is_teacher?(current_user)
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    end
+
+    if (self.feedback.nil?)
+      self.errors[:feedback] << " is mandatory field."
+      return false
+    end
+    true
+  end
+
+  def can_close?
+    if ready_for_close?
+      return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
+      self.errors[:base] << "Insufficient privileges to update the state."
+      false
+    else
+      self.errors[:base] << "Program cannot be closed yet."
+      false
+    end
+  end
+
+  def can_cancel?
+    if (self.comments.nil?)
+      self.errors[:comments] << " is mandatory field."
+      return false
+    end
+    return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
+    self.errors[:base] << "Insufficient privileges to update the state."
+    false
+  end
+
+  def on_cancel
+    self.notify_schedules(CANCELLED)
+    # TODO - cancel the timer for start of the class, no need for now, we will just ignore it once the timer comes
+  end
+
+  def in_final_state?
+    ::Program::FINAL_STATES.include?(self.state)
   end
 
   def friendly_name
@@ -94,7 +314,15 @@ class Program < ActiveRecord::Base
   end
 
   def is_announced?
-    ! [STATE_PROPOSED.to_s, ''].include?(self.state.to_s)
+    self.announce_program_id && !self.announce_program_id.empty?
+  end
+
+  def is_started?
+    self.state == STATE_IN_PROGRESS
+  end
+
+  def is_finished?
+    self.state == STATE_CONDUCTED
   end
 
   def generate_program_id!
@@ -109,46 +337,219 @@ class Program < ActiveRecord::Base
   end
 
   def venue_connected?
-    self.venue_schedule_id != nil
+    !self.venue_schedules.empty?
   end
 
-  def connect_venue(venue)
-    self.venue_schedule_id = venue.id
-    self.save!
+  def notify_schedules(event)
+    # send the event to each of the state machines
+    # ideally we can register the state machine and the specific callback they want to be called
+    self.teacher_schedules.each{|ts|
+      ts.current_user = self.current_user
+      ts.on_program_event(event)
+    }
+    self.venue_schedules.each{|vs|
+      vs.current_user = self.current_user
+      vs.on_program_event(event)
+    }
+    self.kit_schedules.each{|ks|
+      ks.current_user = self.current_user
+      ks.on_program_event(event)
+    }
   end
 
-  def disconnect_venue(venue)
-    self.venue_schedule_id = nil
-    self.save!
-  end
+
+  #def connect_venue(venue)
+  #  self.venue_schedule_id = venue.id
+  #  self.save!
+  #end
+
+  #def disconnect_venue(venue)
+  #  self.venue_schedule_id = nil
+  #  self.save!
+  #end
 
   def kit_connected?
-    self.kit_schedule_id != nil
+    self.kit_schedules && !self.kit_schedules.empty?
   end
 
-  def connect_kit(kit)
-    self.kit_schedule_id = kit.id
-    self.save
+  #def connect_kit(kit)
+  #  self.kit_schedule_id = kit.id
+  #  self.save
+  #end
+
+  #def disconnect_kit(kit)
+  #  self.kit_schedule_id = nil
+  #  self.save!
+  #end
+
+
+  def blockable_venues
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ?', self.center_id)
   end
 
-  def disconnect_kit(kit)
-    self.kit_schedule_id = nil
-    self.save!
-  end  
+  def blockable_kits
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    Kit.joins("JOIN centers_kits ON kits.id = centers_kits.kit_id").where('centers_kits.center_id = ?', self.center_id)
+  end
 
   def assign_dates!
-    self.end_date = self.start_date + self.program_type.no_of_days.to_i.days
+    self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
+  end
+
+
+
+  def no_of_teachers_connected_or_conducted
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS])).group('teacher_id').length
+  end
+
+  def no_of_teachers_connected
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
+  def teachers_connected
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
+  def teachers_conducted_class
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
+  def minimum_no_of_teacher
+    self.program_type.minimum_no_of_teacher
   end
 
   def minimum_teachers_connected?
-    self.program_teacher_schedules.count >= self.program_type.minimum_no_of_teacher
+    self.no_of_teachers_connected >= self.minimum_no_of_teacher
+  end
+
+  def is_teacher?(current_user)
+    self.teacher_schedules.each { |ts|
+      if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == current_user)
+        return true
+      end
+    }
+    false
+  end
+
+  def no_of_kits_connected
+    return 0 if !self.kit_schedules
+    self.kit_schedules.where('state IN (?)', ::KitSchedule::CONNECTED_STATES).count
+  end
+
+  def no_of_venues_connected
+    return 0 if !self.venue_schedules
+    self.venue_schedules.where('state IN (?)', ::VenueSchedule::CONNECTED_STATES).count
+  end
+
+  def no_of_venues_paid
+    return 0 if !self.venue_schedules
+    self.venue_schedules.where('state IN (?)', ::VenueSchedule::PAID_STATES).count
+  end
+
+  def start_date_time
+    timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('start_time ASC').first
+    self.start_date.advance(:hours => timing.start_time.hour, :minutes => timing.start_time.min, :seconds => timing.start_time.sec)
+  end
+
+  def end_date_time
+    timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('end_time DESC').first
+    self.end_date.advance(:hours => timing.end_time.hour, :minutes => timing.end_time.min, :seconds => timing.end_time.sec)
+  end
+
+  def venue_approval_requested?
+    self.venue_schedules.each { |vs|
+      return true if vs.approval_requested?
+    }
+    false
+  end
+
+  def venue_approved?
+    self.venue_schedules.each { |vs|
+      return true if vs.approved?
+    }
+    false
+  end
+
+  def ready_for_close?
+    # TODO - add condition here that teacher adds program feedback,
+    if (self.no_of_venues_connected > 0)
+      self.errors[:base] << "Cannot close program, linked venue is not closed. Please close it and try again."
+      return false
+    end
+
+    if (self.no_of_kits_connected > 0)
+      self.errors[:base] << "Cannot close program, linked kit is not closed. Please close it and try again."
+      return false
+    end
+
+    if (self.no_of_teachers_connected > 0)
+      self.errors[:base] << "Cannot close program, teacher(s) are still linked to the program."
+      return false
+    end
+
+    if !account_closed?
+      self.errors[:base] << "Cannot close program, accounts for program are not closed."
+      return false
+    end
+
+    if !participant_data_entered?
+      self.errors[:base] << "Cannot close program, participant data for program has not been entered."
+      return false
+    end
+
+    true
+  end
+
+  def account_closed?
+    # TODO - need to implement account_closed??
+    return true
+  end
+
+  def participant_data_entered?
+    # TODO - need to implment participant_data_entered?
+    return true
   end
 
   def ready_for_announcement?
-    return false unless self.venue_connected?
-    return false unless self.kit_connected?
+    return false unless self.no_of_venues_paid > 0
+    return false unless self.no_of_kits_connected > 0
     return false unless self.minimum_teachers_connected?
-
     true
+  end
+
+
+  def can_view?
+    return true if self.current_user.is? :any, :center_id => self.center_id
+    return false
+  end
+
+  # Usage --
+  # 1. can_create?
+  # 2. can_create? :any => true
+  # if note specific default value of :any is false
+  def can_create?(options={})
+    if options.has_key?(:any) && options[:any] == true
+      center_ids = []
+    else
+      center_ids = self.center_id
+    end
+
+    return true if self.current_user.is? :center_scheduler, :center_id => center_ids
+    return false
+  end
+
+  def can_update?
+    return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
+    return true if self.current_user.is? :center_treasurer, :center_id => self.center_id
+    return false
   end
 end

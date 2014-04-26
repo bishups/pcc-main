@@ -1,66 +1,94 @@
 <div class='row'>
-  <div class='page-header'>
-    <h2>
-      Program Details 
-      <small>
-        <%= program_state_tag(@program) %>
-      </small>
-      <span class='pull-right'>
-        <%= link_to 'Assign Teacher', new_program_teacher_schedule_path(:program_id => @program.id), :class => 'btn btn-success' %>
-        <% unless @program.is_announced? %> 
-          <%= link_to 'Announce Program', announce_program_path, :class => 'btn btn-danger', :disabled => (! @program.ready_for_announcement? ) %>
-        <% else %>
-          <%= render :partial => 'programs/state_bar' %>
-        <% end %>
-      </span>
-    </h2>
+  <div class='col-md-12'>
+    <%= render :partial => 'programs/state_bar' %>
   </div>
 </div>
-
-<% if @program.ready_for_announcement? %>
-<div class='alert alert-success'>
-  <strong>This program is ready for announcement.</strong>
-</div>
-<% else %>
-<div class='alert alert-danger'>
-  This program is not yet ready for announcement.
-  <small><%= link_to "[Why?]", '#', :id => 'prog-why-a' %></small>
-</div>
-<div class='row' id='program-announcement-overview' style='display :none;'>
+<% if @program.can_create? %>
+    <% if @program.can_announce? && @program.state == ::Program::STATE_PROPOSED %>
+        <div class='alert alert-success'>
+          <br>
+          <strong>This program is ready for announcement.</strong>
+        </div>
+    <% elsif !(@program.is_announced? || ::Program::FINAL_STATES.include?(@program.state)) %>
+        <div class='alert alert-danger'>
+          This program is not yet ready for announcement.
+          <small><%= link_to "[Why?]", '#', :id => 'prog-why-a' %></small>
+        </div>
+        <div class='row' id='program-announcement-overview' style='display :none;'>
+          <div class='col-md-12'>
+            <table class='table table-bordered'>
+              <tr>
+                <td width='25%'><strong>Venue Status</strong></td>
+                <td>
+                  <% if @program.no_of_venues_connected > 0 %>
+                    <%= (@program.venue_schedules.map {|vs| "#{vs.venue[:name]} => #{vs[:state]}" if vs.is_connected?}).join(", ") %>
+                  <% else %>
+                    No Venue Attached.
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Kit Status</strong></td>
+                <td>
+                  <% if @program.no_of_kits_connected > 0 %>
+                    <%= (@program.kit_schedules.map {|ks| "#{ks.kit[:name]} => #{ks[:state]}" if ks.is_connected?}).join(", ") %>
+                  <% else %>
+                      No Kit Attached.
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Teacher Status</strong></td>
+                <td>
+                  Teacher Required: <%= @program.minimum_no_of_teacher %> <br/>
+                  Teacher Associated: <%= @program.no_of_teachers_connected %>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+    <% end %>
+<% end %>
+<% if @program.can_update? %>
+<div class='row'>
   <div class='col-md-12'>
-    <table class='table table-bordered'>
-      <tr>
-        <td width='25%'><strong>Venue Status</strong></td>
-        <td>
-          <% if @program.venue_connected? %>
-            Venue State: <%= @program.venue_schedule.state %>
-          <% else %>
-            Venue is not yet associated with this program.
+    <h3>Last Update</h3>
+    <small><%= @program.last_update %></small>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong> Updated By </strong></td>
+            <td>
+              <address>
+                <%= @program.last_updated_by_user.fullname rescue ' ' %>
+              </address>
+            </td>
+          </tr>
+          <tr>
+            <td width='20%'><strong> Comments </strong></td>
+            <td>
+              <address>
+                <%= @program.comment_type rescue ' ' %>
+              </address>
+            </td>
+          </tr>
+          <tr>
+            <td><strong> Details </strong></td>
+            <td><%= @program.comments %></td>
+          </tr>
+          <% unless @program.feedback.nil? %>
+              <tr>
+                <td><strong> Feedback </strong></td>
+                <td><%= @program.feedback %></td>
+              </tr>
           <% end %>
-        </td>
-      </tr>
-      <tr>
-        <td><strong>Kit Status</strong></td>
-        <td>
-          <% if @program.kit_connected? %>
-            Kit State: <%= @program.kit_schedule.state %>
-          <% else %>
-            Kit is not associated with this program yet.
-          <% end %>
-        </td>
-      </tr>
-      <tr>
-        <td><strong>Teacher Status</strong></td>
-        <td>
-          Teacher Required: <%= @program.program_type.minimum_no_of_teacher %> <br/>
-          Teacher Associated: <%= @program.program_teacher_schedules.count %>
-        </td>
-      </tr>
-    </table>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 <% end %>
-
 <div class='row'>
   <h3>Basic Details</h3>
   <div class='col-md-12'>
@@ -74,6 +102,10 @@
         <td><%= @program.announce_program_id %></td>
       </tr>
       <tr>
+        <td><strong> Name </strong></td>
+        <td><%= @program.name %></td>
+      </tr>
+      <tr>
         <td width='20%'><strong>Center</strong></td>
         <td><%= @program.center.name %></td>
       </tr>
@@ -83,62 +115,131 @@
       </tr>
       <tr>
         <td><strong>Start Date</strong></td>
-        <td><%= @program.start_date %></td>
+        <td><%= @program.start_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
         <td><strong>End Date</strong></td>
-        <td><%= @program.end_date %></td>
+        <td><%= @program.end_date.strftime('%d %B %Y') %></td>
       </tr>
       <tr>
-        <td><strong>Slot</strong></td>
-        <td><%= @program.slot %></td>
+        <td><strong>Timing (s)</strong></td>
+        <td><%= (@program.timings.map {|c| c[:name]}).join(", ") %></td>
       </tr>
     </table>
   </div>
 </div>
 
-<div class='row'>
-  <h3>Venue Details</h3>
-  <div class='col-md-12'>
-    <% if @program.venue_connected? %>
-    <div class='alert alert-success'>
-      Venue <%= link_to "##{@program.venue_schedule.venue.id}", venue_venue_schedule_path(@program.venue_schedule.venue, @program.venue_schedule) %> is associated with this program.
+
+  <div class='row'>
+    <div class='page-header'>
+      <h3>
+        Venue Details
+      </h3>
     </div>
+  </div>
+
+  <div class='row'>
+  <div class='col-md-12'>
+    <% if @program.venue_schedules %>
+        <% @program.venue_schedules.each do |vs| %>
+            <%  vs.current_user = current_user %>
+            <% if vs.is_connected? %>
+                <div class='alert alert-success'>
+                  <% if vs.can_update? %>
+                    Venue  <%= link_to "#{vs.venue.name}", venue_schedule_path(vs) %> is currently linked to the program.
+                  <% else %>
+                      Venue  <%= link_to "#{vs.venue.name}", venue_path(vs.venue) %> is currently linked to the program.
+                  <% end %>
+                </div>
+            <% else %>
+                <div class='alert alert-danger'>
+                  <% if vs.can_update? %>
+                      Venue  <%= link_to "#{vs.venue.name}", venue_schedule_path(vs) %> was earlier linked to the program.
+                  <% else %>
+                      Venue  <%= link_to "#{vs.venue.name}", venue_path(vs.venue) %> was earlier linked to the program.
+                  <% end %>
+                </div>
+            <% end %>
+        <% end %>
     <% else %>
     <div class='alert alert-danger'>
-      Pending assignment.
+      No Venue is associated with this program.
     </div>
     <% end %>
   </div>
 </div>
 
 <div class='row'>
-  <h3>Kit Details</h3>
+  <div class='page-header'>
+    <h3>
+      Kit Details
+    </h3>
+  </div>
+</div>
+<div class='row'>
   <div class='col-md-12'>
-    <% if @program.kit_connected? %>
-    <div class='alert alert-success'>
-      Kit <%= link_to "##{@program.kit_schedule.kit.id}", kit_kit_schedule_path(@program.kit_schedule.kit, @program.kit_schedule) %> is associated with this program.
-    </div>
+    <% if @program.no_of_kits_connected > 0 %>
+        <% @program.kit_schedules.each do |ks| %>
+            <%  ks.current_user = current_user %>
+            <% if ks.is_connected? %>
+                <div class='alert alert-success'>
+                  <% if ks.can_update? %>
+                      Kit  <%= link_to "#{ks.kit.name}", kit_schedule_path(ks) %> is currently linked to the program.
+                  <% else %>
+                      Kit  <%= link_to "#{ks.kit.name}", kit_path(ks.kit) %> is currently linked to the program.
+                  <% end %>
+                </div>
+            <% else %>
+                <div class='alert alert-danger'>
+                  <% if ks.can_update? %>
+                  Kit  <%= link_to "#{ks.kit.name}", kit_schedule_path(ks) %> was earlier linked to the program.
+                  <% else %>
+                      Kit  <%= link_to "#{ks.kit.name}", kit_path(ks.kit) %> was earlier linked to the program.
+                  <% end %>
+                </div>
+            <% end %>
+        <% end %>
     <% else %>
     <div class='alert alert-danger'>
-      Pending assignment.
+      No Venue is associated with this program.
     </div>
     <% end %>
   </div>
 </div>
 
 <div class='row'>
-  <h3>Teacher Details</h3>
+  <div class='page-header'>
+    <h3>
+      Teacher Details
+    </h3>
+  </div>
+</div>
+<div class='row'>
   <div class='col-md-12'>
-    <% if @program.program_teacher_schedules.count > 0 %>
-      <% @program.program_teacher_schedules.each do |pts| %>
-      <div class='alert alert-success'>
-        Teacher Schedule <%= link_to "##{pts.id}", program_teacher_schedule_path(pts) %> has been assigned with this program.
-      </div>
+    <% if @program.no_of_teachers_connected_or_conducted > 0 %>
+      <% @program.teachers_connected.each do |ts| %>
+          <%  ts.current_user = current_user %>
+          <div class='alert alert-success'>
+            <% if ts.can_view_schedule? %>
+                Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> is currently linked to the program.
+            <% else %>
+                Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> is currently linked to the program.
+            <% end %>
+          </div>
       <% end %>
-    <% else %>
+      <% @program.teachers_conducted_class.each  do |ts| %>
+        <%  ts.current_user = current_user %>
+        <div class='alert alert-success'>
+          <% if ts.can_view_schedule? %>
+              Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> conducted the program.
+          <% else %>
+              Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> conducted the program.
+          <% end %>
+        </div>
+      <% end %>
+  <% else %>
     <div class='alert alert-danger'>
-      Pending assignment.
+      No Teacher is associated with this program.
     </div>
     <% end %>
   </div>

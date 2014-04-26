@@ -1,7 +1,7 @@
 <div class='row'>
   <div class='col-md-12'>
     <h2>
-      Kit <small><%= @kit.kit_name_string %> </small>
+      Kit <small><%= @kit.name %> </small>
     </h2>
   </div>
 </div>
@@ -10,17 +10,6 @@
 
 <%= hidden_field_tag 'trigger', @trigger %>
 
-<div class='row'>
-  <div class='col-md-12'>
-    <%= render :partial => 'kits/state_update_confirmation_msg' %>
-  </div>
-</div>
-
-<div class='row'>
-  <div class='col-md-12'>
-    <%= render :partial => 'kits/state_update_comment' %>
-  </div>
-</div>
 <div class='row'>
   <div class='col-md-12'>
     <%= submit_tag "Update", :class => 'btn btn-primary btn-lg' %>

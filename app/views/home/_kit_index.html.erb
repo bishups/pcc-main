@@ -14,13 +14,13 @@
       <tbody>
         <% @kits.each do |kit| %>
           <tr>
-            <td><%= link_to kit.kit_name_string, kit_path(kit)%> </td>
+            <td><%= link_to kit.name, kit_path(kit)%> </td>
             <td><%= kit_state_tag(kit) %> </td>
-            <td><%= kit.center.name rescue '' %> </td>
-            <td><%= kit.max_participant_number %> </td>
+            <td><%= (kit.centers.map {|c| c[:name]}).join(", ") %> </td>
+            <td><%= kit.capacity %> </td>
             <td><%= kit.condition %> </td>
-            <td><%= link_to "Block", new_kit_kit_schedule_path(kit), :class => 'btn btn-primary btn-sm' %> 
-                <%= link_to "Schedule", kit_kit_schedules_path(kit), :class => 'btn btn-primary btn-sm' %> 
+            <td><%= link_to "Block", new_kit_schedule_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
+                <%= link_to "Schedule", kit_schedules_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
             </td> 
           </tr>
         <% end %>

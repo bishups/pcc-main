@@ -2,43 +2,119 @@
   <div class='col-md-12'>
     <%= render :partial => 'state_bar' %>
   </div>
+  <% if @kit.can_update? %>
+      <div class='row'>
+        <div class='col-md-12'>
+          <h3>Last Update</h3>
+          <small><%= @kit.last_update %></small>
+          <div class = 'row'>
+            <div class='col-md-12'>
+              <table class='table table-bordered'>
+                <tr>
+                  <td width='20%'><strong> Updated By </strong></td>
+                  <td>
+                    <address>
+                      <%= @kit.last_updated_by_user.fullname rescue ' ' %>
+                    </address>
+                  </td>
+                </tr>
+                <tr>
+                  <td width='20%'><strong> Comments </strong></td>
+                  <td>
+                    <address>
+                      <%= @kit.comment_type rescue ' ' %>
+                    </address>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong> Details </strong></td>
+                  <td><%= @kit.comments %></td>
+                </tr>
+                <tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+  <% end %>
   <div class = 'row'>
     <div class='col-md-12'>
+      <h3>Details</h3>
       <table class='table table-bordered'>
+        <tr>
+          <td width='20%'><strong>ID #</strong></td>
+          <td><%= @kit.id %></td>
+        </tr>
       <tr>
-        <td width='20%'><strong>Name</strong></td>
-        <td><%= @kit.kit_name_string %></td>
+        <td><strong>Name</strong></td>
+        <td><%= @kit.name %></td>
       </tr>
       <tr>
       <tr>  
-        <td><strong>Center</strong></td>
-        <td><%= @kit.center.name rescue '' %></td>
+        <td><strong>Center (s)</strong></td>
+        <td><%= (@kit.centers.map {|c| c[:name]}).join(", ") %></td>
       </tr>
       <tr>
-        <td><strong>Max Participants</strong></td>
+        <td><strong>Condition</strong></td>
         <td>
-          <address>
-            <%= @kit.max_participant_number %>
-          </address>
+          <%= @kit.condition %>
         </td>
       </tr>
       <tr>
-        <td><strong>General Comments</strong></td>
+        <td><strong>Capacity</strong></td>
         <td>
-          <address>
-            <%= @kit.general_comments %>
-          </address>
+            <%= @kit.capacity %>
         </td>
       </tr>
       <tr>
-        <td><strong>Condition Comments</strong></td>
-        <td>
-          <address>
-            <%= @kit.condition_comments %>
-          </address>
-        </td>
+        <td><strong>Contact</strong></td>
+        <td><%= kit.guardian.fullname rescue '' %></td>
       </tr>
       </table>
     </div>
 </div>
+<% count = 0 %>
+<% @kit.kit_items.each do |kit_item| %>
+<% count += 1 %>
+<div class='row'>
+<div class='col-md-12'>
+  <h3> Item <small>#<%= count %></small> </h3>
+  <div class = 'row'>
+    <div class='col-md-12'>
+      <table class='table table-bordered'>
+        <tr>
+          <td width='20%'><strong> Name </strong></td>
+          <td>
+              <%= kit_item.kit_item_name.name %>
+          </td>
+        </tr>
+        <tr>
+          <td><strong> Count </strong></td>
+          <td>
+              <%= kit_item.count %>
+          </td>
+        </tr>
+        <tr>
+          <td><strong> Condition </strong></td>
+          <td>
+            <%= kit_item.condition %>
+          </td>
+        </tr>
+        <tr>
+          <td><strong> Description </strong></td>
+          <td>
+              <%= kit_item.description rescue ' ' %>
+          </td>
+        </tr>
+        <tr>
+          <td><strong> Comments </strong></td>
+          <td><%= kit_item.comments %></td>
+        </tr>
+        <tr>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+<% end %>
 

@@ -1,4 +1,4 @@
-<% if @trigger.to_sym == :process_payment %>
+<% if @trigger == ::VenueSchedule::EVENT_PAID %>
 <div class='form-group'>
   <label>Payment Mode</label>
   <%= text_field_tag 'payment_mode', nil, :class => 'form-control' %>
@@ -8,3 +8,10 @@
   <%= text_field_tag 'payment_id', nil, :class => 'form-control' %>
 </div>
 <% end %>
+<% if @trigger == ::VenueSchedule::EVENT_BLOCK %>
+    <div class='form-group'>
+      <label>Blocked For (in Days)</label>
+      <%= number_field_tag 'blocked_for', nil, :class => 'form-control' %>
+    </div>
+<% end %>
+

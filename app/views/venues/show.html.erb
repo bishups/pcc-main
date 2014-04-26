@@ -1,39 +1,173 @@
 <div class='row'>
   <div class='col-md-12'>
     <h2>
-      Venue Detail <br/>
-      <small><%= @venue.name %></small>
-      <small><span class='label label-info'><%= @venue.state.to_s.capitalize %></span></small>
-      <small><span class='label label-success'><%= @venue.capacity %></span></small>
+      <small><span class='label label-info'><%= @venue.state %></span></small>
+      Venue <small><%= @venue.name %></small>
+      <small><span class='label label-success'><%#= @venue.capacity %></span></small>
       <small><%= render :partial => 'venues/state_bar' %></small>
-      <small><%= link_to "View Schedule", venue_venue_schedules_path(@venue) %></small>
+      <small><%#= link_to "View Schedule", venue_schedules_path(:venue_id => @venue) %></small>
     </h2>
-    <blockquote>
-      <%= @venue.description %>
-    </blockquote>
-  </div>
-</div>
-<div class='row'>
-  <div class='col-md-12'>
-    <h3>Address</h3>
-    <address>
-      <%= @venue.address %><br/>
-      PIN: <%= @venue.pin_code %>
-    </address>
-  </div>
-</div>
-<div class='row'>
-  <div class='col-md-12'>
-    <h3>Contact</h3>
-    <p>
-      <%= @venue.contact_name %><br/>
-      P: <%= @venue.contact_phone %><br/>
-      M: <%= @venue.contact_mobile %><br/>
-      E: <%= @venue.contact_email %><br/>
-      <address>
-        <%= @venue.contact_address %>
-      </address>
-    </p>
+    <% unless @venue.description.nil? %>
+        <blockquote>
+          <%= @venue.description %>
+        </blockquote>
+    <% end %>
   </div>
 </div>
 
+<% if @venue.can_update? %>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Last Update</h3>
+    <small><%= @venue.last_update %></small>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong> Updated By </strong></td>
+            <td>
+              <address>
+                <%= @venue.last_updated_by_user.fullname rescue ' ' %>
+              </address>
+            </td>
+          </tr>
+          <tr>
+            <td width='20%'><strong> Comments </strong></td>
+            <td>
+              <address>
+                <%= @venue.comment_type rescue ' ' %>
+              </address>
+            </td>
+          </tr>
+          <tr>
+            <td><strong> Details </strong></td>
+            <td><%= @venue.comments %></td>
+          </tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<% end %>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Basic Details</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+        <tr>
+          <td width='20%'><strong>ID #</strong></td>
+          <td><%= @venue.id %></td>
+        </tr>
+          <tr>
+            <td width='20%'><strong>Capacity</strong></td>
+            <td><%= @venue.capacity %></td>
+          </tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Address</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong> Address </strong></td>
+            <td>
+              <address>
+                <%= @venue.address %>
+              </address>
+            </td>
+          </tr>
+          <tr>
+            <td><strong> Pin </strong></td>
+            <td><%= @venue.pin_code %></td>
+          </tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Contact</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong>Name</strong></td>
+            <td><%= @venue.contact_name %></td>
+          </tr>
+          <tr>
+            <td><strong>Phone</strong></td>
+            <td><%= @venue.contact_phone %></td>
+          </tr>
+          <tr>
+            <td><strong>Mobile</strong></td>
+            <td><%= @venue.contact_mobile %></td>
+          </tr>
+          <tr>
+            <td><strong>Email</strong></td>
+            <td><%= @venue.contact_email %></td>
+          </tr>
+          <tr>
+            <td><strong> Address </strong></td>
+            <td>
+              <address>
+                <%= @venue.contact_address %>
+              </address>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+   </div>
+</div>
+
+
+<% if @venue.can_update? %>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Payment</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong>Commercial</strong></td>
+            <td><%= @venue.commercial ? "Yes" : "No" %></td>
+          </tr>
+          <tr>
+            <td><strong>Per Day Price (Rs) </strong></td>
+            <td><%= @venue.per_day_price %></td>
+          </tr>
+          <tr>
+            <td><strong>Contact Name</strong></td>
+            <td><%= @venue.payment_contact_name %></td>
+          </tr>
+          <tr>
+            <td><strong>Mobile</strong></td>
+            <td><%= @venue.payment_contact_mobile %></td>
+          </tr>
+          <tr>
+            <td><strong> Address </strong></td>
+            <td>
+              <address>
+                <%= @venue.payment_contact_address %>
+              </address>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<% end %>

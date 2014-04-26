@@ -1,28 +1,35 @@
 <ul class="nav navbar-nav">
+  <% if false %>
   <li class="dropdown">
     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Teachers <b class="caret"></b></a>
     <ul class="dropdown-menu">
       <li><a href="<%= teacher_teacher_schedules_path(current_user) %>">My Schedule</a></li>
-      <li><a href="<%= new_teacher_teacher_schedule_path(current_user) %>">Publish Schedule</a></li>
+        <li><a href="<%= new_teacher_teacher_schedule_path(current_user) %>">Publish Schedule</a></li>
     </ul>
   </li>
+  <% end %>
   <li class="dropdown">
     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Modules <b class="caret"></b></a>
     <ul class="dropdown-menu">
-      <li><a href="<%= new_enquiry_path %>">Enquiry</a></li>
-      <li><a href="#">Apply for Teacher Training</a></li>
-      <li><a href="<%= venues_path %>">Venue</a></li>
-
-      <li><a href="<%= kits_path %>">Kit</a></li>
-      <li><a href="<%= teachers_path %>">Teacher</a></li>
       <li><a href="<%= programs_path %>">Program</a></li>
+      <li><a href="<%= teachers_path %>">Teacher</a></li>
+      <li><a href="<%= venues_path %>">Venue</a></li>
+      <li><a href="<%= kits_path %>">Kit</a></li>
+    </ul>
+  </li>
+  <li class="dropdown">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
+    <ul class="dropdown-menu">
+      <li><a href="<%= rails_admin_path %>"> Dashboard </a></li>
+      <li><a href="<%= enquiries_path %>">Enquiries </a></li>
     </ul>
   </li>
   <!-- TODO: Enforce role -->
   <li class="dropdown">
-    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Management <b class="caret"></b></a>
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Help <b class="caret"></b></a>
     <ul class="dropdown-menu">
-      <li><a href="<%= enquiries_path %>">Enquiries Management</a></li>
+      <li><a href="#"> FAQ </a></li>
+      <li><a href="<%= new_enquiry_path %>">Submit Enquiry</a></li>
     </ul>
   </li>
   <li class="dropdown">

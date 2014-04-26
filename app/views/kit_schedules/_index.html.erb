@@ -1,23 +1,34 @@
 
 <table class='table table-condensed table-hover table-bordered'>
   <tr>
-    <th>Kit Name</th>
-    <th> State </th>
-    <th>Program Name</th>
+    <th>ID #</th>
+    <th>Program</th>
     <th>Start Date</th>
-    <th>End Date </th>
-    <th> Show </th>
+    <th>End Date</th>
+    <th>Timings</th>
+    <th>Blocked By</th>
+    <th>State</th>
+    <th></th>
   </tr>
-
 <% @kit.kit_schedules.each do |ks| %>
+<% ks.current_user = current_user %>
   <tr>
-    <td><%= ks.kit.kit_name_string %></td>
-    <td><%= kit_schedule_state_tag(ks) %></td>
-    <td><%= ks.program.name rescue nil%></td>
-    <td><%= ks.start_date.strftime('%d/%m/%Y') rescue nil%></td>
-    <td><%= ks.end_date.strftime('%d/%m/%Y') rescue nil%></td>
-    <td> <%= link_to "Open", kit_kit_schedule_path(ks.kit, ks), :class => 'btn btn-primary btn-sm' %> </td> 
+    <td><%= ks.id %></td>
+    <td><%= link_to ks.program.name,program_path(ks.program_id) rescue 'Not Applicable' %></td>
+    <td><%= ks.start_date.strftime('%d %B %Y') %></td>
+    <td><%= ks.end_date.strftime('%d %B %Y') %></td>
+    <% if ks.program.nil? %>
+        <td><%= ks.start_date.strftime('%d %B (%I:%M%P)') %> to <%= ks.end_date.strftime('%d %B (%I:%M%P)') %> </td>
+    <% else %>
+        <td><%= (ks.program.timings.map {|c| c[:name]}).join(", ") rescue ' ' %></td>
+    <% end %>
+    <td><%= ks.blocked_by_user.fullname rescue ' ' %></td>
+    <td><%= kit_schedule_state_tag(ks) %>
+    <% if ks.program_id %>
+        <td> <%= link_to "Open", kit_schedule_path(ks), :class => 'btn btn-primary btn-sm' if ks.can_update? %> </td>
+    <% else %>
+        <td> <%= link_to "Delete", {:controller => "kit_schedules", :action => 'destroy', :id => ks.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if ks.can_delete? %> </td>
+    <% end %>
   </tr>
 <% end %>
 </table>
-

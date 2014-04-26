@@ -1,0 +1,32 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      Teacher <small><%= @teacher.user.fullname %></small>
+    </h2>
+  </div>
+</div>
+<%= form_for(@teacher, :html => {:class => 'form'}) do |f| %>
+<%= resource_error_messages!(@teacher) %>
+<%= hidden_field_tag 'trigger', @trigger %>
+
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'teachers/state_update_confirmation_msg' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'teachers/state_additional_data' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'teachers/state_update_comment' %>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <%= submit_tag "Update", :class => 'btn btn-primary btn-lg' %>
+  </div>
+</div>
+<% end %>

@@ -1,8 +1,9 @@
 class Pincode < ActiveRecord::Base
   belongs_to :center
   attr_accessible :location_name, :pincode, :center, :center_id
-  validates :location_name, :pincode, :presence => true
-
+  validates :center, :presence => true
+  validates :location_name, :presence => true, :uniqueness => true
+  validates :pin_code,  :presence => true, :uniqueness => true, :length => { is: 6}, :numericality => {:only_integer => true }
 
   rails_admin do
     navigation_label 'Geo-graphical informations'

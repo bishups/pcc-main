@@ -1,0 +1,13 @@
+Please approve user <%= @user.firstname %>  <%= @user.lastname %> with email id <%= @user.email %>
+
+==============================================================================================
+
+
+Below is the note from the user.
+
+<%= @user.message_to_approver %>
+
+To approve the user please login to the site, just follow this link: <%= @url %> and add corresponsding access privillages.
+
+
+==============================================================================================

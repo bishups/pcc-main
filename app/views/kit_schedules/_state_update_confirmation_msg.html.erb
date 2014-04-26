@@ -1,22 +1,18 @@
-<% if [:blocked, :assigned, :issued,:closed,:cancel,:over_due].include?(@trigger.to_sym) %>
+<% if ::KitSchedule::PROCESSABLE_EVENTS.include?(@trigger) %>
   <div class='alert alert-info'>
 <% else %>
   <div class='alert-alert-danger'>
 <% end %>
   <h3>Confirmation: </h3>
   <p>
-    <% if @trigger.to_sym == :blocked %>
+    <% if @trigger == ::KitSchedule::EVENT_BLOCK %>
         Are you sure you want to <strong>block</strong> this kit for program <strong><%= @kit_schedule.program.name%> </strong>for the specified dates?
-    <% elsif @trigger.to_sym == :assigned %>
-        Are you sure you want to <strong>Assign</strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
-    <% elsif @trigger.to_sym == :issued %>
+    <% elsif @trigger == ::KitSchedule::EVENT_ISSUE %>
         Are you sure you want to <strong> Issue </strong> this kit for the program <strong><%= @kit_schedule.program.name%></strong>?
-    <% elsif @trigger.to_sym == :closed %>
-        Are you sure you want to change state to <strong> Closed </strong> for this kit?
-    <% elsif @trigger.to_sym == :cancel %>   
+    <% elsif @trigger == ::KitSchedule::EVENT_RETURNED %>
+        Are you sure you want to change state to <strong> Returned </strong> for this kit?
+    <% elsif @trigger == ::KitSchedule::EVENT_CANCEL %>
         Are you sure you want to change state to <strong> Cancelled </strong> for this kit?
-    <% elsif @trigger.to_sym == :over_due %>   
-        Are you sure you want to change state to <strong> Over Due </strong> for this kit?
     <% end %>
   </p>
 </div>

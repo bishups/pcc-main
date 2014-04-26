@@ -2,24 +2,36 @@ class VenueScheduleValidator < ActiveModel::Validator
   def validate(record)
     return if record.program.nil?
 
-    if ::VenueSchedule.where(['start_date >= ? AND start_date <= ? AND slot = ? AND id != ? AND state != ?', 
-      record.start_date, record.end_date, record.slot, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
-      record.errors[:start_date] << "overlaps with existing schedule."
-    elsif ::VenueSchedule.where(['end_date >= ? AND end_date <= ? AND slot = ? AND id != ? AND state != ?', 
-      record.start_date, record.end_date, record.slot, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
-      record.errors[:end_date] << "overlaps with existing schedule."
-    elsif ::VenueSchedule.where(['start_date >= ? AND start_date <= ? AND slot = ? AND id != ? and state != ?', 
-      record.start_date, record.end_date, ::Ontology::Venue::SLOT_FULL_DAY, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
-      record.errors[:start_date] << "overlaps with existing schedule."
-    elsif ::VenueSchedule.where(['end_date >= ? AND end_date <= ? AND slot = ? AND id != ? and state != ?', 
-      record.start_date, record.end_date, ::Ontology::Venue::SLOT_FULL_DAY, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
-      record.errors[:end_date] << "overlaps with existing schedule."
+    program = record.program
+
+    if program.start_date < Time.zone.now
+      record.errors[:start_date] << "cannot be in the past"
+    elsif program.end_date < program.start_date
+      record.errors[:end_date] << "cannot be before start date"
+    elsif VenueSchedule.overlapping(record).count() > 0
+        record.errors[:start_date] << "timing overlaps with existing schedule."
     end
 
-    if record.start_date < Time.now
-      record.errors[:start_date] << "cannot be in the past"
-    elsif record.end_date < record.start_date
-      record.errors[:end_date] << "cannot be before start date"
-    end
+=begin
+      timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
+      if VenueSchedule.joins("JOIN programs ON programs.id = venue_schedules.program_id").joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where(
+          ['programs.id = programs_timings.program_id AND (programs.start_date BETWEEN ? AND ?) AND programs_timings.timing_id IN (?) AND venue_schedules.id != ? AND venue_schedules.state != ?',
+                                program.start_date, program.end_date, timing_ids, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
+        record.errors[:start_date] << "timing overlaps with existing schedule."
+        return
+      end
+      if VenueSchedule.joins("JOIN programs ON programs.id = venue_schedules.program_id").joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where(
+          ['programs.id = programs_timings.program_id AND (programs.end_date BETWEEN ? AND ?) AND programs_timings.timing_id IN (?) AND venue_schedules.id != ? AND venue_schedules.state != ?',
+           program.start_date, program.end_date, timing_ids, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
+        record.errors[:end_date] << " timing overlaps with existing schedule."
+        return
+      end
+      if VenueSchedule.joins("JOIN programs ON programs.id = venue_schedules.program_id").joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where(
+          ['programs.id = programs_timings.program_id AND (programs.start_date <= ? AND programs.end_date >= ?) AND programs_timings.timing_id IN (?) AND venue_schedules.id != ? AND venue_schedules.state != ?',
+           program.start_date, program.end_date, timing_ids, record.id, ::VenueSchedule::STATE_CANCELLED]).count() > 0
+        record.errors[:start_date] << " timing overlaps with existing schedule."
+        return
+      end
+=end
   end
 end

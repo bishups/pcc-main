@@ -1,4 +1,10 @@
+<% if @trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL && @venue_schedule.approval_requested_for_other_venue? %>
+    <label>Comment</label> <small>(mandatory)</small>
+    <textarea name='comment' class='form-control'></textarea>
+    </div>
+<% else %>
 <div class='form-group'>
   <label>Comment</label> <small>(optional)</small>
   <textarea name='comment' class='form-control'></textarea>
 </div>
+<% end %>

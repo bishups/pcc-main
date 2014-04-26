@@ -1,51 +1,109 @@
-<div class='row'>
+<% if @kit_schedule.can_update? %>
+    <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'state_bar' %>
   </div>
-  <div class='row'>
-  <div class='col-md-12'>
-    <table class='table table-bordered'>
-      <tr>
-        <td width='20%'><strong>Name</strong></td>
-        <td><%= @kit.kit_name_string %></td>
-      </tr>
-      <tr>
-        <td><strong>Center</strong></td>
-        <td><%= @kit.center.name rescue '' %></td>
-      </tr>
-      <tr>
-        <td><strong>Max Participants</strong></td>
-        <td>
-          <address>
-            <%= @kit.max_participant_number %>
-          </address>
-        </td>
-      </tr>
-      <tr>
-        <td><strong>Booking Start Date</strong></td>
-        <td><%= @kit_schedule.start_date %></td>
-      </tr>
-      <tr>
-        <td><strong>Booking End Date</strong></td>
-        <td><%= @kit_schedule.end_date %></td>
-      </tr>
-      <tr>
-        <td><strong>Comments</strong></td>
-        <td><%= @kit_schedule.comments %></td>
-      </tr>
-      <% if !@kit_schedule.issued_to_person_id.nil?%>
-      <tr>
-        <td><strong>Kit Issued to</strong></td>
-        <td><%= @kit_schedule.issued_to_person.email %></td>
-      </tr>
-      <%end%>
-
-      <% if !@kit_schedule.blocked_by_person_id.nil? %>
-      <tr>
-        <td><strong>Kit Assigned to</strong></td>
-        <td><%= @kit_schedule.blocked_by_person.email %></td>
-      </tr>
-      <%end%>
-    </table>
+<div class='row'>
+<div class='col-md-12'>
+  <h3>Last Update</h3>
+  <small><%= @kit_schedule.last_update %></small>
+  <div class = 'row'>
+    <div class='col-md-12'>
+      <table class='table table-bordered'>
+        <tr>
+          <td width='20%'><strong> Updated By </strong></td>
+          <td>
+            <address>
+              <%= @kit_schedule.last_updated_by_user.fullname rescue ' ' %>
+            </address>
+          </td>
+        </tr>
+        <tr>
+          <td width='20%'><strong> Comments </strong></td>
+          <td>
+            <address>
+              <%= @kit_schedule.comment_type rescue ' ' %>
+            </address>
+          </td>
+        </tr>
+        <tr>
+          <td><strong> Details </strong></td>
+          <td><%= @kit_schedule.comments %></td>
+        </tr>
+        <% unless @kit_schedule.feedback.nil? %>
+            <tr>
+              <td><strong> Feedback </strong></td>
+              <td><%= @kit_schedule.feedback %></td>
+            </tr>
+        <% end %>
+      </table>
+    </div>
   </div>
 </div>
+</div>
+<div class='row'>
+<div class='col-md-12'>
+  <h3>Basic Details</h3>
+  <div class='row'>
+    <div class='col-md-12'>
+      <table class='table table-bordered'>
+        <tr>
+          <td width='20%'><strong>ID #</strong></td>
+          <td><%= @kit_schedule.id %></td>
+        </tr>
+        <tr>
+          <td><strong>Kit</strong></td>
+          <td><%= link_to "#{@kit_schedule.kit.name}", kit_path(@kit_schedule.kit) %></td>
+        </tr>
+        <tr>
+          <td><strong>Program</strong></td>
+          <td><%= link_to "#{@kit_schedule.program.name}", program_path(@kit_schedule.program) %></td>
+        </tr>
+        <tr>
+          <td><strong>Center</strong></td>
+          <td><%= @kit_schedule.program.center.name %></td>
+        </tr>
+        <tr>
+          <td><strong>Booking Start Date</strong></td>
+          <td><%= @kit_schedule.program.start_date.strftime('%d %B %Y') %></td>
+        </tr>
+        <tr>
+          <td><strong>Booking End Date</strong></td>
+          <td><%= @kit_schedule.program.end_date.strftime('%d %B %Y') %></td>
+        </tr>
+        <tr>
+          <td><strong>Timing (s)</strong></td>
+          <td><%= (@kit_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
+        </tr>
+        <tr>
+          <td><strong>Blocked By</strong></td>
+          <td><%= @kit_schedule.blocked_by_user.fullname rescue ' '%></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+<% if !@kit_schedule.issued_to.nil?%>
+  <div class='row'>
+    <div class='col-md-12'>
+      <h3>Issued Details</h3>
+      <div class='row'>
+        <div class='col-md-12'>
+          <table class='table table-bordered'>
+            <tr>
+              <td width='20%'><strong>Issued to</strong></td>
+              <td><%= @kit_schedule.issued_to %></td>
+            </tr>
+            <tr>
+              <td><strong>Due Date</strong></td>
+              <td><%= @kit_schedule.due_date_time.strftime('%d %B %Y (%I:%M%P)') rescue '' %></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+<%end%>
+
+<% end %>

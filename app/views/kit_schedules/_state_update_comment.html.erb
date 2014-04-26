@@ -1,4 +1,8 @@
 <div class='form-group'>
-  <label>Comment</label> <small>(optional)</small>
-  <textarea name='comment' class='form-control'></textarea>
+<% if @trigger == ::KitSchedule::EVENT_ISSUE %>
+  <label>Comments</label> <small>(mandatory)</small>
+<% else %>
+  <label>Comments</label> <small>(optional)</small>
+<% end %>
+  <textarea name='comments' class='form-control'></textarea>
 </div>

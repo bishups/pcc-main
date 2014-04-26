@@ -1,21 +1,24 @@
-<% if [:block, :request_payment, :process_payment].include?(@trigger.to_sym) %>
+<% if @trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL && @venue_schedule.approval_requested_for_other_venue? %>
+<div class='alert alert-danger'> <strong> WARNING </strong> Approval has already been requested for another venue. </div>
+<% end %>
+<% if [::VenueSchedule::EVENT_BLOCK, ::VenueSchedule::EVENT_REQUEST_PAYMENT].include?(@trigger) %>
 <div class='alert alert-info'>
 <% else %>
 <div class='alert alert-danger'>
 <% end %>
   <h3>Confirmation: </h3>
   <p>
-    <% if @trigger.to_sym == :block %>
+    <% if @trigger == ::VenueSchedule::EVENT_BLOCK %>
       Are you sure you want to <strong>block</strong> this venue for the specified dates?
-    <% elsif @trigger.to_sym == :authorize_for_payment %>
+    <% elsif @trigger == ::VenueSchedule::EVENT_AUTHORIZE_FOR_PAYMENT %>
       Are you sure you want to <strong>Authorize</strong> this venue for payment processing?
-    <% elsif @trigger.to_sym == :request_payment %>
+    <% elsif @trigger == ::VenueSchedule::EVENT_REQUEST_PAYMENT %>
       Are you sure you want to send this venue schedule to <strong>Finance Department</strong> for processing of payment?
-    <% elsif @trigger.to_sym == :process_payment %>
+    <% elsif @trigger == ::VenueSchedule::EVENT_PAID %>
       This venue will be assigned and made available for use in the associated <strong>Program</strong> once payment processing is complete. Are you sure you want to proceed?
-    <% elsif @trigger.to_sym == :cancel %>
+    <% elsif @trigger == ::VenueSchedule::EVENT_CANCEL %>
       This will cancel the venue booking associated with the program. Are you sure you want to proceed?
-    <% elsif @trigger.to_sym == :request_approval %>
+    <% elsif @trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL %>
       Are you sure you want to send this venue schedule for approval?
     <% end %>
   </p>

@@ -18,12 +18,23 @@ class Sector < ActiveRecord::Base
 
   attr_accessible :name, :zone_id, :center_ids, :centers, :zone
 
+
+  # usage -> ::Sector::all_centers_in_one_sector? [center1, center2, center3]
+  def self.all_centers_in_one_sector?(centers)
+    if !centers.empty?
+      sector_id = centers[0].sector_id
+      centers.each {|c| return false if sector_id != c.sector_id }
+    end
+    true
+  end
+
   rails_admin do
     navigation_label 'Geo-graphical informations'
     weight 1
     list do
       field :name
       field :zone
+      field :centers
     end
     edit do
       field :name
@@ -35,10 +46,32 @@ class Sector < ActiveRecord::Base
         inline_add do
           false
         end
+        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+          accessible_zones = bindings[:controller].current_user.accessible_zones(:zonal_coordinator)
+          Proc.new { |scope|
+            # scoping all Players currently, let's limit them to the team's league
+            # Be sure to limit if there are a lot of Players and order them by position
+            # scope = scope.where(:id => accessible_centers )
+            scope = scope.where(:id => accessible_zones )
+          }
+        end
       end
       field :centers do
         inline_add do
           false
+        end
+          associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+          associated_collection_scope do
+            # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+            accessible_centers = bindings[:controller].current_user.accessible_centers(:zonal_coordinator)
+            Proc.new { |scope|
+              # scoping all Players currently, let's limit them to the team's league
+              # Be sure to limit if there are a lot of Players and order them by position
+              # scope = scope.where(:id => accessible_centers )
+              scope = scope.where(:id => accessible_centers )
+            }
         end
       end
     end

@@ -9,29 +9,30 @@
   </div>
   <table class='table table-condensed table-hover table-bordered'>
     <tr>
-      <th>#</th>
+      <th>ID #</th>
       <th>Name</th>
       <th>Center</th>
       <th>PIN Code</th>
       <th>Capacity</th>
       <th>Contact</th>
-      <th>Current State</th>
-      <th width='20%'></th>
+      <th>State</th>
+      <th width='12%'></th>
     </tr>
     <% @venues.each do |venue| %>
+    <% venue.current_user = current_user %>
     <tr>
       <td><%= venue.id %></td>
-      <td><%= link_to venue.name,venue_path(venue) %></td>
-      <td><%= venue.center.name %></td>
+      <td><%= venue.name %></td>
+      <td><%= (venue.centers.map {|c| c[:name]}).join(", ") %></td>
       <td><%= venue.pin_code %></td>
       <td><%= venue.capacity %></td>
       <td><%= venue.contact_name %></td>
-      <td><span class='label label-warning'><%= venue.state.to_s.humanize %></span></td>
+      <td><span class='label label-warning'><%= venue.state %></span></td>
       <td>
-        <%= link_to "Show", venue_path(venue), :class => 'btn btn-primary btn-sm' %> 
-        <% if venue.published? %>
-          <%= link_to "Block", new_venue_venue_schedule_path(venue), :class => 'btn btn-primary btn-sm' %> 
-          <%= link_to "Schedule", venue_venue_schedules_path(venue), :class => 'btn btn-primary btn-sm' %> 
+        <%= link_to "Show", venue_path(venue), :class => 'btn btn-primary btn-sm' if venue.can_view? %>
+        <% if venue.possible? && venue.can_view_schedule? %>
+          <%#   = link_to "Block", new_venue_schedule_path(:venue_id => venue.id), :class => 'btn btn-primary btn-sm' %>
+          <%= link_to "Schedule", venue_schedules_path(:venue_id => venue.id), :class => 'btn btn-primary btn-sm' if venue.can_view_schedule?  %>
         <% end %>
       </td>
     </tr>

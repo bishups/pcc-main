@@ -42,8 +42,11 @@ class Permission < ActiveRecord::Base
   end
 
   rails_admin do
-    navigation_label 'Access Privilege'
-    weight 1
+    navigation_label 'Admin'
+    weight 0
+    visible do
+      bindings[:controller].current_user.is?(:super_admin)
+    end
     list do
       field :name
       field :cancan_action

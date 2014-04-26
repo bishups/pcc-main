@@ -17,6 +17,15 @@ class Zone < ActiveRecord::Base
 
   attr_accessible :name, :sector_ids, :sectors
 
+  # usage -> ::Zone::all_sectors_in_one_zone? [sector1, sector2, sector3]
+  def self.all_sectors_in_one_zone?(sectors)
+    if !sectors.empty?
+      zone_id = sectors[0].zone_id
+      sectors.each {|c| return false if zone_id != c.zone_id }
+    end
+    true
+  end
+
   rails_admin do
     navigation_label 'Geo-graphical informations'
       weight 0
@@ -27,9 +36,18 @@ class Zone < ActiveRecord::Base
     edit do
       field :name
       field :sectors   do
-        inline_add do
-          false
-        end
+         inline_add false
+         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+         associated_collection_scope do
+           # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+           accessible_sectors = bindings[:controller].current_user.accessible_sectors(:zonal_coordinator)
+           Proc.new { |scope|
+             # scoping all Players currently, let's limit them to the team's league
+             # Be sure to limit if there are a lot of Players and order them by position
+             # scope = scope.where(:id => accessible_centers )
+             scope = scope.where(:id => accessible_sectors )
+           }
+         end
       end
     end
   end

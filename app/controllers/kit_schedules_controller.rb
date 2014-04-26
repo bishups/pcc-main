@@ -1,141 +1,244 @@
 class KitSchedulesController < ApplicationController
+
   # GET /kit_schedules
   # GET /kit_schedules.json
   before_filter :authenticate_user!
-  before_filter :load_kit!
+  #before_filter :load_kit!
   
   def index
-    @kit_schedules = @kit.kit_schedules.where(['start_date > ?', DateTime.now])
+    @kit = ::Kit.find(params[:kit_id].to_i)
+    @kit.current_user = current_user
+    @kit_schedules = @kit.kit_schedules.where(['end_date > ?', Time.zone.now - 15.days.from_now])
+
     respond_to do |format|
-      format.html # index.html.erb
-      format.json { render json: @kit_schedules }
-    end
+      if @kit.can_view_schedule?
+        format.html # index.html.erb
+        format.json { render json: @kit_schedules }
+      else
+        format.html { redirect_to kits_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit.errors, status: :unprocessable_entity }
+      end
+     end
   end
 
   # GET /kit_schedules/1
   # GET /kit_schedules/1.json
   def show
-    @kit_schedule = @kit.kit_schedules.find(params[:id])
+    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
 
     respond_to do |format|
-      format.html # show.html.erb
-      format.json { render json: @kit_schedule }
+      if @kit_schedule.can_update?
+        format.html # show.html.erb
+        format.json { render json: @kit_schedule }
+      else
+        format.html { redirect_to kits_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      end
     end
   end
 
   # GET /kit_schedules/new
   # GET /kit_schedules/new.json
   def new
-    @kit_schedule = @kit.kit_schedules.new
+    @kit = ::Kit.find(params[:kit_id].to_i) if params.has_key?(:kit_id)
+    @kit_schedule = KitSchedule.new
+    @kit_schedule.current_user = current_user
 
-    respond_to do |format|
-      format.html 
-      format.json { render json: @kit_schedule }
+    if params.has_key?(:kit_id)
+      @kit_schedule.kit_id = params[:kit_id]
+      center_ids = @kit_schedule.kit.center_ids
     end
-  end
 
-  # GET /kit_schedules/1/edit
-  def edit
-    @kit_schedule = @kit.kit_schedules.find(params[:id])
-
-    @trigger = params[:trigger]
-
-    respond_to do |format|
-      format.html
-      format.json { render json: @kit_schedule }
+    if params.has_key?(:program_id)
+      @kit_schedule.program_id = params[:program_id]
+      center_ids = @kit_schedule.program.center_id
     end
-  end
-
-  # POST /kit_schedules
-  # POST /kit_schedules.json
-  def create
-    @kit_schedule = @kit.kit_schedules.new(params[:kit_schedule])
-    @kit_schedule.set_up_details!
 
     respond_to do |format|
-      if @kit_schedule.save
-        format.html { redirect_to [@kit, @kit_schedule], notice: 'Kit schedule was successfully created.' }
-        format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
+      if @kit_schedule.can_create?(center_ids)
+        format.html
+        format.json { render json: @kit_schedule }
       else
-        format.html { render action: "new" }
+        if @kit_schedule.kit_id.nil?
+          format.html { redirect_to program_path(params[:program_id]), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        else
+          format.html { redirect_to kit_schedules_path(:kit_id => @kit), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        end
         format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
       end
     end
   end
 
+  def reserve
+    @kit = Kit.find(params[:id].to_i)
+    @trigger = params[:trigger]
+    @kit_schedule = KitSchedule.new
+    @kit_schedule.current_user = current_user
+    @kit_schedule.kit_id = @kit.id
+
+    respond_to do |format|
+      if @kit_schedule.can_create_on_trigger?
+        format.html { render action: "reserve" }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      else
+        format.html { redirect_to kit_schedules_path(:kit_id => @kit_schedule.kit_id), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # GET /kit_schedules/1/edit
+  def edit
+    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
+
+    @trigger = params[:trigger]
+
+    respond_to do |format|
+      if @kit_schedule.can_update?
+        format.html
+        format.json { render json: @kit_schedule }
+      else
+        format.html { redirect_to kit_schedules_path(:kit_id => @kit_schedule.kit), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
+  def create_on_trigger
+    @kit_schedule = KitSchedule.new(params[:kit_schedule])
+    @kit = @kit_schedule.kit
+    @trigger = params[:trigger]
+    @kit_schedule.current_user = current_user
+
+    respond_to do |format|
+      if @kit_schedule.can_create_on_trigger?
+        if @kit_schedule.send(@trigger) && @kit_schedule.save
+          format.html { redirect_to kit_schedules_path(:kit_id => @kit.id)}
+          format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
+        else
+          format.html { render action: 'reserve' }
+          format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+        end
+      else
+        format.html { redirect_to kit_schedules_path(:kit_id => @kit.id), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
+
+  # POST /kit_schedules
+  # POST /kit_schedules.json
+  def create
+    # In case it is a reserve/ overdue/ or under-repair schedule, call relevant handler
+    if params.has_key?('trigger')
+      return create_on_trigger
+    end
+
+    # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
+    if params.has_key?(:kit_id)
+      kit_id = params[:kit_id].to_i
+    elsif params.has_key?(:kit_schedule)
+      kit_id = (params[:kit_schedule][:kit_id]).to_i  if params[:kit_schedule].has_key?(:kit_id)
+    end
+
+    @kit = ::Kit.find(kit_id)
+    @kit.current_user = current_user
+    @kit_schedule = @kit.kit_schedules.new(params[:kit_schedule])
+    @kit_schedule.current_user = current_user
+
+    respond_to do |format|
+      if @kit_schedule.can_create?
+        if @kit_schedule.send(::KitSchedule::EVENT_BLOCK) && @kit_schedule.save
+          redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.'
+          format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
+        else
+          #render :action => 'new'
+          format.html { render action: "new" }
+          format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+        end
+      else
+        format.html { redirect_to kit_schedules_path(:kit_id => @kit_schedule.kit), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
+
+
   # PUT /kit_schedules/1
   # PUT /kit_schedules/1.json
   def update
 
-    @kit_schedule = @kit.kit_schedules.find(params[:id])
+    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
     @trigger = params[:trigger]
     @kit_schedule.comments = params[:comment]
 
-    if !params[:issued_to_person_id].nil?
-      @kit_schedule.issued_to_person_id = params[:issued_to_person_id]
-    end
-
-    if @trigger == "blocked"
-      @kit_schedule.blocked_by_person_id = current_user.id
-    end
+    @kit_schedule.issued_to = params[:issued_to] unless params[:issued_to].nil?
+    @kit_schedule.due_date_time = params[:due_date_time] unless params[:due_date_time].nil?
+    @kit_schedule.comments = params[:comments] unless params[:comments].nil?
+    @kit_schedule.issue_for_schedules = params[:issue_for_schedules].split(' ').map(&:to_i) unless params[:issue_for_schedules].nil?
 
     respond_to do |format|
-      format.html do
-        if state_update(@kit_schedule, @trigger)
-          if @kit_schedule.save!
-            #redirect_to action: "edit" , :trigger => params[:trigger]
-            redirect_to [@kit,@kit_schedule]
-          end
-        else
-            render :action => 'edit'
-        end
-      end
 
-      format.json { render :json => @kit_schedule }
+      if @kit_schedule.can_update?
+        if state_update(@kit_schedule, @trigger) &&  @kit_schedule.save!
+          format.html { redirect_to [@kit,@kit_schedule], notice: 'Kit Schedule was successfully updated.' }
+          format.json { render :json => @kit_schedule }
+        else
+          format.html { render :action => 'edit' }
+          format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+        end
+      else
+        format.html { redirect_to kit_schedules_path(:kit_id => @kit_schedule.kit), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
+      end
     end
   end
 
   # DELETE /kit_schedules/1
   # DELETE /kit_schedules/1.json
   def destroy
-    @kit_schedule = @kit.kit_schedules.find(params[:id])
-    @kit_schedule.destroy
+    # not allowing to delete for now
 
-    respond_to do |format|
-      format.html 
-      format.json { head :no_content }
-    end
-  end
-  
-  private
-  def load_kit!
-    @kit = ::Kit.find(params[:kit_id].to_i)
-  end
+    @kit_schedule = KitSchedule.find(params[:id])
+    @kit_schedule.current_user = current_user
 
-   def state_update(ks, trig)
-    if trig == ::KitSchedule::CANCELLLED.to_s
-      if ks.comments.empty?
-        ks.errors[:comments] << "Cannot be left empty"
-        return false
+    # only users making reserve call can delete the corresponding reserved schedules
+    if @kit_schedule.can_delete?
+      kit_id = @kit_schedule.kit_id
+      @kit_schedule.destroy
+      respond_to do |format|
+          format.html { redirect_to kit_schedules_path(:kit_id => kit_id) }
+          format.json { head :no_content }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to kit_schedules_path(:kit_id => @kit_schedule.kit_id), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kit_schedule.errors, status: :unprocessable_entity }
       end
     end
-
-    if trig == ::KitSchedule::ISSUED.to_s
-      if ks.issued_to_person_id.nil?
-        ks.errors[:issued_to_person_id] << "-- Cannot be left Blank"
-        return false
-      else
-        user = User.find_by_id(ks.issued_to_person_id)
-        if user.nil?
-          ks.errors[:issued_to_person_id] << "-- User Id does not exist"
-          return false
-        end
-      end  
-    end
-
-    
-    if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig.to_sym)
-      ks.send(::KitSchedule::EVENT_STATE_MAP[trig.to_sym].to_sym)
-    end
   end
+
+  private
+  #def load_kit!
+  #  @kit = ::Kit.find(params[:kit_id].to_i)
+  #end
+
+   def state_update(ks, trig)
+    if ::KitSchedule::PROCESSABLE_EVENTS.include?(trig)
+      ks.send(trig)
+    else
+      ks.errors[:base] << "Received invalid event - #{trig}."
+      return false
+    end
+   end
+
+
 end

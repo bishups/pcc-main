@@ -1,28 +1,26 @@
-<%= form_for([@venue, @venue_schedule], :html => { :class => 'form' }) do |f| %>
-  <%= resource_error_messages!(@venue_schedule) %>
-
-<!--   <div class="form-group">
-    <%= f.label :start_date %>
-    <%= f.text_field :start_date, :class => 'form-control dateSelect' %>
-    <br/>
-    <%= f.label :end_date %>
-    <%= f.text_field :end_date, :class => 'form-control dateSelect' %>
-  </div>
-
-  <div class='form-group'>
-    <%= f.label :slot %>
-    <%= f.select :slot, options_for_select(::Ontology::Venue::SLOT_ALL), {}, {:class => 'form-control'} %>
-  </div> -->
-  
-  <div class='form-group'>
-    <label for='program_id'>Program</label>
-    <%#= f.text_field :program_id, :class => 'form-control' %>
-    <%= f.select :program_id, options_for_select(@venue.blockable_programs.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
-  </div>
-
-  <%= f.submit 'Block Venue', :class => 'btn btn-lg btn-primary' %>
+<%= form_for(@venue_schedule, :html => { :class => 'form' }) do |f| %>
+    <%= resource_error_messages!(@venue_schedule) %>
+    <% if @venue_schedule.program_id %>
+        <div class='form-group'>
+          <label for='program_id'>Program ID</label>
+          <%= f.text_field :program_id, :value=> @venue_schedule.program_id, :readonly => true, :class => 'form-control' %>
+        </div>
+        <div class='form-group'>
+          <label for='venue_id'>Venue</label>
+          <%= f.select :venue_id, options_for_select(@venue_schedule.program.blockable_venues.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+        </div>
+    <% elsif @venue %>
+        <%= hidden_field_tag 'venue_id', @venue.id %>
+        <div class='form-group'>
+          <label for='venue_id'>Venue ID</label>
+          <%= f.text_field :venue_id, :value=> @venue.id, :readonly => true, :class => 'form-control' %>
+          <label for='program_id'>Program</label>
+          <%= f.select :program_id, options_for_select(@venue.blockable_programs.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+        </div>
+    <% end %>
+    <%= f.submit 'Associated Venue with Program', :class => 'btn btn-lg btn-primary' %>
 <% end %>
 
 <script type='text/javascript'>
-$('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
+    $('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
 </script>

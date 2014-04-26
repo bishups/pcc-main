@@ -34,4 +34,31 @@ module Ontology
     ]
   end
 
+  module Teacher
+    STATE_UNKNOWN = "Unknown"
+    STATE_AVAILABLE = "Available"
+    STATE_UNAVAILABLE = "Not Available"
+    STATE_BLOCKED = "Blocked"
+    STATE_ASSIGNED = "Assigned"
+    STATE_BACKOUT = "Request Back Out"
+
+    STATE_RESERVE = [
+      STATE_AVAILABLE, STATE_UNAVAILABLE
+    ]
+
+    STATE_BLOCK_ASSIGN = [
+      STATE_BLOCKED, STATE_ASSIGNED
+    ]
+
+    SLOT_MORNING = "Morning (6am-9am)"
+    SLOT_AFTERNOON = "Afternoon (10am-1pm)"
+    SLOT_EVENING = "Evening (2pm-5pm)"
+    SLOT_NIGHT = "Night (6pm-9pm)"
+    SLOT_FULL_DAY = "Full Day"
+
+    SLOT_ALL = [
+      SLOT_MORNING, SLOT_AFTERNOON, SLOT_EVENING, SLOT_NIGHT
+    ]
+  end
+
 end

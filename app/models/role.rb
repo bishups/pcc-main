@@ -10,13 +10,23 @@
 
 class Role < ActiveRecord::Base
 
-  has_and_belongs_to_many :users
   has_and_belongs_to_many :permissions
   has_many :access_privileges
+  has_many :users, :through => :access_privileges do
+    def by_centers(centers=[])
+      find(:all, :conditions => ["access_privileges.resource_type = 'Center' and access_privileges.resource_id in (?)", centers])
+    end
+    def by_sectors(sectors=[])
+      find(:all, :conditions => ["access_privileges.resource_type = 'Sector' and access_privileges.resource_id in (?)", sectors])
+    end
+    def by_zones(zones=[])
+      find(:all, :conditions => ["access_privileges.resource_type = 'Zone' and access_privileges.resource_id in (?)", zones])
+    end
+  end
 
   attr_accessible :name, :permission_ids, :permissions
 
-  validates :name, :permissions, :presence => true
+ # validates :name, :permissions, :presence => true
 
   ROLES = [
       {
@@ -56,13 +66,17 @@ class Role < ActiveRecord::Base
 
   rails_admin do
     navigation_label 'Access Privilege'
-    weight 1
+    weight 2
+    visible do
+      bindings[:controller].current_user.is?(:super_admin)
+    end
     list do
       field :name
       field :permissions
     end
     edit do
-      field :name
+      ### do not allow user to change name of existing role
+      #field :name
       field :permissions do
         inline_add do
           false

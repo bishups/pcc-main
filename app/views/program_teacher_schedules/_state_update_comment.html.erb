@@ -1,0 +1,9 @@
+<div class='form-group'>
+  <% if !@trigger.nil? && [::ProgramTeacherSchedule::EVENT_WITHDRAW].include?(@trigger)%>
+      <label>Comment</label> <small>(mandatory)</small>
+  <% else %>
+      <label>Comment</label> <small>(optional)</small>
+  <% end %>
+  <textarea name='comments' class='form-control'></textarea>
+</div>
+

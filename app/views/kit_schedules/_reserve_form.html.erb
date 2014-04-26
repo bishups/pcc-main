@@ -1,0 +1,43 @@
+<%= form_for(@kit_schedule, :html => { :class => 'form' }) do |f| %>
+    <%= hidden_field_tag 'trigger', @trigger %>
+    <%= resource_error_messages!(@kit_schedule) %>
+    <div class='form-group'>
+      <label for='kit_id'>Kit ID</label>
+      <%= f.text_field :kit_id, :value=> @kit_schedule.kit.id, :readonly => true, :class => 'form-control' %>
+      <br/>
+      <label for='start_date'>Start Date (and Time)</label>
+      <% if @trigger == ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE %>
+          <%= f.text_field :start_date, :value=> (Time.zone.now).strftime("%d %B %Y - %I:%M %p")   , :readonly => true, :class => 'form-control' %>
+      <% else %>
+          <%= f.text_field :start_date, :class => 'form-control datetimeSelect' %>
+      <% end %>
+      <br/>
+      <label for='end_date'>End Date (and Time)</label>
+      <%= f.text_field :end_date, :class => 'form-control datetimeSelect' %>
+      <br/>
+      <label for='comments'>Comments</label>
+      <%= f.text_field :comments, :class => 'form-control' %>
+    </div>
+    <% case @trigger %>
+    <% when ::KitSchedule::EVENT_RESERVE %>
+        <%= f.submit 'Reserve Kit', :class => 'btn btn-lg btn-primary' %>
+    <% when ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE %>
+        <%= f.submit 'Mark Kit Overdue', :class => 'btn btn-lg btn-primary' %>
+    <% when ::KitSchedule::EVENT_UNDER_REPAIR %>
+        <%= f.submit 'Mark Kit Under Repair', :class => 'btn btn-lg btn-primary' %>
+    <% end %>
+<% end %>
+
+
+<script type="text/javascript">
+    $(".datetimeSelect").datetimepicker({
+        format: "dd MM yyyy - HH:ii P",
+        showMeridian: true,
+        autoclose: true,
+        todayBtn: true
+    });
+</script>
+
+<script type='text/javascript'>
+    $('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
+</script>

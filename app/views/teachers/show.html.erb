@@ -1,0 +1,93 @@
+<% if @teacher.can_view? %>
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+      <small><span class='label label-info'><%= @teacher.state %></span></small>
+      Teacher
+      <small><%= @teacher.user.fullname %></small>
+      <small><%= render :partial => 'teachers/state_bar' %></small>
+    </h2>
+  </div>
+</div>
+<% if @teacher.can_update? %>
+    <div class='row'>
+      <div class='col-md-12'>
+        <h3>Last Update</h3>
+        <small><%= @teacher.last_update %></small>
+        <div class = 'row'>
+          <div class='col-md-12'>
+            <table class='table table-bordered'>
+              <tr>
+                <td width='20%'><strong> Updated By </strong></td>
+                <td>
+                  <address>
+                    <%= @teacher.last_updated_by_user.fullname rescue ' ' %>
+                  </address>
+                </td>
+              </tr>
+              <tr>
+                <td width='20%'><strong> Comments </strong></td>
+                <td>
+                  <address>
+                    <%= @teacher.comment_type rescue ' ' %>
+                  </address>
+                </td>
+              </tr>
+              <tr>
+                <td><strong> Details </strong></td>
+                <td><%= @teacher.comments %></td>
+              </tr>
+              <tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+<% end %>
+<div class='row'>
+  <h3>Details</h3>
+  <div class='col-md-12'>
+    <table class='table table-bordered'>
+      <tr>
+        <td width='20%'><strong>T No</strong></td>
+        <td><%= @teacher.t_no %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Program Types</strong></td>
+        <td><%= (@teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Zone</strong></td>
+        <td><%= @teacher.zone.name rescue '' %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Center(s)</strong></td>
+        <td><%= (@teacher.centers.map {|c| c[:name]}).join(", ") %></td>
+      </tr>
+    </table>
+  </div>
+</div>
+<div class='row'>
+  <h3>Contact</h3>
+  <div class='col-md-12'>
+    <table class='table table-bordered'>
+      <tr>
+        <td width='20%'><strong>Mobile</strong></td>
+        <td><%= @teacher.user.mobile %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Email</strong></td>
+        <td><%= @teacher.user.email %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Phone</strong></td>
+        <td><%=  @teacher.user.phone %></td>
+      </tr>
+      <tr>
+        <td width='20%'><strong>Address</strong></td>
+        <td><%=  @teacher.user.address %></td>
+      </tr>
+    </table>
+  </div>
+</div>
+<% end %>

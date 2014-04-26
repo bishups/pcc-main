@@ -22,6 +22,9 @@ end
 
 gem 'jquery-rails'
 
+gem 'delayed_job_active_record'
+gem 'bootstrap-datetime-picker-for-rails'
+
 # To use ActiveModel has_secure_password
 # gem 'bcrypt-ruby', '~> 3.0.0'
 
@@ -42,9 +45,10 @@ gem 'cancan'
 #gem 'will_paginate', "3.0.pre2"
 gem 'font-awesome-rails'
 gem 'state_machine'
-gem "rails_admin", :git => "git://github.com/sferik/rails_admin.git", :tag => "v0.4.9"
+gem "rails_admin", :git => "https://github.com/sferik/rails_admin.git", :tag => "v0.4.9"
 gem "paper_trail", :git => "https://github.com/airblade/paper_trail.git", :tag => "v2.7.2"
 gem 'annotate', ">=2.6.0"
 gem 'validates_overlap'
 gem 'rubyXL'
+gem 'omniauth-google-oauth2'
 

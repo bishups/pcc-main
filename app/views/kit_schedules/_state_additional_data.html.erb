@@ -1,6 +1,32 @@
-<% if @trigger.to_sym == :issued %>
+<% if @trigger == ::KitSchedule::EVENT_ISSUE %>
 <div class='form-group'>
-  <label>Issuer ID </label>
-  <%= text_field_tag 'issued_to_person_id', nil, :class => 'form-control' %>
+  <label>Issued to </label>
+  <% if @kit_schedule.issue_for_schedules.nil? %>
+    <%= text_field_tag 'issued_to', nil, :value=> @kit_schedule.issued_to, :class => 'form-control' %>
+  <% else %>
+     <%= hidden_field_tag 'issue_for_schedules', @kit_schedule.issue_for_schedules %>
+     <%= text_field_tag 'issued_to', nil, :value=> @kit_schedule.issued_to, :readonly => true, :class => 'form-control' %>
+   <% end %>
+</div>
+<div class='form-group'>
+  <label>Due Date (and Time) </label>
+  <% if @kit_schedule.issue_for_schedules.blank? %>
+      <%= text_field_tag 'due_date_time', nil, :value=> @kit_schedule.due_date_time, :class => 'form-control datetimeSelect' %>
+  <% else %>
+      <%= text_field_tag 'due_date_time', nil, :value=> @kit_schedule.due_date_time, :readonly => true, :class => 'form-control datetimeSelect' %>
+  <% end %>
 </div>
 <% end %>
+
+<script type="text/javascript">
+    $(".datetimeSelect").datetimepicker({
+        format: "dd MM yyyy - HH:ii P",
+        showMeridian: true,
+        autoclose: true,
+        todayBtn: true
+    });
+</script>
+
+<script type='text/javascript'>
+    $('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
+</script>
