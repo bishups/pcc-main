@@ -1,25 +1,22 @@
-<% if @kit_schedule.kit.state != ::Kit::STATE_AVAILABLE%>
-  <div class="alert alert-danger"> You cannot change the state of Schedule as Kit is 
-    <%=@kit_schedule.kit.state%> 
-    <%= link_to "Update Kit", kit_path(@kit_schedule.kit), :class => 'alert-link' %> 
-    </div>
-<% end %>
 <h2>
   <small><%= kit_schedule_state_tag(@kit_schedule) %></small> Kit Schedule <small><%= @kit_schedule.kit.name %> | <%= @kit_schedule.program.name %></small>
-  <div class='btn-group'>
-    <button type="button" class="btn btn-danger">Update State</button>
-    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-      <span class="caret"></span>
-      <span class="sr-only">Toggle Dropdown</span>
-    </button>
-    <ul class="dropdown-menu" role="menu">
-      <% (@kit_schedule.state_events - (::Program::NOTIFICATIONS + ::KitSchedule::NOTIFICATIONS + ::KitSchedule::NON_MENU_EVENTS)).each do |ev| %>
-          <li>
-            <%= link_to ev, edit_kit_schedule_path(@kit_schedule, :trigger => ev) %>
-          </li>
-      <% end %>
-    </ul>
-  </div>
+  <% unless ::KitSchedule::FINAL_STATES.include?(@kit_schedule.state) %>
+      <div class='btn-group'>
+        <button type="button" class="btn btn-danger">Update State</button>
+        <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+          <span class="caret"></span>
+          <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+              <% events = (@kit_schedule.state_events - (::Program::NOTIFICATIONS + ::KitSchedule::NOTIFICATIONS + ::KitSchedule::NON_MENU_EVENTS)) %>
+              <% events.each do |ev| %>
+                  <li>
+                    <%= link_to ev, edit_kit_schedule_path(@kit_schedule, :trigger => ev) %>
+                  </li>
+              <% end %>
+        </ul>
+      </div>
+  <% end %>
 
    <span class='pull-right'>
     <%= link_to "Back to Kit Schedules", kit_schedules_path(:kit_id => @kit_schedule.kit.id), :class => 'btn btn-primary' %>

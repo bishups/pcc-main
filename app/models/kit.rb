@@ -17,7 +17,7 @@
 #
 
 class Kit < ActiveRecord::Base
-
+  include CommonFunctions
 
 
   attr_accessible :condition,:comments, :name,
@@ -29,23 +29,22 @@ class Kit < ActiveRecord::Base
 
   has_many :kit_item_names, :through => :kit_items
 
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
+
   has_many :kit_schedules
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
   after_create :mark_as_available!
 
-  belongs_to :requester, :class_name => "User"
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
-  attr_accessible :requester_id, :guardian_id, :requester, :guardian
+  attr_accessible :guardian_id, :guardian
 
   validates :name, :condition, :presence => true
   validates :capacity, :numericality => {:only_integer => true }
 
-  attr_accessor :comment_category
-  attr_accessible :comment_category
-
-  has_paper_trail
+  #has_paper_trail
 
   #after_create :generateKitNameStringAfterCreate
   #before_update :generateKitNameString
@@ -61,6 +60,10 @@ class Kit < ActiveRecord::Base
 
     event EVENT_AVAILABLE do
       transition STATE_UNKNOWN => STATE_AVAILABLE
+    end
+
+    after_transition any => any do |object, transition|
+      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
     end
   end
 
@@ -171,6 +174,7 @@ class Kit < ActiveRecord::Base
     end
     list do
       field :name
+      field :guardian
       field :capacity
       field :condition
       field :centers
@@ -178,6 +182,7 @@ class Kit < ActiveRecord::Base
     end
     edit do
       field :name
+      field :guardian
       field :capacity
       field :condition
       #field :kit_items do

@@ -8,6 +8,9 @@ class Teacher < ActiveRecord::Base
   attr_accessor :last_state
   attr_accessible :last_state
 
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
+
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
  # validate :has_centers?
@@ -49,6 +52,8 @@ class Teacher < ActiveRecord::Base
   STATE_UNATTACHED  = 'Not Attached'
   STATE_ATTACHED    = 'Attached'
 
+  FINAL_STATES = [STATE_UNATTACHED]
+
   # The attach functionality need to be exercised through the admin interface only,
   # since zone(s) and center(s) need to be linked again
   # EVENT_ATTACH      = 'Attach '
@@ -78,6 +83,20 @@ class Teacher < ActiveRecord::Base
     before_transition any => STATE_UNFIT, :do => :can_mark_unfit?
     after_transition any => STATE_UNFIT, :do => :on_unfit
 
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        return false
+      end
+      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        return false
+      end
+    end
+
+    after_transition any => any do |object, transition|
+      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+    end
+
   end
 
 
@@ -99,7 +118,7 @@ class Teacher < ActiveRecord::Base
   def before_unattach!
     center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
     if !self.current_user.is? :zonal_coordinator, :center_id => center_ids
-      self.errors[:base] << "Insufficient privileges to update the state."
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       false
     end
 
@@ -107,8 +126,6 @@ class Teacher < ActiveRecord::Base
       self.errors.add(:state, " cannot unattach from zone when teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
       return false
     end
-
-    return false unless self.has_comments?
 
     self.zone_id = nil
     # Also remove all attached centers
@@ -125,7 +142,7 @@ class Teacher < ActiveRecord::Base
   def can_mark_unfit?
     center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
     if !self.current_user.is? :zonal_coordinator, :center_id => center_ids
-      self.errors[:base] << "Insufficient privileges to update the state."
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       false
     end
 
@@ -134,13 +151,12 @@ class Teacher < ActiveRecord::Base
       return false
     end
 
-    return false unless self.has_comments?
     true
   end
 
   def on_unfit
     # if marked unfit remove all published teacher_schedules
-    TeacherSchedule.where('teacher_id IS AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
+    TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
 
     # Also remove all attached centers
     CentersTeachers.where(:teacher_id => self.id).delete_all
@@ -155,13 +171,13 @@ class Teacher < ActiveRecord::Base
   end
 
 
-  def has_comments?
-    if (self.state == STATE_UNFIT) && self.comments.blank?
-      self.errors.add(:comments, " needed if the teacher is marked unfit.")
-      return false
-    end
-    true
-  end
+#  def has_comments?
+#    if (self.state == STATE_UNFIT) && self.comments.blank?
+#      self.errors.add(:comments, " needed if the teacher is marked unfit.")
+#      return false
+#    end
+#    true
+#  end
 
   def has_centers?
     self.errors.add(:centers, " needed if teacher attached to a zone.") if !self.zone.blank? && self.centers.blank? && (self.state != STATE_UNFIT)
@@ -219,7 +235,12 @@ class Teacher < ActiveRecord::Base
   end
 
   def can_update?
-    center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
+    center_ids = []
+    if self.center_ids.nil? || self.center_ids.empty?
+      center_ids = self.zone.center_ids unless self.zone.nil?
+    else
+      center_ids = self.center_ids
+    end
     return true if self.current_user.is? :zonal_coordinator, :center_id => center_ids
     return false
   end

@@ -146,7 +146,7 @@ class TeacherSchedulesController < ApplicationController
             format.html { render action: "edit" }
             format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
           else
-            format.html { redirect_to(teacher_teacher_schedule_path(@teacher, @teacher_schedule)) }
+            format.html { redirect_to teacher_teacher_schedule_path(@teacher, @teacher_schedule), notice: 'Teacher schedule was successfully updated.' }
           end
         end
       else

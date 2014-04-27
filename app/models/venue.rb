@@ -10,7 +10,6 @@
 #  address         :text
 #  pin_code        :string(255)
 #  capacity        :string(255)
-#  seats           :integer
 #  state           :string(255)
 #  contact_name    :string(255)
 #  contact_email   :string(255)
@@ -23,9 +22,11 @@
 #
 
 class Venue < ActiveRecord::Base
+  include CommonFunctions
+
   # attr_accessible :title, :body
   attr_accessor :current_user
-  attr_accessible :name, :description, :address, :pin_code, :capacity, :seats, :contact_name, :contact_phone,
+  attr_accessible :name, :description, :address, :pin_code, :capacity, :contact_name, :contact_phone,
   :contact_mobile, :contact_email, :contact_address, :commercial, :payment_contact_name,
   :payment_contact_address,:payment_contact_mobile,:per_day_price
 
@@ -35,6 +36,9 @@ class Venue < ActiveRecord::Base
   validate :has_centers?
   validate :has_per_day_price?
   validate :has_commercial?
+
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
 
   has_many :venue_schedules
 
@@ -61,6 +65,8 @@ class Venue < ActiveRecord::Base
   STATE_PENDING_FINANCE_APPROVAL = "Pending Finance Approval"
   STATE_INSUFFICIENT_INFO = "Insufficient Info"
 
+  FINAL_STATES = []
+
   EVENT_PROPOSE          = "Propose"
   EVENT_APPROVE          = "Approve"
   EVENT_REJECT           = "Reject"
@@ -79,12 +85,14 @@ class Venue < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_PROPOSE do
-      transition STATE_UNKNOWN => STATE_PROPOSED
+      transition STATE_UNKNOWN => STATE_PROPOSED, :if => lambda {|t| t.can_create?}
     end
+    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_propose?
 
     event EVENT_APPROVE do
-      transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED
+      transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED, :if => lambda {|t| t.is_sector_coordinator? }
     end
+    before_transition any => STATE_APPROVED, :do => :is_sector_coordinator?
 
     after_transition any => STATE_APPROVED do |venue, transition|
       # TODO: check if paid venue or not
@@ -96,29 +104,54 @@ class Venue < ActiveRecord::Base
     end
 
     event EVENT_REQUEST_FINANCE_APPROVAL do
-      transition [STATE_APPROVED, STATE_INSUFFICIENT_INFO] => STATE_PENDING_FINANCE_APPROVAL
+      transition STATE_APPROVED => STATE_PENDING_FINANCE_APPROVAL
+      transition STATE_INSUFFICIENT_INFO => STATE_PENDING_FINANCE_APPROVAL, :if => lambda {|t| t.is_pcc_accounts? }
     end
-    after_transition any => STATE_PENDING_FINANCE_APPROVAL, :do => :notify_finance
+    before_transition STATE_INSUFFICIENT_INFO => STATE_PENDING_FINANCE_APPROVAL, :do => :is_pcc_accounts?
 
     event EVENT_FINANCE_APPROVAL do
-      transition [STATE_PENDING_FINANCE_APPROVAL] => STATE_POSSIBLE
+      transition STATE_PENDING_FINANCE_APPROVAL => STATE_POSSIBLE, :if => lambda {|t| t.is_pcc_accounts? }
     end
+    before_transition STATE_PENDING_FINANCE_APPROVAL => STATE_POSSIBLE, :do => :is_pcc_accounts?
 
     event EVENT_POSSIBLE do
-      transition [STATE_APPROVED] => STATE_POSSIBLE
+      transition STATE_APPROVED => STATE_POSSIBLE
     end
-    after_transition any => STATE_POSSIBLE, :do => :notify_all
 
     event EVENT_REJECT do
-      transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED
+      transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED, :if => lambda {|t| t.is_sector_coordinator? }
     end
     before_transition STATE_POSSIBLE => STATE_REJECTED, :do => :can_reject?
 
     event EVENT_INSUFFICIENT_INFO do
-      transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO
+      transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO, :if => lambda {|t| t.is_pcc_accounts? }
+    end
+    before_transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO, :do => :is_pcc_accounts?
+
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        return false
+      end
+      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        return false
+      end
     end
 
-   end
+    after_transition any => any do |object, transition|
+      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+    end
+
+  end
+
+  def can_propose?
+    unless self.can_create?
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+    true
+  end
+
 
   def initialize(*args)
     super(*args)
@@ -134,15 +167,8 @@ class Venue < ActiveRecord::Base
     Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
   end
 
-  def notify_finance
-    # TODO - notify finance
-  end
-
-  def notify_all
-    # TODO - notify the relevant people
-  end
-
   def can_reject?
+    return false unless self.is_sector_coordinator?
     if self.is_active?
       self.errors[:base] << "Cannot reject the venue, it has active schedules. Please close the schedules and try again."
       return false
@@ -186,6 +212,22 @@ class Venue < ActiveRecord::Base
 
   def has_commercial?
     self.errors.add(:commercial, "should be selected for venue with per day price.") if self.commercial.blank? && !self.per_day_price.blank?
+  end
+
+  def is_pcc_accounts?
+    if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
+
+  def is_sector_coordinator?
+    if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
   end
 
   def can_view?
@@ -263,7 +305,6 @@ class Venue < ActiveRecord::Base
       field :address
       field :pin_code
       field :capacity
-      field :seats
       field :contact_name
       field :contact_phone
       field :contact_mobile

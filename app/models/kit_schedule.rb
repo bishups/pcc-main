@@ -50,7 +50,7 @@ class KitSchedule < ActiveRecord::Base
 
   NOTIFICATIONS = [EVENT_OVERDUE]
   NON_MENU_EVENTS = [EVENT_BLOCK, EVENT_RESERVE, EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE]
-  PROCESSABLE_EVENTS = [EVENT_ISSUE, EVENT_RETURNED, EVENT_CANCEL]
+  PROCESSABLE_EVENTS = [EVENT_ISSUE, EVENT_RETURNED, EVENT_CANCEL, EVENT_CLOSE]
 
   EVENTS_WITH_COMMENTS = [EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE, EVENT_RESERVE, EVENT_CANCEL, EVENT_RETURNED, EVENT_ISSUE]
   EVENTS_WITH_FEEDBACK = [EVENT_CLOSE]
@@ -58,6 +58,8 @@ class KitSchedule < ActiveRecord::Base
   belongs_to :kit
   belongs_to :program
   belongs_to :blocked_by_user, :class_name => User
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
 
   attr_accessor :comment_category
   attr_accessible :comment_category
@@ -103,7 +105,7 @@ class KitSchedule < ActiveRecord::Base
   state_machine :state , :initial => ::Kit::STATE_AVAILABLE do
 
     event EVENT_BLOCK do
-      transition [::Kit::STATE_AVAILABLE] => STATE_BLOCKED
+      transition [::Kit::STATE_AVAILABLE] => STATE_BLOCKED, :if => lambda {|t| t.can_create?}
     end
     before_transition any => STATE_BLOCKED, :do => :before_block
     after_transition any => STATE_BLOCKED, :do => :on_block
@@ -113,54 +115,73 @@ class KitSchedule < ActiveRecord::Base
     end
 
     event EVENT_ISSUE do
-      transition [STATE_ASSIGNED] => STATE_ISSUED
+      transition [STATE_ASSIGNED] => STATE_ISSUED, :if => lambda {|t| t.is_kit_coordinator? }
     end
     before_transition any => STATE_ISSUED, :do => :before_issue
     after_transition any => STATE_ISSUED, :do => :after_issue
 
     event EVENT_RETURNED do
-      transition [STATE_OVERDUE, STATE_ISSUED] => STATE_RETURNED
+      transition [STATE_OVERDUE, STATE_ISSUED] => STATE_RETURNED, :if => lambda {|t| t.is_kit_coordinator? }
     end
+    before_transition any => STATE_RETURNED, :do => :is_kit_coordinator?
 
     event EVENT_CLOSE do
-      transition STATE_RETURNED => STATE_CLOSED
+      transition STATE_RETURNED => STATE_CLOSED, :if => lambda {|t| t.is_center_coordinator? }
     end
+    before_transition STATE_RETURNED => STATE_CLOSED, :do => :is_center_coordinator?
 
     event EVENT_OVERDUE do
-      transition [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED] => STATE_OVERDUE
+      #transition [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED] => STATE_OVERDUE
+      transition [STATE_ISSUED] => STATE_OVERDUE
     end
 
     event EVENT_CANCEL do
-      transition [STATE_BLOCKED] => STATE_CANCELLED
+      transition STATE_BLOCKED => STATE_CANCELLED, :if => lambda {|t| t.current_user.is? :center_scheduler, :center_id => t.program.center_id }
     end
+    before_transition STATE_BLOCKED => STATE_CANCELLED, :do => :can_unblock?
 
     event ::Program::DROPPED do
-      transition [STATE_BLOCKED] => STATE_CANCELLED
+      transition STATE_BLOCKED => STATE_CANCELLED
     end
 
     event ::Program::CANCELLED do
-      transition [STATE_ASSIGNED] => STATE_CANCELLED
+      transition STATE_ASSIGNED => STATE_CANCELLED
     end
-    before_transition any => STATE_CANCELLED, :do => :has_comments?
 
     event EVENT_RESERVE do
-      transition [::Kit::STATE_AVAILABLE] => STATE_RESERVED
+      transition ::Kit::STATE_AVAILABLE => STATE_RESERVED, :if => lambda {|t| t.can_create_reserve? }
     end
+    before_transition any => STATE_RESERVED, :do => :can_create_reserve?
 
     event EVENT_UNDER_REPAIR do
-      transition [::Kit::STATE_AVAILABLE] => STATE_UNDER_REPAIR
+      transition ::Kit::STATE_AVAILABLE => STATE_UNDER_REPAIR, :if => lambda {|t| t.can_create_overdue_or_under_repair? }
     end
 
     event EVENT_UNAVAILABLE_OVERDUE do
-      transition [::Kit::STATE_AVAILABLE] => STATE_UNAVAILABLE_OVERDUE
+      transition ::Kit::STATE_AVAILABLE => STATE_UNAVAILABLE_OVERDUE, :if => lambda {|t| t.can_create_overdue_or_under_repair? }
     end
-    before_transition ::Kit::STATE_AVAILABLE => [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :reserve_fields_present?
+    before_transition any => [STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :can_create_overdue_or_under_repair?
     after_transition ::Kit::STATE_AVAILABLE => [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :after_reserve!
 
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+     if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        return false
+      end
+      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        return false
+      end
+    end
+
+    # send notifications, after any transition
+    after_transition any => any do |object, transition|
+      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+    end
   end
 
 
   def before_block
+    return false unless self.can_create?
     self.start_date = self.program.start_date.to_date - 1.day
     self.end_date = (self.program.end_date.to_date + 2.day - 1.minute).to_date
 #    self.start_date = self.program.start_date
@@ -182,9 +203,26 @@ class KitSchedule < ActiveRecord::Base
     KitSchedule.where('program_id IS ? AND kit_id IS ? AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
   end
 
+  def is_kit_coordinator?
+    unless self.current_user.is? :kit_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+    true
+  end
+
+  def is_center_coordinator?
+    unless self.current_user.is? :center_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+    true
+  end
 
   def before_issue
-    return false unless self.has_comments?
+    return false unless self.is_kit_coordinator?
+
+    #return false unless self.has_comments?
     if self.issued_to.nil?
       self.errors[:issued_to] << " cannot be blank."
       return false
@@ -326,16 +364,8 @@ class KitSchedule < ActiveRecord::Base
       return true
     end
 
-    self.errors[:base] << "Insufficient privileges to update the state."
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     false
-  end
-
-  def reserve_fields_present?
-    if self.comments.blank?
-      self.errors[:comments] << " cannot be blank."
-      return false
-    end
-    true
   end
 
   def after_reserve!
@@ -371,7 +401,7 @@ class KitSchedule < ActiveRecord::Base
       return false
     end
     unless self.can_create_on_trigger?
-      self.errors[:base] << "Insufficient privileges to complete the operation"
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
 

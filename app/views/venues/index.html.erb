@@ -27,7 +27,7 @@
       <td><%= venue.pin_code %></td>
       <td><%= venue.capacity %></td>
       <td><%= venue.contact_name %></td>
-      <td><span class='label label-warning'><%= venue.state %></span></td>
+      <td><%= venue_state_tag(venue) %></span></td>
       <td>
         <%= link_to "Show", venue_path(venue), :class => 'btn btn-primary btn-sm' if venue.can_view? %>
         <% if venue.possible? && venue.can_view_schedule? %>

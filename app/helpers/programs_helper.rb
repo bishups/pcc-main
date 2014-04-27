@@ -17,10 +17,11 @@ module ProgramsHelper
         '<span class="label label-info">Closed</span>'
       elsif prog.state == ::Program::STATE_DROPPED
         '<span class="label label-default">Dropped</span>'
+      elsif prog.state == ::Program::STATE_TEACHER_CLOSED
+        '<span class="label label-warning">Teacher Closed</span>'
       else
         '<span class="label label-default">Unknown</span>'
       end
     end.call().html_safe
   end
 end
-

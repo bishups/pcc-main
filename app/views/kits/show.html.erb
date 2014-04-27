@@ -13,10 +13,12 @@
                 <tr>
                   <td width='20%'><strong> Updated By </strong></td>
                   <td>
-                    <address>
                       <%= @kit.last_updated_by_user.fullname rescue ' ' %>
-                    </address>
                   </td>
+                </tr>
+                <tr>
+                  <td><strong> Updated At </strong></td>
+                  <td><%= @kit.last_updated_at.strftime('%d %B %Y (%I:%M%P)') %></td>
                 </tr>
                 <tr>
                   <td><strong> Comments </strong></td>

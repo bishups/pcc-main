@@ -1,19 +1,21 @@
 <h2>
   <small><%= venue_schedule_state_tag(@venue_schedule) %></small> Venue Schedule <small><%= @venue_schedule.venue.name %> | <%= @venue_schedule.program.name %></small>
-  <div class='btn-group'>
-    <button type="button" class="btn btn-danger">Update State</button>
-    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-      <span class="caret"></span>
-      <span class="sr-only">Toggle Dropdown</span>
-    </button>
-    <ul class="dropdown-menu" role="menu">
-      <% (@venue_schedule.state_events - (::VenueSchedule::NOTIFICATIONS + ::Program::NOTIFICATIONS)).each do |ev| %>
-      <li>
-        <%= link_to ev, edit_venue_schedule_path(@venue_schedule, :trigger => ev) %>
-      </li>
-      <% end %>
-    </ul>
-  </div>
+  <% unless ::VenueSchedule::FINAL_STATES.include?(@venue_schedule.state) %>
+      <div class='btn-group'>
+        <button type="button" class="btn btn-danger">Update State</button>
+        <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+          <span class="caret"></span>
+          <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <% (@venue_schedule.state_events - (::VenueSchedule::NOTIFICATIONS + ::Program::NOTIFICATIONS)).each do |ev| %>
+          <li>
+            <%= link_to ev, edit_venue_schedule_path(@venue_schedule, :trigger => ev) %>
+          </li>
+          <% end %>
+        </ul>
+      </div>
+  <% end %>
   <span class='pull-right'>
     <%= link_to "Back to Schedules", venue_schedules_path(:venue_id => @venue_schedule.venue.id), :class => 'btn btn-primary' %>
   </span>

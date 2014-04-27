@@ -70,7 +70,7 @@ class ProgramsController < ApplicationController
     @program = Program.find(params[:id])
     @program.current_user = current_user
     @trigger = params[:trigger]
-    @comment_category = Comment.where('model IS ? AND action IS ?', 'Program', @trigger).pluck(:text)
+    @program.comment_category = Comment.where('model IS ? AND action IS ?', 'Program', @trigger).pluck(:text)
 
     if !@program.can_update?
       format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
@@ -83,7 +83,7 @@ class ProgramsController < ApplicationController
     @program.current_user = current_user
     @trigger = params[:trigger]
     @program.feedback = params[:feedback] if params.has_key?(:feedback)
-    @program.comments = params[:comments] if params.has_key?(:comments)
+    @program.load_comments!(params)
 
     respond_to do |format|
       if @program.can_update?

@@ -18,7 +18,7 @@
     <%= f.select :center_id, options_for_select(@centers.all.map {|c| [c.name, c.id]}), {}, :class => 'form-control' %>
   </div>
   <div class="form-group">
-    <%= f.label :slot %>
+    <%= f.label :timings %>
     <%= f.select :timing_ids,  options_for_select(Timing.all.map {|e| [e.name, e.id]}), {}, :multiple => true, :class => 'form-control' %>
   </div>
 

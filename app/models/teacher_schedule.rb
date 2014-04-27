@@ -26,6 +26,9 @@ class TeacherSchedule < ActiveRecord::Base
   attr_accessible :start_date, :end_date, :state
   attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
   belongs_to :blocked_by_user, :class_name => User
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
+
   #validates :blocked_by_user_id, :presence => true
 
   #has_many :program_teacher_schedules
@@ -146,7 +149,7 @@ class TeacherSchedule < ActiveRecord::Base
       self.comments = event
       pts.send(event)
       # also call update on the model
-      pts.update if pts.errors.empty?
+      pts.update(event) if pts.errors.empty?
     else
       # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
     end

@@ -30,6 +30,7 @@ end
 =end
 
 class ProgramTeacherSchedule < ActiveRecord::Base
+  include CommonFunctions
   # needed for using form_for
   #extend ActiveModel::Naming
   #include ActiveModel::AttributeMethods
@@ -37,7 +38,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   #composed_of :program, mapping: %w(program_id id)
   #composed_of :teacher_schedule, mapping: [ %w(teacher_id teacher_id), %w(schedule_id id), %w(reserving_user_id reserving_user_id) ]
 
-  attr_accessor :teacher_id, :teacher, :blocked_by_user_id, :program, :program_id, :teacher_schedule, :teacher_schedule_id, :comments
+  attr_accessor :teacher_id, :teacher, :blocked_by_user_id, :program, :program_id, :teacher_schedule, :teacher_schedule_id, :comments, :feedback, :comment_category
 
   attr_accessor :current_user, :state
 
@@ -77,13 +78,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_BLOCK do
-      transition STATE_UNKNOWN => STATE_BLOCKED, :if => lambda {|pts| pts.current_user.is? :center_scheduler, :center_id => pts.program.center_id}
+      transition STATE_UNKNOWN => STATE_BLOCKED
     end
 
     event EVENT_RELEASE do
-      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :if => lambda {|pts| pts.current_user.is? :center_scheduler, :center_id => pts.program.center_id}
-      transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.current_user.is? :sector_coordinator, :center_id => pts.program.center_id}
-      transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.current_user.is? :sector_coordinator, :center_id => pts.program.center_id}
+      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :if => lambda {|pts| pts.is_center_scheduler? }
+      transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.is_sector_coordinator? }
+      transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.is_sector_coordinator? }
     end
     # move the before transition, privilege part of the check to :if condition of the transition
     before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE do |pts, transition|
@@ -93,8 +94,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     before_transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_approve_release?
 
     event EVENT_REQUEST_RELEASE do
-      transition STATE_BLOCKED => STATE_RELEASE_REQUESTED, :if => lambda {|pts| pts.is_teacher? }
-      transition STATE_ASSIGNED => STATE_RELEASE_REQUESTED
+      transition [STATE_BLOCKED, STATE_ASSIGNED] => STATE_RELEASE_REQUESTED, :if => lambda {|pts| pts.is_teacher? }
     end
     before_transition any => STATE_RELEASE_REQUESTED, :do => :is_teacher?
 
@@ -110,7 +110,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     # in case the program is already announced, allowing them to change the state
     event EVENT_ASSIGN do
-      transition STATE_BLOCKED => STATE_ASSIGNED, :if => lambda {|pts| pts.program.is_announced? && pts.program.is_active? }
+      transition STATE_BLOCKED => STATE_ASSIGNED, :if => lambda {|pts| pts.is_center_scheduler? && pts.program.is_announced? && pts.program.is_active?}
     end
     after_transition STATE_BLOCKED => STATE_ASSIGNED, :do => :if_program_started!
 
@@ -131,10 +131,22 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     # Done
     event EVENT_WITHDRAW do
-      transition STATE_IN_CLASS => STATE_WITHDRAWN, :if => lambda {|pts| pts.current_user.is? :zonal_coordinator, :center_id => pts.program.center_id}
+      transition STATE_IN_CLASS => STATE_WITHDRAWN, :if => lambda {|pts| pts.is_zonal_coordinator? }
     end
     before_transition STATE_IN_CLASS => STATE_WITHDRAWN, :do => :can_withdraw?
 
+    before_transition any => any do |object, transition|
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        return false
+      end
+      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        return false
+      end
+    end
+
+    after_transition any => any do |object, transition|
+      # NOTE: the last_update is handled differently in this case
+    end
 
   end
 
@@ -164,15 +176,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       return true
     end
 
-    self.errors[:base] << "Insufficient privileges to update the state."
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     false
   end
 
   def can_approve_release?
-    if !self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "Insufficient privileges to update the state."
-      return false
-    end
+    return false unless self.is_sector_coordinator?
 
     if ((self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher) && self.program.venue_approved?)
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
@@ -184,10 +193,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
   def can_mark_assign_to_unavailable?
-    if !self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "Insufficient privileges to update the state."
-      return false
-    end
+    return false unless self.is_sector_coordinator?
 
     if self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
@@ -197,10 +203,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def can_withdraw?
-    if !self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "Insufficient privileges to update the state."
-      return false
-    end
+    return false unless self.is_zonal_coordinator?
 
     if self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
@@ -211,12 +214,35 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def is_teacher?
     if self.current_user.id != self.teacher_id
-      self.errors[:base] << "Insufficient privileges to update the state."
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       false
     end
     true
   end
 
+  def is_center_scheduler?
+    if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
+
+  def is_sector_coordinator?
+    if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
+
+  def is_zonal_coordinator?
+    if self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
 
   def initialize(*args)
     super(*args)
@@ -225,7 +251,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
   # NOTE: ProgramTeacherSchedule is **NOT** using ActiveRecord class functions like save
-  def update
+  def update(trigger)
     # if the state was updated to ::TeacherSchedule::STATE_AVAILABLE or ::TeacherSchedule::STATE_UNAVAILABLE
     if (::TeacherSchedule::STATE_PUBLISHED).include?(self.state)
       program_id = nil
@@ -241,9 +267,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     teacher_schedules = TeacherSchedule.where('program_id = ? AND teacher_id = ?', self.program_id, self.teacher_id)
     teacher_schedules.each {|ts|
       # 1. update the state of all teacher_schedule(s) for a teacher, and program.
+      ts.store_last_update!(self.current_user, ts.state, self.state, trigger)
       ts.state = self.state
       ts.program_id = program_id
       ts.blocked_by_user_id = blocked_by_user_id
+      ts.comments = self.comments unless self.comments.nil?
+      ts.feedback = self.feedback unless self.feedback.nil?
       ts.save(:validate => false)
       ## TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?

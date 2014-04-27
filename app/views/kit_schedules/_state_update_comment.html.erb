@@ -1,8 +1,9 @@
 <div class='form-group'>
     <% if ::KitSchedule::EVENTS_WITH_COMMENTS.include?(@trigger) %>
-        <% unless @comment_category.empty? %>
+        <% unless @kit_schedule.comment_category.empty? %>
             <label for='comment_category'>Comments</label> <small>(mandatory)</small>
-            <%= select_tag 'comment_category', options_for_select(@comment_category.map {|cc| [cc] }), :class => 'form-control' %>
+            <%= select_tag 'comment_category', options_for_select(@kit_schedule.comment_category), :class => 'form-control' %>
+            <br>
             <label>Details</label>
             <textarea name='comments' class='form-control'></textarea>
         <% else %>

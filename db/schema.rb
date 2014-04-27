@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404252110930) do
+ActiveRecord::Schema.define(:version => 201404272852160) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -127,14 +127,13 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.string   "issued_to"
-    t.date     "due_date"
     t.datetime "due_date_time"
     t.datetime "start_date"
     t.datetime "end_date"
-    t.integer  "comment_id"
     t.text     "comments"
     t.text     "feedback"
     t.string   "last_update"
+    t.datetime "last_updated_at"
   end
 
   create_table "kits", :force => true do |t|
@@ -143,13 +142,12 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "condition"
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
-    t.integer  "requester_id"
     t.string   "name"
     t.integer  "capacity"
-    t.integer  "comment_id"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
   end
 
   create_table "notifications", :force => true do |t|
@@ -234,8 +232,8 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
-    t.integer  "comment_id"
     t.string   "last_update"
+    t.datetime "last_updated_at"
   end
 
   create_table "programs_timings", :force => true do |t|
@@ -303,11 +301,10 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "center_id"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
-    t.integer  "comment_id"
     t.text     "comments"
-    t.text     "teacher_comments"
     t.text     "feedback"
     t.string   "last_update"
+    t.datetime "last_updated_at"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -327,9 +324,9 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
     t.text     "comments"
-    t.integer  "comment_id"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
   end
 
   create_table "timings", :force => true do |t|
@@ -377,10 +374,10 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "state"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
-    t.integer  "comment_id"
     t.text     "comments"
     t.text     "feedback"
     t.string   "last_update"
+    t.datetime "last_updated_at"
   end
 
   create_table "venues", :force => true do |t|
@@ -389,7 +386,6 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.text     "address"
     t.string   "pin_code"
     t.string   "capacity"
-    t.integer  "seats"
     t.string   "state"
     t.string   "contact_name"
     t.string   "contact_email"
@@ -403,10 +399,10 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "payment_contact_address"
     t.string   "payment_contact_mobile"
     t.integer  "per_day_price"
-    t.integer  "comment_id"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
   end
 
   create_table "versions", :force => true do |t|

@@ -77,7 +77,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       @program_teacher_schedule = load_program_teacher_schedule!(params)
     end
     @trigger = params[:trigger]
-    @comment_category = Comment.where('model IS ? AND action IS ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
+    @program_teacher_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
 
     unless @program_teacher_schedule.can_update?
       format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
@@ -101,6 +101,7 @@ class ProgramTeacherSchedulesController < ApplicationController
   def _update
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     @trigger = params[:trigger]
+    @program_teacher_schedule.load_comments!(params)
 
 =begin
     state_update(@program_teacher_schedule, @trigger)
@@ -118,9 +119,9 @@ class ProgramTeacherSchedulesController < ApplicationController
 
     respond_to do |format|
       if @program_teacher_schedule.can_update?
-        if state_update(@program_teacher_schedule, @trigger) &&  @program_teacher_schedule.update
+        if state_update(@program_teacher_schedule, @trigger) &&  @program_teacher_schedule.update(@trigger)
           if @program_teacher_schedule.program_id
-            format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id)  }
+            format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id), notice: 'Program-Teacher Schedule was successfully updated.'  }
             format.json { render :json => @program_teacher_schedule }
           else
             format.html { redirect_to  teacher_teacher_schedules_path(@program_teacher_schedule.teacher) }
@@ -188,6 +189,8 @@ class ProgramTeacherSchedulesController < ApplicationController
       end
       ts.program_id = program.id
       ts.blocked_by_user_id = current_user.id
+      # This is a hack to store the last update
+      ts.store_last_update!(current_user, STATE_UNKNOWN, STATE_BLOCKED, EVENT_BLOCK)
       ts.save(:validate => false) if ts.send(EVENT_BLOCK)
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?

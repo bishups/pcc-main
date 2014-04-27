@@ -15,6 +15,8 @@
 #
 
 class VenueSchedule < ActiveRecord::Base
+  include CommonFunctions
+
   # attr_accessible :title, :body
   attr_accessible :program_id, :program
 
@@ -36,6 +38,8 @@ class VenueSchedule < ActiveRecord::Base
 
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
 
   attr_accessor :comment_category
   attr_accessible :comment_category
@@ -44,6 +48,7 @@ class VenueSchedule < ActiveRecord::Base
 
   #before_create :assign_details!
   #after_create :connect_program!
+  after_create :mark_as_block_requested!
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
   scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
@@ -105,12 +110,14 @@ class VenueSchedule < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_BLOCK_REQUEST do
-      transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED
+      transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED, :if => lambda {|t| t.can_create?}
     end
+    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_block?
 
     event EVENT_REJECT do
-      transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE
+      transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :if => lambda {|t| t.is_venue_coordinator? }
     end
+    before_transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :do => :is_venue_coordinator?
 
     event EVENT_BLOCK do
       transition STATE_BLOCK_REQUESTED => STATE_BLOCKED
@@ -119,8 +126,9 @@ class VenueSchedule < ActiveRecord::Base
     after_transition any => STATE_BLOCKED, :do => :after_block
 
     event EVENT_CANCEL do
-      transition STATE_BLOCK_REQUESTED => STATE_CANCELLED
+      transition STATE_BLOCK_REQUESTED => STATE_CANCELLED, :if => lambda {|t| t.is_center_scheduler? }
     end
+    before_transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :do => :is_center_scheduler?
 
     event ::Program::DROPPED do
       transition [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED] => STATE_CANCELLED
@@ -131,18 +139,22 @@ class VenueSchedule < ActiveRecord::Base
     end
 
     event EVENT_REQUEST_APPROVAL do
-      transition STATE_BLOCKED => STATE_APPROVAL_REQUESTED
+      transition STATE_BLOCKED => STATE_APPROVAL_REQUESTED, :if => lambda {|t| t.is_center_scheduler? }
     end
     before_transition any => STATE_APPROVAL_REQUESTED, :do => :can_request_approval?
 
 
     event EVENT_AUTHORIZE_FOR_PAYMENT do
-      transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT
+      transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT, :if => lambda {|t| t.is_sector_coordinator? }
     end
+    before_transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT, :do => :is_sector_coordinator?
     after_transition any => STATE_AUTHORIZED_FOR_PAYMENT, :do => :on_authorization_for_payment?
 
     event EVENT_REQUEST_PAYMENT do
       transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING, :if => lambda {|vs| !vs.venue_free?}
+    end
+    before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING do |vs, transition|
+        return !vs.venue_free?
     end
 
     event EVENT_BLOCK_EXPIRED do
@@ -151,7 +163,11 @@ class VenueSchedule < ActiveRecord::Base
 
     event EVENT_PAID do
       transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAID, :if => lambda {|vs| vs.venue_free?}
-      transition STATE_PAYMENT_PENDING => STATE_PAID, :if => lambda {|vs| !vs.venue_free?}
+      transition STATE_PAYMENT_PENDING => STATE_PAID, :if => lambda {|vs| !vs.venue_free? && vs.is_pcc_accounts? }
+    end
+    before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAID, :do => :venue_free?
+    before_transition STATE_PAYMENT_PENDING => STATE_PAID do |vs, transition|
+        return !vs.venue_free? && vs.is_pcc_accounts?
     end
     after_transition any => STATE_PAID, :do => :on_paid
 
@@ -168,14 +184,49 @@ class VenueSchedule < ActiveRecord::Base
     end
 
     event EVENT_SECURITY_REFUNDED do
-      transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free?}
+      transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free? && vs.is_venue_coordinator? }
+    end
+    before_transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED do |vs, transition|
+      return !vs.venue_free? && vs.is_venue_coordinator?
     end
 
     event EVENT_CLOSE do
-      transition STATE_CONDUCTED => STATE_CLOSED, :if => lambda {|vs| vs.venue_free?}
-      transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free?}
+      transition STATE_CONDUCTED => STATE_CLOSED, :if => lambda {|vs| vs.venue_free? && vs.is_center_coordinator? }
+      transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free? && vs.is_center_coordinator? }
+    end
+    before_transition STATE_CONDUCTED => STATE_CLOSED do |vs, transition|
+      return vs.venue_free? && vs.is_center_coordinator?
+    end
+    before_transition STATE_SECURITY_REFUNDED => STATE_CLOSED do |vs, transition|
+      return !vs.venue_free? && vs.is_center_coordinator?
     end
 
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        return false
+      end
+      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        return false
+      end
+    end
+
+    after_transition any => any do |object, transition|
+      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+    end
+
+  end
+
+  def can_block?
+    unless self.can_create?
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+    true
+  end
+
+  def mark_as_block_requested!
+    self.send(EVENT_BLOCK_REQUEST)
   end
 
   def reloaded?
@@ -199,6 +250,7 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def before_block
+    return false unless self.is_venue_coordinator?
     blocked_for = self.blocked_for ? self.blocked_for.to_i : 0
     if !blocked_for.between?(1,90)
       self.errors[:blocked_for] << "Venue can be blocked from 1 to 90 days."
@@ -240,8 +292,10 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def can_request_approval?
+    return false unless self.is_center_scheduler?
+
     if approval_requested_for_other_venue?
-      # TODO - make sure that the comments have been entered
+      return false unless self.has_comments?
     end
 
     # approve if program already announced
@@ -302,6 +356,46 @@ class VenueSchedule < ActiveRecord::Base
     else
       # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
     end
+  end
+
+  def is_center_coordinator?
+    if self.current_user.is? :center_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
+
+  def is_venue_coordinator?
+    if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
+
+  def is_sector_coordinator?
+    if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
+
+  def is_center_scheduler?
+    if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
+  end
+
+  def is_pcc_accounts?
+    if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      false
+    end
+    true
   end
 
   def can_create?(center_ids = self.program.center_id)

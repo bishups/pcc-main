@@ -1,4 +1,4 @@
-<% if [::Program::EVENT_ANNOUNCE, ::Program::EVENT_CANCEL].include?(@trigger) %>
+<% if ([::Program::EVENT_ANNOUNCE]+::Program::EVENTS_WITH_COMMENTS).include?(@trigger) %>
 <div class='alert alert-danger'>
 <% else %>
 <div class='alert alert-info'>
@@ -8,19 +8,21 @@
     <% if @trigger == ::Program::EVENT_ANNOUNCE %>
     This action will <strong>announce</strong> the program to various departments and entities involved. This action cannot be reverted. Are you sure you want to proceed?
     <% elsif @trigger == ::Program::EVENT_REGISTRATION_OPEN %>
-    This action will <strong>Open Registration</strong> for the program and send appropriate notification to parties involved. Are you sure you want to proceed?
+    This action will <strong>Open Registration</strong> for the program and send appropriate notification. Are you sure you want to proceed?
     <% elsif @trigger == ::Program::EVENT_DROP %>
      <strong>WARNING: </strong> This will cancel the program and free all associated resources. This action cannot be reverted. Are you sure if you want to proceed?
     <% elsif @trigger == ::Program::EVENT_CANCEL %>
     <strong>WARNING: </strong> This will cancel the program and free all associated resources. This action cannot be reverted. Are you sure if you want to proceed?
     <% elsif @trigger == ::Program::EVENT_START %>
     Are you sure you want to change the program to In-Progress state?
+    <% elsif @trigger == ::Program::EVENT_PROPOSE %>
+        Are you sure you want to Propose the program?
     <% elsif @trigger == ::Program::EVENT_FINISH %>
-    Are you sure you want to change the program to Finished (Conducted) state?
+    Are you sure you want to change the program to Conducted state?
+    <% elsif @trigger == ::Program::EVENT_TEACHER_CLOSE %>
+        Are you sure you want to change the program to Teacher Closed state?
     <% elsif @trigger == ::Program::EVENT_CLOSE %>
     Are you sure you want to close this program?
-    <% else %>
-      Unknown state!
     <% end %>
   </p>
 </div>

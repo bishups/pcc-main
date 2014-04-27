@@ -1,4 +1,20 @@
 <div class='form-group'>
-  <label>Comment</label> <small>(optional)</small>
-  <textarea name='comments' class='form-control'></textarea>
+  <% if ::Teacher::EVENTS_WITH_COMMENTS.include?(@trigger) %>
+      <% unless @teacher.comment_category.empty? %>
+          <label for='comment_category'>Comments</label> <small>(mandatory)</small>
+          <%= select_tag 'comment_category', options_for_select(@teacher.comment_category), :class => 'form-control' %>
+          <br>
+          <label>Details</label>
+          <textarea name='comments' class='form-control'></textarea>
+      <% else %>
+          <label>Comments</label> <small>(mandatory)</small>
+          <textarea name='comments' class='form-control'></textarea>
+      <% end %>
+  <% elsif ::Teacher::EVENTS_WITH_FEEDBACK.include?(@trigger) %>
+      <label>Feedback</label> <small>(mandatory)</small>
+      <textarea name='feedback' class='form-control'></textarea>
+  <% else %>
+      <label>Comments</label> <small>(optional)</small>
+      <textarea name='comments' class='form-control'></textarea>
+  <% end %>
 </div>

@@ -1,5 +1,4 @@
 class KitSchedulesController < ApplicationController
-
   # GET /kit_schedules
   # GET /kit_schedules.json
   before_filter :authenticate_user!
@@ -76,7 +75,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule = KitSchedule.new
     @kit_schedule.current_user = current_user
     @kit_schedule.kit_id = @kit.id
-    @comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
+    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_create_on_trigger?
@@ -95,7 +94,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.current_user = current_user
 
     @trigger = params[:trigger]
-    @comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
+    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_update?
@@ -112,8 +111,9 @@ class KitSchedulesController < ApplicationController
   def create_on_trigger
     @kit_schedule = KitSchedule.new(params[:kit_schedule])
     @kit = @kit_schedule.kit
-    @trigger = params[:trigger]
     @kit_schedule.current_user = current_user
+    @trigger = params[:trigger]
+    @kit_schedule.load_comments!(params)
 
     respond_to do |format|
       if @kit_schedule.can_create_on_trigger?
@@ -181,12 +181,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.current_user = current_user
     @trigger = params[:trigger]
 
-    @kit_schedule.comments = params.has_key?(:comment_category) ? params[:comment_category] : ""
-    unless params[:comments].nil?
-      @kit_schedule.comments += " - " unless @kit_schedule.comments.empty?
-      @kit_schedule.comments += params[:comments]
-    end
-
+    @kit_schedule.load_comments!(params)
     @kit_schedule.issued_to = params[:issued_to] unless params[:issued_to].nil?
 #    @kit_schedule.due_date_time = params[:due_date_time] unless params[:due_date_time].nil?
 #    @kit_schedule.issue_for_schedules = params[:issue_for_schedules].split(' ').map(&:to_i) unless params[:issue_for_schedules].nil?

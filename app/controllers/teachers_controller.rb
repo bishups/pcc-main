@@ -64,7 +64,7 @@ class TeachersController < ApplicationController
       @teacher.current_user = current_user
     end
     @trigger = params[:trigger]
-    @comment_category = Comment.where('model IS ? AND action IS ?', 'Teacher', @trigger).pluck(:text)
+    @teacher.comment_category = Comment.where('model IS ? AND action IS ?', 'Teacher', @trigger).pluck(:text)
 
     respond_to do |format|
       if @teacher.can_update?
@@ -105,7 +105,7 @@ class TeachersController < ApplicationController
     @teacher = Teacher.find(params[:id])
     @teacher.current_user = current_user
     @trigger = params[:trigger]
-    @teacher.comments = params[:comments] if params.has_key?(:comments)
+    @teacher.load_comments!(params)
 
     respond_to do |format|
       if @teacher.can_update?

@@ -26,6 +26,8 @@ module VenueSchedulesHelper
         '<span class="label label-danger">Closed</span>'
       elsif vs.state == ::VenueSchedule::STATE_CANCELLED
         '<span class="label label-danger">Cancelled</span>'
+      elsif vs.state == ::VenueSchedule::STATE_SECURITY_REFUNDED
+        '<span class="label label-warning">Security Refunded</span>'
       else
         '<span class="label label-default">Unknown</span>'
       end

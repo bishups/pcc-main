@@ -117,11 +117,7 @@ class User < ActiveRecord::Base
       user.uid = auth.uid
       user
     else
-<<<<<<< HEAD
       User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name)
-=======
-      User.new(:email=>auth.info.email)
->>>>>>> 5fa620cc1e71de810b46ea1e94ee995f55d4b0eb
     end
   end
 
@@ -211,6 +207,8 @@ class User < ActiveRecord::Base
       for_center_ids = for_center_ids.map(&:to_i).compact
     end
     for_all = (options.has_key?(:for) && options[:for] == :any) ? false : true
+    # HACK - for_all is set true if we are looking at [] centers.
+    for_all = true if for_center_ids.empty?
     self.access_privileges.each do |ap|
       self_centers = []
       if ap.resource.class.name.demodulize == "Center"
@@ -218,17 +216,12 @@ class User < ActiveRecord::Base
       elsif ap.resource.class.name.demodulize == "Sector" || ap.resource.class.name.demodulize == "Zone"
         self_centers = ap.resource.centers
       end
-<<<<<<< HEAD
-      # if for given ap, self has >= centers than asked for
-      if for_center_ids or (for_center_ids.compact - self_centers.collect(&:id)).empty?
-=======
       # if for given ap,
       # a. for_all if self has >= centers than asked for
       # b. for_any if self has any center that was asked for
       self_center_ids = self_centers.collect(&:id)
       if (for_all && (for_center_ids - self_center_ids).empty?) ||
          (!for_all && (for_center_ids - self_center_ids) != for_center_ids )
->>>>>>> 5fa620cc1e71de810b46ea1e94ee995f55d4b0eb
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
         for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
@@ -348,23 +341,23 @@ class User < ActiveRecord::Base
       #field :access_privileges do
       #  children_fields [:role, :resource]
       #end
-      #field :custom_access_privileges do
-      #  pretty_value do
-      #    ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
-      #    if ap_str.empty?
-      #      #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
-      #      #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
-      #      #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
-      #      %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a>}
-      #    else
-      #      %{<div class="access_privilege_ap"> #{ap_str} </div >}
-      #    end
-      #  end
+      field :custom_access_privileges do
+        pretty_value do
+          ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
+          if ap_str.empty?
+            #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
+            #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
+            #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
+            %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a>}
+          else
+            %{<div class="access_privilege_ap"> #{ap_str} </div >}
+          end
+        end
       #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
-      #
-      #  label "Access Privileges"
-      #  help ""
-      #end
+
+        label "Access Privileges"
+        help ""
+      end
       #field :access_privileges  do
       #  def value
       #    bindings[:object].access_privileges #.each do {|ap| ap.role.name}

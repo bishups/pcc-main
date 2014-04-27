@@ -1,15 +1,19 @@
 <% if @trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL && @venue_schedule.approval_requested_for_other_venue? %>
-<div class='alert alert-danger'> <strong> WARNING </strong> Approval has already been requested for another venue. </div>
+    <div class='alert alert-danger'> <h3> WARNING !!! </h3> <p> <strong> Approval has already been requested for another venue. </strong> </p> </div>
 <% end %>
-<% if [::VenueSchedule::EVENT_BLOCK, ::VenueSchedule::EVENT_REQUEST_PAYMENT].include?(@trigger) %>
-<div class='alert alert-info'>
+<% if ::VenueSchedule::EVENTS_WITH_COMMENTS.include?(@trigger) %>
+    <div class='alert alert-warning'>
 <% else %>
-<div class='alert alert-danger'>
+    <div class='alert alert-info'>
 <% end %>
   <h3>Confirmation: </h3>
   <p>
     <% if @trigger == ::VenueSchedule::EVENT_BLOCK %>
-      Are you sure you want to <strong>block</strong> this venue for the specified dates?
+      Are you sure you want to <strong>confirm block</strong> of this venue for the specified dates?
+    <% elsif @trigger == ::VenueSchedule::EVENT_REJECT %>
+        Are you sure you want to <strong>reject block</strong> of this venue for the specified dates?
+    <% elsif @trigger == ::VenueSchedule::EVENT_BLOCK_REQUEST %>
+        Are you sure you want to <strong>request block</strong> of this venue for the specified dates?
     <% elsif @trigger == ::VenueSchedule::EVENT_AUTHORIZE_FOR_PAYMENT %>
       Are you sure you want to <strong>Authorize</strong> this venue for payment processing?
     <% elsif @trigger == ::VenueSchedule::EVENT_REQUEST_PAYMENT %>
@@ -20,6 +24,10 @@
       This will cancel the venue booking associated with the program. Are you sure you want to proceed?
     <% elsif @trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL %>
       Are you sure you want to send this venue schedule for approval?
+    <% elsif @trigger == ::VenueSchedule::EVENT_SECURITY_REFUNDED %>
+        Are you sure you want to mark <strong>security refunded</strong> of this venue for the specified program?
+    <% elsif @trigger == ::VenueSchedule::EVENT_CLOSE %>
+        Are you sure you want to mark the venue <strong>closed</strong> for the specified program?
     <% end %>
   </p>
 </div>

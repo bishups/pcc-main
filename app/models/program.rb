@@ -26,6 +26,10 @@ class Program < ActiveRecord::Base
   validates :start_date, :presence => true
 #  validates :end_date, :presence => true
   validates :center_id, :presence => true
+
+  belongs_to :proposer, :class_name => "User" #, :foreign_key => "rated_id"
+  attr_accessible :proposer_id, :proposer
+
   validates :proposer_id, :presence => true
 
   attr_accessor :current_user
@@ -46,6 +50,9 @@ class Program < ActiveRecord::Base
 
   has_and_belongs_to_many :timings, :join_table => :programs_timings
   attr_accessible :timing_ids, :timings
+
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
 
   attr_accessor :comment_category
   attr_accessible :comment_category
@@ -77,7 +84,7 @@ class Program < ActiveRecord::Base
       EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE
   ]
 
-  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_DROP]
+  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL]
   EVENTS_WITH_FEEDBACK = [EVENT_TEACHER_CLOSE]
 
   ### TODO -
@@ -118,8 +125,9 @@ class Program < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_PROPOSE do
-      transition STATE_UNKNOWN => STATE_PROPOSED
+      transition STATE_UNKNOWN => STATE_PROPOSED, :if => lambda {|t| t.can_create? }
     end
+    after_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :fill_proposer_id!
 
     event EVENT_ANNOUNCE do
       transition STATE_PROPOSED => STATE_ANNOUNCED, :if => lambda {|p| p.can_announce?}
@@ -154,7 +162,7 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_TEACHER_CLOSED, :do => :can_teacher_close?
 
     event EVENT_CLOSE do
-      transition STATE_TEACHER_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_scheduler, :center_id => p.center_id}
+      transition STATE_TEACHER_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_coordinator, :center_id => p.center_id}
     end
     before_transition any => STATE_CLOSED, :do => :can_close?
     # TODO - enable or disable the button based on whether conditions are met
@@ -165,6 +173,19 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
 
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        return false
+      end
+      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        return false
+      end
+    end
+  end
+
+  def fill_proposer_id!
+    self.proposer = current_user
   end
 
   def reloaded?
@@ -179,6 +200,7 @@ class Program < ActiveRecord::Base
     return if !self.reloaded?
     if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
       self.send(EVENT_START)
+      self.save if self.errors.empty?
     end
   end
 
@@ -186,13 +208,14 @@ class Program < ActiveRecord::Base
     return if !self.reloaded?
     if [STATE_IN_PROGRESS].include?(self.state)
       self.send(EVENT_FINISH)
+      self.save if self.errors.empty?
     end
   end
 
   def can_announce?
     if ready_for_announcement?
       return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
-      self.errors[:base] << "Insufficient privileges to update the state."
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       false
     else
       self.errors[:base] << "Program cannot be announced yet."
@@ -209,7 +232,7 @@ class Program < ActiveRecord::Base
 
   def can_open_registration?
     return true if (self.current_user.is? :center_treasurer, :center_id => self.center_id)
-    self.errors[:base] << "Insufficient privileges to update the state."
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     false
   end
 
@@ -234,9 +257,7 @@ class Program < ActiveRecord::Base
       return true
     end
 
-    return false unless self.has_comments?
-
-    self.errors[:base] << "Insufficient privileges to update the state."
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     false
   end
 
@@ -261,7 +282,7 @@ class Program < ActiveRecord::Base
 
   def can_teacher_close?
     if !is_teacher?(current_user)
-      self.errors[:base] << "Insufficient privileges to update the state."
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       false
     end
 
@@ -274,8 +295,8 @@ class Program < ActiveRecord::Base
 
   def can_close?
     if ready_for_close?
-      return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
-      self.errors[:base] << "Insufficient privileges to update the state."
+      return true if self.current_user.is? :center_coordinator, :center_id => self.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       false
     else
       self.errors[:base] << "Program cannot be closed yet."
@@ -284,12 +305,8 @@ class Program < ActiveRecord::Base
   end
 
   def can_cancel?
-    if (self.comments.nil?)
-      self.errors[:comments] << " is mandatory field."
-      return false
-    end
     return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
-    self.errors[:base] << "Insufficient privileges to update the state."
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     false
   end
 
@@ -322,7 +339,7 @@ class Program < ActiveRecord::Base
     self.announce_program_id = ("%s %s %d" % 
       [self.center.name, self.start_date.strftime('%B%Y'), self.id]
     ).parameterize
-    self.save!
+    #self.save!
   end
   
   def proposer

@@ -1,8 +1,6 @@
-class EditDatesKitSchedules < ActiveRecord::Migration
+class DeleteCommentId < ActiveRecord::Migration
   def change
-    remove_column :kit_schedules, :start_date, :end_date
-    add_column :kit_schedules, :start_date, :datetime
-    add_column :kit_schedules, :end_date, :datetime
+    remove_column :kit_schedules, :comment_id, :end_date
   end
 end
 
