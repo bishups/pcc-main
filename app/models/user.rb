@@ -46,6 +46,8 @@ class User < ActiveRecord::Base
   devise :database_authenticatable,
          :recoverable, :rememberable, :trackable, :registerable, :omniauthable, :omniauth_providers => [:google_oauth2]
 
+  acts_as_paranoid
+
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
@@ -216,6 +218,7 @@ class User < ActiveRecord::Base
       elsif ap.resource.class.name.demodulize == "Sector" || ap.resource.class.name.demodulize == "Zone"
         self_centers = ap.resource.centers
       end
+
       # if for given ap,
       # a. for_all if self has >= centers than asked for
       # b. for_any if self has any center that was asked for

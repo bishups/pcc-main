@@ -1,6 +1,8 @@
 class Teacher < ActiveRecord::Base
   include CommonFunctions
 
+  acts_as_paranoid
+
   attr_accessor :current_user
   attr_accessible :current_user
 

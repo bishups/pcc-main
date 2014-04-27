@@ -51,4 +51,4 @@ gem 'annotate', ">=2.6.0"
 gem 'validates_overlap'
 gem 'rubyXL'
 gem 'omniauth-google-oauth2'
-
+gem "paranoia", "~> 1.0"

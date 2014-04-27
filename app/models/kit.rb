@@ -20,6 +20,8 @@ class Kit < ActiveRecord::Base
   include CommonFunctions
 
 
+  acts_as_paranoid
+
   attr_accessible :condition,:comments, :name,
                   :state,:capacity
 

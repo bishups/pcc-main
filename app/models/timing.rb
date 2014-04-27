@@ -1,4 +1,7 @@
 class Timing < ActiveRecord::Base
+
+  acts_as_paranoid
+
   attr_accessible :end_time, :name, :start_time
   belongs_to :timing, :polymorphic => true
   has_and_belongs_to_many :program_types

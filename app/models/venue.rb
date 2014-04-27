@@ -24,6 +24,9 @@
 class Venue < ActiveRecord::Base
   include CommonFunctions
 
+
+  acts_as_paranoid
+
   # attr_accessible :title, :body
   attr_accessor :current_user
   attr_accessible :name, :description, :address, :pin_code, :capacity, :contact_name, :contact_phone,
@@ -276,7 +279,6 @@ class Venue < ActiveRecord::Base
   rails_admin do
     visible do
       bindings[:controller].current_user.is?(:venue_coordinator)
-      #bindings[:object].current_user = bindings[:controller].current_user
     end
     list do
       field :name
