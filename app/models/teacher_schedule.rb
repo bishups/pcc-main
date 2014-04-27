@@ -12,6 +12,8 @@
 #
 
 class TeacherSchedule < ActiveRecord::Base
+  include CommonFunctions
+
   # attr_accessible :title, :body
   attr_accessor :current_user
 

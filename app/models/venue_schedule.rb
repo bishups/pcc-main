@@ -48,7 +48,6 @@ class VenueSchedule < ActiveRecord::Base
 
   #before_create :assign_details!
   #after_create :connect_program!
-  after_create :mark_as_block_requested!
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
   scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
@@ -112,7 +111,7 @@ class VenueSchedule < ActiveRecord::Base
     event EVENT_BLOCK_REQUEST do
       transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED, :if => lambda {|t| t.can_create?}
     end
-    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_block?
+    before_transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED, :do => :can_block?
 
     event EVENT_REJECT do
       transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :if => lambda {|t| t.is_venue_coordinator? }
@@ -212,7 +211,7 @@ class VenueSchedule < ActiveRecord::Base
     end
 
     after_transition any => any do |object, transition|
-      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
     end
 
   end
@@ -223,10 +222,6 @@ class VenueSchedule < ActiveRecord::Base
       return false
     end
     true
-  end
-
-  def mark_as_block_requested!
-    self.send(EVENT_BLOCK_REQUEST)
   end
 
   def reloaded?

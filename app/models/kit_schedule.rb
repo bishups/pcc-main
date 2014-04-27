@@ -175,7 +175,7 @@ class KitSchedule < ActiveRecord::Base
 
     # send notifications, after any transition
     after_transition any => any do |object, transition|
-      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
     end
   end
 

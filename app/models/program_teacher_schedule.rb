@@ -266,12 +266,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     teacher_schedules = TeacherSchedule.where('program_id = ? AND teacher_id = ?', self.program_id, self.teacher_id)
     teacher_schedules.each {|ts|
-      # 1. update the state of all teacher_schedule(s) for a teacher, and program.
+      # 1. update the state of all teacher_schedule(s) for a teacher, and program
       ts.store_last_update!(self.current_user, ts.state, self.state, trigger)
       ts.state = self.state
       ts.program_id = program_id
       ts.blocked_by_user_id = blocked_by_user_id
-      ts.comments = self.comments unless self.comments.nil?
+      ts.comments = self.comments.nil? ? "" : self.comments
       ts.feedback = self.feedback unless self.feedback.nil?
       ts.save(:validate => false)
       ## TODO - check if break if correct idea, we should rollback previous change(s) in this loop
@@ -282,6 +282,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
       # 2. if they have been marked Available or unavailable, then check if combine_consecutive_slots
       if ((::TeacherSchedule::STATE_PUBLISHED).include?(ts.state)) && ts.combine_consecutive_schedules?
+        ts.clear_comments!
+        ts.clear_last_update!
         ts.combine_consecutive_schedules
         # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
         if !ts.save

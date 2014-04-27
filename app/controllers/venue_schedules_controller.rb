@@ -75,7 +75,7 @@ class VenueSchedulesController < ApplicationController
 
     respond_to do |format|
       if @venue_schedule.can_create?
-        if @venue_schedule.save
+        if @venue_schedule.send(::VenueSchedule::EVENT_BLOCK_REQUEST) && @venue_schedule.save
           format.html { redirect_to @venue_schedule, notice: 'Venue Schedule was successfully created.' }
           format.json { render json: @venue_schedule, status: :created, location: @venue_schedule }
         else

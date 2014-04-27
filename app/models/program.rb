@@ -182,6 +182,12 @@ class Program < ActiveRecord::Base
         return false
       end
     end
+
+    # send notifications, after any transition
+    after_transition any => any do |object, transition|
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
+    end
+
   end
 
   def fill_proposer_id!
@@ -234,10 +240,6 @@ class Program < ActiveRecord::Base
     return true if (self.current_user.is? :center_treasurer, :center_id => self.center_id)
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     false
-  end
-
-  def before_any
-    puts "I am here"
   end
 
   def can_drop?

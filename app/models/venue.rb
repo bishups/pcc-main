@@ -85,9 +85,9 @@ class Venue < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_PROPOSE do
-      transition STATE_UNKNOWN => STATE_PROPOSED, :if => lambda {|t| t.can_create?}
+      transition STATE_UNKNOWN => STATE_PROPOSED #, :if => lambda {|t| t.can_create?}
     end
-    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_propose?
+    #before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_propose?
 
     event EVENT_APPROVE do
       transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED, :if => lambda {|t| t.is_sector_coordinator? }
@@ -139,7 +139,7 @@ class Venue < ActiveRecord::Base
     end
 
     after_transition any => any do |object, transition|
-      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
     end
 
   end
@@ -276,6 +276,7 @@ class Venue < ActiveRecord::Base
   rails_admin do
     visible do
       bindings[:controller].current_user.is?(:venue_coordinator)
+      #bindings[:object].current_user = bindings[:controller].current_user
     end
     list do
       field :name
@@ -285,6 +286,12 @@ class Venue < ActiveRecord::Base
       field :centers
     end
     edit do
+      field :current_user, :hidden do
+        visible false
+        default_value do
+          bindings[:view]._current_user
+        end
+      end
       field :name
       field :centers do
         help 'Required. Type any character to search for center ...'
@@ -314,7 +321,9 @@ class Venue < ActiveRecord::Base
       field :payment_contact_name
       field :payment_contact_address
       field :payment_contact_mobile
-      field :per_day_price
+      field :per_day_price do
+        help "Required (for commerical venues)."
+      end
     end
 
   end

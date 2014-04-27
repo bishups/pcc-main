@@ -29,6 +29,10 @@ module CommonFunctions
     self.feedback = params[:feedback] unless params[:feedback].nil?
   end
 
+  def clear_comments!
+    self.comments = self.feedback = ""
+  end
+
   def store_last_update!(user, from_state, to_state, event)
     self.last_updated_by_user = user
     # We are not relying on in-built table updated_at, in case the state machine transition differ from table transition
@@ -36,9 +40,16 @@ module CommonFunctions
 #    time_str = (Time.zone.now).strftime('%d %B %Y (%I:%M%P)')
 #    self.last_update = "From #{from_state} to #{to_state} on #{event} at #{time_str}"
     if (from_state.casecmp("Unknown") == 0)
-      self.last_update = "#{to_state}"
+      self.last_update = " #{to_state}"
     else
-      self.last_update = "#{from_state} to #{to_state}"
+      self.last_update = " #{from_state} to #{to_state}"
     end
   end
+
+  def clear_last_update!
+    self.last_updated_by_user = nil
+    self.last_updated_at = nil
+    self.last_update = nil
+  end
+
 end

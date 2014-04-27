@@ -63,7 +63,7 @@ class Kit < ActiveRecord::Base
     end
 
     after_transition any => any do |object, transition|
-      object.store_last_update!(self.current_user, transition.from, transition.to, transition.event)
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
     end
   end
 
@@ -181,6 +181,13 @@ class Kit < ActiveRecord::Base
       field :kit_item_names
     end
     edit do
+      # to get the current user from the rails-admin view
+      field :current_user, :hidden do
+        read_only true
+        default_value do
+          bindings[:object].current_user = bindings[:view].current_user
+        end
+      end
       field :name
       field :guardian
       field :capacity

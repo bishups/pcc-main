@@ -35,13 +35,17 @@ class ProgramTeacherSchedulesController < ApplicationController
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         end
       else
-        error = block_teacher_schedule!(params[:program_teacher_schedule])
+        error = block_teacher_schedule!(@program_teacher_schedule, params[:program_teacher_schedule])
         #@program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
         respond_to do |format|
           if error.empty?
-            format.html { redirect_to program_path(@program_teacher_schedule.program) }
-            format.json { render json: @program_teacher_schedule, status: :created, location: @program_teacher_schedule }
+            format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id), notice: 'Program-Teacher Schedule was successfully updated.'  }
+            format.json { render :json => @program_teacher_schedule }
+
+            #format.html { redirect_to program_path(@program_teacher_schedule.program) }
+            #format.json { render json: @program_teacher_schedule, status: :created, location: @program_teacher_schedule }
           else
+            @teachers = load_relevant_teachers()
             format.html { render action: "new" }
             format.json { render json: error, status: :unprocessable_entity }
           end
@@ -172,7 +176,7 @@ class ProgramTeacherSchedulesController < ApplicationController
   # Incoming params - params => {"program_id"=>"3", "teacher_id"=>"1"}
   # 1. given the teacher_id, find the schedules relevant for the program_id
   # 2. split the schedule, marking the one against program - with program_id and state
-  def block_teacher_schedule!(params)
+  def block_teacher_schedule!(pts, params)
     program = Program.find(params[:program_id])
     teacher = Teacher.find(params[:teacher_id])
     error = []
@@ -189,15 +193,21 @@ class ProgramTeacherSchedulesController < ApplicationController
       end
       ts.program_id = program.id
       ts.blocked_by_user_id = current_user.id
+      ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
+      ts.clear_comments!
       # This is a hack to store the last update
-      ts.store_last_update!(current_user, STATE_UNKNOWN, STATE_BLOCKED, EVENT_BLOCK)
-      ts.save(:validate => false) if ts.send(EVENT_BLOCK)
+      ts.store_last_update!(current_user, ::ProgramTeacherSchedule::STATE_UNKNOWN, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
+      ts.save(:validate => false)
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         error << ts.errors.full_messages
         break
       end
     }
+    # This is a hack, just to make sure the relevant notifications are sent out
+    pts.state = ::ProgramTeacherSchedule::STATE_UNKNOWN
+    pts.send(::ProgramTeacherSchedule::EVENT_BLOCK) if error.empty?
+    error << pts.errors.full_messages if !pts.errors.empty?
     error
   end
 
