@@ -203,6 +203,7 @@ class ProgramTeacherSchedulesController < ApplicationController
         error << ts.errors.full_messages
         break
       end
+      pts.teacher_schedule_id = ts.id
     }
     # This is a hack, just to make sure the relevant notifications are sent out
     pts.state = ::ProgramTeacherSchedule::STATE_UNKNOWN

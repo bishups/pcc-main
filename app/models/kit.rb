@@ -66,6 +66,7 @@ class Kit < ActiveRecord::Base
 
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
+      object.notify(transition.from, transition.to, transition.event, object.center_ids)
     end
   end
 

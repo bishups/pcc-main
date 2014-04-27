@@ -15,37 +15,37 @@ class Teacher < ActiveRecord::Base
 
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
- # validate :has_centers?
+  validate :has_centers?
 
   has_and_belongs_to_many :program_types
   attr_accessible :program_type_ids, :program_types
- # validate :has_program_types?
+  validate :has_program_types?
 
   belongs_to :user
   attr_accessible :user_id, :user
-#  validates :user_id, :uniqueness => true
+  validates :user_id, :uniqueness => true
 
   belongs_to :zone
   attr_accessible :zone_id, :zone
-#  validate :has_zone?
+  validate :has_zone?
 
   attr_accessor :comment_category
   attr_accessible :comment_category
 
   attr_accessible :t_no
-#  validates :t_no, :presence => true, :length => { :in => 1..9}
-  #validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
+  validates :t_no, :presence => true, :length => { :in => 1..9}
+  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
 
   has_many :teacher_schedules
   has_many :timings, through: :teacher_schedules
   attr_accessible :teacher_schedules, :teacher_schedule_ids
 
   attr_accessible :comments
-#  validate :has_comments?
+  validate :check_comments?
 
   attr_accessible :state
- # validates :state, :presence => true
- # validate :invalid_state?
+  validates :state, :presence => true
+  validate :invalid_state?
 
   before_save :load_last_state
   after_save  :send_notification
@@ -111,11 +111,14 @@ class Teacher < ActiveRecord::Base
   def send_notification
     if self.last_state != STATE_ATTACHED && self.state == STATE_ATTACHED
       # TODO - send a notification for teacher attach from here
+      object.notify(:any, STATE_ATTACHED, :any, self.center_ids)
     end
     if self.last_state == STATE_ATTACHED && self.state != STATE_ATTACHED
       # TODO - send a notification for teacher attach from here
+      object.notify(STATE_ATTACHED, :any, :any, self.center_ids)
     end
   end
+
 
   def before_unattach!
     center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
@@ -172,14 +175,15 @@ class Teacher < ActiveRecord::Base
     false
   end
 
+  # This is a hack to take care of rails_admin
+  def check_comments?
+    if [STATE_UNFIT, STATE_UNATTACHED].include?(self.state) && !self.has_comments?
+      self.errors.add(:comments, " needed if the teacher is marked unfit/ unattached.")
+      return false
+    end
+    true
+  end
 
-#  def has_comments?
-#    if (self.state == STATE_UNFIT) && self.comments.blank?
-#      self.errors.add(:comments, " needed if the teacher is marked unfit.")
-#      return false
-#    end
-#    true
-#  end
 
   def has_centers?
     self.errors.add(:centers, " needed if teacher attached to a zone.") if !self.zone.blank? && self.centers.blank? && (self.state != STATE_UNFIT)
@@ -294,7 +298,6 @@ class Teacher < ActiveRecord::Base
       end
       field :state, :enum do
         label "Status"
-        # TODO - humanize the strings below, without breaking the state_machine functionality
         enum do
           [STATE_UNFIT, STATE_UNATTACHED, STATE_ATTACHED]
         end

@@ -52,4 +52,63 @@ module CommonFunctions
     self.last_update = nil
   end
 
+  def notify(from_state, to_state, on_event, center_ids)
+
+    model = self.class.name
+    from = from_state != :any ? [from_state, "any"] : ["any"]
+    to = to_state != :any ? [to_state, "any"] : ["any"]
+    on = on_event != :any ? [on_event, "any"] : ["any"]
+    center_ids = center_ids.class == Array ? center_ids : [center_ids]
+
+    notify = {}
+    notifications = Notification.where('model IS ? AND from_state IN (?) AND to_state IN (?)  AND on_event IN (?) ', model, from, to, on).all
+    notifications.each { |n|
+      r = Role.find(n.role_id)
+      case r.name
+        when ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text],
+            ::User::ROLE_ACCESS_HIERARCHY[:zao][:text],
+            ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text],
+            ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]
+          # convert centers into zones, and search by that
+          #zones = Zone.joins(:sector).joins(:center).where('centers.id IN (?)', center_ids).uniq.all
+          #users = r.users.by_zones(zones).uniq
+        when ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]
+          # convert centers into sectors, and search by that
+          #sectors = Sector.joins(:center).where('centers.id IN (?)', center_ids).uniq.all
+          #users = r.users.by_sectors(sectors).uniq
+        else
+          # search by centers
+          users = r.users.by_centers(center_ids).uniq
+      end
+
+
+      # for each of the users, add the flags send_sms, send_email, and additional_text
+      # check if the user already exists, if it does make a OR of send_sms, send_email. Add additional text
+      # insert into the hash
+      users.each { |user|
+        old_value = notify[user] if notify.has_key?(user)
+        new_value = {:send_sms => n.send_sms, :send_email => n.send_email, :additional_text => (n.additional_text.nil? || n.additional_text.blank? ? "" : "(#{n.additional_text})") }
+        if old_value.nil?
+          old_value = new_value
+        else
+          old_value[:send_sms] |= new_value[:send_sms]
+          old_value[:send_email] |= new_value[:send_email]
+          old_value[:additional_text] += new_value[:additional_text]
+        end
+        notify[user] = old_value
+      }
+    }
+
+    notify.each_pair {|user, value|
+      self.notify_user(user, model, from_state, to_state, on_event, value)
+    }
+  end
+
+
+  def notify_user(user, model, from, to, on, value)
+
+  end
+
+
+
 end

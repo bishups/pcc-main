@@ -38,7 +38,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   #composed_of :program, mapping: %w(program_id id)
   #composed_of :teacher_schedule, mapping: [ %w(teacher_id teacher_id), %w(schedule_id id), %w(reserving_user_id reserving_user_id) ]
 
-  attr_accessor :teacher_id, :teacher, :blocked_by_user_id, :program, :program_id, :teacher_schedule, :teacher_schedule_id, :comments, :feedback, :comment_category
+  attr_accessor :teacher_id, :teacher, :blocked_by_user_id, :program, :program_id, :deleted_program, :deleted_program_id, :teacher_schedule, :teacher_schedule_id, :comments, :feedback, :comment_category
 
   attr_accessor :current_user, :state
 
@@ -145,7 +145,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     after_transition any => any do |object, transition|
-      # NOTE: the last_update is handled differently in this case
+      # NOTE: the last_update is handled differently in this case --
+      # it needs to be stored with each of the linked teacher_schedules
+
+      # HACK - In case the program reference was removed on cancellation of block
+      center_id = object.program.nil? ? object.deleted_program.center_id : object.program.center_id
+      object.notify(transition.from, transition.to, transition.event, center_id)
     end
 
   end
@@ -291,6 +296,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
           break
         end
       end
+      self.deleted_program_id = self.program_id if program_id.nil?
       self.program_id = program_id
     }
   end
