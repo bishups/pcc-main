@@ -18,7 +18,7 @@
 
 class Kit < ActiveRecord::Base
 
-
+  acts_as_paranoid
 
   attr_accessible :condition,:comments, :name,
                   :state,:capacity

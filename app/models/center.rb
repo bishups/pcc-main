@@ -10,6 +10,9 @@
 #
 
 class Center < ActiveRecord::Base
+
+  acts_as_paranoid
+
   belongs_to :sector
   has_many :pincodes
   has_one :zone, :through => :sector

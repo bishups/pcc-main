@@ -46,6 +46,8 @@ class User < ActiveRecord::Base
   devise :database_authenticatable,
          :recoverable, :rememberable, :trackable, :registerable, :omniauthable, :omniauth_providers => [:google_oauth2]
 
+  acts_as_paranoid
+
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles

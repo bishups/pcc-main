@@ -1,4 +1,7 @@
 class Comment < ActiveRecord::Base
+
+  acts_as_paranoid
+
   attr_accessible :action, :model, :text, :active
 
   validates :action, :model, :text, :presence => true

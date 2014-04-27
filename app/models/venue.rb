@@ -23,6 +23,9 @@
 #
 
 class Venue < ActiveRecord::Base
+
+  acts_as_paranoid
+
   # attr_accessible :title, :body
   attr_accessor :current_user
   attr_accessible :name, :description, :address, :pin_code, :capacity, :seats, :contact_name, :contact_phone,
