@@ -1,17 +1,11 @@
-<% if @trigger == ::VenueSchedule::EVENT_PAID %>
-<div class='form-group'>
-  <label>Payment Mode</label>
-  <%= text_field_tag 'payment_mode', nil, :class => 'form-control' %>
-</div>
-<div class='form-group'>
-  <label>Payment Id</label>
-  <%= text_field_tag 'payment_id', nil, :class => 'form-control' %>
-</div>
-<% end %>
 <% if @trigger == ::VenueSchedule::EVENT_BLOCK %>
     <div class='form-group'>
-      <label>Blocked For (in Days)</label>
-      <%= number_field_tag 'blocked_for', nil, :class => 'form-control' %>
+      <label>Block Expiry Date </label><small> (If venue is not paid by this date, then the block will be removed) </small>
+      <%= text_field_tag 'block_expiry_date', nil, :class => 'form-control dateSelect' %>
     </div>
 <% end %>
 
+
+<script type='text/javascript'>
+    $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
+</script>

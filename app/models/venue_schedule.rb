@@ -27,7 +27,7 @@ class VenueSchedule < ActiveRecord::Base
   validates_with VenueScheduleValidator
   #validates_uniqueness_of :program_id
 
-  attr_accessor :blocked_for, :current_user
+  attr_accessor :block_expiry_date, :current_user
   #attr_accessible :blocked_for
 
   belongs_to :venue
@@ -173,6 +173,7 @@ class VenueSchedule < ActiveRecord::Base
     event ::Program::ANNOUNCED do
       transition STATE_PAID => STATE_ASSIGNED
     end
+    after_transition STATE_PAID => STATE_ASSIGNED, :do => :on_assigned
 
     event ::Program::STARTED do
       transition STATE_ASSIGNED => STATE_IN_PROGRESS
@@ -218,11 +219,9 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def can_block?
-    unless self.can_create?
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      return false
-    end
-    true
+    return true if self.can_create?
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def reloaded?
@@ -247,22 +246,36 @@ class VenueSchedule < ActiveRecord::Base
 
   def before_block
     return false unless self.is_venue_coordinator?
-    blocked_for = self.blocked_for ? self.blocked_for.to_i : 0
-    if !blocked_for.between?(1,90)
-      self.errors[:blocked_for] << "Venue can be blocked from 1 to 90 days."
-      false
+
+    expiry_date = Time.zone.parse(self.block_expiry_date) + 1.day - 1.minute
+    self.block_expiry_date = expiry_date
+    if expiry_date.nil?
+      self.errors[:block_expiry_date] << " is mandatory."
+      return false
     end
+
+    current_date = Time.zone.now
+    days = (expiry_date.to_date - current_date.to_date).to_i
+
+    unless days.between?(1,90)
+      self.errors[:base] << "Venue can be blocked from 1 to 90 days."
+      return false
+    end
+
+    return true
   end
 
   def after_block
-    self.delay(:run_at => self.blocked_for.to_i.days.from_now).trigger_block_expire
-    true
+    self.delay(:run_at => self.block_expiry_date).trigger_block_expire
+    return true
   end
 
   def on_paid
-    if self.program.is_announced?
-      self.send(::Program::ANNOUNCED)
-    end
+    self.send(::Program::ANNOUNCED) if self.program.is_announced?
+  end
+
+  def on_assigned
+    self.send(::Program::STARTED) if self.program.is_started?
   end
 
   def venue_free?
@@ -275,16 +288,13 @@ class VenueSchedule < ActiveRecord::Base
 
   def is_active?
     return false if FINAL_STATES.include?(self.state)
-    return false if !self.program.is_active?
-    true
+    # return false unless self.program.is_active?
+    return true
   end
 
   def on_authorization_for_payment?
-    if self.errors.empty?
-      #self.save
-      event = self.venue_free? ? EVENT_PAID : EVENT_REQUEST_PAYMENT
-      self.send(event)
-    end
+    event = self.venue_free? ? EVENT_PAID : EVENT_REQUEST_PAYMENT
+    self.send(event)
   end
 
   def can_request_approval?
@@ -295,41 +305,41 @@ class VenueSchedule < ActiveRecord::Base
     end
 
     # approve if program already announced
-    return true if self.program.is_announced?
+    return true if self.program.is_announced? && self.program.is_active?
 
     # If a proposed program is not announced, and other resources are available for announcement
-    if self.program.in_final_state?
+    unless self.program.is_active?
       self.errors[:base] << "Program is already closed. Cannot request approval."
       return false
     end
-    if !self.program.kit_connected?
+    if self.program.no_of_kits_connected <= 0
       self.errors[:base] << "Kit is not added to the program. Please add a kit and try again."
       return false
     end
 
-    if !self.program.minimum_teachers_connected?
+    unless self.program.minimum_teachers_connected?
       self.errors[:base] << "Minimum number of teachers are not added to the program. Please add teacher(s) and try again."
       return false
     end
 
-    true
+    return true
   end
 
   def approval_requested_for_other_venue?
     self.program.venue_schedules.each { |vs|
       return true if vs.approval_requested?
     }
-    false
+    return false
   end
 
   # have we requested the approval for the venue?
   def approval_requested?
-    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
   end
 
   # has the payment been approved for the venue?
   def approved?
-    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
   end
 
   def on_program_event(event)
@@ -355,43 +365,33 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def is_center_coordinator?
-    if self.current_user.is? :center_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :center_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_venue_coordinator?
-    if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_sector_coordinator?
-    if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_center_scheduler?
-    if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_pcc_accounts?
-    if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def can_create?(center_ids = self.program.center_id)

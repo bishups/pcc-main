@@ -153,7 +153,7 @@ class Venue < ActiveRecord::Base
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
-    true
+    return true
   end
 
 
@@ -168,16 +168,20 @@ class Venue < ActiveRecord::Base
   def blockable_programs
     # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
     # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
+    Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES)
   end
 
   def can_reject?
-    return false unless self.is_sector_coordinator?
+    unless self.is_sector_coordinator?
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+
     if self.is_active?
       self.errors[:base] << "Cannot reject the venue, it has active schedules. Please close the schedules and try again."
       return false
     end
-    true
+    return true
   end
 
   def is_active?
@@ -185,7 +189,7 @@ class Venue < ActiveRecord::Base
     self.venue_schedules.each { |vs|
       return true if vs.is_active?
     }
-    false
+    return false
   end
 
   def free?
@@ -219,19 +223,15 @@ class Venue < ActiveRecord::Base
   end
 
   def is_pcc_accounts?
-    if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_sector_coordinator?
-    if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def can_view?

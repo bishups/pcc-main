@@ -19,6 +19,8 @@ module ProgramsHelper
         '<span class="label label-default">Dropped</span>'
       elsif prog.state == ::Program::STATE_TEACHER_CLOSED
         '<span class="label label-warning">Teacher Closed</span>'
+      elsif prog.state == ::Program::STATE_ZAO_CLOSED
+        '<span class="label label-info">ZAO Closed</span>'
       else
         '<span class="label label-default">Unknown</span>'
       end

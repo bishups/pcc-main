@@ -66,9 +66,11 @@ class Program < ActiveRecord::Base
   STATE_IN_PROGRESS   = "In Progress"
   STATE_CONDUCTED     = "Conducted"
   STATE_TEACHER_CLOSED = "Teacher Closed"
+  STATE_ZAO_CLOSED    = "ZAO Closed"
   STATE_CLOSED        = "Closed"
 
-  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CONDUCTED, STATE_CLOSED]
+  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CLOSED]
+  CLOSED_STATES = (FINAL_STATES + [STATE_CONDUCTED, STATE_TEACHER_CLOSED, STATE_ZAO_CLOSED])
 
   EVENT_PROPOSE       = "Propose"
   EVENT_ANNOUNCE      = "Announce"
@@ -79,12 +81,13 @@ class Program < ActiveRecord::Base
   EVENT_DROP          = "Drop"
   EVENT_CANCEL        = "Cancel"
   EVENT_TEACHER_CLOSE = "Teacher Close"
+  EVENT_ZAO_CLOSE = "ZAO Close"
 
   PROCESSABLE_EVENTS = [
-      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE
+      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE, EVENT_ZAO_CLOSE
   ]
 
-  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL]
+  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL, EVENT_ZAO_CLOSE]
   EVENTS_WITH_FEEDBACK = [EVENT_TEACHER_CLOSE]
 
   ### TODO -
@@ -127,6 +130,7 @@ class Program < ActiveRecord::Base
     event EVENT_PROPOSE do
       transition STATE_UNKNOWN => STATE_PROPOSED, :if => lambda {|t| t.can_create? }
     end
+    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_create?
     after_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :fill_proposer_id!
 
     event EVENT_ANNOUNCE do
@@ -157,12 +161,17 @@ class Program < ActiveRecord::Base
     after_transition any => STATE_CONDUCTED, :do => :on_finish
 
     event EVENT_TEACHER_CLOSE do
-      transition STATE_CONDUCTED => STATE_TEACHER_CLOSED, :if => lambda {|p| p.is_teacher?(current_user)}
+      transition STATE_CONDUCTED => STATE_TEACHER_CLOSED, :if => lambda {|p| p.is_teacher?}
     end
     before_transition any => STATE_TEACHER_CLOSED, :do => :can_teacher_close?
 
+    event EVENT_ZAO_CLOSE do
+      transition STATE_TEACHER_CLOSED => STATE_ZAO_CLOSED, :if => lambda {|p| p.is_zao? }
+    end
+    before_transition any => STATE_ZAO_CLOSED, :do => :can_zao_close?
+
     event EVENT_CLOSE do
-      transition STATE_TEACHER_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_coordinator, :center_id => p.center_id}
+      transition STATE_ZAO_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_coordinator, :center_id => p.center_id}
     end
     before_transition any => STATE_CLOSED, :do => :can_close?
     # TODO - enable or disable the button based on whether conditions are met
@@ -223,16 +232,16 @@ class Program < ActiveRecord::Base
     if ready_for_announcement?
       return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
+      return false
     else
       self.errors[:base] << "Program cannot be announced yet."
-      false
+      return false
     end
   end
 
   def on_announce
     self.generate_program_id!
-    self.notify_schedules(ANNOUNCED)
+    self.notify_all(ANNOUNCED)
     # start the timer for start of class notification
     self.delay(:run_at => self.start_date).trigger_program_start
   end
@@ -240,7 +249,7 @@ class Program < ActiveRecord::Base
   def can_open_registration?
     return true if (self.current_user.is? :center_treasurer, :center_id => self.center_id)
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    false
+    return false
   end
 
   def can_drop?
@@ -261,7 +270,7 @@ class Program < ActiveRecord::Base
     end
 
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    false
+    return false
   end
 
 
@@ -276,50 +285,76 @@ class Program < ActiveRecord::Base
   end
 
   def on_finish
-    self.notify_schedules(FINISHED)
+    self.notify_all(FINISHED)
   end
 
   def is_active?
-    !(self.end_date < Time.zone.now || FINAL_STATES.include?(self.state))
+    !(::Program::CLOSED_STATES.include?(self.state))
   end
 
   def can_teacher_close?
-    if !is_teacher?(current_user)
+    unless is_teacher?
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-
-    if (self.feedback.nil?)
-      self.errors[:feedback] << " is mandatory field."
       return false
     end
-    true
+    return true
   end
+
+  def can_zao_close?
+    return false unless self.is_zao?
+
+    unless account_closed?
+      self.errors[:base] << "Cannot ZAO Close program, accounts for program are not closed."
+      return false
+    end
+
+    unless participant_data_entered?
+      self.errors[:base] << "Cannot ZAO Close program, participant data for program has not been entered."
+      return false
+    end
+    return true
+  end
+
+
+
+  def account_closed?
+    # TODO - need to implement account_closed??
+    return true
+  end
+
+  def participant_data_entered?
+    # TODO - need to implement participant_data_entered?
+    return true
+  end
+
+
+  def is_zao?
+    return true if self.current_user.is? :zao, :center_id => self.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
 
   def can_close?
     if ready_for_close?
       return true if self.current_user.is? :center_coordinator, :center_id => self.center_id
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
+      return false
     else
       self.errors[:base] << "Program cannot be closed yet."
-      false
+      return false
     end
   end
 
   def can_cancel?
     return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    false
+    return false
   end
 
   def on_cancel
-    self.notify_schedules(CANCELLED)
+    self.notify_all(CANCELLED)
     # TODO - cancel the timer for start of the class, no need for now, we will just ignore it once the timer comes
-  end
-
-  def in_final_state?
-    ::Program::FINAL_STATES.include?(self.state)
   end
 
   def friendly_name
@@ -332,10 +367,6 @@ class Program < ActiveRecord::Base
 
   def is_started?
     self.state == STATE_IN_PROGRESS
-  end
-
-  def is_finished?
-    self.state == STATE_CONDUCTED
   end
 
   def generate_program_id!
@@ -353,7 +384,7 @@ class Program < ActiveRecord::Base
     !self.venue_schedules.empty?
   end
 
-  def notify_schedules(event)
+  def notify_all(event)
     # send the event to each of the state machines
     # ideally we can register the state machine and the specific callback they want to be called
     self.teacher_schedules.each{|ts|
@@ -381,9 +412,6 @@ class Program < ActiveRecord::Base
   #  self.save!
   #end
 
-  def kit_connected?
-    self.kit_schedules && !self.kit_schedules.empty?
-  end
 
   #def connect_kit(kit)
   #  self.kit_schedule_id = kit.id
@@ -444,13 +472,13 @@ class Program < ActiveRecord::Base
     self.no_of_teachers_connected >= self.minimum_no_of_teacher
   end
 
-  def is_teacher?(current_user)
+  def is_teacher?
     self.teacher_schedules.each { |ts|
-      if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == current_user)
+      if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == self.current_user)
         return true
       end
     }
-    false
+    return false
   end
 
   def no_of_kits_connected
@@ -482,14 +510,14 @@ class Program < ActiveRecord::Base
     self.venue_schedules.each { |vs|
       return true if vs.approval_requested?
     }
-    false
+    return false
   end
 
   def venue_approved?
     self.venue_schedules.each { |vs|
       return true if vs.approved?
     }
-    false
+    return false
   end
 
   def ready_for_close?
@@ -509,26 +537,6 @@ class Program < ActiveRecord::Base
       return false
     end
 
-    if !account_closed?
-      self.errors[:base] << "Cannot close program, accounts for program are not closed."
-      return false
-    end
-
-    if !participant_data_entered?
-      self.errors[:base] << "Cannot close program, participant data for program has not been entered."
-      return false
-    end
-
-    true
-  end
-
-  def account_closed?
-    # TODO - need to implement account_closed??
-    return true
-  end
-
-  def participant_data_entered?
-    # TODO - need to implment participant_data_entered?
     return true
   end
 
@@ -536,7 +544,7 @@ class Program < ActiveRecord::Base
     return false unless self.no_of_venues_paid > 0
     return false unless self.no_of_kits_connected > 0
     return false unless self.minimum_teachers_connected?
-    true
+    return true
   end
 
 

@@ -63,7 +63,6 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   EVENT_BLOCK              = 'Block'
   EVENT_REQUEST_RELEASE    = 'Request Release'
   EVENT_RELEASE            = 'Release'
-  EVENT_ASSIGN             = 'Assign'
   EVENT_WITHDRAW           = 'Withdraw'
 
 
@@ -78,7 +77,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_BLOCK do
-      transition STATE_UNKNOWN => STATE_BLOCKED
+      transition STATE_UNKNOWN => STATE_BLOCKED, :if => lambda {|t| t.can_create?}
+    end
+    before_transition STATE_UNKNOWN => STATE_BLOCKED, :do => :can_block?
+    after_transition any => STATE_BLOCKED, :do => :if_program_announced!
+
+    event ::Program::DROPPED do
+      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE
     end
 
     event EVENT_RELEASE do
@@ -98,38 +103,23 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
     before_transition any => STATE_RELEASE_REQUESTED, :do => :is_teacher?
 
-    # Done
     event ::Program::CANCELLED do
       transition STATE_ASSIGNED => ::TeacherSchedule::STATE_AVAILABLE
     end
 
-    # Done
-    event ::Program::DROPPED do
-      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE
-    end
-
-    # in case the program is already announced, allowing them to change the state
-    event EVENT_ASSIGN do
-      transition STATE_BLOCKED => STATE_ASSIGNED, :if => lambda {|pts| pts.is_center_scheduler? && pts.program.is_announced? && pts.program.is_active?}
-    end
-    after_transition STATE_BLOCKED => STATE_ASSIGNED, :do => :if_program_started!
-
-    # Done
     event ::Program::ANNOUNCED do
       transition STATE_BLOCKED => STATE_ASSIGNED
     end
+    after_transition STATE_BLOCKED => STATE_ASSIGNED, :do => :if_program_started!
 
-    # Done
     event ::Program::STARTED do
       transition STATE_ASSIGNED => STATE_IN_CLASS
     end
 
-    # Done
     event ::Program::FINISHED do
       transition STATE_IN_CLASS => STATE_COMPLETED_CLASS
     end
 
-    # Done
     event EVENT_WITHDRAW do
       transition STATE_IN_CLASS => STATE_WITHDRAWN, :if => lambda {|pts| pts.is_zonal_coordinator? }
     end
@@ -155,12 +145,24 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   end
 
+
+  def can_block?
+    return true if self.can_create?
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
+
+  def if_program_announced!
+    self.send(::Program::ANNOUNCED) if self.program.is_announced? && self.program.is_active?
+  end
+
   def if_program_started!
     self.send(::Program::STARTED) if self.program.is_started?
   end
 
-  def can_unblock?
 
+  def can_unblock?
     if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id) && (self.program.no_of_teachers_connected > self.program.minimum_no_of_teacher)
       return true
     end
@@ -182,8 +184,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    false
+    return false
   end
+
 
   def can_approve_release?
     return false unless self.is_sector_coordinator?
@@ -193,7 +196,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       return false
     end
 
-    true
+    return true
   end
 
 
@@ -204,7 +207,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
       return false
     end
-    true
+    return true
   end
 
   def can_withdraw?
@@ -212,41 +215,35 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     if self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
-      false
+      return false
     end
-    true
+    return true
   end
 
   def is_teacher?
     if self.current_user.id != self.teacher_id
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
+      return false
     end
-    true
+    return true
   end
 
   def is_center_scheduler?
-    if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_sector_coordinator?
-    if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if  self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_zonal_coordinator?
-    if self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def initialize(*args)

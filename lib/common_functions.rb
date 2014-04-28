@@ -9,7 +9,7 @@ module CommonFunctions
       self.errors[:base] << "Please fill Details when selecting 'Other'."
       return false
     end
-    true
+    return true
   end
 
   def has_feedback?
@@ -17,7 +17,7 @@ module CommonFunctions
       self.errors[:feedback] << " is mandatory field."
       return false
     end
-    true
+    return true
   end
 
   def load_comments!(params)
@@ -69,13 +69,11 @@ module CommonFunctions
             ::User::ROLE_ACCESS_HIERARCHY[:zao][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]
-          # convert centers into zones, and search by that
-          #zones = Zone.joins(:sector).joins(:center).where('centers.id IN (?)', center_ids).uniq.all
-          #users = r.users.by_zones(zones).uniq
+          # search by zones
+          users = r.users.by_zones(center_ids).uniq
         when ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]
-          # convert centers into sectors, and search by that
-          #sectors = Sector.joins(:center).where('centers.id IN (?)', center_ids).uniq.all
-          #users = r.users.by_sectors(sectors).uniq
+          # search by sectors
+          users = r.users.by_sectors(center_ids).uniq
         else
           # search by centers
           users = r.users.by_centers(center_ids).uniq
@@ -106,6 +104,38 @@ module CommonFunctions
 
 
   def notify_user(user, model, from, to, on, value)
+
+=begin
+
+Program #1 Uyir Nokkam Cbe-City starting 01 Apr 2014
+
+if value.send_email == true
+Email - template (html format) user.email_id
+
+Namaskaram,
+#{self.friendly_name}
+Status: #{from} to #{to}
+unless value.additional_text.nil?
+#{value.additional_text}
+end
+
+Please log-in to http://localhost:3000/ for details.
+
+Pranam,
+Isha Foundation
+
+
+if value.send_sms == true
+Sms - template (text format) user.mobile
+
+Namaskaram, #{self.friendly_name_for_sms}, Status: #{from} to #{to}
+unless value.additional_text.nil?
+#{value.additional_text}
+end
+Pranam,
+Isha Foundation
+
+=end
 
   end
 

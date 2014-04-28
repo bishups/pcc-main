@@ -52,7 +52,7 @@ class KitSchedule < ActiveRecord::Base
   NON_MENU_EVENTS = [EVENT_BLOCK, EVENT_RESERVE, EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE]
   PROCESSABLE_EVENTS = [EVENT_ISSUE, EVENT_RETURNED, EVENT_CANCEL, EVENT_CLOSE]
 
-  EVENTS_WITH_COMMENTS = [EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE, EVENT_RESERVE, EVENT_CANCEL, EVENT_RETURNED, EVENT_ISSUE]
+  EVENTS_WITH_COMMENTS = [EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE, EVENT_RESERVE, EVENT_CANCEL, EVENT_RETURNED] #s, EVENT_ISSUE]
   EVENTS_WITH_FEEDBACK = [EVENT_CLOSE]
 
   belongs_to :kit
@@ -115,7 +115,7 @@ class KitSchedule < ActiveRecord::Base
     end
 
     event EVENT_ISSUE do
-      transition [STATE_ASSIGNED] => STATE_ISSUED, :if => lambda {|t| t.is_kit_coordinator? }
+      transition STATE_ASSIGNED => STATE_ISSUED, :if => lambda {|t| t.is_kit_coordinator? }
     end
     before_transition any => STATE_ISSUED, :do => :before_issue
     after_transition any => STATE_ISSUED, :do => :after_issue
@@ -132,7 +132,7 @@ class KitSchedule < ActiveRecord::Base
 
     event EVENT_OVERDUE do
       #transition [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED] => STATE_OVERDUE
-      transition [STATE_ISSUED] => STATE_OVERDUE
+      transition STATE_ISSUED => STATE_OVERDUE
     end
 
     event EVENT_CANCEL do
@@ -151,7 +151,7 @@ class KitSchedule < ActiveRecord::Base
     event EVENT_RESERVE do
       transition ::Kit::STATE_AVAILABLE => STATE_RESERVED, :if => lambda {|t| t.can_create_reserve? }
     end
-    before_transition any => STATE_RESERVED, :do => :can_create_reserve?
+    before_transition any => STATE_RESERVED, :do => :can_reserve?
 
     event EVENT_UNDER_REPAIR do
       transition ::Kit::STATE_AVAILABLE => STATE_UNDER_REPAIR, :if => lambda {|t| t.can_create_overdue_or_under_repair? }
@@ -160,7 +160,7 @@ class KitSchedule < ActiveRecord::Base
     event EVENT_UNAVAILABLE_OVERDUE do
       transition ::Kit::STATE_AVAILABLE => STATE_UNAVAILABLE_OVERDUE, :if => lambda {|t| t.can_create_overdue_or_under_repair? }
     end
-    before_transition any => [STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :can_create_overdue_or_under_repair?
+    before_transition any => [STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :can_overdue_or_under_repair?
     after_transition ::Kit::STATE_AVAILABLE => [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :after_reserve!
 
     # check for comments, before any transition
@@ -209,7 +209,7 @@ class KitSchedule < ActiveRecord::Base
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
-    true
+    return true
   end
 
   def is_center_coordinator?
@@ -217,7 +217,7 @@ class KitSchedule < ActiveRecord::Base
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
-    true
+    return true
   end
 
   def before_issue
@@ -229,7 +229,7 @@ class KitSchedule < ActiveRecord::Base
       return false
     end
     self.due_date_time = self.end_date
-    true
+    return true
   end
 
 =begin
@@ -344,7 +344,7 @@ class KitSchedule < ActiveRecord::Base
   def after_issue
     self.delay(:run_at => self.due_date_time).trigger_overdue
     self.issue_for_schedules = NIL
-    true
+    return true
   end
 
   def can_unblock?
@@ -366,7 +366,25 @@ class KitSchedule < ActiveRecord::Base
     end
 
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    false
+    return false
+  end
+
+  def can_reserve?
+    return false unless self.can_create_reserve?
+    unless (self.end_date.mjd - self.start_date.mjd + 1).between?(1,90)
+      self.errors[:end_date] << " should be within 90 days of the start date"
+      return false
+    end
+    return true
+  end
+
+  def can_overdue_or_under_repair?
+    return false unless self.can_create_overdue_or_under_repair?
+    unless (self.end_date.mjd - self.start_date.mjd + 1).between?(1,90)
+      self.errors[:end_date] << " should be within 90 days of the start date"
+      return false
+    end
+    return true
   end
 
   def after_reserve!

@@ -131,7 +131,7 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule.current_user = current_user
     @trigger = params[:trigger]
     #authorize! :update, @venue
-    @venue_schedule.blocked_for = params[:blocked_for] if params.has_key?(:blocked_for)
+    @venue_schedule.block_expiry_date = params[:block_expiry_date] if params.has_key?(:block_expiry_date)
     @venue_schedule.load_comments!(params)
 
     respond_to do |format|

@@ -9,7 +9,7 @@
           <br>
           <strong>This program is ready for announcement.</strong>
         </div>
-    <% elsif !(@program.is_announced? || ::Program::FINAL_STATES.include?(@program.state)) %>
+    <% elsif !@program.is_announced? && @program.is_active? %>
         <div class='alert alert-danger'>
           This program is not yet ready for announcement.
           <small><%= link_to "[Why?]", '#', :id => 'prog-why-a' %></small>
@@ -108,11 +108,11 @@
       </tr>
       <tr>
         <td><strong>Start Date</strong></td>
-        <td><%= @program.start_date.strftime('%d %B %Y') %></td>
+        <td><%= @program.start_date.strftime('%d %B %Y (%A)') %></td>
       </tr>
       <tr>
         <td><strong>End Date</strong></td>
-        <td><%= @program.end_date.strftime('%d %B %Y') %></td>
+        <td><%= @program.end_date.strftime('%d %B %Y (%A)') %></td>
       </tr>
       <tr>
         <td><strong>Timing (s)</strong></td>
