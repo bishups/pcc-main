@@ -17,6 +17,15 @@ class Zone < ActiveRecord::Base
 
   attr_accessible :name, :sector_ids, :sectors
 
+  def self.by_centers(centers)
+    joins(:sectors).joins(:centers).where(:centers=>{:id=>centers}).uniq
+  end
+
+  def self.by_sectors(sectors)
+    joins(:sectors).where(:sectors=>{:id=>sectors}).uniq
+  end
+
+
   # usage -> ::Zone::all_sectors_in_one_zone? [sector1, sector2, sector3]
   def self.all_sectors_in_one_zone?(sectors)
     if !sectors.empty?

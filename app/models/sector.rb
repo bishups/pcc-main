@@ -18,6 +18,9 @@ class Sector < ActiveRecord::Base
 
   attr_accessible :name, :zone_id, :center_ids, :centers, :zone
 
+  def self.by_centers(centers)
+    joins(:centers).where(:centers=>{:id=>centers}).uniq
+  end
 
   # usage -> ::Sector::all_centers_in_one_sector? [center1, center2, center3]
   def self.all_centers_in_one_sector?(centers)

@@ -13,15 +13,28 @@ class Role < ActiveRecord::Base
   has_and_belongs_to_many :permissions
   has_many :access_privileges
   has_many :users, :through => :access_privileges do
+
     def by_centers(centers=[])
       find(:all, :conditions => ["access_privileges.resource_type = 'Center' and access_privileges.resource_id in (?)", centers])
     end
-    def by_sectors(sectors=[])
-      find(:all, :conditions => ["access_privileges.resource_type = 'Sector' and access_privileges.resource_id in (?)", sectors])
+
+    def by_sectors(objs=[])
+      if objs.first.class.name == "Center"
+        objs=Sector.by_centers(objs)
+      end
+      find(:all, :conditions => ["access_privileges.resource_type = 'Sector' and access_privileges.resource_id in (?)", objs])
     end
-    def by_zones(zones=[])
-      find(:all, :conditions => ["access_privileges.resource_type = 'Zone' and access_privileges.resource_id in (?)", zones])
+
+    def by_zones(objs=[])
+      if objs.first.class.name == "Center"
+        objs=Zone.by_centers(objs)
+      end
+      if objs.first.class.name == "Sector"
+        objs=Zone.by_sectors(objs)
+      end
+      find(:all, :conditions => ["access_privileges.resource_type = 'Zone' and access_privileges.resource_id in (?)", objs])
     end
+
   end
 
   attr_accessible :name, :permission_ids, :permissions
