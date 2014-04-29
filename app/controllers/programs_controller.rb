@@ -3,7 +3,7 @@ class ProgramsController < ApplicationController
 
   def index
     center_ids = current_user.accessible_center_ids
-    @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 30.days.from_now), ::Program::FINAL_STATES).order('start_date ASC').all
+    @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 1.month.from_now), ::Program::FINAL_STATES).order('start_date ASC').all
 
     respond_to do |format|
       format.html

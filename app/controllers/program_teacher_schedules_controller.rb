@@ -197,7 +197,8 @@ class ProgramTeacherSchedulesController < ApplicationController
       ts.clear_comments!
       # This is a hack to store the last update
       ts.store_last_update!(current_user, ::ProgramTeacherSchedule::STATE_UNKNOWN, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
-      ts.save(:validate => false)
+      #ts.save(:validate => false)
+      ts.save!
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         error << ts.errors.full_messages

@@ -124,7 +124,7 @@ class Venue < ActiveRecord::Base
     event EVENT_REJECT do
       transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED, :if => lambda {|t| t.is_sector_coordinator? }
     end
-    before_transition STATE_POSSIBLE => STATE_REJECTED, :do => :can_reject?
+    before_transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED, :do => :can_reject?
 
     event EVENT_INSUFFICIENT_INFO do
       transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO, :if => lambda {|t| t.is_pcc_accounts? }

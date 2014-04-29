@@ -22,7 +22,7 @@ group :assets do
 end
 
 gem 'jquery-rails'
-
+gem 'whenever', :require => false
 gem 'delayed_job_active_record'
 gem 'bootstrap-datetime-picker-for-rails'
 

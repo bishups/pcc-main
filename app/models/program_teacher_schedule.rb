@@ -53,24 +53,22 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   STATE_RELEASE_REQUESTED   = 'Release Requested'
   STATE_IN_CLASS            = 'In Class'
   STATE_COMPLETED_CLASS     = 'Completed Class'
-  STATE_WITHDRAWN           = 'Withdrawn'
 
   CONNECTED_STATES = [STATE_BLOCKED, STATE_RELEASE_REQUESTED, STATE_ASSIGNED, STATE_IN_CLASS]
-  FINAL_STATES = [STATE_COMPLETED_CLASS, STATE_WITHDRAWN]
+  FINAL_STATES = [STATE_COMPLETED_CLASS]
 
 
   # Events
   EVENT_BLOCK              = 'Block'
   EVENT_REQUEST_RELEASE    = 'Request Release'
   EVENT_RELEASE            = 'Release'
-  EVENT_WITHDRAW           = 'Withdraw'
 
 
   PROCESSABLE_EVENTS = [
-      EVENT_REQUEST_RELEASE, EVENT_RELEASE, EVENT_WITHDRAW
+      EVENT_REQUEST_RELEASE, EVENT_RELEASE
   ]
 
-  EVENTS_WITH_COMMENTS = [EVENT_RELEASE, EVENT_WITHDRAW, EVENT_REQUEST_RELEASE]
+  EVENTS_WITH_COMMENTS = [EVENT_RELEASE, EVENT_REQUEST_RELEASE]
   EVENTS_WITH_FEEDBACK = []
 
 
@@ -118,12 +116,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     event ::Program::FINISHED do
       transition STATE_IN_CLASS => STATE_COMPLETED_CLASS
+      transition [STATE_BLOCKED, STATE_RELEASE_REQUESTED] => ::TeacherSchedule::STATE_EXPIRED
     end
-
-    event EVENT_WITHDRAW do
-      transition STATE_IN_CLASS => STATE_WITHDRAWN, :if => lambda {|pts| pts.is_zonal_coordinator? }
-    end
-    before_transition STATE_IN_CLASS => STATE_WITHDRAWN, :do => :can_withdraw?
 
     before_transition any => any do |object, transition|
       if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
@@ -158,7 +152,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def if_program_started!
-    self.send(::Program::STARTED) if self.program.is_started?
+    self.send(::Program::STARTED) if self.program.in_progress?
   end
 
 
@@ -210,18 +204,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     return true
   end
 
-  def can_withdraw?
-    return false unless self.is_zonal_coordinator?
-
-    if self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher
-      self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
-      return false
-    end
-    return true
-  end
 
   def is_teacher?
-    if self.current_user.id != self.teacher_id
+    if self.current_user != self.teacher.user
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -255,7 +240,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   # NOTE: ProgramTeacherSchedule is **NOT** using ActiveRecord class functions like save
   def update(trigger)
     # if the state was updated to ::TeacherSchedule::STATE_AVAILABLE or ::TeacherSchedule::STATE_UNAVAILABLE
-    if (::TeacherSchedule::STATE_PUBLISHED).include?(self.state)
+    if (::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_EXPIRED]).include?(self.state)
       program_id = nil
       blocked_by_user_id = nil
     else
@@ -275,7 +260,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       ts.blocked_by_user_id = blocked_by_user_id
       ts.comments = self.comments.nil? ? "" : self.comments
       ts.feedback = self.feedback unless self.feedback.nil?
-      ts.save(:validate => false)
+      ts.save!
       ## TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         self.errors[:base] << ts.errors.full_messages
@@ -283,10 +268,10 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
 
       # 2. if they have been marked Available or unavailable, then check if combine_consecutive_slots
-      if ((::TeacherSchedule::STATE_PUBLISHED).include?(ts.state)) && ts.combine_consecutive_schedules?
+      if ((::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_EXPIRED]).include?(ts.state)) && ts.can_combine_consecutive_schedules?
         ts.clear_comments!
         ts.clear_last_update!
-        ts.combine_consecutive_schedules
+        ts.combine_consecutive_schedules!
         # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
         if !ts.save
           self.errors[:base] << ts.errors.full_messages

@@ -52,9 +52,9 @@
           <td><%= teacher_schedule_state_tag(ts) %></td>
           <td>
             <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id && ts.can_view_schedule? %>
-            <% if ts.can_update? %>
-                <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if !ts.program_id %>
-                <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if !ts.program_id %>
+            <% if ts.can_update? && !ts.program_id && ::TeacherSchedule::STATE_PUBLISHED.include?(ts.state) %>
+                <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' %>
+                <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm'%>
             <% end %>
           </td>
         </tr>

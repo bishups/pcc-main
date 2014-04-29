@@ -190,6 +190,11 @@ class KitSchedule < ActiveRecord::Base
     return false unless self.can_create?
     self.start_date = self.program.start_date.to_date - 1.day
     self.end_date = (self.program.end_date.to_date + 2.day - 1.minute).to_date
+
+    current_date = Time.zone.now.to_date
+    if self.start_date < current_date && self.program.in_progress?
+      self.start_date = current_date
+    end
 #    self.start_date = self.program.start_date
 #    self.end_date = self.program.end_date
   end
@@ -353,21 +358,19 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def can_unblock?
-    # to prevent too many error messages on console return early
+    no_kits_blocked = self.program.no_of_kits_connected
     if (self.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
-      if self.program.venue_approved?
-        self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for payment request."
-        return false
-      end
-      return true
+      return true unless self.program.venue_approved?
+      return true if no_kits_blocked > 1
+      self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for payment request. Add another kit and try again."
+      return false
     end
 
     if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id)
-      if self.program.venue_approval_requested?
-        self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for sector coordinator approval."
-        return false
-      end
-      return true
+      return true unless self.program.venue_approval_requested?
+      return true if no_kits_blocked > 1
+      self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for sector coordinator approval. Add another kit and try again."
+      return false
     end
 
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."

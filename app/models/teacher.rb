@@ -121,6 +121,7 @@ class Teacher < ActiveRecord::Base
       # HACK - since we can attach only from rails_admin, store the last update
       # TODO - see how we can get the current_user here?
       object.store_last_update!(nil, last_state, current_state, nil)
+      # turning off validation when saving, since it is a minimal update in a callback
       object.save(:validate => false)
       object.notify(:any, STATE_ATTACHED, :any, self.center_ids)
     end
@@ -128,10 +129,11 @@ class Teacher < ActiveRecord::Base
       # if we have published TeacherSchedules, means we are coming through the rails_admin
       if TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).count > 0
         # remove all published teacher schedules
-        TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
+        object.delete_published_schedules
         # HACK - store the last update for rails_admin
         # TODO - see how we can get the current_user here?
         object.store_last_update!(nil, last_state, current_state, nil)
+        # turning off validation when saving, since it is a minimal update in a callback
         object.save(:validate => false)
       end
       object.notify(STATE_ATTACHED, :any, :any, self.center_ids)
@@ -161,7 +163,7 @@ class Teacher < ActiveRecord::Base
 
   def after_unattach
     # if marked unfit remove all published teacher_schedules
-    TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
+    self.delete_published_schedules
   end
 
   def can_mark_unfit?
@@ -187,6 +189,10 @@ class Teacher < ActiveRecord::Base
     CentersTeachers.where(:teacher_id => self.id).delete_all
   end
 
+
+  def delete_published_schedules
+    TeacherSchedule.where('teacher_id IS ? AND state IN (?) AND start_date >= ?', self.id, ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date).delete_all
+  end
 
   def in_schedule?
     self.teacher_schedules.each { |ts|

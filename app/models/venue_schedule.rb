@@ -75,6 +75,7 @@ class VenueSchedule < ActiveRecord::Base
 
   PAID_STATES = [STATE_PAID, STATE_ASSIGNED, STATE_IN_PROGRESS, STATE_CONDUCTED, STATE_SECURITY_REFUNDED, STATE_CLOSED]
   CONNECTED_STATES = (PAID_STATES + [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING])
+  BLOCKED_STATES = (CONNECTED_STATES - [STATE_BLOCK_REQUESTED])
   # final states
   FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED, STATE_EXPIRED]
 
@@ -129,8 +130,12 @@ class VenueSchedule < ActiveRecord::Base
 
     event EVENT_CANCEL do
       transition STATE_BLOCK_REQUESTED => STATE_CANCELLED, :if => lambda {|t| t.is_center_scheduler? }
+      transition STATE_BLOCKED => STATE_CANCELLED, :if => lambda {|t| t.is_center_scheduler? }
+      transition STATE_APPROVAL_REQUESTED => STATE_CANCELLED, :if => lambda {|t| t.is_sector_coordinator? }
     end
-    before_transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :do => :is_center_scheduler?
+    before_transition STATE_BLOCK_REQUESTED => STATE_CANCELLED, :do => :is_center_scheduler?
+    before_transition STATE_BLOCKED => STATE_CANCELLED, :do => :can_cancel_block?
+    before_transition STATE_APPROVAL_REQUESTED => STATE_CANCELLED, :do => :can_cancel_approval_request?
 
     event ::Program::DROPPED do
       transition [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED] => STATE_CANCELLED
@@ -225,6 +230,25 @@ class VenueSchedule < ActiveRecord::Base
 
   end
 
+  def can_cancel_block?
+    return false unless self.is_center_scheduler?
+    if self.program.no_of_venues_blocked <= 1
+      self.errors[:base] << "Cannot remove the only blocked venue. Please block another venue and try again."
+      return false
+    end
+    return true
+  end
+
+  def can_cancel_approval_request?
+    return false unless self.is_sector_coordinator?
+    if self.program.no_of_venues_blocked <= 1
+      self.errors[:base] << "Cannot remove the only blocked venue. Please block another venue and try again."
+      return false
+    end
+    return true
+  end
+
+
   def can_block?
     return true if self.can_create?
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
@@ -286,7 +310,7 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def on_assigned
-    self.send(::Program::STARTED) if self.program.is_started? && self.program.is_active?
+    self.send(::Program::STARTED) if self.program.in_progress?
   end
 
   def venue_free?

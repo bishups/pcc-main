@@ -164,10 +164,9 @@ class Program < ActiveRecord::Base
     event EVENT_EXPIRE do
       transition STATE_PROPOSED => STATE_EXPIRED
     end
-    after_transition any => STATE_IN_PROGRESS, :do => :on_start
 
     event EVENT_FINISH do
-      transition [STATE_IN_PROGRESS] => STATE_CONDUCTED
+      transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
     after_transition any => STATE_CONDUCTED, :do => :on_finish
 
@@ -380,7 +379,7 @@ class Program < ActiveRecord::Base
     self.announce_program_id && !self.announce_program_id.empty?
   end
 
-  def is_started?
+  def in_progress?
     self.state == STATE_IN_PROGRESS
   end
 
@@ -501,9 +500,19 @@ class Program < ActiveRecord::Base
     self.kit_schedules.where('state IN (?)', ::KitSchedule::CONNECTED_STATES).count
   end
 
+  def no_of_kits_assigned
+    return 0 if !self.kit_schedules
+    self.kit_schedules.where('state IN (?)', ::KitSchedule::ASSIGNED_STATES).count
+  end
+
   def no_of_venues_connected
     return 0 if !self.venue_schedules
     self.venue_schedules.where('state IN (?)', ::VenueSchedule::CONNECTED_STATES).count
+  end
+
+  def no_of_venues_blocked
+    return 0 if !self.venue_schedules
+    self.venue_schedules.where('state IN (?)', ::VenueSchedule::BLOCKED_STATES).count
   end
 
   def no_of_venues_paid

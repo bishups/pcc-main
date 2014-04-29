@@ -12,8 +12,6 @@ module ProgramTeacherSchedulesHelper
         '<span class="label label-info">In Class</span>'
       elsif pts.state == ::ProgramTeacherSchedule::STATE_COMPLETED_CLASS
         '<span class="label label-success">Completed Class</span>'
-      elsif pts.state == ::ProgramTeacherSchedule::STATE_WITHDRAWN
-        '<span class="label label-danger">Withdrawn</span>'
       else
         '<span class="label label-default">Unknown</span>'
       end

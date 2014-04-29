@@ -36,13 +36,13 @@ class TeacherSchedule < ActiveRecord::Base
   #has_many :program_teacher_schedules
 
   validates :start_date, :end_date, :timing_id, :center_id, :state, :presence => true
+  validates_with TeacherScheduleValidator
 
-  # validates :start_date, :end_date, :overlap => {:scope => ['user_id', 'slot'] }
-  validate :start_and_end_dates, :scheduleOverlapNotAllowed
   validate :teacher_enabled?
 
   STATE_AVAILABLE = 'Available'
   STATE_UNAVAILABLE = 'Not Available'
+  STATE_EXPIRED = 'Expired'
   STATE_PUBLISHED = [
       STATE_AVAILABLE, STATE_UNAVAILABLE
   ]
@@ -61,6 +61,7 @@ class TeacherSchedule < ActiveRecord::Base
     if self.start_date < start_date
       ts = self.dup
       ts.end_date = start_date - 1.day
+      # turning off validation when saving, since dates will overlap database record corresponding to self
       if !ts.save(:validate => false)
         errors[:start_date] << "Unable to split schedule, around start date"
       end
@@ -70,6 +71,7 @@ class TeacherSchedule < ActiveRecord::Base
     if self.end_date > end_date
       ts = self.dup
       ts.start_date = end_date + 1.day
+      # turning off validation when saving, since dates will overlap database record corresponding to self
       if !ts.save(:validate => false)
         errors[:end_date] << "Unable to split schedule, around end date"
       end
@@ -81,9 +83,9 @@ class TeacherSchedule < ActiveRecord::Base
     ::ProgramTeacherSchedule::CONNECTED_STATES.include?(self.state)
   end
 
-  def combine_consecutive_schedules?
+  def can_combine_consecutive_schedules?
     additional_days = 0
-    if (::TeacherSchedule::STATE_PUBLISHED).include?(state)
+    if (STATE_PUBLISHED + [STATE_EXPIRED]).include?(state)
       ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
                                   start_date - 1.day, timing_id, state, teacher_id, center_id]).first
       if ts
@@ -100,8 +102,8 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
 
-  def combine_consecutive_schedules()
-    if (::TeacherSchedule::STATE_PUBLISHED).include?(state)
+  def combine_consecutive_schedules!
+    if (STATE_PUBLISHED+ [STATE_EXPIRED]).include?(state)
       ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
                                   start_date - 1.day, timing_id, state, teacher_id, center_id]).first
       if ts
@@ -177,41 +179,41 @@ class TeacherSchedule < ActiveRecord::Base
     return false
   end
 
-    private
 
-  # Validator
-  def start_and_end_dates
-    if self.start_date and self.end_date
-      errors.add(:start_date, "must be in the future") if self.start_date < Time.zone.now.to_date
-      errors.add(:end_date, "cannot be less than start date") if self.start_date > self.end_date
-#      errors.add(:end_date, "cannot be less than 2 days after start date") if (self.end_date - self.start_date) < 2.days
+  def split_schedule_on_start_date!(start_date)
+    if self.start_date < start_date
+      ts = self.dup
+      # save the future day(s) schedule, after advancing start_date to today's date
+      ts.start_date = start_date
+      # TODO - check how to do error handling
+      # turning off validation when saving, since dates will overlap database record corresponding to self
+      if !ts.save(:validate => false)
+        errors[:start_date] << "Unable to split schedule, around start date"
+      end
+      self.end_date = start_date - 1.day
     end
   end
 
-  def scheduleOverlapNotAllowed
-    # teacher schedule should not overlap with any existing schedule
-    ts = TeacherSchedule.where(['(start_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
-                                self.start_date, self.end_date, self.timing_id, self.teacher_id]).to_a
-    if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
-      errors[:start_date] << " timing overlaps with existing schedule."
-      return
-    end
 
-    ts = TeacherSchedule.where(['(end_date BETWEEN ? AND ?) AND timing_id = ? AND teacher_id = ?',
-                                self.start_date, self.end_date, self.timing_id, self.teacher_id]).to_a
-    if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
-        errors[:end_date] << " timing overlaps with existing schedule."
-        return
-    end
-
-    ts = TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND teacher_id = ?',
-                                self.start_date, self.end_date, self.timing_id, self.teacher_id]).to_a
-    if !ts.empty? && (ts.count > 1 || ts[0].id != self.id)
-       errors[:start_date] << " timing overlaps with existing schedule."
-       return
-    end
+  # this is a cron job, run through whenever gem
+  # from the config/schedule.rb file
+  def mark_as_expired
+    # see if it can be combined with other schedules
+    current_date = Time.zone.now.to_date
+    teacher_schedules = TeacherSchedule.where('start_date < ? AND state IN (?)', current_date, ::TeacherSchedule::STATE_PUBLISHED)
+    teacher_schedules.each { |ts|
+      # split the current STATE_AVAILABLE schedule, in one day (previous_day) and future day(s) schedule
+      ts.split_schedule_on_start_date!(current_date)
+      # In case state was AVAILABLE, mark it as EXPIRED, else leave UNAVAILABLE as is
+      ts.state = STATE_EXPIRED if ts.state == STATE_AVAILABLE
+      ts.combine_consecutive_schedules! if ts.can_combine_consecutive_schedules?
+      # TODO - check how to do error handling
+      # turning off validation when saving, since dates are in past
+      if !ts.save(:validate => false)
+        self.errors[:base] << ts.errors.full_messages
+      end
+    }
   end
-
 
 
 end

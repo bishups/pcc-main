@@ -8,7 +8,7 @@ class TeacherSchedulesController < ApplicationController
     center_ids = current_user.accessible_center_ids
     @teacher = Teacher.find(params[:teacher_id])
     @teacher.current_user = current_user
-    @teacher_schedules = @teacher.teacher_schedules.where("end_date > ? AND center_id IN (?)", (Time.zone.now - 15.days.from_now), center_ids).group("coalesce(program_id, created_at)")
+    @teacher_schedules = @teacher.teacher_schedules.where("end_date >= ? AND center_id IN (?)", Time.zone.now.to_date, center_ids).group("coalesce(program_id, created_at)")
 
     respond_to do |format|
       if @teacher.can_view_schedule?
@@ -80,13 +80,13 @@ class TeacherSchedulesController < ApplicationController
             @teacher_schedule.teacher_id = params[:teacher_id]
             @teacher_schedule.timing_id = timing_id
             if @teacher_schedule.valid?
-              additional_days = @teacher_schedule.combine_consecutive_schedules?
+              additional_days = @teacher_schedule.can_combine_consecutive_schedules?
               if (additional_days + @teacher_schedule.no_of_days < 3)
                 @teacher_schedule.errors[:end_date] << "cannot be less than 2 days after start date."
                 format.html { render action: "new" }
                 format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
               else
-                @teacher_schedule.combine_consecutive_schedules if additional_days != 0
+                @teacher_schedule.combine_consecutive_schedules! if additional_days != 0
                 if !@teacher_schedule.save
                   format.html { render action: "new" }
                   format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
@@ -135,13 +135,13 @@ class TeacherSchedulesController < ApplicationController
 
     respond_to do |format|
       if @teacher_schedule.can_update?
-        additional_days = @teacher_schedule.combine_consecutive_schedules?
+        additional_days = @teacher_schedule.can_combine_consecutive_schedules?
         if (additional_days + @teacher_schedule.no_of_days < 3)
           @teacher_schedule.errors[:end_date] << "cannot be less than 2 days after start date."
           format.html { render action: "edit" }
           format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
         else
-          @teacher_schedule.combine_consecutive_schedules if additional_days != 0
+          @teacher_schedule.combine_consecutive_schedules! if additional_days != 0
           if !@teacher_schedule.save
             format.html { render action: "edit" }
             format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
