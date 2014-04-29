@@ -1,24 +1,26 @@
 <h2>
   <small><%= venue_state_tag(@venue) %></span></small> Venue <small><%= @venue.name %></small>
-
-<% unless ::Venue::FINAL_STATES.include?(@venue.state) %>
-    <% if @venue.can_update? %>
-        <div class='btn-group'>
-            <button type="button" class="btn btn-danger">Update State</button>
-            <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-              <span class="caret"></span>
-              <span class="sr-only">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu" role="menu">
-              <% @venue.state_events.each do |ev| %>
-              <li>
-                <%= link_to ev, edit_venue_path(@venue, :trigger => ev) %>
-              </li>
-              <% end %>
-            </ul>
-        </div>
+    <% unless ::Venue::FINAL_STATES.include?(@venue.state) %>
+        <% if @venue.can_update? %>
+            <div class='btn-group'>
+                <button type="button" class="btn btn-danger">Update State</button>
+                <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                  <span class="caret"></span>
+                  <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                  <% events = @venue.state_events %>
+                  <% if events.count > 0 %>
+                      <% events.each do |ev| %>
+                        <li> <%= link_to ev, edit_venue_path(@venue, :trigger => ev) %> </li>
+                      <% end %>
+                  <% else %>
+                      <li class="disabled"><a href="#">No Action Available</a></li>
+                  <% end %>
+                </ul>
+            </div>
+        <% end %>
     <% end %>
-<% end %>
 <span class='pull-right'>
     <%= link_to "Back to Venues", venues_path, :class => 'btn btn-primary' %>
 </span>

@@ -1,5 +1,13 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#kit_schedule_table').dataTable({
+            "sPaginationType": "bootstrap"
+        } );
+    });
+</script>
 
-<table class='table table-condensed table-hover table-bordered'>
+<table id="kit_schedule_table" class='display dataTable table table-condensed table-hover table-bordered'>
+  <thead>
   <tr>
     <th>ID #</th>
     <th>Program</th>
@@ -10,27 +18,30 @@
     <th>State</th>
     <th></th>
   </tr>
-<% @kit.kit_schedules.each do |ks| %>
-<% ks.current_user = current_user %>
-  <tr>
-    <td><%= ks.id %></td>
-    <td><%= link_to ks.program.name,program_path(ks.program_id) rescue 'Not Applicable' %></td>
-    <td><%= ks.start_date.strftime('%d %B %Y') %></td>
-    <td><%= ks.end_date.strftime('%d %B %Y') %></td>
-    <% if false %>
-        <% if ks.program.nil? %>
-            <td><%= ks.start_date.strftime('%d %B (%I:%M%P)') %> to <%= ks.end_date.strftime('%d %B (%I:%M%P)') %> </td>
-        <% else %>
-            <td><%= (ks.program.timings.map {|c| c[:name]}).join(", ") rescue ' ' %></td>
+  </thead>
+  <tbody>
+  <% @kit.kit_schedules.each do |ks| %>
+      <% ks.current_user = current_user %>
+      <tr>
+        <td><%= ks.id %></td>
+        <td><%= link_to ks.program.name,program_path(ks.program_id) rescue 'Not Applicable' %></td>
+        <td><%= ks.start_date.strftime('%d %B %Y') %></td>
+        <td><%= ks.end_date.strftime('%d %B %Y') %></td>
+        <% if false %>
+            <% if ks.program.nil? %>
+                <td><%= ks.start_date.strftime('%d %B (%I:%M%P)') %> to <%= ks.end_date.strftime('%d %B (%I:%M%P)') %> </td>
+            <% else %>
+                <td><%= (ks.program.timings.map {|c| c[:name]}).join(", ") rescue ' ' %></td>
+            <% end %>
         <% end %>
-    <% end %>
-    <td><%= ks.blocked_by_user.fullname rescue ' ' %></td>
-    <td><%= kit_schedule_state_tag(ks) %>
-    <% if ks.program_id %>
-        <td> <%= link_to "Open", kit_schedule_path(ks), :class => 'btn btn-primary btn-sm' if ks.can_update? %> </td>
-    <% else %>
-        <td> <%= link_to "Delete", {:controller => "kit_schedules", :action => 'destroy', :id => ks.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if ks.can_delete? %> </td>
-    <% end %>
-  </tr>
-<% end %>
+        <td><%= ks.blocked_by_user.fullname rescue ' ' %></td>
+        <td><%= kit_schedule_state_tag(ks) %>
+          <% if ks.program_id %>
+            <td> <%= link_to "Open", kit_schedule_path(ks), :class => 'btn btn-primary btn-sm' if ks.can_update? %> </td>
+        <% else %>
+            <td> <%= link_to "Delete", {:controller => "kit_schedules", :action => 'destroy', :id => ks.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if ks.can_delete? %> </td>
+        <% end %>
+      </tr>
+  <% end %>
+  </tbody>
 </table>

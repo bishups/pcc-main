@@ -8,12 +8,14 @@
           <span class="sr-only">Toggle Dropdown</span>
         </button>
         <ul class="dropdown-menu" role="menu">
-              <% events = (@kit_schedule.state_events - (::Program::NOTIFICATIONS + ::KitSchedule::NOTIFICATIONS + ::KitSchedule::NON_MENU_EVENTS)) %>
+          <% events = (@kit_schedule.state_events - (::Program::NOTIFICATIONS + ::KitSchedule::NOTIFICATIONS + ::KitSchedule::NON_MENU_EVENTS)) %>
+          <% if events.count > 0 %>
               <% events.each do |ev| %>
-                  <li>
-                    <%= link_to ev, edit_kit_schedule_path(@kit_schedule, :trigger => ev) %>
-                  </li>
+                  <li> <%= link_to ev, edit_kit_schedule_path(@kit_schedule, :trigger => ev) %> </li>
               <% end %>
+          <% else %>
+              <li class="disabled"><a href="#">No Action Available</a></li>
+          <% end %>
         </ul>
       </div>
   <% end %>

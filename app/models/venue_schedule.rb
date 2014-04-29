@@ -24,7 +24,7 @@ class VenueSchedule < ActiveRecord::Base
   validates :program_id, :presence => true
 
   # Overlap validation
-  validates_with VenueScheduleValidator
+  validates_with VenueScheduleValidator, :on => :create
   #validates_uniqueness_of :program_id
 
   attr_accessor :block_expiry_date, :current_user
@@ -69,13 +69,15 @@ class VenueSchedule < ActiveRecord::Base
   STATE_CLOSED                    = "Closed"
   STATE_CANCELLED                 = "Cancelled"
   STATE_UNAVAILABLE               = "Unavailable"
+  STATE_EXPIRED                   = "Expired"
 
   # connected to program
 
   PAID_STATES = [STATE_PAID, STATE_ASSIGNED, STATE_IN_PROGRESS, STATE_CONDUCTED, STATE_SECURITY_REFUNDED, STATE_CLOSED]
   CONNECTED_STATES = (PAID_STATES + [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING])
   # final states
-  FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED]
+  FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED, STATE_EXPIRED]
+
 
   EVENT_BLOCK_REQUEST     = "Block Request"
   EVENT_BLOCK             = "Block"
@@ -97,6 +99,7 @@ class VenueSchedule < ActiveRecord::Base
   EVENTS_WITH_FEEDBACK = [EVENT_CLOSE]
 
   NOTIFICATIONS = [EVENT_BLOCK_EXPIRED]
+
 
   def initialize(*args)
     super(*args)
@@ -183,6 +186,10 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
 
+    event ::Program::FINISHED do
+      transition (CONNECTED_STATES - PAID_STATES) => STATE_EXPIRED
+    end
+
     event EVENT_SECURITY_REFUNDED do
       transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free? && vs.is_venue_coordinator? }
     end
@@ -239,8 +246,10 @@ class VenueSchedule < ActiveRecord::Base
   def trigger_block_expire
     return if !self.reloaded?
     if [STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING].include?(self.state)
-      self.send(EVENT_BLOCK_EXPIRED)
-      self.save if self.errors.empty?
+      if self.program.end_date > Time.zone.now
+        self.send(EVENT_BLOCK_EXPIRED)
+        self.save if self.errors.empty?
+      end
     end
   end
 
@@ -267,15 +276,17 @@ class VenueSchedule < ActiveRecord::Base
 
   def after_block
     self.delay(:run_at => self.block_expiry_date).trigger_block_expire
+    # They have to manually opt for permission, even if the program has started
+    #self.send(EVENT_REQUEST_APPROVAL) if self.program.is_announced? && self.program.is_active?
     return true
   end
 
   def on_paid
-    self.send(::Program::ANNOUNCED) if self.program.is_announced?
+    self.send(::Program::ANNOUNCED) if self.program.is_announced? && self.program.is_active?
   end
 
   def on_assigned
-    self.send(::Program::STARTED) if self.program.is_started?
+    self.send(::Program::STARTED) if self.program.is_started? && self.program.is_active?
   end
 
   def venue_free?
@@ -288,13 +299,13 @@ class VenueSchedule < ActiveRecord::Base
 
   def is_active?
     return false if FINAL_STATES.include?(self.state)
-    # return false unless self.program.is_active?
+    return false unless self.program.is_active?
     return true
   end
 
   def on_authorization_for_payment?
     event = self.venue_free? ? EVENT_PAID : EVENT_REQUEST_PAYMENT
-    self.send(event)
+    self.send(event) if self.program.is_active?
   end
 
   def can_request_approval?
@@ -334,12 +345,12 @@ class VenueSchedule < ActiveRecord::Base
 
   # have we requested the approval for the venue?
   def approval_requested?
-    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED].include?(self.state))
   end
 
   # has the payment been approved for the venue?
   def approved?
-    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED].include?(self.state))
   end
 
   def on_program_event(event)
@@ -348,7 +359,7 @@ class VenueSchedule < ActiveRecord::Base
         ::Program::DROPPED => [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED],
         ::Program::ANNOUNCED => [STATE_PAID],
         ::Program::STARTED => [STATE_ASSIGNED],
-        ::Program::FINISHED => [STATE_IN_PROGRESS],
+        ::Program::FINISHED => [STATE_IN_PROGRESS] + (CONNECTED_STATES - PAID_STATES),
 
     }
 

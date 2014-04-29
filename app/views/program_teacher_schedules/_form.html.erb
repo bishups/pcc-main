@@ -1,16 +1,23 @@
 <%= form_for(@program_teacher_schedule, :html => { :class => 'form' }) do |f| %>
   <%= resource_error_messages!(@program_teacher_schedule) %>
-  
+  <% submit_disabled = false %>
+
   <div class='form-group'>
     <label for='program_id'>Program ID</label>
     <%= f.text_field :program_id, :value=> params[:program_id], :readonly => true, :class => 'form-control' %>
   </div>
   <div class='form-group'>
     <label for='teacher_id'>Teacher</label>
-    <%= f.select :teacher_id, options_for_select(@teachers.map {|t| [t.user.fullname, t.id] }), {}, :class => 'form-control' %>
+    <% blockable = @teachers %>
+    <% if blockable.count > 0 %>
+        <%= f.select :teacher_id, options_for_select(blockable.map {|t| [t.user.fullname, t.id] }), {}, :class => 'form-control' %>
+    <% else %>
+        <% submit_disabled = true %>
+        <%= f.select :teacher_id, options_for_select(['None Available']), {:disabled => true}, :class => 'form-control' %>
+    <% end %>
   </div>
 
-  <%= f.submit 'Associated Teacher with Program', :class => 'btn btn-lg btn-primary' %>
+  <%= f.submit 'Associated Teacher with Program', :disabled => submit_disabled, :class => 'btn btn-lg btn-primary' %>
 <% end %>
 
 <script type='text/javascript'>

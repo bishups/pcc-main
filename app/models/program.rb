@@ -31,6 +31,7 @@ class Program < ActiveRecord::Base
   attr_accessible :proposer_id, :proposer
 
   validates :proposer_id, :presence => true
+  validates_with ProgramValidator, :on => :create
 
   attr_accessor :current_user
   attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date, :feedback
@@ -68,9 +69,11 @@ class Program < ActiveRecord::Base
   STATE_TEACHER_CLOSED = "Teacher Closed"
   STATE_ZAO_CLOSED    = "ZAO Closed"
   STATE_CLOSED        = "Closed"
+  STATE_EXPIRED       = "Expired"
 
-  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CLOSED]
+  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CLOSED, STATE_EXPIRED]
   CLOSED_STATES = (FINAL_STATES + [STATE_CONDUCTED, STATE_TEACHER_CLOSED, STATE_ZAO_CLOSED])
+
 
   EVENT_PROPOSE       = "Propose"
   EVENT_ANNOUNCE      = "Announce"
@@ -82,10 +85,13 @@ class Program < ActiveRecord::Base
   EVENT_CANCEL        = "Cancel"
   EVENT_TEACHER_CLOSE = "Teacher Close"
   EVENT_ZAO_CLOSE = "ZAO Close"
+  EVENT_EXPIRE = "Expire"
 
   PROCESSABLE_EVENTS = [
       EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE, EVENT_ZAO_CLOSE
   ]
+
+  INTERNAL_NOTIFICATIONS = [EVENT_START, EVENT_FINISH, EVENT_EXPIRE]
 
   EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL, EVENT_ZAO_CLOSE]
   EVENTS_WITH_FEEDBACK = [EVENT_TEACHER_CLOSE]
@@ -155,6 +161,11 @@ class Program < ActiveRecord::Base
     end
     after_transition any => STATE_IN_PROGRESS, :do => :on_start
 
+    event EVENT_EXPIRE do
+      transition STATE_PROPOSED => STATE_EXPIRED
+    end
+    after_transition any => STATE_IN_PROGRESS, :do => :on_start
+
     event EVENT_FINISH do
       transition [STATE_IN_PROGRESS] => STATE_CONDUCTED
     end
@@ -216,6 +227,10 @@ class Program < ActiveRecord::Base
     return if !self.reloaded?
     if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
       self.send(EVENT_START)
+      self.save if self.errors.empty?
+    end
+    if [STATE_PROPOSED].include?(self.state)
+      self.send(EVENT_EXPIRE)
       self.save if self.errors.empty?
     end
   end
@@ -358,7 +373,7 @@ class Program < ActiveRecord::Base
   end
 
   def friendly_name
-    ("%s %s %s" % [self.center.name, self.start_date.strftime('%d-%m-%Y'), self.program_type.name]).parameterize
+    ("(%s) %s (%s)" % [self.start_date.strftime('%d %B %Y'), self.center.name, self.program_type.name])
   end
 
   def is_announced?
@@ -427,7 +442,7 @@ class Program < ActiveRecord::Base
   def blockable_venues
     # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
     # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ?', self.center_id)
+    Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ?', self.center_id).order('LOWER(venues.name) ASC')
   end
 
   def blockable_kits
@@ -438,7 +453,7 @@ class Program < ActiveRecord::Base
 
   def assign_dates!
     self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
-  end
+    @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time  end
 
 
 

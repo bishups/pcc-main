@@ -90,7 +90,7 @@ class Kit < ActiveRecord::Base
   def blockable_programs
     # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
     # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES)
+    Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC')
   end
 
   def friendly_name

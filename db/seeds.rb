@@ -139,6 +139,10 @@ notifications = [
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_DROPPED, :on_event => ::Program::EVENT_DROP, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_DROPPED, :on_event => ::Program::EVENT_DROP, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  zonal_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  zao.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -186,6 +190,11 @@ notifications = [
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_ISSUED, :to_state => ::KitSchedule::STATE_OVERDUE, :on_event => ::KitSchedule::EVENT_OVERDUE, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_ISSUED, :to_state => ::KitSchedule::STATE_OVERDUE, :on_event => ::KitSchedule::EVENT_OVERDUE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::KitSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::KitSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::KitSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_ASSIGNED, :to_state => ::KitSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
     {:model => 'Venue', :from_state => ::Venue::STATE_UNKNOWN, :to_state => ::Venue::STATE_PROPOSED, :on_event => ::Venue::EVENT_PROPOSE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue pending your approval.' },
 
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_APPROVED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -225,8 +234,18 @@ notifications = [
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT, :to_state => ::VenueSchedule::STATE_PAID, :on_event => ::VenueSchedule::EVENT_PAID, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT, :to_state => ::VenueSchedule::STATE_PAID, :on_event => ::VenueSchedule::EVENT_PAID, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_IN_PROGRESS, :to_state => ::VenueSchedule::STATE_CONDUCTED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_IN_PROGRESS, :to_state => ::VenueSchedule::STATE_CONDUCTED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_IN_PROGRESS, :to_state => ::VenueSchedule::STATE_CONDUCTED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT, :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_PAYMENT_PENDING, :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_PAYMENT_PENDING, :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired. Please Cancel Payment Request.' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_PAYMENT_PENDING, :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired. Please Cancel Payment Request.' },
+
 
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please publish schedule.' },

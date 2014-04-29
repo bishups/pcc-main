@@ -3,7 +3,8 @@ class ProgramsController < ApplicationController
 
   def index
     center_ids = current_user.accessible_center_ids
-    @programs = Program.where("center_id IN (?) AND end_date > ?", center_ids, (Time.zone.now - 15.days.from_now)).all
+    @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 30.days.from_now), ::Program::FINAL_STATES).order('start_date ASC').all
+
     respond_to do |format|
       format.html
     end
@@ -14,7 +15,7 @@ class ProgramsController < ApplicationController
     @program.current_user = current_user
     center_ids = current_user.accessible_center_ids(:center_scheduler)
     # TODO - sort it
-    @centers = Center.where("id IN (?)", center_ids)
+    @centers = Center.where("id IN (?)", center_ids).order('name ASC')
     #@program_types = ProgramType.all
     #@timings = []
 

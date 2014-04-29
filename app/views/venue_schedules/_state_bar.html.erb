@@ -8,10 +8,13 @@
           <span class="sr-only">Toggle Dropdown</span>
         </button>
         <ul class="dropdown-menu" role="menu">
-          <% (@venue_schedule.state_events - (::VenueSchedule::NOTIFICATIONS + ::Program::NOTIFICATIONS)).each do |ev| %>
-          <li>
-            <%= link_to ev, edit_venue_schedule_path(@venue_schedule, :trigger => ev) %>
-          </li>
+          <% events = (@venue_schedule.state_events - (::VenueSchedule::NOTIFICATIONS + ::Program::NOTIFICATIONS)) %>
+          <% if events.count > 0 %>
+              <% events.each do |ev| %>
+                  <li> <%= link_to ev, edit_venue_schedule_path(@venue_schedule, :trigger => ev) %> </li>
+              <% end %>
+          <% else %>
+              <li class="disabled"><a href="#">No Action Available</a></li>
           <% end %>
         </ul>
       </div>

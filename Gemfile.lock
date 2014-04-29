@@ -8,6 +8,13 @@ GIT
       railties (~> 3.0)
 
 GIT
+  remote: https://github.com/ricardodovalle/jquery-datatables-rails
+  revision: 003b25d9a27024256bb6c82e27ebed245e16b72b
+  specs:
+    jquery-datatables-rails (1.11.3)
+      jquery-rails
+
+GIT
   remote: https://github.com/sferik/rails_admin.git
   revision: 546f11fc23bb2eb32acdccce5ad743155855d706
   tag: v0.4.9
@@ -230,6 +237,7 @@ DEPENDENCIES
   delayed_job_active_record
   devise
   font-awesome-rails
+  jquery-datatables-rails!
   jquery-rails
   omniauth-google-oauth2
   paper_trail!

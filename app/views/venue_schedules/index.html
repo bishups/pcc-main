@@ -1,16 +1,24 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#venue_schedule_table').dataTable({
+            "sPaginationType": "bootstrap"
+        } );
+    });
+</script>
+
 <div class='row'>
     <div class='col-md-12'>
-        <h2>
-          Venue Schedules <small><%= @venue.name %></small>
-          <span class='pull-right'>
+        <h2>Venue Schedules <small><%= @venue.name %></small>
+        <span class='pull-right'>
             <%= link_to "Block Venue", new_venue_schedule_path(:venue_id => @venue.id), :class => 'btn btn-primary btn-sm' if @venue.can_create_schedule? %>
-          </span>
-          <span class='pull-right'>
-            <%= render :partial => 'shared/resource_inline_search' %>
-          </span>
+        </span>
+        <hr>
         </h2>
     </div>
-    <table class='table table-condensed table-hover table-bordered'>
+</div>
+
+<table id="venue_schedule_table" class='display dataTable table table-condensed table-hover table-bordered'>
+    <thead>
         <tr>
             <th>ID #</th>
             <th>Program</th>
@@ -21,19 +29,23 @@
             <th>State</th>
             <th></th>
         </tr>
-        <% @venue_schedules.each do |vs| %>
-        <% vs.current_user = current_user %>
-        <tr>
-            <td><%= vs.id %></td>
-            <td><%= link_to vs.program.name,program_path(vs.program_id)  %></td>
-            <td><%= vs.program.start_date.strftime('%d %B %Y') %></td>
-            <td><%= vs.program.end_date.strftime('%d %B %Y') %></td>
-            <td><%= (vs.program.timings.map {|c| c[:name]}).join(", ") %></td>
-            <td><%= vs.blocked_by_user.fullname %></td>
-            <td><%= venue_schedule_state_tag(vs) %>
-            <td><%= link_to "Open", venue_schedule_path(vs), :class => 'btn btn-primary btn-sm' if vs.can_update? %></td>
-        </tr>
-        <% end %>
-    </table>
-</div>
+    </thead>
+    <tbody>
+    <% @venue_schedules.each do |vs| %>
+    <% vs.current_user = current_user %>
+    <tr>
+        <td><%= vs.id %></td>
+        <td><%= link_to vs.program.name,program_path(vs.program_id)  %></td>
+        <td><%= vs.program.start_date.strftime('%d %B %Y') %></td>
+        <td><%= vs.program.end_date.strftime('%d %B %Y') %></td>
+        <td><%= (vs.program.timings.map {|c| c[:name]}).join(", ") %></td>
+        <td><%= vs.blocked_by_user.fullname %></td>
+        <td><%= venue_schedule_state_tag(vs) %>
+        <td><%= link_to "Open", venue_schedule_path(vs), :class => 'btn btn-primary btn-sm' if vs.can_update? %></td>
+    </tr>
+    <% end %>
+    </tbody>
+</table>
+
+
 

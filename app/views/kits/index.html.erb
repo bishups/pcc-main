@@ -1,12 +1,19 @@
-<div class='col-md-12'>
-    <h2>
-      Available Kits
-      <span class='pull-right'>
-        <%= render :partial => 'shared/resource_inline_search' %>
-      </span>
-    </h2>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#kit_table').dataTable({
+            "sPaginationType": "bootstrap"
+        } );
+    });
+</script>
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h2> Available Kits <hr></h2>
   </div>
-  <table class='table table-condensed table-hover table-bordered'>
+</div>
+
+<table id="kit_table" class='display dataTable table table-condensed table-hover table-bordered'>
+  <thead>
   <tr>
     <th>ID #</th>
     <th>Name</th>
@@ -15,26 +22,29 @@
     <th>Capacity </th>
     <th>Contact </th>
     <th>State</th>
-    <th width='14%'></th>
+    <th></th>
   </tr>
-
-<% @kits.each do |kit| %>
-<% kit.current_user = current_user %>
-  <tr>
-    <td><%= kit.id %></td>
-    <td> <%=kit.name%></td>
-    <td> <%=  (kit.centers.map {|c| c[:name]}).join(", ") %> </td>
-    <td> <%=  kit.condition %> </td>
-    <td> <%=  kit.capacity %> </td>
-    <td><%= kit.guardian.fullname rescue '' %></td>
-    <td> <%=  kit_state_tag(kit) %> </td>
-    <td> <%#= link_to "Block", new_kit_schedule_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
-        <%= link_to "Show", kit_path(kit), :class => 'btn btn-primary btn-sm' if kit.can_view? %>
-        <%= link_to "Schedule", kit_schedules_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' if kit.can_view_schedule? %>
-    </td> 
-  </tr>
-<% end %>
+  </thead>
+  <tbody>
+  <% @kits.each do |kit| %>
+      <% kit.current_user = current_user %>
+      <tr>
+        <td><%= kit.id %></td>
+        <td> <%=kit.name%></td>
+        <td> <%=  (kit.centers.map {|c| c[:name]}).join(", ") %> </td>
+        <td> <%=  kit.condition %> </td>
+        <td> <%=  kit.capacity %> </td>
+        <td><%= kit.guardian.fullname rescue '' %></td>
+        <td> <%=  kit_state_tag(kit) %> </td>
+        <td> <%#= link_to "Block", new_kit_schedule_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' %>
+          <%= link_to "Show", kit_path(kit), :class => 'btn btn-primary btn-sm' if kit.can_view? %>
+          <%= link_to "Schedule", kit_schedules_path(:kit_id => kit.id), :class => 'btn btn-primary btn-sm' if kit.can_view_schedule? %>
+        </td>
+      </tr>
+  <% end %>
+  </tbody>
 </table>
+
 
 
 

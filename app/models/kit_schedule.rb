@@ -31,8 +31,9 @@ class KitSchedule < ActiveRecord::Base
   STATE_RETURNED    = "Returned"
   STATE_CANCELLED   = "Cancelled"
   STATE_CLOSED      = "Closed"
+  STATE_EXPIRED     = "Expired"
 
-  FINAL_STATES = [STATE_CLOSED, STATE_CANCELLED]
+  FINAL_STATES = [STATE_CLOSED, STATE_CANCELLED, STATE_EXPIRED]
   CONNECTED_STATES = [STATE_BLOCKED, STATE_ASSIGNED, STATE_ISSUED, STATE_OVERDUE, STATE_RETURNED]
   RESERVED_STATES = [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE]
   ALL_STATES = RESERVED_STATES + FINAL_STATES + CONNECTED_STATES
@@ -146,6 +147,10 @@ class KitSchedule < ActiveRecord::Base
 
     event ::Program::CANCELLED do
       transition STATE_ASSIGNED => STATE_CANCELLED
+    end
+
+    event ::Program::FINISHED do
+      transition [STATE_BLOCKED, STATE_ASSIGNED] => STATE_EXPIRED
     end
 
     event EVENT_RESERVE do
@@ -401,6 +406,7 @@ class KitSchedule < ActiveRecord::Base
         ::Program::CANCELLED => [STATE_ASSIGNED],
         ::Program::DROPPED => [STATE_BLOCKED],
         ::Program::ANNOUNCED => [STATE_BLOCKED],
+        ::Program::FINISHED => [STATE_BLOCKED, STATE_ASSIGNED],
     }
     # verify when all the events can come
     if valid_states[event].include?(self.state)

@@ -49,7 +49,7 @@ class Teacher < ActiveRecord::Base
   validates :state, :presence => true
   validate :invalid_state?
 
-  before_save :load_last_state
+  #before_save :load_last_state
   after_save  :send_notification
 
   STATE_UNFIT       = 'Not Fit'
@@ -103,28 +103,36 @@ class Teacher < ActiveRecord::Base
 
   end
 
-  def load_last_state
-    self.last_state = Teacher.find(self.id).state
-  rescue ActiveRecord::RecordNotFound
-    self.last_state = STATE_UNATTACHED
-  end
+  #def load_last_state
+  #  self.last_state = Teacher.find(self.id).state
+  #rescue ActiveRecord::RecordNotFound
+  #  self.last_state = STATE_UNATTACHED
+  #end
 
   # HACK - a common place, for both rails_admin and state_machine,  to send notifications
   def send_notification
-    if self.last_state != STATE_ATTACHED && self.state == STATE_ATTACHED
+    changes = self.previous_changes
+    return true if changes.nil? || changes[:state].nil?
+
+    last_state = changes[:state][0]
+    current_state = changes[:state][1]
+
+    if last_state != STATE_ATTACHED && current_state == STATE_ATTACHED
       # HACK - since we can attach only from rails_admin, store the last update
       # TODO - see how we can get the current_user here?
-      object.store_last_update!(nil, self.last_state, self.state, nil)
+      object.store_last_update!(nil, last_state, current_state, nil)
+      object.save(:validate => false)
       object.notify(:any, STATE_ATTACHED, :any, self.center_ids)
     end
-    if self.last_state == STATE_ATTACHED && self.state != STATE_ATTACHED
+    if last_state == STATE_ATTACHED && current_state != STATE_ATTACHED
       # if we have published TeacherSchedules, means we are coming through the rails_admin
       if TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).count > 0
         # remove all published teacher schedules
         TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
         # HACK - store the last update for rails_admin
         # TODO - see how we can get the current_user here?
-        object.store_last_update!(nil, self.last_state, self.state, nil)
+        object.store_last_update!(nil, last_state, current_state, nil)
+        object.save(:validate => false)
       end
       object.notify(STATE_ATTACHED, :any, :any, self.center_ids)
     end

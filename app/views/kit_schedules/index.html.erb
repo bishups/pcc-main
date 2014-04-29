@@ -1,8 +1,6 @@
 <div class='row'>
   <div class='col-md-12'>
-    <h2>
-      Kit Schedules
-      <small><%= @kit.name %></small>
+    <h2>Kit Schedules <small><%= @kit.name %></small>
       <%= hidden_field_tag 'trigger', @trigger %>
       <% can_create = @kit.can_create_schedule?; can_reserve = @kit.can_create_reserve_schedule?; can_overdue_under_repair = @kit.can_create_overdue_or_under_repair_schedule? %>
       <% if can_create || can_reserve || can_overdue_under_repair %>
@@ -27,16 +25,8 @@
             </div>
           </span>
       <% end %>
-      <span class='pull-right'>
-        <%= render :partial => 'shared/resource_inline_search' %>
-      </span>
+      <hr>
     </h2>
   </div>
-  <%=render 'index'%>
 </div>
-
-<%# if @kit_id.nil? %>
-  <%#= link_to 'New Kit schedule', new_kit_schedule_path %>
-<%# else %>
-  <%#= link_to 'New Kit schedule', new_kit_schedule_path(:kit_id => @kit_id) %>
-<%#  end %>
+<%=render 'index'%>
