@@ -179,9 +179,9 @@ class ProgramTeacherSchedulesController < ApplicationController
     teacher = Teacher.find(params[:teacher_id])
     error = []
     program.timings.each {|t|
-      ts = teacher.teacher_schedules.where('start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ?',
+      ts = teacher.teacher_schedules.where('start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ? AND program_type_id IS ?',
                              program.start_date.to_date, program.end_date.to_date, t.id,
-                             ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
+                             ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).first
       # split this schedule as per program dates
       ts.split_schedule!(program.start_date.to_date, program.end_date.to_date)
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
@@ -219,9 +219,9 @@ class ProgramTeacherSchedulesController < ApplicationController
     teacher_ids = ProgramTypesTeachers.find_all_by_program_type_id(program.program_type_id).map { |pts| pts[:teacher_id] }
     program.timings.each {|t|
       # if teacher is available for each of timing specified in the program for the specified center
-      teacher_ids &= TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ?',
+      teacher_ids &= TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ? AND program_type_id IS ?',
                                          program.start_date.to_date, program.end_date.to_date, t.id,
-                                         ::TeacherSchedule::STATE_AVAILABLE, program.center_id]).pluck(:teacher_id)
+                                         ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id]).pluck(:teacher_id)
     }
     teachers = Teacher.find(teacher_ids)
   end
