@@ -29,6 +29,10 @@ class TeacherSchedulesController < ApplicationController
     @teacher_schedule.teacher = @teacher
     @teacher.current_user = @teacher_schedule.current_user = current_user
 
+    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', @teacher.id).all.sort_by{|pt| pt[:name]}
+    @selected_program_type = @program_types[0]
+    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
+
     respond_to do |format|
       if @teacher_schedule.can_create?
         format.html
@@ -175,6 +179,13 @@ class TeacherSchedulesController < ApplicationController
         format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  def update_timings
+    # updates timings based on selection
+    program_type = ProgramType.find(params[:program_type_id])
+    # map to name and id for use in our options_for_select
+    @timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
   end
 
 private

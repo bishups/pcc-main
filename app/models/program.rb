@@ -36,7 +36,7 @@ class Program < ActiveRecord::Base
   attr_accessor :current_user
   attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date, :feedback
 
-  before_create :assign_dates!
+  before_validation :assign_dates!
 
   belongs_to :center
   belongs_to :program_type
@@ -136,11 +136,11 @@ class Program < ActiveRecord::Base
     event EVENT_PROPOSE do
       transition STATE_UNKNOWN => STATE_PROPOSED, :if => lambda {|t| t.can_create? }
     end
-    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_create?
+    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_propose?
     after_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :fill_proposer_id!
 
     event EVENT_ANNOUNCE do
-      transition STATE_PROPOSED => STATE_ANNOUNCED, :if => lambda {|p| p.can_announce?}
+      transition STATE_PROPOSED => STATE_ANNOUNCED
     end
     before_transition any => STATE_ANNOUNCED, :do => :can_announce?
     after_transition any => STATE_ANNOUNCED, :do => :on_announce
@@ -450,7 +450,8 @@ class Program < ActiveRecord::Base
 
   def assign_dates!
     self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
-    @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time  end
+    #@program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
+  end
 
 
 
@@ -572,6 +573,10 @@ class Program < ActiveRecord::Base
   def can_view?
     return true if self.current_user.is? :any, :center_id => self.center_id
     return false
+  end
+
+  def can_propose?
+    return self.can_create?
   end
 
   # Usage --

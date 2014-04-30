@@ -22,8 +22,8 @@ class TeacherSchedule < ActiveRecord::Base
   belongs_to :program
   belongs_to :center
 
-  attr_accessor :comment_category
-  attr_accessible :comment_category
+  attr_accessor :comment_category, :program_type_id
+  attr_accessible :comment_category, :program_type_id
 
   attr_accessible :start_date, :end_date, :state
   attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
