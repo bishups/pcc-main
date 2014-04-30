@@ -3,7 +3,7 @@ module ProgramTeacherSchedulesHelper
   def program_teacher_schedule_state_tag(pts)
     proc do
       if pts.state == ::ProgramTeacherSchedule::STATE_BLOCKED
-        '<span class="label label-info">Blocked</span>'
+        '<span class="label label-danger">Blocked</span>'
       elsif pts.state == ::ProgramTeacherSchedule::STATE_ASSIGNED
         '<span class="label label-success">Assigned</span>'
       elsif pts.state == ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED

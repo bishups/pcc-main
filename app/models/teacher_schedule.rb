@@ -213,6 +213,7 @@ class TeacherSchedule < ActiveRecord::Base
       if !ts.save(:validate => false)
         self.errors[:base] << ts.errors.full_messages
       end
+      self.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, :any, ts.center_id) if ts.state = STATE_AVAILABLE_EXPIRED
     }
   end
 

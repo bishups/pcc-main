@@ -16,7 +16,7 @@
 <table id="teacher_table" class='display dataTable table table-condensed table-hover table-bordered'>
   <thead>
   <tr>
-    <th>T No</th>
+    <th>ID #</th>
     <th>Name</th>
     <th>Program Types</th>
     <th>Zone</th>
@@ -29,7 +29,7 @@
   <% @teachers.each do |teacher| %>
       <% teacher.current_user = current_user %>
       <tr>
-        <td><%= teacher.t_no %></td>
+        <td><%= teacher.id %></td>
         <td><%= teacher.user.fullname %></td>
         <td><%= (teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
         <td><%= teacher.zone.name rescue '' %></td>

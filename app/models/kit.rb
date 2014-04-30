@@ -88,10 +88,22 @@ class Kit < ActiveRecord::Base
 
 
   def blockable_programs
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC')
+    # NOTE: We **can** add a kit even after the program has started
+    programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if kit.can_be_blocked_by?(program)
+    }
+    blockable_programs
   end
+
+  def can_be_blocked_by?(program)
+    ks = KitSchedule.new
+    ks.assign_dates!(program)
+    ks.kit_id = self.id
+    KitSchedule.overlapping_schedules(ks).count == 0
+  end
+
 
   def friendly_name
     ("%s" % [self.name]).parameterize

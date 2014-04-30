@@ -236,6 +236,76 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
 
+  def blockable_teachers
+    return [] if self.program.nil?
+
+    program = self.program
+    # get all teachers for specific program type
+    teacher_ids = ProgramTypesTeachers.find_all_by_program_type_id(program.program_type_id).map { |pts| pts[:teacher_id] }
+    program.timings.each {|t|
+      # if teacher is available for each of timing specified in the program for the specified center
+      teacher_ids &= TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ? AND program_type_id IS ?',
+                                            program.start_date.to_date, program.end_date.to_date, t.id,
+                                            ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id]).pluck(:teacher_id)
+    }
+    teachers = Teacher.find(teacher_ids)
+  end
+
+
+  def blockable_programs
+    return [] if self.teacher.nil?
+    teacher = self.teacher
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    # NOTE: We cannot add a teacher once the program has started
+    programs = Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', teacher.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if teacher.can_be_blocked_by?(program)
+    }
+    blockable_programs
+  end
+
+
+  # Incoming params - params => {"program_id"=>"3", "teacher_id"=>"1"}
+  # 1. given the teacher_id, find the schedules relevant for the program_id
+  # 2. split the schedule, marking the one against program - with program_id and state
+  def block_teacher_schedule!(params)
+    program = Program.find(params[:program_id])
+    teacher = Teacher.find(params[:teacher_id])
+    program.timings.each {|t|
+      ts = teacher.teacher_schedules.where('start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ? AND program_type_id IS ?',
+                                           program.start_date.to_date, program.end_date.to_date, t.id,
+                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).first
+      # split this schedule as per program dates
+      ts.split_schedule!(program.start_date.to_date, program.end_date.to_date)
+      # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
+      if !ts.errors.empty?
+        self.errors[:base] << ts.errors.full_messages
+        break
+      end
+      ts.program_id = program.id
+      ts.blocked_by_user_id = current_user.id
+      ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
+      ts.clear_comments!
+      # This is a hack to store the last update
+      ts.store_last_update!(current_user, ::ProgramTeacherSchedule::STATE_UNKNOWN, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
+      #ts.save(:validate => false)
+      ts.save!
+      # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
+      if !ts.errors.empty?
+        self.errors[:base] << ts.errors.full_messages
+        break
+      end
+      self.teacher_schedule_id = ts.id
+    }
+    # This is a hack, just to make sure the relevant notifications are sent out
+    self.state = ::ProgramTeacherSchedule::STATE_UNKNOWN
+    # TODO - check whether errors need to be checked here
+    self.send(::ProgramTeacherSchedule::EVENT_BLOCK) if self.errors.empty?
+
+  end
+
 
   # NOTE: ProgramTeacherSchedule is **NOT** using ActiveRecord class functions like save
   def update(trigger)

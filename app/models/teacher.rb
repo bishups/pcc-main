@@ -260,6 +260,13 @@ class Teacher < ActiveRecord::Base
     return teacher_schedule.can_create?
   end
 
+  # HACK - to route the call through teacher object from the UI.
+  def can_create_program_schedule?
+    program_teacher_schedule = ProgramTeacherSchedule.new
+    program_teacher_schedule.current_user = self.current_user
+    return program_teacher_schedule.can_create?(self.center_ids)
+  end
+
   def can_update?
     center_ids = []
     if self.center_ids.nil? || self.center_ids.empty?
@@ -286,6 +293,15 @@ class Teacher < ActiveRecord::Base
     #return true if self.current_user.is? :venue_coordinator, :center_id => center_ids
   end
 
+  def can_be_blocked_by?(program)
+    program.timings.each {|t|
+      ts = self.teacher_schedules.where('start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ? AND program_type_id IS ?',
+                                        program.start_date.to_date, program.end_date.to_date, t.id,
+                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).first
+      return false if ts.nil?
+    }
+    return true
+  end
 
 
   rails_admin do

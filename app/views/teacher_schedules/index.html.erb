@@ -10,10 +10,8 @@
   <div class='col-md-12'>
     <h2>Teacher Schedule <small><%= @teacher.user.name %></small>
       <span class='pull-right'>
-        <%  if @teacher.is_current_user? %>
-            <%= link_to "New Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' if @teacher.can_create_schedule? %>
-        <% end %>
-        <%# TODO - put the block teacher here, with the suitable check %>
+        <%= link_to "Publish Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' if @teacher.can_create_schedule? %>
+        <%= link_to "Block Teacher", new_program_teacher_schedule_path(:teacher_id => @teacher.id), :class => 'btn btn-primary btn-sm' if @teacher.can_create_program_schedule? %>
       </span>
       <hr>
     </h2>

@@ -165,12 +165,21 @@ class Venue < ActiveRecord::Base
   end
 
   def blockable_programs
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES)
+    # NOTE: We **can** add a venue even after the program has started
+    programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if venue.can_be_blocked_by?(program)
+    }
+    blockable_programs
   end
 
-  def can_reject?
+  def can_be_blocked_by?(program)
+    VenueSchedule.all_overlapping(self, program).count == 0
+  end
+
+
+def can_reject?
     unless self.is_sector_coordinator?
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false

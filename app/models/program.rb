@@ -123,6 +123,9 @@ class Program < ActiveRecord::Base
   scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND programs.id IS NOT ? ',
                                                                                program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
 
+# given a program, returns a relation with all overlapping program(s) (including itself)
+  scope :all_overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?)',
+                                                                                                                                       program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids) }
   # given a program, returns a relation with other overlapping program(s)
   scope :overlapping_date_time, lambda { |start_date, end_date| Program.where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?))',
                                                                                                                                    start_date, end_date, start_date, end_date, start_date, end_date) }
@@ -437,16 +440,24 @@ class Program < ActiveRecord::Base
 
 
   def blockable_venues
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ?', self.center_id).order('LOWER(venues.name) ASC')
+    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND venues.state IS ?', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
+    blockable_venues = []
+    venues.each {|venue|
+      blockable_venues << venue if venue.can_be_blocked_by?(self)
+    }
+    blockable_venues
   end
 
+
   def blockable_kits
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Kit.joins("JOIN centers_kits ON kits.id = centers_kits.kit_id").where('centers_kits.center_id = ?', self.center_id)
+    kits = Kit.joins("JOIN centers_kits ON kits.id = centers_kits.kit_id").where('centers_kits.center_id = ?', self.center_id).all
+    blockable_kits = []
+    kits.each {|kit|
+      blockable_kits << kit if kit.can_be_blocked_by?(self)
+    }
+    blockable_kits
   end
+
 
   def assign_dates!
     self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)

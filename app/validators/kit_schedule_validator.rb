@@ -4,7 +4,8 @@
 class KitScheduleValidator < ActiveModel::Validator
   def validate(record)
 
-    if record.start_date < -10.minutes.from_now
+#    if record.start_date < -10.minutes.from_now
+    if record.start_date.to_date < Time.zone.now.to_date
       record.errors[:start_date] << " for kit schedule cannot be in the past"
     elsif record.end_date < record.start_date
       record.errors[:end_date] << " cannot be before start date"

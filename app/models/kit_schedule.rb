@@ -94,7 +94,7 @@ class KitSchedule < ActiveRecord::Base
                                                          ks.id, [STATE_ASSIGNED], ks.kit_id, ks.end_date)}
 =end
 
-  # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit, in specified states
+  # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit
   scope :overlapping_schedules, lambda { |ks| where('kit_schedules.id IS NOT ? AND kit_schedules.state NOT IN (?) AND kit_schedules.kit_id IS ? AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
                                                    ks.id, FINAL_STATES, ks.kit_id, ks.start_date, ks.end_date, ks.start_date, ks.end_date, ks.start_date, ks.end_date)}
 
@@ -181,22 +181,24 @@ class KitSchedule < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.program.center_id)
+      center_id = object.program.nil? ? object.kit.center_ids : object.program.center_id
+      object.notify(transition.from, transition.to, transition.event, center_id)
+    end
+  end
+
+  def assign_dates!(program)
+    self.start_date = program.start_date.to_date - 1.day
+    self.end_date = (program.end_date.to_date + 2.day - 1.minute).to_date
+    current_date = Time.zone.now.to_date
+    if self.start_date < current_date && program.in_progress?
+      self.start_date = current_date
     end
   end
 
 
   def before_block
     return false unless self.can_create?
-    self.start_date = self.program.start_date.to_date - 1.day
-    self.end_date = (self.program.end_date.to_date + 2.day - 1.minute).to_date
-
-    current_date = Time.zone.now.to_date
-    if self.start_date < current_date && self.program.in_progress?
-      self.start_date = current_date
-    end
-#    self.start_date = self.program.start_date
-#    self.end_date = self.program.end_date
+    self.assign_dates!(self.program)
   end
 
   def on_block
@@ -379,7 +381,7 @@ class KitSchedule < ActiveRecord::Base
 
   def can_reserve?
     return false unless self.can_create_reserve?
-    unless (self.end_date.mjd - self.start_date.mjd + 1).between?(1,90)
+    unless (self.end_date.to_date.mjd - self.start_date.to_date.mjd + 1).between?(1,90)
       self.errors[:end_date] << " should be within 90 days of the start date"
       return false
     end
@@ -388,7 +390,7 @@ class KitSchedule < ActiveRecord::Base
 
   def can_overdue_or_under_repair?
     return false unless self.can_create_overdue_or_under_repair?
-    unless (self.end_date.mjd - self.start_date.mjd + 1).between?(1,90)
+    unless (self.end_date.to_date.mjd - self.start_date.to_date.mjd + 1).between?(1,90)
       self.errors[:end_date] << " should be within 90 days of the start date"
       return false
     end
@@ -423,18 +425,7 @@ class KitSchedule < ActiveRecord::Base
     end
   end
 
-  def can_delete?
-    unless self.program_id.nil?
-      self.errors[:base] << "Cannot delete a kit schedule linked to a program"
-      return false
-    end
-    unless self.can_create_on_trigger?
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      return false
-    end
 
-    return true
-  end
 
   def can_update?
     return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
@@ -463,6 +454,8 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def can_delete?
+    return false if self.end_date < Time.zone.now
+
     if (self.state == STATE_RESERVED)
       return true if (self.blocked_by_user == self.current_user) && self.can_create_reserve?
       return true if self.can_create_reserve?(self.kit.center_ids, :all)
@@ -475,5 +468,6 @@ class KitSchedule < ActiveRecord::Base
 
     return false
   end
+
 
 end
