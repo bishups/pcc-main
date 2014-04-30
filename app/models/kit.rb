@@ -131,21 +131,21 @@ class Kit < ActiveRecord::Base
   end
 
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user
     return kit_schedule.can_create?(self.center_ids)
   end
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_reserve_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user
     return kit_schedule.can_create_reserve?(self.center_ids)
   end
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_overdue_or_under_repair_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user

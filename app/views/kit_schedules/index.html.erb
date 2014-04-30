@@ -15,7 +15,6 @@
                     <li><%= link_to "Block Kit", new_kit_schedule_path(:kit_id => @kit.id) %></li>
                     <li class="divider"></li>
                 <% end %>
-                <%# TODO - Reserve kit is only for sector coordinator - put the relevant check %>
                 <li><%= link_to "Reserve Kit", reserve_kit_schedule_path(@kit, :trigger => ::KitSchedule::EVENT_RESERVE) if can_reserve %></li>
                 <% if can_overdue_under_repair %>
                     <li><%= link_to "Kit Overdue", reserve_kit_schedule_path(@kit, :trigger => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE) %></li>

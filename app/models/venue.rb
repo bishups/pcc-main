@@ -98,7 +98,6 @@ class Venue < ActiveRecord::Base
     before_transition any => STATE_APPROVED, :do => :is_sector_coordinator?
 
     after_transition any => STATE_APPROVED do |venue, transition|
-      # TODO: check if paid venue or not
       if venue.free?
         venue.send(EVENT_POSSIBLE)
       else
@@ -266,7 +265,7 @@ class Venue < ActiveRecord::Base
     return false
   end
 
-  # TODO - this is a hack, to route the call through venue object from the UI.
+  # HACK - to route the call through venue object from the UI.
   def can_create_schedule?
     venue_schedule = VenueSchedule.new
     venue_schedule.current_user = self.current_user

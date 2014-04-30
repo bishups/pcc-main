@@ -14,7 +14,6 @@ class ProgramsController < ApplicationController
     @program = Program.new
     @program.current_user = current_user
     center_ids = current_user.accessible_center_ids(:center_scheduler)
-    # TODO - sort it
     @centers = Center.where("id IN (?)", center_ids).order('name ASC')
     #@program_types = ProgramType.all
     #@timings = []

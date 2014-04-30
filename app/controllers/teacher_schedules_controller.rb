@@ -8,7 +8,7 @@ class TeacherSchedulesController < ApplicationController
     center_ids = current_user.accessible_center_ids
     @teacher = Teacher.find(params[:teacher_id])
     @teacher.current_user = current_user
-    @teacher_schedules = @teacher.teacher_schedules.where("end_date >= ? AND center_id IN (?)", Time.zone.now.to_date, center_ids).group("coalesce(program_id, created_at)")
+    @teacher_schedules = @teacher.teacher_schedules.where("end_date >= ? AND center_id IN (?)", (Time.zone.now.to_date - 1.month.from_now.to_date), center_ids).group("coalesce(program_id, created_at)")
 
     respond_to do |format|
       if @teacher.can_view_schedule?
@@ -182,7 +182,6 @@ private
 
 
 
-  # TODO: Enforce role
   #def load_teacher!
   #  @teacher = Teacher.find_by_user_id(current_user.id)
   #end

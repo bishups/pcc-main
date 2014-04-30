@@ -42,7 +42,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   STATE_AVAILABLE = 'Available'
   STATE_UNAVAILABLE = 'Not Available'
-  STATE_EXPIRED = 'Expired'
+  STATE_AVAILABLE_EXPIRED = 'Available (Expired)'
   STATE_PUBLISHED = [
       STATE_AVAILABLE, STATE_UNAVAILABLE
   ]
@@ -85,7 +85,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   def can_combine_consecutive_schedules?
     additional_days = 0
-    if (STATE_PUBLISHED + [STATE_EXPIRED]).include?(state)
+    if (STATE_PUBLISHED + [STATE_AVAILABLE_EXPIRED]).include?(state)
       ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
                                   start_date - 1.day, timing_id, state, teacher_id, center_id]).first
       if ts
@@ -103,7 +103,7 @@ class TeacherSchedule < ActiveRecord::Base
 
 
   def combine_consecutive_schedules!
-    if (STATE_PUBLISHED+ [STATE_EXPIRED]).include?(state)
+    if (STATE_PUBLISHED+ [STATE_AVAILABLE_EXPIRED]).include?(state)
       ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
                                   start_date - 1.day, timing_id, state, teacher_id, center_id]).first
       if ts
@@ -205,7 +205,7 @@ class TeacherSchedule < ActiveRecord::Base
       # split the current STATE_AVAILABLE schedule, in one day (previous_day) and future day(s) schedule
       ts.split_schedule_on_start_date!(current_date)
       # In case state was AVAILABLE, mark it as EXPIRED, else leave UNAVAILABLE as is
-      ts.state = STATE_EXPIRED if ts.state == STATE_AVAILABLE
+      ts.state = STATE_AVAILABLE_EXPIRED if ts.state == STATE_AVAILABLE
       ts.combine_consecutive_schedules! if ts.can_combine_consecutive_schedules?
       # TODO - check how to do error handling
       # turning off validation when saving, since dates are in past

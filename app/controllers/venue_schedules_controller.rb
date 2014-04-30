@@ -57,7 +57,7 @@ class VenueSchedulesController < ApplicationController
   # POST /venue_schedules
   # POST /venue_schedules.json
   def create
-    # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
+    # HACK - to initialize @venue on create from fix _form.html.erb to pass correct params :-(
     if params.has_key?(:venue_id)
       venue_id = params[:venue_id].to_i
     elsif params.has_key?(:venue_schedule)

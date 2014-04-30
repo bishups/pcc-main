@@ -22,8 +22,6 @@ class ProgramTeacherSchedulesController < ApplicationController
   end
 
   def create
-    # TODO - add the logic for saving the program with the schedule, and splitting the teacher schedule
-
     if !params.has_key?(:program_teacher_schedule)
       # this was an update, which came to create, because of all the activerecord non-sense
       _update

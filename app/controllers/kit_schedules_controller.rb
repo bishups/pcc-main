@@ -141,7 +141,7 @@ class KitSchedulesController < ApplicationController
       return create_on_trigger
     end
 
-    # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
+    # HACK - to initialize @venue on create from fix _form.html.erb to pass correct params :-(
     if params.has_key?(:kit_id)
       kit_id = params[:kit_id].to_i
     elsif params.has_key?(:kit_schedule)

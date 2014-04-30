@@ -75,7 +75,6 @@ class Teacher < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNATTACHED do
 
     event EVENT_UNATTACH do
-      # TODO - if not transitioning in state machine, see if need to pass back some error message
       transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|t| t.current_user.is? :zonal_coordinator, :center_id => t.center_ids }
     end
     before_transition any => STATE_UNATTACHED, :do => :before_unattach!
@@ -253,7 +252,7 @@ class Teacher < ActiveRecord::Base
     return false
   end
 
-  # TODO - this is a hack, to route the call through teacher object from the UI.
+  # HACK - to route the call through teacher object from the UI.
   def can_create_schedule?
     teacher_schedule = TeacherSchedule.new
     teacher_schedule.teacher = self

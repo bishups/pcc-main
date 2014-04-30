@@ -4,7 +4,6 @@ class VenuesController < ApplicationController
   # GET /venues
   # GET /venues.json
   def index
-    # TODO: Display venue associated with User's Center/Zone only
     center_ids = current_user.accessible_center_ids
     @venues = Venue.joins("JOIN centers_venues ON centers_venues.venue_id = venues.id").where('centers_venues.center_id IN (?)', center_ids).uniq.all
     respond_to do |format|

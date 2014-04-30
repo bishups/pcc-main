@@ -70,6 +70,7 @@ class VenueSchedule < ActiveRecord::Base
   STATE_CANCELLED                 = "Cancelled"
   STATE_UNAVAILABLE               = "Unavailable"
   STATE_EXPIRED                   = "Expired"
+  STATE_AVAILABLE_EXPIRED         = "Available (Expired)"
 
   # connected to program
 
@@ -77,7 +78,7 @@ class VenueSchedule < ActiveRecord::Base
   CONNECTED_STATES = (PAID_STATES + [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING])
   BLOCKED_STATES = (CONNECTED_STATES - [STATE_BLOCK_REQUESTED])
   # final states
-  FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED, STATE_EXPIRED]
+  FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED, STATE_EXPIRED, STATE_AVAILABLE_EXPIRED]
 
 
   EVENT_BLOCK_REQUEST     = "Block Request"
@@ -192,7 +193,11 @@ class VenueSchedule < ActiveRecord::Base
     end
 
     event ::Program::FINISHED do
-      transition (CONNECTED_STATES - PAID_STATES) => STATE_EXPIRED
+      transition (BLOCKED_STATES - PAID_STATES) => STATE_AVAILABLE_EXPIRED
+    end
+
+    event ::Program::FINISHED do
+      transition STATE_BLOCK_REQUESTED => STATE_EXPIRED
     end
 
     event EVENT_SECURITY_REFUNDED do
@@ -291,7 +296,12 @@ class VenueSchedule < ActiveRecord::Base
     days = (expiry_date.to_date - current_date.to_date).to_i
 
     unless days.between?(1,90)
-      self.errors[:base] << "Venue can be blocked from 1 to 90 days."
+      self.errors[:block_expiry_date] << " can be between 1 to 90 days."
+      return false
+    end
+
+    if self.block_expiry_date > self.program.end_date
+      self.errors[:block_expiry_date] << " cannot be beyond program close date."
       return false
     end
 
@@ -369,12 +379,12 @@ class VenueSchedule < ActiveRecord::Base
 
   # have we requested the approval for the venue?
   def approval_requested?
-    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED, STATE_AVAILABLE_EXPIRED].include?(self.state))
   end
 
   # has the payment been approved for the venue?
   def approved?
-    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED, STATE_AVAILABLE_EXPIRED].include?(self.state))
   end
 
   def on_program_event(event)

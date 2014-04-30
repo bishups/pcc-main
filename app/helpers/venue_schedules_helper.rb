@@ -29,7 +29,9 @@ module VenueSchedulesHelper
       elsif vs.state == ::VenueSchedule::STATE_SECURITY_REFUNDED
         '<span class="label label-warning">Security Refunded</span>'
       elsif prog.state == ::VenueSchedule::STATE_EXPIRED
-        '<span class="label label-danger">Expired</span>'
+        '<span class="label label-warning">Expired</span>'
+      elsif prog.state == ::VenueSchedule::STATE_AVAILABLE_EXPIRED
+        '<span class="label label-warning">Available (Expired)</span>'
       else
         '<span class="label label-default">Unknown</span>'
       end

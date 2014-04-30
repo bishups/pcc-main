@@ -116,7 +116,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     event ::Program::FINISHED do
       transition STATE_IN_CLASS => STATE_COMPLETED_CLASS
-      transition [STATE_BLOCKED, STATE_RELEASE_REQUESTED] => ::TeacherSchedule::STATE_EXPIRED
+      transition [STATE_BLOCKED, STATE_RELEASE_REQUESTED] => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED
     end
 
     before_transition any => any do |object, transition|
@@ -240,7 +240,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   # NOTE: ProgramTeacherSchedule is **NOT** using ActiveRecord class functions like save
   def update(trigger)
     # if the state was updated to ::TeacherSchedule::STATE_AVAILABLE or ::TeacherSchedule::STATE_UNAVAILABLE
-    if (::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_EXPIRED]).include?(self.state)
+    if (::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_AVAILABLE_EXPIRED]).include?(self.state)
       program_id = nil
       blocked_by_user_id = nil
     else
@@ -268,7 +268,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
 
       # 2. if they have been marked Available or unavailable, then check if combine_consecutive_slots
-      if ((::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_EXPIRED]).include?(ts.state)) && ts.can_combine_consecutive_schedules?
+      if ((::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_AVAILABLE_EXPIRED]).include?(ts.state)) && ts.can_combine_consecutive_schedules?
         ts.clear_comments!
         ts.clear_last_update!
         ts.combine_consecutive_schedules!

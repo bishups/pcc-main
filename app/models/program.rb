@@ -96,7 +96,7 @@ class Program < ActiveRecord::Base
   EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL, EVENT_ZAO_CLOSE]
   EVENTS_WITH_FEEDBACK = [EVENT_TEACHER_CLOSE]
 
-  ### TODO -
+  ###
   # http://www.sitepoint.com/comparing-ruby-background-processing-libraries-delayed-job/
   # Program will be sending four notifications - two on timers, two on user action
   # timer can be set using the delayed action for the program state machine
@@ -184,7 +184,6 @@ class Program < ActiveRecord::Base
       transition STATE_ZAO_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_coordinator, :center_id => p.center_id}
     end
     before_transition any => STATE_CLOSED, :do => :can_close?
-    # TODO - enable or disable the button based on whether conditions are met
 
     event EVENT_CANCEL do
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zonal_coordinator, :center_id => p.center_id }
@@ -368,7 +367,6 @@ class Program < ActiveRecord::Base
 
   def on_cancel
     self.notify_all(CANCELLED)
-    # TODO - cancel the timer for start of the class, no need for now, we will just ignore it once the timer comes
   end
 
   def friendly_name
@@ -545,7 +543,6 @@ class Program < ActiveRecord::Base
   end
 
   def ready_for_close?
-    # TODO - add condition here that teacher adds program feedback,
     if (self.no_of_venues_connected > 0)
       self.errors[:base] << "Cannot close program, linked venue is not closed. Please close it and try again."
       return false
