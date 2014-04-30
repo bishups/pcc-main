@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404272852160) do
+ActiveRecord::Schema.define(:version => 201404302110720) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -313,6 +313,7 @@ ActiveRecord::Schema.define(:version => 201404272852160) do
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
+    t.integer  "program_type_id"
   end
 
   create_table "teacher_slots", :force => true do |t|

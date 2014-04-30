@@ -82,6 +82,7 @@ class TeacherSchedulesController < ApplicationController
             @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
             @teacher_schedule.current_user = current_user
             @teacher_schedule.teacher_id = params[:teacher_id]
+            @teacher_schedule.program_type_id = params[:teacher_schedule][:program_type_id]
             @teacher_schedule.timing_id = timing_id
             if @teacher_schedule.valid?
               additional_days = @teacher_schedule.can_combine_consecutive_schedules?
@@ -117,6 +118,10 @@ class TeacherSchedulesController < ApplicationController
     @teacher_schedule = TeacherSchedule.find(params[:id])
     @teacher = @teacher_schedule.teacher
     @teacher.current_user = @teacher_schedule.current_user = @teacher_schedule.teacher.current_user = current_user
+
+    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', @teacher.id).all.sort_by{|pt| pt[:name]}
+    @selected_program_type = @teacher_schedule.program_type
+    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
 
     respond_to do |format|
       if @teacher_schedule.can_update?

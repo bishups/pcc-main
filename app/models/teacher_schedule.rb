@@ -21,11 +21,12 @@ class TeacherSchedule < ActiveRecord::Base
   belongs_to :teacher
   belongs_to :program
   belongs_to :center
+  belongs_to :program_type
 
-  attr_accessor :comment_category, :program_type_id
-  attr_accessible :comment_category, :program_type_id
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
-  attr_accessible :start_date, :end_date, :state
+  attr_accessible :start_date, :end_date, :state, :program_type_id, :program_type
   attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :last_updated_by_user, :class_name => User
