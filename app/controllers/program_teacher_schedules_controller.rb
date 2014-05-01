@@ -30,23 +30,20 @@ class ProgramTeacherSchedulesController < ApplicationController
       # this was an update, which came to create, because of all the activerecord non-sense
       _update
     else
-
       @program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
       program = @program_teacher_schedule.program
       teacher = @program_teacher_schedule.teacher
       # Double check if indeed we can block the teacher with the program, because block_teacher_schedule! should not fail
-      if !@program_teacher_schedule.can_create?
-        respond_to do |format|
+      respond_to do |format|
+        if !@program_teacher_schedule.can_create?
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
-        end
-      elsif !teacher.can_be_blocked_by?(program)
-        format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Request timed out, cannot perform the requested action. Please try again." }
-        format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
-      else
-        @program_teacher_schedule.block_teacher_schedule!(params[:program_teacher_schedule])
-        #@program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
-        respond_to do |format|
+        elsif !teacher.can_be_blocked_by?(program)
+          format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Request timed out, cannot perform the requested action. Please try again." }
+          format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
+        else
+          @program_teacher_schedule.block_teacher_schedule!(params[:program_teacher_schedule])
+          #@program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
           if @program_teacher_schedule.errors.empty?
             format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id), notice: 'Program-Teacher Schedule was successfully updated.'  }
             format.json { render :json => @program_teacher_schedule }
@@ -77,8 +74,6 @@ class ProgramTeacherSchedulesController < ApplicationController
         format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
       end
     end
-
-
   end
 
   # GET /venues/1/edit
@@ -92,8 +87,10 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
 
     unless @program_teacher_schedule.can_update?
-      format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
-      format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
+      respond_to do |format|
+        format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -135,8 +132,6 @@ class ProgramTeacherSchedulesController < ApplicationController
         format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
       end
     end
-
-
   end
 
   #:blocked_by_user_id

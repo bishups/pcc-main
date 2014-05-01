@@ -27,7 +27,7 @@
       <th>Start Date</th>
       <th>End Date</th>
       <th>Timing(s)</th>
-      <th>Center</th>
+      <th>Center(s)</th>
       <th>State</th>
       <th></th>
     </tr>
@@ -46,7 +46,13 @@
                 <%= ts.timing.name %>
             <% end %>
           </td>
-          <td><%= ts.center.name %></td>
+          <td>
+          <% if ts.program_id %>
+              <%=  ts.program.center.name %>
+          <% else %>
+              <%= (ts.centers.map {|c| c[:name]}).join(", ") %>
+          <% end %>
+          </td>
           <td><%= teacher_schedule_state_tag(ts) %></td>
           <td>
             <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id && ts.can_view_schedule? %>

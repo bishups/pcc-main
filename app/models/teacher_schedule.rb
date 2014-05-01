@@ -20,14 +20,14 @@ class TeacherSchedule < ActiveRecord::Base
   belongs_to :timing
   belongs_to :teacher
   belongs_to :program
-  belongs_to :center
+  has_and_belongs_to_many :centers, :join_table => "centers_teacher_schedules"
   belongs_to :program_type
 
   attr_accessor :comment_category
   attr_accessible :comment_category
 
   attr_accessible :start_date, :end_date, :state, :program_type_id, :program_type
-  attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :center, :center_id
+  attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :centers, :center_ids
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at
@@ -36,7 +36,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   #has_many :program_teacher_schedules
 
-  validates :start_date, :end_date, :timing_id, :center_id, :state, :presence => true
+  validates :start_date, :end_date, :timing_id, :center_ids, :state, :presence => true
   validates_with TeacherScheduleValidator
 
   validate :teacher_enabled?
@@ -60,7 +60,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   def split_schedule!(start_date, end_date)
     if self.start_date < start_date
-      ts = self.dup
+      ts = self.deep_dup
       ts.end_date = start_date - 1.day
       # turning off validation when saving, since dates will overlap database record corresponding to self
       if !ts.save(:validate => false)
@@ -70,7 +70,7 @@ class TeacherSchedule < ActiveRecord::Base
     end
 
     if self.end_date > end_date
-      ts = self.dup
+      ts = self.deep_dup
       ts.start_date = end_date + 1.day
       # turning off validation when saving, since dates will overlap database record corresponding to self
       if !ts.save(:validate => false)
@@ -87,14 +87,14 @@ class TeacherSchedule < ActiveRecord::Base
   def can_combine_consecutive_schedules?
     additional_days = 0
     if (STATE_PUBLISHED + [STATE_AVAILABLE_EXPIRED]).include?(state)
-      ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
-                                  start_date - 1.day, timing_id, state, teacher_id, center_id]).first
+      ts = TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where(['teacher_schedules.end_date = ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND teacher_schedules.teacher_id = ? AND centers_teacher_schedules.center_id IN (?)',
+                                  start_date - 1.day, timing_id, state, teacher_id, center_ids]).first
       if ts
         additional_days += ts.no_of_days
       end
 
-      ts = TeacherSchedule.where(['start_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
-                                  end_date + 1.day, timing_id, state, teacher_id, center_id]).first
+      ts = TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where(['teacher_schedules.start_date = ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND teacher_schedules.teacher_id = ? AND centers_teacher_schedules.center_id IN (?)',
+                                  end_date + 1.day, timing_id, state, teacher_id, center_ids]).first
       if ts
         additional_days += ts.no_of_days
       end
@@ -105,18 +105,18 @@ class TeacherSchedule < ActiveRecord::Base
 
   def combine_consecutive_schedules!
     if (STATE_PUBLISHED+ [STATE_AVAILABLE_EXPIRED]).include?(state)
-      ts = TeacherSchedule.where(['end_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
-                                  start_date - 1.day, timing_id, state, teacher_id, center_id]).first
+      ts = TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where(['teacher_schedules.end_date = ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND teacher_schedules.teacher_id = ? AND centers_teacher_schedules.center_id IN (?)',
+                                  start_date - 1.day, timing_id, state, teacher_id, center_ids]).readonly(false).first
       if ts
         self.start_date = ts.start_date
-        ts.delete
+        ts.destroy
       end
 
-      ts = TeacherSchedule.where(['start_date = ? AND timing_id = ? AND state = ? AND teacher_id = ? AND center_id = ?',
-                                  end_date + 1.day, timing_id, state, teacher_id, center_id]).first
+      ts = TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where(['teacher_schedules.start_date = ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND teacher_schedules.teacher_id = ? AND centers_teacher_schedules.center_id IN (?)',
+                                  end_date + 1.day, timing_id, state, teacher_id, center_ids]).readonly(false).first
       if ts
         self.end_date = ts.end_date
-        ts.delete
+        ts.destroy
       end
     end
   end
@@ -183,7 +183,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   def split_schedule_on_start_date!(start_date)
     if self.start_date < start_date
-      ts = self.dup
+      ts = self.deep_dup
       # save the future day(s) schedule, after advancing start_date to today's date
       ts.start_date = start_date
       # TODO - check how to do error handling
@@ -213,9 +213,19 @@ class TeacherSchedule < ActiveRecord::Base
       if !ts.save(:validate => false)
         self.errors[:base] << ts.errors.full_messages
       end
-      self.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, :any, ts.center_id) if ts.state = STATE_AVAILABLE_EXPIRED
+      self.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, :any, ts.center_ids) if ts.state = STATE_AVAILABLE_EXPIRED
     }
   end
 
+  def deep_dup
+    # from http://stackoverflow.com/questions/5976684/cloning-a-record-in-rails-is-it-possible-to-clone-associations-and-deep-copy
+    ts = self.dup
+    # turning off validation when saving, since dates will overlap database record corresponding to self
+    if !ts.save(:validate => false)
+      errors[:base] << "copy error"
+    end
+    ts.centers = self.centers
+    ts
+  end
 
 end

@@ -23,9 +23,9 @@
   </div>
 
   <div class='form-group'>
-     <%= label_tag :center %>
+     <%= label_tag 'Center(s)' %>
      <% centers = @teacher.centers.sort_by{|e| e[:name]} %>
-     <%= select_tag 'teacher_schedule[center_id]',  options_for_select(centers.map {|e| [e.name, e.id]}, @teacher_schedule.center_id), {:class => 'form-control'} %>
+     <%= select_tag 'teacher_schedule[center_ids]',  options_for_select(centers.map {|e| [e.name, e.id]}, @teacher_schedule.center_ids), {:multiple => true, :class => 'form-control'} %>
   </div>
 
   <div class="form-group">
@@ -35,7 +35,7 @@
 
 
     <div class='form-group'>
-      <%= label_tag :timing %>
+      <%= label_tag 'Timing' %>
       <%= select_tag 'teacher_schedule[timing_id]', options_for_select(@timings.map {|e| [e.name, e.id]}, @teacher_schedule.timing_id), {:id => 'timings_select', :class => 'form-control'} %>
     </div>
 

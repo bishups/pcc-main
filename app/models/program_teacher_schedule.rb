@@ -244,7 +244,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     teacher_ids = ProgramTypesTeachers.find_all_by_program_type_id(program.program_type_id).map { |pts| pts[:teacher_id] }
     program.timings.each {|t|
       # if teacher is available for each of timing specified in the program for the specified center
-      teacher_ids &= TeacherSchedule.where(['start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ? AND program_type_id IS ?',
+      teacher_ids &= TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where(['teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id IS ? AND teacher_schedules.program_type_id IS ?',
                                             program.start_date.to_date, program.end_date.to_date, t.id,
                                             ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id]).pluck(:teacher_id)
     }
@@ -274,9 +274,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     program = Program.find(params[:program_id])
     teacher = Teacher.find(params[:teacher_id])
     program.timings.each {|t|
-      ts = teacher.teacher_schedules.where('start_date <= ? AND end_date >= ? AND timing_id = ? AND state = ? AND center_id = ? AND program_type_id IS ?',
+      ts = teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id IS ? AND teacher_schedules.program_type_id IS ?',
                                            program.start_date.to_date, program.end_date.to_date, t.id,
-                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).first
+                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).readonly(false).first
       # split this schedule as per program dates
       ts.split_schedule!(program.start_date.to_date, program.end_date.to_date)
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop

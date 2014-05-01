@@ -81,7 +81,8 @@ class Kit < ActiveRecord::Base
 
   def has_centers?
     self.errors.add(:centers, " required field.") if self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    #self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
   end
 
 

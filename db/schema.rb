@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404302110720) do
+ActiveRecord::Schema.define(:version => 201405012120301) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -39,6 +39,11 @@ ActiveRecord::Schema.define(:version => 201404302110720) do
   create_table "centers_kits", :force => true do |t|
     t.integer "center_id"
     t.integer "kit_id"
+  end
+
+  create_table "centers_teacher_schedules", :force => true do |t|
+    t.integer "center_id"
+    t.integer "teacher_schedule_id"
   end
 
   create_table "centers_teachers", :force => true do |t|

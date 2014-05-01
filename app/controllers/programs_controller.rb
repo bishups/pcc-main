@@ -75,8 +75,10 @@ class ProgramsController < ApplicationController
     @program.comment_category = Comment.where('model IS ? AND action IS ?', 'Program', @trigger).pluck(:text)
 
     if !@program.can_update?
-      format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
-      format.json { render json: @program.errors, status: :unprocessable_entity }
+      respond_to do |format|
+        format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      end
     end
   end
 

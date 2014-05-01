@@ -8,7 +8,7 @@ class TeacherSchedulesController < ApplicationController
     center_ids = current_user.accessible_center_ids
     @teacher = Teacher.find(params[:teacher_id])
     @teacher.current_user = current_user
-    @teacher_schedules = @teacher.teacher_schedules.where("end_date >= ? AND center_id IN (?)", (Time.zone.now.to_date - 1.month.from_now.to_date), center_ids).group("coalesce(program_id, created_at)")
+    @teacher_schedules = @teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where("teacher_schedules.end_date >= ? AND centers_teacher_schedules.center_id IN (?)", (Time.zone.now.to_date - 1.month.from_now.to_date), center_ids).group("coalesce(program_id, created_at)")
 
     respond_to do |format|
       if @teacher.can_view_schedule?
@@ -29,9 +29,10 @@ class TeacherSchedulesController < ApplicationController
     @teacher_schedule.teacher = @teacher
     @teacher.current_user = @teacher_schedule.current_user = current_user
 
-    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', @teacher.id).all.sort_by{|pt| pt[:name]}
-    @selected_program_type = @program_types[0]
-    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
+    load_program_type_timings!(@teacher)
+    #@program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', @teacher.id).all.sort_by{|pt| pt[:name]}
+    #@selected_program_type = @program_types[0]
+    #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
 
     respond_to do |format|
       if @teacher_schedule.can_create?
@@ -76,8 +77,11 @@ class TeacherSchedulesController < ApplicationController
         format.html { redirect_to teacher_teacher_schedules_path(@teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
       else
-        timing_arr = params[:teacher_schedule][:timing_id]
-        if (timing_arr)
+        @teacher_schedule.errors[:base] << "At least one Timing should be selected." if params[:teacher_schedule][:timing_id].nil?
+        @teacher_schedule.errors[:base] << "At least one Center should be selected." if params[:teacher_schedule][:center_ids].nil?
+
+        if (@teacher_schedule.errors.empty?)
+          timing_arr = params[:teacher_schedule][:timing_id]
           timing_arr.each { |timing_id|
             @teacher_schedule = TeacherSchedule.new(params[:teacher_schedule])
             @teacher_schedule.current_user = current_user
@@ -87,12 +91,14 @@ class TeacherSchedulesController < ApplicationController
             if @teacher_schedule.valid?
               additional_days = @teacher_schedule.can_combine_consecutive_schedules?
               if (additional_days + @teacher_schedule.no_of_days < 3)
+                load_program_type_timings!(@teacher)
                 @teacher_schedule.errors[:end_date] << "cannot be less than 2 days after start date."
                 format.html { render action: "new" }
                 format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
               else
                 @teacher_schedule.combine_consecutive_schedules! if additional_days != 0
                 if !@teacher_schedule.save
+                  load_program_type_timings!(@teacher)
                   format.html { render action: "new" }
                   format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
                 else
@@ -100,12 +106,14 @@ class TeacherSchedulesController < ApplicationController
                 end
               end
             else
+              load_program_type_timings!(@teacher)
               format.html { render action: "new" }
               format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
             end
           }
         else
-          @teacher_schedule.errors[:timing] << "At least one timings must be selected."
+          #@teacher_schedule.errors[:timing] << "At least one timings must be selected."
+          load_program_type_timings!(@teacher)
           format.html { render action: "new" }
           format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
         end
@@ -172,14 +180,12 @@ class TeacherSchedulesController < ApplicationController
     @teacher = @teacher_schedule.teacher
     @teacher.current_user = @teacher_schedule.current_user = @teacher_schedule.teacher.current_user = current_user
 
-    if @teacher_schedule.can_update?
-      @teacher_schedule.destroy()
-      respond_to do |format|
-        format.html { redirect_to teacher_teacher_schedules_path(@teacher) }
-        format.json { head :no_content }
-      end
-    else
-      respond_to do |format|
+    respond_to do |format|
+      if @teacher_schedule.can_update?
+        @teacher_schedule.destroy
+          format.html { redirect_to teacher_teacher_schedules_path(@teacher) }
+          format.json { head :no_content }
+      else
         format.html { redirect_to teacher_teacher_schedules_path(@teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
       end
@@ -191,6 +197,12 @@ class TeacherSchedulesController < ApplicationController
     program_type = ProgramType.find(params[:program_type_id])
     # map to name and id for use in our options_for_select
     @timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
+  end
+
+  def load_program_type_timings!(teacher)
+    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', teacher.id).all.sort_by{|pt| pt[:name]}
+    @selected_program_type = @program_types[0]
+    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
   end
 
 private

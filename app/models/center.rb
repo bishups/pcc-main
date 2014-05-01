@@ -20,7 +20,8 @@ class Center < ActiveRecord::Base
   has_and_belongs_to_many :teachers
   has_and_belongs_to_many :kits
   has_and_belongs_to_many :venues
-  attr_accessible :name, :sector_id, :sector, :pincodes, :pincode_ids
+  has_and_belongs_to_many :teacher_schedules, :join_table => "centers_teacher_schedules"
+  attr_accessible :name, :sector_id, :sector, :pincodes, :pincode_ids, :zone, :zone_id, :teacher_schedules, :teacher_schedule_ids
 
   validates :name,:sector, :presence => true
 
