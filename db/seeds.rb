@@ -171,10 +171,16 @@ notifications = [
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNAVAILABLE_OVERDUE, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNAVAILABLE_OVERDUE, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
+    {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_RESERVED, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_RESERVED, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::KitSchedule::EVENT_DELETE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Kit available for block.' },
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::KitSchedule::EVENT_DELETE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Kit available for block.' },
 
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_BLOCKED, :to_state => ::KitSchedule::STATE_CANCELLED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_BLOCKED, :to_state => ::KitSchedule::STATE_CANCELLED, :on_event => 'any', :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },

@@ -214,7 +214,7 @@ class KitSchedulesController < ApplicationController
     # only users making reserve call can delete the corresponding reserved schedules
     if @kit_schedule.can_delete?
       kit_id = @kit_schedule.kit_id
-      @kit_schedule.destroy
+      @kit_schedule.delete_reserve!
       respond_to do |format|
           format.html { redirect_to kit_schedules_path(:kit_id => kit_id) }
           format.json { head :no_content }

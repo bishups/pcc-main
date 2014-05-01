@@ -48,6 +48,7 @@ class KitSchedule < ActiveRecord::Base
   EVENT_CANCEL     = "Cancel"
   EVENT_RETURNED   = "Returned"
   EVENT_CLOSE      = "Close"
+  EVENT_DELETE     = "Delete"  # this is not a state machine event, but just used for logging when deleting reserve
 
   NOTIFICATIONS = [EVENT_OVERDUE]
   NON_MENU_EVENTS = [EVENT_BLOCK, EVENT_RESERVE, EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE]
@@ -76,7 +77,7 @@ class KitSchedule < ActiveRecord::Base
   validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_reserved_or_cancelled?, :message => " is already associated with the Kit."
 
   #checking for overlap validation
-  validates_with KitScheduleValidator
+  validates_with KitScheduleValidator, :on => :create
 
 =begin
   # given a kit_schedule (linked to a program), returns a relation with other overlapping kit_schedule(s) (linked to programs) for the specific kit, not in specified states
@@ -454,7 +455,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def can_delete?
-    return false if self.end_date < Time.zone.now
+    return false if self.end_date.to_date < Time.zone.now.to_date
 
     if (self.state == STATE_RESERVED)
       return true if (self.blocked_by_user == self.current_user) && self.can_create_reserve?
@@ -467,6 +468,29 @@ class KitSchedule < ActiveRecord::Base
     end
 
     return false
+  end
+
+  def delete_reserve!
+    # delete only the future part of the reserve
+    end_date = Time.zone.now.to_date - 1.minute
+
+    # if there is no past part - delete the object itself, else update the dates and save
+    if end_date.to_date < self.start_date.to_date
+      # notify the availability of future part
+      self.store_last_update!(self.current_user, self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
+      self.notify(self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.center_ids)
+      self.destroy
+    else
+      # create a dummy to log and notify
+      ks = self.dup
+      ks.start_date = Time.zone.now
+      # notify the availability of future part
+      ks.store_last_update!(ks.current_user, ks.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
+      self.notify(ks.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.center_ids)
+      # save the past part
+      self.end_date = end_date
+      self.save
+    end
   end
 
 
