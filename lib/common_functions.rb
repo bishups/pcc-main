@@ -105,8 +105,19 @@ module CommonFunctions
 
   def notify_user(user, model, from, to, on, value)
 
-=begin
+    if(value.send_email == true){
 
+       User_Mailer.email(user, from, to, value.additional_text, self.friendly_name).deliver 
+  }
+
+  if(value.send_sms == true){
+
+   User_Mailer.sms(user, from, to, value.additional_text, self.friendly_name_for_sms).deliver  
+  }
+
+
+
+=begin
 Program #1 Uyir Nokkam Cbe-City starting 01 Apr 2014
 
 if value.send_email == true
