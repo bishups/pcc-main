@@ -18,7 +18,7 @@ class UserMailer < ActionMailer::Base
     @to = to
     @additional_text = additional_text
     @friendly_name_for_sms = friendly_name_for_sms
-    sms_email_id = '#{@user.mobile}.#{Rails.application.config.sms_country_username}@smscountry.net'
+    sms_email_id = "#{@user.mobile}.#{Rails.application.config.sms_country_username}@smscountry.net"
     mail(:to => sms_email_id, :subject => Rails.application.config.sms_country_username)
   end
 

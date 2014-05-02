@@ -49,7 +49,7 @@ PccMain::Application.configure do
 
   # sms country configuration
   # TODO - fill the sms country user name here
-  config.sms_country_username = ""
+  config.sms_country_username = "_TODO_intialize_config.sms_country_username_"
   # to test the mails
   config.action_mailer.delivery_method = :letter_opener
 
