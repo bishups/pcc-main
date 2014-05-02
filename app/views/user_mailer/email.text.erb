@@ -1,0 +1,15 @@
+Namaskaram <%= @user.firstname %>,
+Status of <%= @friendly_name[:text] %> has changed:
+
+Status:-
+From: <%= @from %>
+To: <%= @to %>
+
+<% unless @additional_text.nil? %>
+    Additional Information: <%= @additional_text %>
+<% end %>
+
+Please log-in to <%= @url %> for details.
+
+Pranam,
+Isha Foundation

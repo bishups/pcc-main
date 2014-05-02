@@ -213,7 +213,11 @@ class TeacherSchedule < ActiveRecord::Base
       if !ts.save(:validate => false)
         self.errors[:base] << ts.errors.full_messages
       end
-      self.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, :any, ts.center_ids) if ts.state = STATE_AVAILABLE_EXPIRED
+      # send notifications every x days - depending upon the program type that the teacher is enabled for
+      every_x_days = self.teacher.programs_types.minimum(:no_of_days)
+      unless (self.start_date - self.end_date) % every_x_days
+        self.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, :any, ts.centers) if ts.state = STATE_AVAILABLE_EXPIRED
+      end
     }
   end
 
@@ -226,6 +230,17 @@ class TeacherSchedule < ActiveRecord::Base
     end
     ts.centers = self.centers
     ts
+  end
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.teacher_teacher_schedule_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    name = "Teacher Schedule ##{self.id} #{self.user.firstname} (#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')})"
   end
 
 end

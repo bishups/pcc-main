@@ -85,7 +85,7 @@ module CommonFunctions
       # insert into the hash
       users.each { |user|
         old_value = notify[user] if notify.has_key?(user)
-        new_value = {:send_sms => n.send_sms, :send_email => n.send_email, :additional_text => (n.additional_text.nil? || n.additional_text.blank? ? "" : "(#{n.additional_text})") }
+        new_value = {:send_sms => n.send_sms, :send_email => n.send_email, :additional_text => (n.additional_text.nil? || n.additional_text.blank? ? "" : "#{n.additional_text}") }
         if old_value.nil?
           old_value = new_value
         else
@@ -98,57 +98,17 @@ module CommonFunctions
     }
 
     notify.each_pair {|user, value|
-      self.notify_user(user, model, from_state, to_state, on_event, value)
+      self.notify_user(user, from_state, to_state, on_event, value)
     }
   end
 
 
-  def notify_user(user, model, from, to, on, value)
-
-    if(value.send_email == true){
-
-       User_Mailer.email(user, from, to, value.additional_text, self.friendly_name).deliver 
-  }
-
-  if(value.send_sms == true){
-
-   User_Mailer.sms(user, from, to, value.additional_text, self.friendly_name_for_sms).deliver  
-  }
-
-
-
-=begin
-Program #1 Uyir Nokkam Cbe-City starting 01 Apr 2014
-
-if value.send_email == true
-Email - template (html format) user.email_id
-
-Namaskaram,
-#{self.friendly_name}
-Status: #{from} to #{to}
-unless value.additional_text.nil?
-#{value.additional_text}
-end
-
-Please log-in to http://localhost:3000/ for details.
-
-Pranam,
-Isha Foundation
-
-
-if value.send_sms == true
-Sms - template (text format) user.mobile
-
-Namaskaram, #{self.friendly_name_for_sms}, Status: #{from} to #{to}
-unless value.additional_text.nil?
-#{value.additional_text}
-end
-Pranam,
-Isha Foundation
-
-=end
-
+  def notify_user(user, from, to, on, value)
+    UserMailer.email(user, from, to, on, value[:additional_text], self.friendly_name_for_email).deliver if value[:send_email]
+    UserMailer.sms(user, from, to, on, value[:additional_text], self.friendly_name_for_sms).deliver if value[:send_sms]
   end
+
+
 
 
 

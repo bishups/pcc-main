@@ -207,7 +207,7 @@ class Program < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center_id)
+      object.notify(transition.from, transition.to, transition.event, object.center)
     end
 
   end
@@ -374,6 +374,18 @@ class Program < ActiveRecord::Base
 
   def friendly_name
     ("(%s) %s (%s)" % [self.start_date.strftime('%d %B %Y'), self.center.name, self.program_type.name])
+  end
+
+
+  def friendly_name_for_email
+    {
+      :text => friendly_name_for_sms,
+      :link => Rails.application.routes.url_helpers.program_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    "Program ##{self.id} #{self.program_type.name} #{self.center.name} (#{self.start_date.strftime('%d %B %Y')})"
   end
 
   def is_announced?

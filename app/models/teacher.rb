@@ -122,7 +122,7 @@ class Teacher < ActiveRecord::Base
       object.store_last_update!(nil, last_state, current_state, nil)
       # turning off validation when saving, since it is a minimal update in a callback
       object.save(:validate => false)
-      object.notify(:any, STATE_ATTACHED, :any, self.center_ids)
+      object.notify(:any, STATE_ATTACHED, :any, self.centers)
     end
     if last_state == STATE_ATTACHED && current_state != STATE_ATTACHED
       # if we have published TeacherSchedules, means we are coming through the rails_admin
@@ -135,7 +135,7 @@ class Teacher < ActiveRecord::Base
         # turning off validation when saving, since it is a minimal update in a callback
         object.save(:validate => false)
       end
-      object.notify(STATE_ATTACHED, :any, :any, self.center_ids)
+      object.notify(STATE_ATTACHED, :any, :any, self.centers)
     end
 
   end
@@ -303,6 +303,18 @@ class Teacher < ActiveRecord::Base
     }
     return true
   end
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.teacher_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    name = "Teacher ##{self.id} #{self.user.firstname} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
+  end
+
 
 
   rails_admin do

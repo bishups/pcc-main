@@ -133,8 +133,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       # it needs to be stored with each of the linked teacher_schedules
 
       # HACK - In case the program reference was removed on cancellation of block
-      center_id = object.program.nil? ? object.deleted_program.center_id : object.program.center_id
-      object.notify(transition.from, transition.to, transition.event, center_id)
+      center = object.program.nil? ? object.deleted_program.center : object.program.center
+      object.notify(transition.from, transition.to, transition.event, center)
     end
 
   end
@@ -363,5 +363,17 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     return true if self.current_user == self.teacher.user
     return false
   end
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.program_teacher_schedule_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    "Program-Teacher Schedule ##{self.id} #{self.program.center.name}-#{self.teacher.user.firstname} (#{self.program.start_date.strftime('%d %B %Y')})"
+  end
+
 end
 

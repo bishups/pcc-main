@@ -25,6 +25,7 @@ gem 'jquery-rails'
 gem 'whenever', :require => false
 gem 'delayed_job_active_record'
 gem 'bootstrap-datetime-picker-for-rails'
+gem "letter_opener", :group => :development
 
 # To use ActiveModel has_secure_password
 # gem 'bcrypt-ruby', '~> 3.0.0'

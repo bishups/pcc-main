@@ -182,8 +182,8 @@ class KitSchedule < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      center_id = object.program.nil? ? object.kit.center_ids : object.program.center_id
-      object.notify(transition.from, transition.to, transition.event, center_id)
+      centers = object.program.nil? ? object.kit.centers : [object.program.center]
+      object.notify(transition.from, transition.to, transition.event, centers)
     end
   end
 
@@ -478,7 +478,7 @@ class KitSchedule < ActiveRecord::Base
     if end_date.to_date < self.start_date.to_date
       # notify the availability of future part
       self.store_last_update!(self.current_user, self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
-      self.notify(self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.center_ids)
+      self.notify(self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.centers)
       self.destroy
     else
       # create a dummy to log and notify
@@ -486,12 +486,24 @@ class KitSchedule < ActiveRecord::Base
       ks.start_date = Time.zone.now
       # notify the availability of future part
       ks.store_last_update!(ks.current_user, ks.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
-      self.notify(ks.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.center_ids)
+      self.notify(ks.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.centers)
       # save the past part
       self.end_date = end_date
       self.save
     end
   end
 
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.kit_schedule_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    name = "Kit Schedule ##{self.id} #{self.kit.name}"
+    name += ", #{self.program.center.name}" unless self.program.nil?
+    name += " (#{self.start_date.strftime('%d %B %Y')})"
+  end
 
 end

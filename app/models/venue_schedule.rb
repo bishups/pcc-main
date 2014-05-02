@@ -233,7 +233,7 @@ class VenueSchedule < ActiveRecord::Base
 
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.program.center_id)
+      object.notify(transition.from, transition.to, transition.event, object.program.center)
     end
 
   end
@@ -453,6 +453,21 @@ class VenueSchedule < ActiveRecord::Base
     return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
     return false
   end
+
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.venue_schedule_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    name = "Venue Schedule ##{self.id} #{self.venue.name}"
+    name += ", #{self.program.center.name}" unless self.program.nil?
+    name += " (#{self.start_date.strftime('%d %B %Y')})"
+  end
+
 
   private
 

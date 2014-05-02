@@ -66,7 +66,7 @@ class Kit < ActiveRecord::Base
 
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center_ids)
+      object.notify(transition.from, transition.to, transition.event, object.centers)
     end
   end
 
@@ -108,6 +108,17 @@ class Kit < ActiveRecord::Base
 
   def friendly_name
     ("%s" % [self.name]).parameterize
+  end
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.kit_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    "Kit ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
   end
 
 

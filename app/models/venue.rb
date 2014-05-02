@@ -142,7 +142,7 @@ class Venue < ActiveRecord::Base
 
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center_ids)
+      object.notify(transition.from, transition.to, transition.event, object.centers)
     end
 
   end
@@ -284,6 +284,17 @@ def can_reject?
 
   def friendly_name
     ("%s" % [self.name]).parameterize
+  end
+
+  def friendly_name_for_email
+    {
+      :text => friendly_name_for_sms,
+      :link => Rails.application.routes.url_helpers.venue_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    "Venue ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
   end
 
   rails_admin do

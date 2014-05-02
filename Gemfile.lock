@@ -65,6 +65,7 @@ GEM
     activesupport (3.2.13)
       i18n (= 0.6.1)
       multi_json (~> 1.0)
+    addressable (2.3.6)
     annotate (2.6.3)
       activerecord (>= 2.3.0)
       rake (>= 0.8.7)
@@ -123,6 +124,10 @@ GEM
     kaminari (0.15.1)
       actionpack (>= 3.0.0)
       activesupport (>= 3.0.0)
+    launchy (2.4.2)
+      addressable (~> 2.3)
+    letter_opener (1.2.0)
+      launchy (~> 2.2)
     mail (2.5.4)
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
@@ -243,6 +248,7 @@ DEPENDENCIES
   font-awesome-rails
   jquery-datatables-rails!
   jquery-rails
+  letter_opener
   omniauth-google-oauth2
   paper_trail!
   paranoia (~> 1.0)
