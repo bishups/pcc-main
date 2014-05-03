@@ -66,7 +66,7 @@ class Kit < ActiveRecord::Base
 
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center_ids)
+      object.notify(transition.from, transition.to, transition.event, object.centers)
     end
   end
 
@@ -81,20 +81,44 @@ class Kit < ActiveRecord::Base
 
   def has_centers?
     self.errors.add(:centers, " required field.") if self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    #self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
   end
 
 
 
 
   def blockable_programs
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
+    # NOTE: We **can** add a kit even after the program has started
+    programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if kit.can_be_blocked_by?(program)
+    }
+    blockable_programs
   end
+
+  def can_be_blocked_by?(program)
+    ks = KitSchedule.new
+    ks.assign_dates!(program)
+    ks.kit_id = self.id
+    KitSchedule.overlapping_schedules(ks).count == 0
+  end
+
 
   def friendly_name
     ("%s" % [self.name]).parameterize
+  end
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.kit_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    "Kit ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
   end
 
 
@@ -131,21 +155,21 @@ class Kit < ActiveRecord::Base
   end
 
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user
     return kit_schedule.can_create?(self.center_ids)
   end
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_reserve_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user
     return kit_schedule.can_create_reserve?(self.center_ids)
   end
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_overdue_or_under_repair_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user

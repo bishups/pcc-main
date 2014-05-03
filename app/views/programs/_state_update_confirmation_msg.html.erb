@@ -21,6 +21,8 @@
     Are you sure you want to change the program to Conducted state?
     <% elsif @trigger == ::Program::EVENT_TEACHER_CLOSE %>
         Are you sure you want to change the program to Teacher Closed state?
+    <% elsif @trigger == ::Program::EVENT_ZAO_CLOSE %>
+        Are you sure you want to change the program to ZAO Closed state?
     <% elsif @trigger == ::Program::EVENT_CLOSE %>
     Are you sure you want to close this program?
     <% end %>

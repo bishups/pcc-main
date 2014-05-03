@@ -36,6 +36,7 @@ PccMain::Application.configure do
   config.assets.debug = true
 
   # ActionMailer for Devise
+  # TODO - change the default url options here
   config.action_mailer.default_url_options = { :host => "localhost:3000" }
   config.action_mailer.smtp_settings = {
       address:              'smtp.gmail.com',
@@ -45,5 +46,11 @@ PccMain::Application.configure do
       password:             '<password>',
       authentication:       'plain',
       enable_starttls_auto: true  }
+
+  # sms country configuration
+  # TODO - fill the sms country user name here
+  config.sms_country_username = "_TODO_intialize_config.sms_country_username_"
+  # to test the mails
+  config.action_mailer.delivery_method = :letter_opener
 
 end

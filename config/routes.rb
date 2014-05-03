@@ -11,8 +11,8 @@ PccMain::Application.routes.draw do
   # Misc. static pages
   get '/about'                            => 'home#about'
   get '/registration_confirmation'        => 'home#registration_confirmation'
-  get 'programs/update_timings', :as => 'update_timings'
-
+  get 'programs/update_timings', :as => 'update_program_timings'
+  get 'teacher_schedules/update_timings', :as => 'update_teacher_schedule_timings'
   # Resources
   resources :enquiries
   resources :programs

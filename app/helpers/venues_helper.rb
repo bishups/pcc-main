@@ -1,7 +1,6 @@
 module VenuesHelper
   def venue_state_tag(v)
     proc do
-      # TODO - change this once state machine is added to teacher schedule
       case v.state
         when ::Venue::STATE_PROPOSED
           '<span class="label label-info">Proposed</span>'

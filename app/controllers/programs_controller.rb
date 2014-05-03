@@ -3,7 +3,8 @@ class ProgramsController < ApplicationController
 
   def index
     center_ids = current_user.accessible_center_ids
-    @programs = Program.where("center_id IN (?) AND end_date > ?", center_ids, (Time.zone.now - 15.days.from_now)).all
+    @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 1.month.from_now), ::Program::FINAL_STATES).order('start_date ASC').all
+
     respond_to do |format|
       format.html
     end
@@ -13,10 +14,11 @@ class ProgramsController < ApplicationController
     @program = Program.new
     @program.current_user = current_user
     center_ids = current_user.accessible_center_ids(:center_scheduler)
-    # TODO - sort it
-    @centers = Center.where("id IN (?)", center_ids)
-    #@program_types = ProgramType.all
-    #@timings = []
+    @centers = Center.where("id IN (?)", center_ids).order('name ASC')
+
+    @program_types = ProgramType.all.sort_by{|pt| pt[:name]}
+    @selected_program_type = @program_types[0]
+    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
 
     respond_to do |format|
       if @program.can_create? :any => true
@@ -73,8 +75,10 @@ class ProgramsController < ApplicationController
     @program.comment_category = Comment.where('model IS ? AND action IS ?', 'Program', @trigger).pluck(:text)
 
     if !@program.can_update?
-      format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
-      format.json { render json: @program.errors, status: :unprocessable_entity }
+      respond_to do |format|
+        format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -105,14 +109,10 @@ class ProgramsController < ApplicationController
   end
 
   def update_timings
-    # TODO - Need to update the slot times based on the program type selected
-    # TODO - Keyword - cascaded drop down
-    # TODO - Complications - 1. accessing formbuilder value from ajax, 2. multiple selection box
-    # updates artists and songs based on program_type selected
+    # updates timings based on selection
     program_type = ProgramType.find(params[:program_type_id])
     # map to name and id for use in our options_for_select
-    @timings = program_type.timings
-    # @timings = program_type.timings.map{|a| [a.name, a.id]}.insert(0, "Select a Slot Time")
+    @timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
   end
 
   private

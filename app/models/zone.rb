@@ -35,6 +35,15 @@ class Zone < ActiveRecord::Base
     true
   end
 
+  # usage -> ::Sector::all_centers_in_one_zone?? [center1, center2, center3]
+  def self.all_centers_in_one_zone?(centers)
+    if !centers.empty?
+      zone_id = centers[0].zone_id
+      centers.each {|c| return false if zone_id != c.zone_id }
+    end
+    true
+  end
+
   rails_admin do
     navigation_label 'Geo-graphical informations'
       weight 0

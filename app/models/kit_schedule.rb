@@ -31,8 +31,9 @@ class KitSchedule < ActiveRecord::Base
   STATE_RETURNED    = "Returned"
   STATE_CANCELLED   = "Cancelled"
   STATE_CLOSED      = "Closed"
+  STATE_AVAILABLE_EXPIRED     = "Available (Expired)"
 
-  FINAL_STATES = [STATE_CLOSED, STATE_CANCELLED]
+  FINAL_STATES = [STATE_CLOSED, STATE_CANCELLED, STATE_AVAILABLE_EXPIRED]
   CONNECTED_STATES = [STATE_BLOCKED, STATE_ASSIGNED, STATE_ISSUED, STATE_OVERDUE, STATE_RETURNED]
   RESERVED_STATES = [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE]
   ALL_STATES = RESERVED_STATES + FINAL_STATES + CONNECTED_STATES
@@ -47,12 +48,13 @@ class KitSchedule < ActiveRecord::Base
   EVENT_CANCEL     = "Cancel"
   EVENT_RETURNED   = "Returned"
   EVENT_CLOSE      = "Close"
+  EVENT_DELETE     = "Delete"  # this is not a state machine event, but just used for logging when deleting reserve
 
   NOTIFICATIONS = [EVENT_OVERDUE]
   NON_MENU_EVENTS = [EVENT_BLOCK, EVENT_RESERVE, EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE]
   PROCESSABLE_EVENTS = [EVENT_ISSUE, EVENT_RETURNED, EVENT_CANCEL, EVENT_CLOSE]
 
-  EVENTS_WITH_COMMENTS = [EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE, EVENT_RESERVE, EVENT_CANCEL, EVENT_RETURNED, EVENT_ISSUE]
+  EVENTS_WITH_COMMENTS = [EVENT_UNDER_REPAIR, EVENT_UNAVAILABLE_OVERDUE, EVENT_RESERVE, EVENT_CANCEL, EVENT_RETURNED] #s, EVENT_ISSUE]
   EVENTS_WITH_FEEDBACK = [EVENT_CLOSE]
 
   belongs_to :kit
@@ -75,7 +77,7 @@ class KitSchedule < ActiveRecord::Base
   validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_reserved_or_cancelled?, :message => " is already associated with the Kit."
 
   #checking for overlap validation
-  validates_with KitScheduleValidator
+  validates_with KitScheduleValidator, :on => :create
 
 =begin
   # given a kit_schedule (linked to a program), returns a relation with other overlapping kit_schedule(s) (linked to programs) for the specific kit, not in specified states
@@ -93,7 +95,7 @@ class KitSchedule < ActiveRecord::Base
                                                          ks.id, [STATE_ASSIGNED], ks.kit_id, ks.end_date)}
 =end
 
-  # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit, in specified states
+  # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit
   scope :overlapping_schedules, lambda { |ks| where('kit_schedules.id IS NOT ? AND kit_schedules.state NOT IN (?) AND kit_schedules.kit_id IS ? AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
                                                    ks.id, FINAL_STATES, ks.kit_id, ks.start_date, ks.end_date, ks.start_date, ks.end_date, ks.start_date, ks.end_date)}
 
@@ -115,7 +117,7 @@ class KitSchedule < ActiveRecord::Base
     end
 
     event EVENT_ISSUE do
-      transition [STATE_ASSIGNED] => STATE_ISSUED, :if => lambda {|t| t.is_kit_coordinator? }
+      transition STATE_ASSIGNED => STATE_ISSUED, :if => lambda {|t| t.is_kit_coordinator? }
     end
     before_transition any => STATE_ISSUED, :do => :before_issue
     after_transition any => STATE_ISSUED, :do => :after_issue
@@ -132,7 +134,7 @@ class KitSchedule < ActiveRecord::Base
 
     event EVENT_OVERDUE do
       #transition [STATE_BLOCKED, STATE_ISSUED, STATE_ASSIGNED] => STATE_OVERDUE
-      transition [STATE_ISSUED] => STATE_OVERDUE
+      transition STATE_ISSUED => STATE_OVERDUE
     end
 
     event EVENT_CANCEL do
@@ -148,10 +150,14 @@ class KitSchedule < ActiveRecord::Base
       transition STATE_ASSIGNED => STATE_CANCELLED
     end
 
+    event ::Program::FINISHED do
+      transition [STATE_BLOCKED, STATE_ASSIGNED] => STATE_AVAILABLE_EXPIRED
+    end
+
     event EVENT_RESERVE do
       transition ::Kit::STATE_AVAILABLE => STATE_RESERVED, :if => lambda {|t| t.can_create_reserve? }
     end
-    before_transition any => STATE_RESERVED, :do => :can_create_reserve?
+    before_transition any => STATE_RESERVED, :do => :can_reserve?
 
     event EVENT_UNDER_REPAIR do
       transition ::Kit::STATE_AVAILABLE => STATE_UNDER_REPAIR, :if => lambda {|t| t.can_create_overdue_or_under_repair? }
@@ -160,7 +166,7 @@ class KitSchedule < ActiveRecord::Base
     event EVENT_UNAVAILABLE_OVERDUE do
       transition ::Kit::STATE_AVAILABLE => STATE_UNAVAILABLE_OVERDUE, :if => lambda {|t| t.can_create_overdue_or_under_repair? }
     end
-    before_transition any => [STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :can_create_overdue_or_under_repair?
+    before_transition any => [STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :can_overdue_or_under_repair?
     after_transition ::Kit::STATE_AVAILABLE => [STATE_RESERVED, STATE_UNDER_REPAIR, STATE_UNAVAILABLE_OVERDUE], :do => :after_reserve!
 
     # check for comments, before any transition
@@ -176,17 +182,24 @@ class KitSchedule < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.program.center_id)
+      centers = object.program.nil? ? object.kit.centers : [object.program.center]
+      object.notify(transition.from, transition.to, transition.event, centers)
+    end
+  end
+
+  def assign_dates!(program)
+    self.start_date = program.start_date.to_date - 1.day
+    self.end_date = (program.end_date.to_date + 2.day - 1.minute).to_date
+    current_date = Time.zone.now.to_date
+    if self.start_date < current_date && program.in_progress?
+      self.start_date = current_date
     end
   end
 
 
   def before_block
     return false unless self.can_create?
-    self.start_date = self.program.start_date.to_date - 1.day
-    self.end_date = (self.program.end_date.to_date + 2.day - 1.minute).to_date
-#    self.start_date = self.program.start_date
-#    self.end_date = self.program.end_date
+    self.assign_dates!(self.program)
   end
 
   def on_block
@@ -209,7 +222,7 @@ class KitSchedule < ActiveRecord::Base
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
-    true
+    return true
   end
 
   def is_center_coordinator?
@@ -217,7 +230,7 @@ class KitSchedule < ActiveRecord::Base
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
-    true
+    return true
   end
 
   def before_issue
@@ -229,7 +242,7 @@ class KitSchedule < ActiveRecord::Base
       return false
     end
     self.due_date_time = self.end_date
-    true
+    return true
   end
 
 =begin
@@ -266,7 +279,7 @@ class KitSchedule < ActiveRecord::Base
       return false
     end
 
-    # TODO - check if the due_date and time overlaps with any of the schedule
+    # check if the due_date and time overlaps with any of the schedule
 
     if self.due_date_time
       # save the dates
@@ -344,29 +357,45 @@ class KitSchedule < ActiveRecord::Base
   def after_issue
     self.delay(:run_at => self.due_date_time).trigger_overdue
     self.issue_for_schedules = NIL
-    true
+    return true
   end
 
   def can_unblock?
-    # to prevent too many error messages on console return early
+    no_kits_blocked = self.program.no_of_kits_connected
     if (self.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
-      if self.program.venue_approved?
-        self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for payment request."
-        return false
-      end
-      return true
+      return true unless self.program.venue_approved?
+      return true if no_kits_blocked > 1
+      self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for payment request. Add another kit and try again."
+      return false
     end
 
     if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id)
-      if self.program.venue_approval_requested?
-        self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for sector coordinator approval."
-        return false
-      end
-      return true
+      return true unless self.program.venue_approval_requested?
+      return true if no_kits_blocked > 1
+      self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for sector coordinator approval. Add another kit and try again."
+      return false
     end
 
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    false
+    return false
+  end
+
+  def can_reserve?
+    return false unless self.can_create_reserve?
+    unless (self.end_date.to_date.mjd - self.start_date.to_date.mjd + 1).between?(1,90)
+      self.errors[:end_date] << " should be within 90 days of the start date"
+      return false
+    end
+    return true
+  end
+
+  def can_overdue_or_under_repair?
+    return false unless self.can_create_overdue_or_under_repair?
+    unless (self.end_date.to_date.mjd - self.start_date.to_date.mjd + 1).between?(1,90)
+      self.errors[:end_date] << " should be within 90 days of the start date"
+      return false
+    end
+    return true
   end
 
   def after_reserve!
@@ -383,6 +412,7 @@ class KitSchedule < ActiveRecord::Base
         ::Program::CANCELLED => [STATE_ASSIGNED],
         ::Program::DROPPED => [STATE_BLOCKED],
         ::Program::ANNOUNCED => [STATE_BLOCKED],
+        ::Program::FINISHED => [STATE_BLOCKED, STATE_ASSIGNED],
     }
     # verify when all the events can come
     if valid_states[event].include?(self.state)
@@ -396,18 +426,7 @@ class KitSchedule < ActiveRecord::Base
     end
   end
 
-  def can_delete?
-    unless self.program_id.nil?
-      self.errors[:base] << "Cannot delete a kit schedule linked to a program"
-      return false
-    end
-    unless self.can_create_on_trigger?
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      return false
-    end
 
-    return true
-  end
 
   def can_update?
     return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
@@ -436,6 +455,8 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def can_delete?
+    return false if self.end_date.to_date < Time.zone.now.to_date
+
     if (self.state == STATE_RESERVED)
       return true if (self.blocked_by_user == self.current_user) && self.can_create_reserve?
       return true if self.can_create_reserve?(self.kit.center_ids, :all)
@@ -447,6 +468,42 @@ class KitSchedule < ActiveRecord::Base
     end
 
     return false
+  end
+
+  def delete_reserve!
+    # delete only the future part of the reserve
+    end_date = Time.zone.now.to_date - 1.minute
+
+    # if there is no past part - delete the object itself, else update the dates and save
+    if end_date.to_date < self.start_date.to_date
+      # notify the availability of future part
+      self.store_last_update!(self.current_user, self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
+      self.notify(self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.centers)
+      self.destroy
+    else
+      # create a dummy to log and notify
+      ks = self.dup
+      ks.start_date = Time.zone.now
+      # notify the availability of future part
+      ks.store_last_update!(ks.current_user, ks.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
+      self.notify(ks.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.centers)
+      # save the past part
+      self.end_date = end_date
+      self.save
+    end
+  end
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.kit_schedule_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    name = "Kit Schedule ##{self.id} #{self.kit.name}"
+    name += ", #{self.program.center.name}" unless self.program.nil?
+    name += " (#{self.start_date.strftime('%d %B %Y')})"
   end
 
 end

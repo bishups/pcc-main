@@ -37,19 +37,23 @@
   <div class='col-md-12'>
     <table class='table table-bordered'>
       <tr>
-        <td width='20%'><strong>T No</strong></td>
+        <td width='20%'><strong>ID #</strong></td>
+        <td><%= @teacher.id %></td>
+      </tr>
+      <tr>
+        <td><strong>T No</strong></td>
         <td><%= @teacher.t_no %></td>
       </tr>
       <tr>
-        <td width='20%'><strong>Program Types</strong></td>
+        <td><strong>Program Types</strong></td>
         <td><%= (@teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
       </tr>
       <tr>
-        <td width='20%'><strong>Zone</strong></td>
+        <td><strong>Zone</strong></td>
         <td><%= @teacher.zone.name rescue '' %></td>
       </tr>
       <tr>
-        <td width='20%'><strong>Center(s)</strong></td>
+        <td><strong>Center(s)</strong></td>
         <td><%= (@teacher.centers.map {|c| c[:name]}).join(", ") %></td>
       </tr>
     </table>

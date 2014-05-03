@@ -9,7 +9,7 @@ module CommonFunctions
       self.errors[:base] << "Please fill Details when selecting 'Other'."
       return false
     end
-    true
+    return true
   end
 
   def has_feedback?
@@ -17,7 +17,7 @@ module CommonFunctions
       self.errors[:feedback] << " is mandatory field."
       return false
     end
-    true
+    return true
   end
 
   def load_comments!(params)
@@ -69,13 +69,11 @@ module CommonFunctions
             ::User::ROLE_ACCESS_HIERARCHY[:zao][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]
-          # convert centers into zones, and search by that
-          #zones = Zone.joins(:sector).joins(:center).where('centers.id IN (?)', center_ids).uniq.all
-          #users = r.users.by_zones(zones).uniq
+          # search by zones
+          users = r.users.by_zones(center_ids).uniq
         when ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]
-          # convert centers into sectors, and search by that
-          #sectors = Sector.joins(:center).where('centers.id IN (?)', center_ids).uniq.all
-          #users = r.users.by_sectors(sectors).uniq
+          # search by sectors
+          users = r.users.by_sectors(center_ids).uniq
         else
           # search by centers
           users = r.users.by_centers(center_ids).uniq
@@ -87,7 +85,7 @@ module CommonFunctions
       # insert into the hash
       users.each { |user|
         old_value = notify[user] if notify.has_key?(user)
-        new_value = {:send_sms => n.send_sms, :send_email => n.send_email, :additional_text => (n.additional_text.nil? || n.additional_text.blank? ? "" : "(#{n.additional_text})") }
+        new_value = {:send_sms => n.send_sms, :send_email => n.send_email, :additional_text => (n.additional_text.nil? || n.additional_text.blank? ? "" : "#{n.additional_text}") }
         if old_value.nil?
           old_value = new_value
         else
@@ -100,14 +98,17 @@ module CommonFunctions
     }
 
     notify.each_pair {|user, value|
-      self.notify_user(user, model, from_state, to_state, on_event, value)
+      self.notify_user(user, from_state, to_state, on_event, value)
     }
   end
 
 
-  def notify_user(user, model, from, to, on, value)
-
+  def notify_user(user, from, to, on, value)
+    UserMailer.email(user, from, to, on, value[:additional_text], self.friendly_name_for_email).deliver if value[:send_email]
+    UserMailer.sms(user, from, to, on, value[:additional_text], self.friendly_name_for_sms).deliver if value[:send_sms]
   end
+
+
 
 
 

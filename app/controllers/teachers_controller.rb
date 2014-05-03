@@ -7,7 +7,7 @@ class TeachersController < ApplicationController
   # GET /teachers.json
   def index
     center_ids = current_user.accessible_center_ids
-    @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).uniq.all
+    @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).order('teachers.t_no ASC').uniq.all
     # any teachers who are attached to zones, but not to the centers
     zone_ids = current_user.accessible_zone_ids
     if !zone_ids.empty?

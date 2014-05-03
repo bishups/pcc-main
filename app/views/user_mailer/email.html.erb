@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+<p> Namaskaram <%= @user.firstname %>, </p>
+<p> Status of <%= link_to @friendly_name[:text], @friendly_name[:link] %> has changed: </p>
+<p>From: <%= @from %></p>
+<p>To: <%= @to %></p>
+<% unless @additional_text.nil? %>
+    <p><%= @additional_text %></p>
+<% end %>
+<p>Please log-in to <%= link_to @url, @url %> for details.</p>
+<p>Pranam,</p>
+<p>Isha Foundation</p>
+</body>
+</html>

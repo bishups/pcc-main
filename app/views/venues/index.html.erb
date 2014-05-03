@@ -1,13 +1,18 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#venue_table').dataTable({
+            "sPaginationType": "bootstrap"
+        } );
+    });
+</script>
+
 <div class='row'>
   <div class='col-md-12'>
-    <h2>
-      Available Venues
-      <span class='pull-right'>
-        <%= render :partial => 'shared/resource_inline_search' %>
-      </span>
-    </h2>
+    <h2>Available Venues<hr></h2>
   </div>
-  <table class='table table-condensed table-hover table-bordered'>
+</div>
+<table id="venue_table" class='display dataTable table table-condensed table-hover table-bordered'>
+  <thead>
     <tr>
       <th>ID #</th>
       <th>Name</th>
@@ -16,8 +21,10 @@
       <th>Capacity</th>
       <th>Contact</th>
       <th>State</th>
-      <th width='12%'></th>
+      <th></th>
     </tr>
+  </thead>
+  <tbody>
     <% @venues.each do |venue| %>
     <% venue.current_user = current_user %>
     <tr>
@@ -37,6 +44,6 @@
       </td>
     </tr>
     <% end %>
+    </tbody>
   </table>
-</div>
 

@@ -7,7 +7,7 @@ class KitSchedulesController < ApplicationController
   def index
     @kit = ::Kit.find(params[:kit_id].to_i)
     @kit.current_user = current_user
-    @kit_schedules = @kit.kit_schedules.where(['end_date > ?', Time.zone.now - 15.days.from_now])
+    @kit_schedules = @kit.kit_schedules.where(['end_date > ? OR state NOT IN (?) ', (Time.zone.now - 1.month.from_now), ::KitSchedule::FINAL_STATES]).order('start_date ASC')
 
     respond_to do |format|
       if @kit.can_view_schedule?
@@ -141,7 +141,7 @@ class KitSchedulesController < ApplicationController
       return create_on_trigger
     end
 
-    # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
+    # HACK - to initialize @venue on create from fix _form.html.erb to pass correct params :-(
     if params.has_key?(:kit_id)
       kit_id = params[:kit_id].to_i
     elsif params.has_key?(:kit_schedule)
@@ -214,7 +214,7 @@ class KitSchedulesController < ApplicationController
     # only users making reserve call can delete the corresponding reserved schedules
     if @kit_schedule.can_delete?
       kit_id = @kit_schedule.kit_id
-      @kit_schedule.destroy
+      @kit_schedule.delete_reserve!
       respond_to do |format|
           format.html { redirect_to kit_schedules_path(:kit_id => kit_id) }
           format.json { head :no_content }

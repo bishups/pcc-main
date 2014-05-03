@@ -53,32 +53,35 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   STATE_RELEASE_REQUESTED   = 'Release Requested'
   STATE_IN_CLASS            = 'In Class'
   STATE_COMPLETED_CLASS     = 'Completed Class'
-  STATE_WITHDRAWN           = 'Withdrawn'
 
   CONNECTED_STATES = [STATE_BLOCKED, STATE_RELEASE_REQUESTED, STATE_ASSIGNED, STATE_IN_CLASS]
-  FINAL_STATES = [STATE_COMPLETED_CLASS, STATE_WITHDRAWN]
+  FINAL_STATES = [STATE_COMPLETED_CLASS]
 
 
   # Events
   EVENT_BLOCK              = 'Block'
   EVENT_REQUEST_RELEASE    = 'Request Release'
   EVENT_RELEASE            = 'Release'
-  EVENT_ASSIGN             = 'Assign'
-  EVENT_WITHDRAW           = 'Withdraw'
 
 
   PROCESSABLE_EVENTS = [
-      EVENT_REQUEST_RELEASE, EVENT_RELEASE, EVENT_WITHDRAW
+      EVENT_REQUEST_RELEASE, EVENT_RELEASE
   ]
 
-  EVENTS_WITH_COMMENTS = [EVENT_RELEASE, EVENT_WITHDRAW, EVENT_REQUEST_RELEASE]
+  EVENTS_WITH_COMMENTS = [EVENT_RELEASE, EVENT_REQUEST_RELEASE]
   EVENTS_WITH_FEEDBACK = []
 
 
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_BLOCK do
-      transition STATE_UNKNOWN => STATE_BLOCKED
+      transition STATE_UNKNOWN => STATE_BLOCKED, :if => lambda {|t| t.can_create?}
+    end
+    before_transition STATE_UNKNOWN => STATE_BLOCKED, :do => :can_block?
+    after_transition any => STATE_BLOCKED, :do => :if_program_announced!
+
+    event ::Program::DROPPED do
+      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE
     end
 
     event EVENT_RELEASE do
@@ -98,42 +101,23 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
     before_transition any => STATE_RELEASE_REQUESTED, :do => :is_teacher?
 
-    # Done
     event ::Program::CANCELLED do
       transition STATE_ASSIGNED => ::TeacherSchedule::STATE_AVAILABLE
     end
 
-    # Done
-    event ::Program::DROPPED do
-      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE
-    end
-
-    # in case the program is already announced, allowing them to change the state
-    event EVENT_ASSIGN do
-      transition STATE_BLOCKED => STATE_ASSIGNED, :if => lambda {|pts| pts.is_center_scheduler? && pts.program.is_announced? && pts.program.is_active?}
-    end
-    after_transition STATE_BLOCKED => STATE_ASSIGNED, :do => :if_program_started!
-
-    # Done
     event ::Program::ANNOUNCED do
       transition STATE_BLOCKED => STATE_ASSIGNED
     end
+    after_transition STATE_BLOCKED => STATE_ASSIGNED, :do => :if_program_started!
 
-    # Done
     event ::Program::STARTED do
       transition STATE_ASSIGNED => STATE_IN_CLASS
     end
 
-    # Done
     event ::Program::FINISHED do
       transition STATE_IN_CLASS => STATE_COMPLETED_CLASS
+      transition [STATE_BLOCKED, STATE_RELEASE_REQUESTED] => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED
     end
-
-    # Done
-    event EVENT_WITHDRAW do
-      transition STATE_IN_CLASS => STATE_WITHDRAWN, :if => lambda {|pts| pts.is_zonal_coordinator? }
-    end
-    before_transition STATE_IN_CLASS => STATE_WITHDRAWN, :do => :can_withdraw?
 
     before_transition any => any do |object, transition|
       if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
@@ -149,18 +133,30 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       # it needs to be stored with each of the linked teacher_schedules
 
       # HACK - In case the program reference was removed on cancellation of block
-      center_id = object.program.nil? ? object.deleted_program.center_id : object.program.center_id
-      object.notify(transition.from, transition.to, transition.event, center_id)
+      center = object.program.nil? ? object.deleted_program.center : object.program.center
+      object.notify(transition.from, transition.to, transition.event, center)
     end
 
   end
 
-  def if_program_started!
-    self.send(::Program::STARTED) if self.program.is_started?
+
+  def can_block?
+    return true if self.can_create?
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
-  def can_unblock?
 
+  def if_program_announced!
+    self.send(::Program::ANNOUNCED) if self.program.is_announced? && self.program.is_active?
+  end
+
+  def if_program_started!
+    self.send(::Program::STARTED) if self.program.in_progress?
+  end
+
+
+  def can_unblock?
     if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id) && (self.program.no_of_teachers_connected > self.program.minimum_no_of_teacher)
       return true
     end
@@ -182,8 +178,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    false
+    return false
   end
+
 
   def can_approve_release?
     return false unless self.is_sector_coordinator?
@@ -193,7 +190,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       return false
     end
 
-    true
+    return true
   end
 
 
@@ -204,49 +201,34 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
       return false
     end
-    true
+    return true
   end
 
-  def can_withdraw?
-    return false unless self.is_zonal_coordinator?
-
-    if self.program.no_of_teachers_connected <= self.program.minimum_no_of_teacher
-      self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
-      false
-    end
-    true
-  end
 
   def is_teacher?
-    if self.current_user.id != self.teacher_id
+    if self.current_user != self.teacher.user
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
+      return false
     end
-    true
+    return true
   end
 
   def is_center_scheduler?
-    if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_sector_coordinator?
-    if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if  self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_zonal_coordinator?
-    if self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def initialize(*args)
@@ -254,11 +236,81 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
 
+  def blockable_teachers
+    return [] if self.program.nil?
+
+    program = self.program
+    # get all teachers for specific program type
+    teacher_ids = ProgramTypesTeachers.find_all_by_program_type_id(program.program_type_id).map { |pts| pts[:teacher_id] }
+    program.timings.each {|t|
+      # if teacher is available for each of timing specified in the program for the specified center
+      teacher_ids &= TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where(['teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id IS ? AND teacher_schedules.program_type_id IS ?',
+                                            program.start_date.to_date, program.end_date.to_date, t.id,
+                                            ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id]).pluck(:teacher_id)
+    }
+    teachers = Teacher.find(teacher_ids)
+  end
+
+
+  def blockable_programs
+    return [] if self.teacher.nil?
+    teacher = self.teacher
+    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
+    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
+    # NOTE: We cannot add a teacher once the program has started
+    programs = Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', teacher.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if teacher.can_be_blocked_by?(program)
+    }
+    blockable_programs
+  end
+
+
+  # Incoming params - params => {"program_id"=>"3", "teacher_id"=>"1"}
+  # 1. given the teacher_id, find the schedules relevant for the program_id
+  # 2. split the schedule, marking the one against program - with program_id and state
+  def block_teacher_schedule!(params)
+    program = Program.find(params[:program_id])
+    teacher = Teacher.find(params[:teacher_id])
+    program.timings.each {|t|
+      ts = teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id IS ? AND teacher_schedules.program_type_id IS ?',
+                                           program.start_date.to_date, program.end_date.to_date, t.id,
+                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).readonly(false).first
+      # split this schedule as per program dates
+      ts.split_schedule!(program.start_date.to_date, program.end_date.to_date)
+      # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
+      if !ts.errors.empty?
+        self.errors[:base] << ts.errors.full_messages
+        break
+      end
+      ts.program_id = program.id
+      ts.blocked_by_user_id = current_user.id
+      ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
+      ts.clear_comments!
+      # This is a hack to store the last update
+      ts.store_last_update!(current_user, ::ProgramTeacherSchedule::STATE_UNKNOWN, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
+      #ts.save(:validate => false)
+      ts.save!
+      # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
+      if !ts.errors.empty?
+        self.errors[:base] << ts.errors.full_messages
+        break
+      end
+      self.teacher_schedule_id = ts.id
+    }
+    # This is a hack, just to make sure the relevant notifications are sent out
+    self.state = ::ProgramTeacherSchedule::STATE_UNKNOWN
+    # TODO - check whether errors need to be checked here
+    self.send(::ProgramTeacherSchedule::EVENT_BLOCK) if self.errors.empty?
+
+  end
+
 
   # NOTE: ProgramTeacherSchedule is **NOT** using ActiveRecord class functions like save
   def update(trigger)
     # if the state was updated to ::TeacherSchedule::STATE_AVAILABLE or ::TeacherSchedule::STATE_UNAVAILABLE
-    if (::TeacherSchedule::STATE_PUBLISHED).include?(self.state)
+    if (::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_AVAILABLE_EXPIRED]).include?(self.state)
       program_id = nil
       blocked_by_user_id = nil
     else
@@ -278,7 +330,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       ts.blocked_by_user_id = blocked_by_user_id
       ts.comments = self.comments.nil? ? "" : self.comments
       ts.feedback = self.feedback unless self.feedback.nil?
-      ts.save(:validate => false)
+      ts.save!
       ## TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         self.errors[:base] << ts.errors.full_messages
@@ -286,10 +338,10 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
 
       # 2. if they have been marked Available or unavailable, then check if combine_consecutive_slots
-      if ((::TeacherSchedule::STATE_PUBLISHED).include?(ts.state)) && ts.combine_consecutive_schedules?
+      if ((::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_AVAILABLE_EXPIRED]).include?(ts.state)) && ts.can_combine_consecutive_schedules?
         ts.clear_comments!
         ts.clear_last_update!
-        ts.combine_consecutive_schedules
+        ts.combine_consecutive_schedules!
         # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
         if !ts.save
           self.errors[:base] << ts.errors.full_messages
@@ -311,5 +363,17 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     return true if self.current_user == self.teacher.user
     return false
   end
+
+  def friendly_name_for_email
+    {
+        :text => friendly_name_for_sms,
+        :link => Rails.application.routes.url_helpers.program_teacher_schedule_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    "Program-Teacher Schedule ##{self.id} #{self.program.center.name}-#{self.teacher.user.firstname} (#{self.program.start_date.strftime('%d %B %Y')})"
+  end
+
 end
 

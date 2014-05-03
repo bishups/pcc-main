@@ -98,7 +98,6 @@ class Venue < ActiveRecord::Base
     before_transition any => STATE_APPROVED, :do => :is_sector_coordinator?
 
     after_transition any => STATE_APPROVED do |venue, transition|
-      # TODO: check if paid venue or not
       if venue.free?
         venue.send(EVENT_POSSIBLE)
       else
@@ -124,7 +123,7 @@ class Venue < ActiveRecord::Base
     event EVENT_REJECT do
       transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED, :if => lambda {|t| t.is_sector_coordinator? }
     end
-    before_transition STATE_POSSIBLE => STATE_REJECTED, :do => :can_reject?
+    before_transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED, :do => :can_reject?
 
     event EVENT_INSUFFICIENT_INFO do
       transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO, :if => lambda {|t| t.is_pcc_accounts? }
@@ -143,7 +142,7 @@ class Venue < ActiveRecord::Base
 
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center_ids)
+      object.notify(transition.from, transition.to, transition.event, object.centers)
     end
 
   end
@@ -153,7 +152,7 @@ class Venue < ActiveRecord::Base
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
-    true
+    return true
   end
 
 
@@ -166,18 +165,31 @@ class Venue < ActiveRecord::Base
   end
 
   def blockable_programs
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
+    # NOTE: We **can** add a venue even after the program has started
+    programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if venue.can_be_blocked_by?(program)
+    }
+    blockable_programs
   end
 
-  def can_reject?
-    return false unless self.is_sector_coordinator?
+  def can_be_blocked_by?(program)
+    VenueSchedule.all_overlapping(self, program).count == 0
+  end
+
+
+def can_reject?
+    unless self.is_sector_coordinator?
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+
     if self.is_active?
       self.errors[:base] << "Cannot reject the venue, it has active schedules. Please close the schedules and try again."
       return false
     end
-    true
+    return true
   end
 
   def is_active?
@@ -185,7 +197,7 @@ class Venue < ActiveRecord::Base
     self.venue_schedules.each { |vs|
       return true if vs.is_active?
     }
-    false
+    return false
   end
 
   def free?
@@ -207,7 +219,8 @@ class Venue < ActiveRecord::Base
 
   def has_centers?
     self.errors.add(:centers, "- required field.") if self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
+#    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
   def has_per_day_price?
@@ -219,19 +232,15 @@ class Venue < ActiveRecord::Base
   end
 
   def is_pcc_accounts?
-    if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def is_sector_coordinator?
-    if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      false
-    end
-    true
+    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def can_view?
@@ -266,7 +275,7 @@ class Venue < ActiveRecord::Base
     return false
   end
 
-  # TODO - this is a hack, to route the call through venue object from the UI.
+  # HACK - to route the call through venue object from the UI.
   def can_create_schedule?
     venue_schedule = VenueSchedule.new
     venue_schedule.current_user = self.current_user
@@ -275,6 +284,17 @@ class Venue < ActiveRecord::Base
 
   def friendly_name
     ("%s" % [self.name]).parameterize
+  end
+
+  def friendly_name_for_email
+    {
+      :text => friendly_name_for_sms,
+      :link => Rails.application.routes.url_helpers.venue_path(self)
+    }
+  end
+
+  def friendly_name_for_sms
+    "Venue ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
   end
 
   rails_admin do
