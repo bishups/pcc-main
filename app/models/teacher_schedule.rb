@@ -198,7 +198,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   # this is a cron job, run through whenever gem
   # from the config/schedule.rb file
-  def mark_as_expired
+  def self.mark_as_expired
     # see if it can be combined with other schedules
     current_date = Time.zone.now.to_date
     teacher_schedules = TeacherSchedule.where('start_date < ? AND state IN (?)', current_date, ::TeacherSchedule::STATE_PUBLISHED)
@@ -214,9 +214,9 @@ class TeacherSchedule < ActiveRecord::Base
         self.errors[:base] << ts.errors.full_messages
       end
       # send notifications every x days - depending upon the program type that the teacher is enabled for
-      every_x_days = self.teacher.programs_types.minimum(:no_of_days)
-      unless (self.start_date - self.end_date) % every_x_days
-        self.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, :any, ts.centers) if ts.state = STATE_AVAILABLE_EXPIRED
+      every_x_days = Teacher.joins("JOIN program_types_teachers ON teachers.id = program_types_teachers.teacher_id").joins("JOIN program_types ON program_types.id = program_types_teachers.program_type_id").where("teachers.id IS ?", ts.teacher_id).minimum("program_types.no_of_days")
+      if (ts.no_of_days % every_x_days == 0)
+        ts.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, :any, ts.centers) if ts.state == STATE_AVAILABLE_EXPIRED
       end
     }
   end

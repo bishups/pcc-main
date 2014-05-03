@@ -5,6 +5,10 @@ class TeacherSchedulesController < ApplicationController
   # GET /teacher_schedules
   # GET /teacher_schedules.json
   def index
+    # expiring the schedules if needed, whenever the results are displayed to the user. This is a backup to the whenever cron job
+    # TODO - check in case the user had the session open since a long time.
+    TeacherSchedule.mark_as_expired
+
     center_ids = current_user.accessible_center_ids
     @teacher = Teacher.find(params[:teacher_id])
     @teacher.current_user = current_user
