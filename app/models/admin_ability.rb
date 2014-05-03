@@ -18,24 +18,30 @@ class AdminAbility
     end
     if user.is?(:center_coordinator)
       can :manage, [User, AccessPrivilege]
+      can :read, Role
       cannot [:create,:destroy], User
     end
     if user.is?(:zonal_coordinator)
       can :manage, Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]).map(&:id).uniq}}
       cannot [:create,:destroy], Teacher
-      can :manage, [User,Zone], {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]).map(&:id).uniq}}
+      can :manage, [User], {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]).map(&:id).uniq}}
+      can :manage, Zone, {:id => Zone.by_centers(user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]).map(&:id).uniq)}
       cannot [:create,:destroy], [User,Zone]
       can :manage, [AccessPrivilege, Sector, Center, Pincode]
+      can :read, Role
     end
     if user.is?(:zao)
       can :manage, User, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zao][:text]).map(&:id).uniq}}
       cannot [:create,:destroy], User
       can :manage, [AccessPrivilege, Pincode]
+      can :read, Role
     end
     if user.is?(:sector_coordinator)
-      can :manage, [User,Sector], {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
+      can :manage, [User], {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
+      can :manage, Sector, {:id => Sector.by_centers(user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq)}
       cannot [:create,:destroy], [User,Sector]
       can :manage, [AccessPrivilege, Center, Pincode]
+      can :read, Role
     end
 
     # can :manage, :all
