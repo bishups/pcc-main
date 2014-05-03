@@ -131,10 +131,7 @@ class TeacherSchedulesController < ApplicationController
     @teacher = @teacher_schedule.teacher
     @teacher.current_user = @teacher_schedule.current_user = @teacher_schedule.teacher.current_user = current_user
 
-    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', @teacher.id).all.sort_by{|pt| pt[:name]}
-    @selected_program_type = @teacher_schedule.program_type
-    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
-
+    load_program_type_timings_on_update!(@teacher_schedule)
     respond_to do |format|
       if @teacher_schedule.can_update?
         format.html
@@ -155,15 +152,21 @@ class TeacherSchedulesController < ApplicationController
     @teacher.current_user = @teacher_schedule.current_user = @teacher_schedule.teacher.current_user = current_user
 
     respond_to do |format|
-      if @teacher_schedule.can_update?
+      if !@teacher_schedule.valid?
+        load_program_type_timings_on_update!(@teacher_schedule)
+        format.html { render action: "edit" }
+        format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
+      elsif @teacher_schedule.can_update?
         additional_days = @teacher_schedule.can_combine_consecutive_schedules?
         if (additional_days + @teacher_schedule.no_of_days < 3)
           @teacher_schedule.errors[:end_date] << "cannot be less than 2 days after start date."
+          load_program_type_timings_on_update!(@teacher_schedule)
           format.html { render action: "edit" }
           format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
         else
           @teacher_schedule.combine_consecutive_schedules! if additional_days != 0
           if !@teacher_schedule.save
+            load_program_type_timings_on_update!(@teacher_schedule)
             format.html { render action: "edit" }
             format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
           else
@@ -209,7 +212,13 @@ class TeacherSchedulesController < ApplicationController
     @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
   end
 
-private
+  def load_program_type_timings_on_update!(teacher_schedule)
+    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', teacher_schedule.teacher.id).all.sort_by{|pt| pt[:name]}
+    @selected_program_type = teacher_schedule.program_type
+    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
+  end
+
+  private
 
 
 

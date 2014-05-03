@@ -6,6 +6,9 @@
     });
 </script>
 
+<% if @kit.kit_schedules.empty? %>
+    <div class="alert alert-danger"> No Kit Schedules Found.</div>
+<% else %>
 <table id="kit_schedule_table" class='display dataTable table table-condensed table-hover table-bordered'>
   <thead>
   <tr>
@@ -45,3 +48,4 @@
   <% end %>
   </tbody>
 </table>
+<% end %>

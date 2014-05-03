@@ -7,7 +7,9 @@ class TeacherScheduleValidator < ActiveModel::Validator
   # Validator
   def validate_dates(record)
     current_date = Time.zone.now.to_date
-    if record.start_date == current_date
+    if record.start_date.nil?
+      # the error string will be returned from other validations
+    elsif record.start_date == current_date
       record.errors[:start_date] << " cannot be today's date"
     elsif record.start_date < current_date
       record.errors.add(:start_date, " cannot be in past")

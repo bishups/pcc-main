@@ -1,0 +1,25 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>User:</b>
+  <%= @notification_log.user %>
+</p>
+
+<p>
+  <b>Date:</b>
+  <%= @notification_log.date %>
+</p>
+
+<p>
+  <b>Model:</b>
+  <%= @notification_log.model %>
+</p>
+
+<p>
+  <b>Text:</b>
+  <%= @notification_log.text %>
+</p>
+
+
+<%= link_to 'Edit', edit_notification_log_path(@notification_log) %> |
+<%= link_to 'Back', notification_logs_path %>

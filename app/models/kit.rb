@@ -18,7 +18,8 @@
 
 class Kit < ActiveRecord::Base
   include CommonFunctions
-
+  has_many :activity_logs, :as => :model, :inverse_of => :model
+  has_many :notification_logs, :as => :model, :inverse_of => :model
 
   acts_as_paranoid
 
@@ -113,7 +114,7 @@ class Kit < ActiveRecord::Base
   def friendly_name_for_email
     {
         :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.kit_path(self)
+        :link => Rails.application.routes.url_helpers.kit_url(self)
     }
   end
 

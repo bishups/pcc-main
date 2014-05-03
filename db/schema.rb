@@ -25,6 +25,19 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   add_index "access_privileges", ["role_id"], :name => "index_access_privileges_on_role_id"
   add_index "access_privileges", ["user_id"], :name => "index_access_privileges_on_user_id"
 
+  create_table "activity_logs", :force => true do |t|
+    t.integer  "user_id"
+    t.datetime "date"
+    t.integer  "model_id"
+    t.string   "model_type"
+    t.string   "log"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  add_index "activity_logs", ["model_id"], :name => "index_activity_logs_on_model_id"
+  add_index "activity_logs", ["user_id"], :name => "index_activity_logs_on_user_id"
+
   create_table "centers", :force => true do |t|
     t.string   "name"
     t.integer  "sector_id"
@@ -162,6 +175,19 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   end
 
   add_index "kits", ["deleted_at"], :name => "index_kits_on_deleted_at"
+
+  create_table "notification_logs", :force => true do |t|
+    t.integer  "user_id"
+    t.datetime "date"
+    t.integer  "model_id"
+    t.string   "model_type"
+    t.string   "log"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  add_index "notification_logs", ["model_id"], :name => "index_notification_logs_on_model_id"
+  add_index "notification_logs", ["user_id"], :name => "index_notification_logs_on_user_id"
 
   create_table "notifications", :force => true do |t|
     t.string   "model"

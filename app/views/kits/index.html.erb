@@ -12,6 +12,9 @@
   </div>
 </div>
 
+<% if @kits.empty? %>
+    <div class="alert alert-danger"> No Kits Found.</div>
+<% else %>
 <table id="kit_table" class='display dataTable table table-condensed table-hover table-bordered'>
   <thead>
   <tr>
@@ -44,6 +47,7 @@
   <% end %>
   </tbody>
 </table>
+<% end %>
 
 
 

@@ -1,6 +1,9 @@
 class Teacher < ActiveRecord::Base
   include CommonFunctions
 
+  has_many :activity_logs, :as => :model, :inverse_of => :model
+  has_many :notification_logs, :as => :model, :inverse_of => :model
+
   acts_as_paranoid
 
   attr_accessor :current_user
@@ -88,11 +91,13 @@ class Teacher < ActiveRecord::Base
 
     # check for comments, before any transition
     before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
       if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
-        return false
-      end
-      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
-        return false
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
       end
     end
 
@@ -307,7 +312,7 @@ class Teacher < ActiveRecord::Base
   def friendly_name_for_email
     {
         :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.teacher_path(self)
+        :link => Rails.application.routes.url_helpers.teacher_url(self)
     }
   end
 

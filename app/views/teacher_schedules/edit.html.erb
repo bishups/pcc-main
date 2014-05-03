@@ -16,10 +16,10 @@
 
   <div class="form-group">
     <%= label_tag :start_date %>
-    <%= text_field_tag 'teacher_schedule[start_date]', @teacher_schedule.start_date.strftime('%d %B %Y (%A)'), :class => 'form-control dateSelect' %>
+    <%= text_field_tag 'teacher_schedule[start_date]', @teacher_schedule.start_date.nil? ? nil : @teacher_schedule.start_date.strftime('%d %B %Y (%A)') , :class => 'form-control dateSelect' %>
     <br/>
     <%= label_tag :end_date %>
-    <%= text_field_tag 'teacher_schedule[end_date]', @teacher_schedule.end_date.strftime('%d %B %Y (%A)'), :class => 'form-control dateSelect' %>
+    <%= text_field_tag 'teacher_schedule[end_date]', @teacher_schedule.end_date.nil? ? nil : @teacher_schedule.end_date.strftime('%d %B %Y (%A)') , :class => 'form-control dateSelect' %>
   </div>
 
   <div class='form-group'>

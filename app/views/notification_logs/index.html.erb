@@ -1,0 +1,29 @@
+<h1>Listing notification_logs</h1>
+
+<table>
+  <tr>
+    <th>User</th>
+    <th>Date</th>
+    <th>Model</th>
+    <th>Text</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @notification_logs.each do |notification_log| %>
+  <tr>
+    <td><%= notification_log.user %></td>
+    <td><%= notification_log.date %></td>
+    <td><%= notification_log.model %></td>
+    <td><%= notification_log.text %></td>
+    <td><%= link_to 'Show', notification_log %></td>
+    <td><%= link_to 'Edit', edit_notification_log_path(notification_log) %></td>
+    <td><%= link_to 'Destroy', notification_log, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Notification log', new_notification_log_path %>

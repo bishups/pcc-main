@@ -132,11 +132,13 @@ class Venue < ActiveRecord::Base
 
     # check for comments, before any transition
     before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
       if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
-        return false
-      end
-      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
-        return false
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
       end
     end
 
@@ -289,7 +291,7 @@ def can_reject?
   def friendly_name_for_email
     {
       :text => friendly_name_for_sms,
-      :link => Rails.application.routes.url_helpers.venue_path(self)
+      :link => Rails.application.routes.url_helpers.venue_url(self)
     }
   end
 

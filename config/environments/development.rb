@@ -36,8 +36,9 @@ PccMain::Application.configure do
   config.assets.debug = true
 
   # ActionMailer for Devise
-  # TODO - change the default url options here
-  config.action_mailer.default_url_options = { :host => "localhost:3000" }
+  # HACK - This won't work for us, since we are generating the link in the model. See routes.default_url_options below
+  #config.action_mailer.default_url_options = {:host => "http://localhost:3000"}
+
   config.action_mailer.smtp_settings = {
       address:              'smtp.gmail.com',
       port:                 587,
@@ -53,4 +54,9 @@ PccMain::Application.configure do
   # to test the mails
   config.action_mailer.delivery_method = :letter_opener
 
+  # This is needed for the action-mailer
+  # TODO - change the default url options here
+  config.after_initialize do
+    Rails.application.routes.default_url_options[:host] = 'localhost:3000'
+  end
 end
