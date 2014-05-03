@@ -94,8 +94,8 @@
 
 ## create_default_roles
   roles={
-      ::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
-      ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zao][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
@@ -258,11 +258,11 @@ notifications.each{|n| Notification.create(n) }
     puts "User #{item.kit_item_name} has not been saved because of #{kititem.errors.messages}"
   end
 
-  #timing = Timing.find_or_initialize_by_name("Morning (6am-9am)")
-  #timing = Timing.find_or_initialize_by_name("Afternoon (10am-1pm)")
-  #timing = Timing.find_or_initialize_by_name("Evening (2pm-5pm)")
-  #timing = Timing.find_or_initialize_by_name("Night (6pm-9pm)")
 
+  {"Morning" => ["6am","9am"], "Afternoon" => ["10am","1pm"], "Evening" => ["2pm","5pm"], "Night" => ["6pm","9pm"] }.each do |name,timing|
+    timing = Timing.find_or_initialize_by_name(name)
+    timing.save(:name => name, :start_time => timing[0], :end_time => timing[1] )
+  end
 
 
 # create geo_graphical_locations
