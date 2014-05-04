@@ -1,7 +1,7 @@
 module CommonFunctions
   def has_comments?
     if self.comments.nil? || self.comments.blank?
-      self.errors[:comments] << " is mandatory field."
+      self.errors[:comments] << " cannot be blank"
       return false
     end
 
@@ -14,7 +14,7 @@ module CommonFunctions
 
   def has_feedback?
     if self.feedback.nil? || self.feedback.blank?
-      self.errors[:feedback] << " is mandatory field."
+      self.errors[:feedback] << " cannot be blank"
       return false
     end
     return true
@@ -37,12 +37,15 @@ module CommonFunctions
     self.last_updated_by_user = user
     # We are not relying on in-built table updated_at, in case the state machine transition differ from table transition
     self.last_updated_at = Time.zone.now
-#    time_str = (Time.zone.now).strftime('%d %B %Y (%I:%M%P)')
-#    self.last_update = "From #{from_state} to #{to_state} on #{event} at #{time_str}"
+    self.last_update = " " + self.update_str(from_state, to_state, event)
+    log_last_activity(user, from_state, to_state, event, self.last_updated_at)
+  end
+
+  def update_str(from_state, to_state, event)
     if (from_state.casecmp("Unknown") == 0)
-      self.last_update = " #{to_state}"
+      "#{to_state}"
     else
-      self.last_update = " #{from_state} to #{to_state}"
+      "#{from_state} to #{to_state}"
     end
   end
 
@@ -51,6 +54,21 @@ module CommonFunctions
     self.last_updated_at = nil
     self.last_update = nil
   end
+
+  def log_last_activity(user, from_state, to_state, event, date = Time.zone.now)
+    activity = ActivityLog.new
+    activity.user = user
+    activity.model_type = self.class.name == "ProgramTeacherSchedule" ? "TeacherSchedule" : self.class.name
+    activity.model_id = self.id
+    activity.date = date.nil? ? Time.zone.now : date
+    activity.log = self.update_str(from_state, to_state, event)
+    # user, date, model_id, model_type, text
+    activity.save!
+    unless activity.errors.nil?
+      # TODO - some error handling or log msg?
+    end
+  end
+
 
   def notify(from_state, to_state, on_event, center_ids)
 
@@ -106,9 +124,23 @@ module CommonFunctions
   def notify_user(user, from, to, on, value)
     UserMailer.email(user, from, to, on, value[:additional_text], self.friendly_name_for_email).deliver if value[:send_email]
     UserMailer.sms(user, from, to, on, value[:additional_text], self.friendly_name_for_sms).deliver if value[:send_sms]
+    self.log_notify(user, self.friendly_name_for_email) if value[:send_email] || value[:send_sms]
   end
 
 
+  def log_notify(user, log)
+    notification = NotificationLog.new
+    notification.user = user
+    notification.model_type = self.class.name == "ProgramTeacherSchedule" ? "TeacherSchedule" : self.class.name
+    notification.model_id = self.id
+    notification.date = Time.zone.now
+    notification.log = log
+    # user, date, model_id, model_type, text
+    notification.save!
+    unless notification.errors.nil?
+      # TODO - some error handling or log msg?
+    end
+  end
 
 
 

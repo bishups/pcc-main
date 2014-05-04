@@ -223,11 +223,13 @@ class VenueSchedule < ActiveRecord::Base
 
     # check for comments, before any transition
     before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
       if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
-        return false
-      end
-      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
-        return false
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
       end
     end
 
@@ -288,12 +290,13 @@ class VenueSchedule < ActiveRecord::Base
   def before_block
     return false unless self.is_venue_coordinator?
 
-    expiry_date = Time.zone.parse(self.block_expiry_date) + 1.day - 1.minute
-    self.block_expiry_date = expiry_date
-    if expiry_date.nil?
-      self.errors[:block_expiry_date] << " is mandatory."
+    if self.block_expiry_date.nil?
+      self.errors[:block_expiry_date] << " cannot be blank."
       return false
     end
+
+    expiry_date = Time.zone.parse(self.block_expiry_date) + 1.day - 1.minute
+    self.block_expiry_date = expiry_date
 
     current_date = Time.zone.now
     days = (expiry_date.to_date - current_date.to_date).to_i
@@ -458,7 +461,7 @@ class VenueSchedule < ActiveRecord::Base
   def friendly_name_for_email
     {
         :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.venue_schedule_path(self)
+        :link => Rails.application.routes.url_helpers.venue_schedule_url(self)
     }
   end
 

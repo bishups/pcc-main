@@ -14,6 +14,9 @@
 class TeacherSchedule < ActiveRecord::Base
   include CommonFunctions
 
+  has_many :activity_logs, :as => :model, :inverse_of => :model
+  has_many :notification_logs, :as => :model, :inverse_of => :model
+
   # attr_accessible :title, :body
   attr_accessor :current_user
 
@@ -36,7 +39,7 @@ class TeacherSchedule < ActiveRecord::Base
 
   #has_many :program_teacher_schedules
 
-  validates :start_date, :end_date, :timing_id, :center_ids, :state, :presence => true
+  validates :start_date, :end_date, :timing, :centers, :state, :presence => true
   validates_with TeacherScheduleValidator
 
   validate :teacher_enabled?
@@ -235,7 +238,7 @@ class TeacherSchedule < ActiveRecord::Base
   def friendly_name_for_email
     {
         :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.teacher_teacher_schedule_path(self)
+        :link => Rails.application.routes.url_helpers.teacher_teacher_schedule_url(self)
     }
   end
 

@@ -117,7 +117,7 @@ class KitSchedulesController < ApplicationController
 
     respond_to do |format|
       if @kit_schedule.can_create_on_trigger?
-        if @kit_schedule.send(@trigger) && @kit_schedule.save
+        if @kit_schedule.valid? && @kit_schedule.send(@trigger) && @kit_schedule.save
           format.html { redirect_to kit_schedules_path(:kit_id => @kit.id)}
           format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
         else

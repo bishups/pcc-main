@@ -17,6 +17,8 @@
 
 class KitSchedule < ActiveRecord::Base
   include CommonFunctions
+  has_many :activity_logs, :as => :model, :inverse_of => :model
+  has_many :notification_logs, :as => :model, :inverse_of => :model
 
   before_destroy :can_delete?
 
@@ -69,12 +71,9 @@ class KitSchedule < ActiveRecord::Base
   attr_accessor :current_user, :issue_for_schedules
   attr_accessible :program_id, :kit_id,:end_date, :start_date, :state, :comments, :issued_to, :due_date_time, :issue_for_schedules
 
-  validates :start_date, :presence => true
-  validates :end_date, :presence => true
-  validates :kit_id , :presence => true
-  validates :state , :presence => true
-  validates :program_id, :presence => true, :unless => :kit_reserved?
-  validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_reserved_or_cancelled?, :message => " is already associated with the Kit."
+  validates :start_date, :end_date, :kit_id, :state, :presence => true
+  validates :program_id, :presence => true, :unless => :kit_available_or_reserved?
+  validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_available_reserved_or_cancelled?, :message => " is already associated with the Kit."
 
   #checking for overlap validation
   validates_with KitScheduleValidator, :on => :create
@@ -171,11 +170,13 @@ class KitSchedule < ActiveRecord::Base
 
     # check for comments, before any transition
     before_transition any => any do |object, transition|
-     if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
-        return false
-      end
-      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
-        return false
+      # Don't return here, else LocalJumpError will occur
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
       end
     end
 
@@ -208,12 +209,13 @@ class KitSchedule < ActiveRecord::Base
     self.send(::Program::ANNOUNCED) if self.program.is_announced? && self.program.is_active?
   end
 
-  def kit_reserved?
+  def kit_available_or_reserved?
+    return true if self.state == ::Kit::STATE_AVAILABLE
     RESERVED_STATES.include?(self.state)
   end
 
-  def kit_reserved_or_cancelled?
-    return true if kit_reserved?
+  def kit_available_reserved_or_cancelled?
+    return true if kit_available_or_reserved?
     KitSchedule.where('program_id IS ? AND kit_id IS ? AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
   end
 
@@ -238,7 +240,7 @@ class KitSchedule < ActiveRecord::Base
 
     #return false unless self.has_comments?
     if self.issued_to.nil?
-      self.errors[:issued_to] << " cannot be blank."
+      self.errors[:issued_to] << " cannot be blank"
       return false
     end
     self.due_date_time = self.end_date
@@ -496,7 +498,7 @@ class KitSchedule < ActiveRecord::Base
   def friendly_name_for_email
     {
         :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.kit_schedule_path(self)
+        :link => Rails.application.routes.url_helpers.kit_schedule_url(self)
     }
   end
 

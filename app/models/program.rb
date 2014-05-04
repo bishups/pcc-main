@@ -23,9 +23,11 @@
 class Program < ActiveRecord::Base
   include CommonFunctions
 
-  validates :start_date, :presence => true
+  has_many :activity_logs, :as => :model, :inverse_of => :model
+  has_many :notification_logs, :as => :model, :inverse_of => :model
+
+  validates :start_date, :center_id, :name, :program_type_id, :timings, :presence => true
 #  validates :end_date, :presence => true
-  validates :center_id, :presence => true
 
   belongs_to :proposer, :class_name => "User" #, :foreign_key => "rated_id"
   attr_accessible :proposer_id, :proposer
@@ -196,11 +198,13 @@ class Program < ActiveRecord::Base
 
     # check for comments, before any transition
     before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
       if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
-        return false
-      end
-      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
-        return false
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
       end
     end
 
@@ -380,7 +384,7 @@ class Program < ActiveRecord::Base
   def friendly_name_for_email
     {
       :text => friendly_name_for_sms,
-      :link => Rails.application.routes.url_helpers.program_path(self)
+      :link => Rails.application.routes.url_helpers.program_url(self)
     }
   end
 
@@ -470,9 +474,10 @@ class Program < ActiveRecord::Base
     blockable_kits
   end
 
-
   def assign_dates!
-    self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
+    if !self.start_date.nil? && !self.program_type.nil?
+      self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
+    end
     #@program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
   end
 

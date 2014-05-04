@@ -20,6 +20,9 @@
   </div>
 </div>
 
+<% if @programs.empty? %>
+    <div class="alert alert-danger"> No Programs Found.</div>
+<% else %>
 <table id="program_table" class='display dataTable table table-condensed table-hover table-bordered'>
       <thead>
       <tr>
@@ -65,3 +68,4 @@
       <% end %>
       </tbody>
     </table>
+<% end %>

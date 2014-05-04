@@ -11,6 +11,9 @@
     <h2>Available Venues<hr></h2>
   </div>
 </div>
+<% if @venues.empty? %>
+    <div class="alert alert-danger"> No Venues Found.</div>
+<% else %>
 <table id="venue_table" class='display dataTable table table-condensed table-hover table-bordered'>
   <thead>
     <tr>
@@ -46,4 +49,4 @@
     <% end %>
     </tbody>
   </table>
-
+<% end %>

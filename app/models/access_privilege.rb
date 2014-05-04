@@ -90,7 +90,7 @@ class AccessPrivilege < ActiveRecord::Base
           role = bindings[:object]
           Proc.new { |scope|
             # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
-            scope = scope.where("name IS NOT ?", ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]) #if role.present?
+            scope = scope.where("name IS NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text], ::User::ROLE_ACCESS_HIERARCHY[:any][:text]]) #if role.present?
             # sorting over association does not work for now -- see open issue  https://github.com/sferik/rails_admin/issues/1395
             scope = scope.reorder("role.name ASC")
           }

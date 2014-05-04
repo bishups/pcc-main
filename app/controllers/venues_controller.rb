@@ -5,10 +5,16 @@ class VenuesController < ApplicationController
   # GET /venues.json
   def index
     center_ids = current_user.accessible_center_ids
-    @venues = Venue.joins("JOIN centers_venues ON centers_venues.venue_id = venues.id").where('centers_venues.center_id IN (?)', center_ids).uniq.all
     respond_to do |format|
-      format.html # index.html.erb
-      format.json { render json: @venues }
+      if center_ids.empty?
+        @venues = []
+        format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venues, status: :unprocessable_entity }
+      else
+        @venues = Venue.joins("JOIN centers_venues ON centers_venues.venue_id = venues.id").where('centers_venues.center_id IN (?)', center_ids).uniq.all
+        format.html # index.html.erb
+        format.json { render json: @venues }
+      end
     end
   end
 

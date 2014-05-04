@@ -120,11 +120,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
       if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
-        return false
-      end
-      if EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
-        return false
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
       end
     end
 
@@ -279,7 +281,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
                                            ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).readonly(false).first
       # split this schedule as per program dates
       ts.split_schedule!(program.start_date.to_date, program.end_date.to_date)
-      # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
+          # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         self.errors[:base] << ts.errors.full_messages
         break
@@ -299,6 +301,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
       self.teacher_schedule_id = ts.id
     }
+    # This is a hack to store in the activity_log
+    self.log_last_activity(current_user, ::ProgramTeacherSchedule::STATE_UNKNOWN, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
     # This is a hack, just to make sure the relevant notifications are sent out
     self.state = ::ProgramTeacherSchedule::STATE_UNKNOWN
     # TODO - check whether errors need to be checked here
@@ -321,9 +325,11 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     # TeacherSchedule.where('program_id = ? AND teacher_id = ?', self.program.id, self.teacher_id).update_all(
     #     {:state => self.state, :program_id => program_id, :blocked_by_user_id => self.blocked_by_user_id})
 
+    old_state = ::ProgramTeacherSchedule::STATE_UNKNOWN
     teacher_schedules = TeacherSchedule.where('program_id = ? AND teacher_id = ?', self.program_id, self.teacher_id)
     teacher_schedules.each {|ts|
       # 1. update the state of all teacher_schedule(s) for a teacher, and program
+      old_state = ts.state
       ts.store_last_update!(self.current_user, ts.state, self.state, trigger)
       ts.state = self.state
       ts.program_id = program_id
@@ -348,6 +354,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
           break
         end
       end
+      # This is a HACK to store to activity log
+      self.log_last_activity(self.current_user, old_state, self.state, trigger)
       self.deleted_program_id = self.program_id if program_id.nil?
       self.program_id = program_id
     }
@@ -367,7 +375,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   def friendly_name_for_email
     {
         :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.program_teacher_schedule_path(self)
+        :link => Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
     }
   end
 

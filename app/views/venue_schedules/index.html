@@ -17,6 +17,9 @@
     </div>
 </div>
 
+<% if @venue_schedules.empty? %>
+<div class="alert alert-danger"> No Venue Schedules Found.</div>
+<% else %>
 <table id="venue_schedule_table" class='display dataTable table table-condensed table-hover table-bordered'>
     <thead>
         <tr>
@@ -46,6 +49,6 @@
     <% end %>
     </tbody>
 </table>
-
+<% end %>
 
 
