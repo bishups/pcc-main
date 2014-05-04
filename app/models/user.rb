@@ -97,7 +97,7 @@ class User < ActiveRecord::Base
   validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
-  validate :validate_approver_email, on: :create
+  validate :validate_approver_email, :on => :create
 
   before_create do |user|
     if user.approver_email
