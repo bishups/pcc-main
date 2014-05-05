@@ -30,7 +30,7 @@ class Kit < ActiveRecord::Base
   attr_accessible :kit_items
   attr_accessor :current_user
 
-  has_many :kit_item_names, :through => :kit_items
+  has_many :kit_item_types, :through => :kit_items
 
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at

@@ -1,4 +1,4 @@
-class KitItemName < ActiveRecord::Base
+class KitItemType < ActiveRecord::Base
   attr_accessible :name, :description
 
   validates :name, :presence => true
