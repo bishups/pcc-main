@@ -42,11 +42,11 @@ module CommonFunctions
   end
 
   def update_str(from_state, to_state, event)
-    if (from_state.casecmp("Unknown") == 0)
-      "#{to_state}"
-    else
+#    if (from_state.casecmp("Unknown") == 0)
+#      "#{to_state}"
+#    else
       "#{from_state} to #{to_state}"
-    end
+#    end
   end
 
   def clear_last_update!
@@ -55,13 +55,15 @@ module CommonFunctions
     self.last_update = nil
   end
 
-  def log_last_activity(user, from_state, to_state, event, date = Time.zone.now)
+  def log_last_activity(user, from, to, on, date = Time.zone.now)
     activity = ::ActivityLog.new
     activity.user = user
     activity.model_type = self.class.name == "ProgramTeacherSchedule" ? "TeacherSchedule" : self.class.name
     activity.model_id = self.id
     activity.date = date.nil? ? Time.zone.now : date
-    activity.text = self.update_str(from_state, to_state, event)
+    activity.text1 = self.friendly_first_name_for_email
+    activity.text2 = " #{self.friendly_second_name_for_email} from #{self.update_str(from, to, on)}."
+
     # user, date, model_id, model_type, text
     activity.save
     unless activity.errors.nil?
@@ -70,13 +72,13 @@ module CommonFunctions
   end
 
 
-  def notify(from_state, to_state, on_event, center_ids)
+  def notify(from_state, to_state, on_event, centers)
 
     model = self.class.name
     from = from_state != :any ? [from_state, "any"] : ["any"]
     to = to_state != :any ? [to_state, "any"] : ["any"]
     on = on_event != :any ? [on_event, "any"] : ["any"]
-    center_ids = center_ids.class == Array ? center_ids : [center_ids]
+    centers = centers.class == Array ? centers : [centers]
 
     notify = {}
     notifications = Notification.where('model IS ? AND from_state IN (?) AND to_state IN (?)  AND on_event IN (?) ', model, from, to, on).all
@@ -88,13 +90,13 @@ module CommonFunctions
             ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]
           # search by zones
-          users = r.users.by_zones(center_ids).uniq
+          users = r.users.by_zones(centers).uniq
         when ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]
           # search by sectors
-          users = r.users.by_sectors(center_ids).uniq
+          users = r.users.by_sectors(centers).uniq
         else
           # search by centers
-          users = r.users.by_centers(center_ids).uniq
+          users = r.users.by_centers(centers).uniq
       end
 
 
@@ -136,7 +138,7 @@ module CommonFunctions
     notification.date = Time.zone.now
     notification.text1 = self.friendly_first_name_for_email
     notification.text2 = " #{self.friendly_second_name_for_email} changed from #{self.update_str(from, to, on)}."
-    notification.text2 += " #{additional_text.chomp('.')}."
+    notification.text2 += " #{additional_text.chomp('.')}." unless additional_text.blank?
     # user, date, model_id, model_type, text
     notification.save
     unless notification.errors.nil?

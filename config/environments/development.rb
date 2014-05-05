@@ -57,6 +57,6 @@ PccMain::Application.configure do
   # This is needed for the action-mailer
   # TODO - change the default url options here
   config.after_initialize do
-    Rails.application.routes.default_url_options[:host] = 'http://localhost:3000'
+    Rails.application.routes.default_url_options[:host] = 'localhost:3000'
   end
 end

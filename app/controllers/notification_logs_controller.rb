@@ -2,7 +2,7 @@ class NotificationLogsController < ApplicationController
   # GET /notification_logs
   # GET /notification_logs.json
   def index
-    @notification_logs = current_user.notification_logs
+    @notification_logs = current_user.notification_logs.where("date > ? ", (Time.zone.now - 1.month.from_now)).all
 
     respond_to do |format|
       format.html # index.html.erb
@@ -13,14 +13,14 @@ class NotificationLogsController < ApplicationController
   # GET /notification_logs/1
   # GET /notification_logs/1.json
   def show
-=begin
+
     @notification_log = NotificationLog.find(params[:id])
 
     respond_to do |format|
       format.html # show.html.erb
       format.json { render json: @notification_log }
     end
-=end
+
   end
 
   # GET /notification_logs/new

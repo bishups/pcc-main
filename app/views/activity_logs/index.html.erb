@@ -1,29 +1,47 @@
-<h1>Listing activity_logs</h1>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#activity_log_table').dataTable({
+            "sPaginationType": "bootstrap"
+        } );
+    });
+</script>
 
-<table>
-  <tr>
-    <th>User</th>
-    <th>Date</th>
-    <th>Model</th>
-    <th>Text</th>
-    <th></th>
-    <th></th>
-    <th></th>
-  </tr>
 
-<% @activity_logs.each do |activity_log| %>
-  <tr>
-    <td><%= activity_log.user %></td>
-    <td><%= activity_log.date %></td>
-    <td><%= activity_log.model %></td>
-    <td><%= activity_log.text %></td>
-    <td><%= link_to 'Show', activity_log %></td>
-    <td><%= link_to 'Edit', edit_activity_log_path(activity_log) %></td>
-    <td><%= link_to 'Destroy', activity_log, method: :delete, data: { confirm: 'Are you sure?' } %></td>
-  </tr>
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>Activity Log
+      <hr>
+    </h2>
+  </div>
+</div>
+
+
+
+<% if @activity_logs.empty? %>
+    <div class="alert alert-danger"> No Activity Log Found.</div>
+<% else %>
+    <table id="activity_log_table" class='display dataTable table table-condensed table-hover table-bordered'>
+      <thead>
+      <tr>
+        <th>Date</th>
+        <th>Activity</th>
+        <th>Current Status</th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @activity_logs.each do |al| %>
+          <tr>
+            <td><%= al.date.strftime("%d %B %Y") %></td>
+            <% object = al.object %>
+            <% if object.nil? %>
+                <td>Updated <%= al.text1 + al.text2 %></td>
+                <td><span class="label label-default">Deleted</span></td>
+            <% else %>
+                <td>Updated <%= link_to al.text1, object.url %> <%= al.text2 %></td>
+                <td><%= send( al.model_state_tag, object) rescue '' %></td>
+            <% end %>
+          </tr>
+      <% end %>
+      </tbody>
+    </table>
 <% end %>
-</table>
-
-<br />
-
-<%= link_to 'New Activity log', new_activity_log_path %>

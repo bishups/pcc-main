@@ -32,7 +32,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "model_type"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
-    t.string   "text"
+    t.string   "text1"
+    t.string   "text2"
   end
 
   add_index "activity_logs", ["model_id"], :name => "index_activity_logs_on_model_id"

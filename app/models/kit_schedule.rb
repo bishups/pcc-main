@@ -495,9 +495,8 @@ class KitSchedule < ActiveRecord::Base
     end
   end
 
-
   def url
-    self.program.nil? ? Rails.application.routes.url_helpers.kit_url(self.kit) : Rails.application.routes.url_helpers.kit_schedule_url(self)
+    self.program.nil? ? Rails.application.routes.url_helpers.kit_schedules_url(:kit_id => self.kit.id) : Rails.application.routes.url_helpers.kit_schedule_url(self)
   end
 
   def friendly_first_name_for_email
@@ -507,7 +506,11 @@ class KitSchedule < ActiveRecord::Base
   def friendly_second_name_for_email
     name = " for Kit ##{self.kit_id} #{self.kit.name}"
     if self.program.nil?
-      name += " (#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')})"
+      if self.start_date.to_date == self.end_date.to_date
+        name += " (#{self.start_date.strftime('%d %B %Y')})"
+      else
+        name += " (#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')})"
+      end
     else
       name += " and Program ##{self.program_id} #{self.program.name}"
     end

@@ -77,7 +77,23 @@ class Kit < ActiveRecord::Base
   end
 
   def mark_as_available!
-    self.send(EVENT_AVAILABLE)  if self.state == ::Kit::STATE_UNKNOWN
+
+    #self.send(EVENT_AVAILABLE) if self.state == ::Kit::STATE_UNKNOWN
+
+    # HACK #1 - all this making the centers dirty and reloading the object
+    # due to open rails bug when trying to save a model with habtm in after_create
+    # https://rails.lighthouseapp.com/projects/8994/tickets/4553-habtm-association-failure-to-save-in-join-table-with-after_create-callback
+    # HACK #2 - after HACK #1, some problem with doing a send to state machine
+    # so setting the state directly and logging in the current context only
+    if self.state == STATE_UNKNOWN
+      centers = self.centers
+      self.reload
+      self.state = STATE_AVAILABLE
+      self.centers = centers
+      self.store_last_update!(nil, STATE_UNKNOWN, STATE_AVAILABLE, EVENT_AVAILABLE)
+      self.notify(STATE_UNKNOWN, STATE_AVAILABLE, EVENT_AVAILABLE, self.centers)
+      self.save
+    end
   end
 
   def has_centers?

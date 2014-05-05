@@ -1,8 +1,6 @@
 PccMain::Application.routes.draw do
 
   resources :notification_logs
-
-
   resources :activity_logs
 
 

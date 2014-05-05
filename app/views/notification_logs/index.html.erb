@@ -40,8 +40,8 @@
             <td><%= nl.date.strftime("%d %B %Y") %></td>
             <% object = nl.object %>
             <% if object.nil? %>
-                <td><%= nl.text1 + n2.text2 %></td>
-                <td><span class="label label-danger">Deleted</span></td>
+                <td><%= nl.text1 + nl.text2 %></td>
+                <td><span class="label label-default">Deleted</span></td>
             <% else %>
                 <td><%= link_to nl.text1, object.url %> <%= nl.text2 %></td>
                 <td><%= send( nl.model_state_tag, object) rescue '' %></td>
