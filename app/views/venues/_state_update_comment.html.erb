@@ -1,17 +1,17 @@
 <div class='form-group'>
   <% if ::Venue::EVENTS_WITH_COMMENTS.include?(@trigger) %>
       <% unless @venue.comment_category.empty? %>
-          <label for='comment_category'>Comments</label> <small>(mandatory)</small>
+          <label for='comment_category'>Comments</label> <small>(required)</small>
           <%= select_tag 'comment_category', options_for_select(@venue.comment_category), :class => 'form-control' %>
           <br>
           <label>Details</label>
           <textarea name='comments' class='form-control'></textarea>
       <% else %>
-          <label>Comments</label> <small>(mandatory)</small>
+          <label>Comments</label> <small>(required)</small>
           <textarea name='comments' class='form-control'></textarea>
       <% end %>
   <% elsif ::Venue::EVENTS_WITH_FEEDBACK.include?(@trigger) %>
-      <label>Feedback</label> <small>(mandatory)</small>
+      <label>Feedback</label> <small>(required)</small>
       <textarea name='feedback' class='form-control'></textarea>
   <% else %>
       <label>Comments</label> <small>(optional)</small>

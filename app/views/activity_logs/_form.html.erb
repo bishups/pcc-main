@@ -1,3 +1,4 @@
+<% if false %>
 <%= form_for(@activity_log) do |f| %>
   <% if @activity_log.errors.any? %>
     <div id="error_explanation">
@@ -30,4 +31,5 @@
   <div class="actions">
     <%= f.submit %>
   </div>
+<% end %>
 <% end %>

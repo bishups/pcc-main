@@ -377,20 +377,26 @@ class Program < ActiveRecord::Base
   end
 
   def friendly_name
-    ("(%s) %s (%s)" % [self.start_date.strftime('%d %B %Y'), self.center.name, self.program_type.name])
+    ("#%d %s (%s, %s, %s)" % [self.id, self.name, self.start_date.strftime('%d %B %Y'), self.center.name, self.program_type.name])
   end
 
 
-  def friendly_name_for_email
-    {
-      :text => friendly_name_for_sms,
-      :link => Rails.application.routes.url_helpers.program_url(self)
-    }
+  def url
+    Rails.application.routes.url_helpers.program_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Program ##{self.id}"
+   end
+
+  def friendly_second_name_for_email
+    "  #{self.name} (#{self.center.name} #{self.program_type.name}) #{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}"
   end
 
   def friendly_name_for_sms
-    "Program ##{self.id} #{self.program_type.name} #{self.center.name} (#{self.start_date.strftime('%d %B %Y')})"
+    "Program ##{self.id} #{self.name}"
   end
+
 
   def is_announced?
     self.announce_program_id && !self.announce_program_id.empty?

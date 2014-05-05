@@ -1,3 +1,4 @@
+<% if false %>
 <%= form_for(@notification_log) do |f| %>
   <% if @notification_log.errors.any? %>
     <div id="error_explanation">
@@ -24,10 +25,11 @@
     <%= f.text_field :model %>
   </div>
   <div class="field">
-    <%= f.label :text %><br />
-    <%= f.text_field :text %>
+    <%= f.label :log %><br />
+    <%= f.text_field :log %>
   </div>
   <div class="actions">
     <%= f.submit %>
   </div>
+<% end %>
 <% end %>

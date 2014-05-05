@@ -38,8 +38,8 @@ class Zone < ActiveRecord::Base
   # usage -> ::Sector::all_centers_in_one_zone?? [center1, center2, center3]
   def self.all_centers_in_one_zone?(centers)
     if !centers.empty?
-      zone_id = centers[0].zone_id
-      centers.each {|c| return false if zone_id != c.zone_id }
+      zone_id = centers[0].sector.zone_id
+      centers.each {|c| return false if zone_id != c.sector.zone_id }
     end
     true
   end

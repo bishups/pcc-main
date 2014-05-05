@@ -1,23 +1,23 @@
 class UserMailer < ActionMailer::Base
   default :from => "info@pcc-admin.ishayoga.org"
 
-  def email(user, from, to, on, additional_text, friendly_name_for_email)
+  def email(object, user, from, to, on, additional_text)
+    @object = object
     @user = user
     @from = from
     @to = to
     @additional_text = additional_text
-    @friendly_name = friendly_name_for_email
-    @url  = 'http://localhost:3000'
-    mail(:to => @user.email, :subject => "#{@friendly_name[:text]} updated")
+    @url  = Rails.application.routes.default_url_options[:host]
+    mail(:to => @user.email, :subject => "#{@object.friendly_first_name_for_email + @object.friendly_second_name_for_email} updated")
   end
 
 
-  def sms(user, from, to, on, additional_text, friendly_name_for_sms)
+  def sms(object, user, from, to, on, additional_text)
+    @object = object
     @user = user
     @from = from
     @to = to
     @additional_text = additional_text
-    @friendly_name_for_sms = friendly_name_for_sms
     sms_email_id = "#{@user.mobile}.#{Rails.application.config.sms_country_username}@smscountry.net"
     mail(:to => sms_email_id, :subject => Rails.application.config.sms_country_username)
   end

@@ -48,6 +48,9 @@ class User < ActiveRecord::Base
 
   acts_as_paranoid
 
+  has_many :notification_logs
+  has_many :activity_logs
+  attr_accessible :notification_logs, :notification_log_ids, :activity_logs, :activity_log_ids
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles

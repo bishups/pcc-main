@@ -44,7 +44,7 @@ class Kit < ActiveRecord::Base
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
   attr_accessible :guardian_id, :guardian
 
-  validates :name, :condition, :presence => true
+  validates :name, :condition, :guardian, :presence => true
   validates :capacity, :numericality => {:only_integer => true }
 
   #has_paper_trail
@@ -77,7 +77,7 @@ class Kit < ActiveRecord::Base
   end
 
   def mark_as_available!
-    self.send(EVENT_AVAILABLE)
+    self.send(EVENT_AVAILABLE)  if self.state == ::Kit::STATE_UNKNOWN
   end
 
   def has_centers?
@@ -108,18 +108,23 @@ class Kit < ActiveRecord::Base
 
 
   def friendly_name
-    ("%s" % [self.name]).parameterize
+    ("#%d %s" % [self.id, self.name])
   end
 
-  def friendly_name_for_email
-    {
-        :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.kit_url(self)
-    }
+  def url
+    Rails.application.routes.url_helpers.kit_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Kit ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.name}"
   end
 
   def friendly_name_for_sms
-    "Kit ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
+    "Kit ##{self.id} #{self.name}"
   end
 
 
@@ -217,7 +222,10 @@ class Kit < ActiveRecord::Base
         end
       end
       field :name
-      field :guardian
+      field :guardian do
+        inline_edit false
+        inline_add false
+      end
       field :capacity
       field :condition
       #field :kit_items do

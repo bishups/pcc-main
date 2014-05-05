@@ -47,6 +47,12 @@ PccMain::Application.routes.draw do
   #  resources :users
   #end
 
+  resources :notification_logs do
+    collection do
+      delete :delete_all
+    end
+  end
+
   root :to => 'home#index'
 
   # This is a legacy wild controller route that's not recommended for RESTful applications.

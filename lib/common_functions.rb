@@ -38,7 +38,7 @@ module CommonFunctions
     # We are not relying on in-built table updated_at, in case the state machine transition differ from table transition
     self.last_updated_at = Time.zone.now
     self.last_update = " " + self.update_str(from_state, to_state, event)
-    log_last_activity(user, from_state, to_state, event, self.last_updated_at)
+    self.log_last_activity(user, from_state, to_state, event, self.last_updated_at)
   end
 
   def update_str(from_state, to_state, event)
@@ -56,14 +56,14 @@ module CommonFunctions
   end
 
   def log_last_activity(user, from_state, to_state, event, date = Time.zone.now)
-    activity = ActivityLog.new
+    activity = ::ActivityLog.new
     activity.user = user
     activity.model_type = self.class.name == "ProgramTeacherSchedule" ? "TeacherSchedule" : self.class.name
     activity.model_id = self.id
     activity.date = date.nil? ? Time.zone.now : date
-    activity.log = self.update_str(from_state, to_state, event)
+    activity.text = self.update_str(from_state, to_state, event)
     # user, date, model_id, model_type, text
-    activity.save!
+    activity.save
     unless activity.errors.nil?
       # TODO - some error handling or log msg?
     end
@@ -122,21 +122,23 @@ module CommonFunctions
 
 
   def notify_user(user, from, to, on, value)
-    UserMailer.email(user, from, to, on, value[:additional_text], self.friendly_name_for_email).deliver if value[:send_email]
-    UserMailer.sms(user, from, to, on, value[:additional_text], self.friendly_name_for_sms).deliver if value[:send_sms]
-    self.log_notify(user, self.friendly_name_for_email) if value[:send_email] || value[:send_sms]
+    UserMailer.email(self, user, from, to, on, value[:additional_text]).deliver if value[:send_email]
+    UserMailer.sms(self, user, from, to, on, value[:additional_text]).deliver if value[:send_sms]
+    self.log_notify(user, from, to, on, value[:additional_text]) if value[:send_email] || value[:send_sms]
   end
 
 
-  def log_notify(user, log)
-    notification = NotificationLog.new
+  def log_notify(user, from, to, on, additional_text)
+    notification = ::NotificationLog.new
     notification.user = user
     notification.model_type = self.class.name == "ProgramTeacherSchedule" ? "TeacherSchedule" : self.class.name
     notification.model_id = self.id
     notification.date = Time.zone.now
-    notification.log = log
+    notification.text1 = self.friendly_first_name_for_email
+    notification.text2 = " #{self.friendly_second_name_for_email} changed from #{self.update_str(from, to, on)}."
+    notification.text2 += " #{additional_text.chomp('.')}."
     # user, date, model_id, model_type, text
-    notification.save!
+    notification.save
     unless notification.errors.nil?
       # TODO - some error handling or log msg?
     end

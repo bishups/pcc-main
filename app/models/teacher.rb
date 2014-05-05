@@ -309,17 +309,21 @@ class Teacher < ActiveRecord::Base
     return true
   end
 
-  def friendly_name_for_email
-    {
-        :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.teacher_url(self)
-    }
+  def url
+    Rails.application.routes.url_helpers.teacher_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Teacher ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.user.fullname}"
   end
 
   def friendly_name_for_sms
-    name = "Teacher ##{self.id} #{self.user.firstname} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
+    "Teacher ##{self.id} #{self.user.firstname}"
   end
-
 
 
   rails_admin do

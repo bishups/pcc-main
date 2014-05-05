@@ -457,20 +457,23 @@ class VenueSchedule < ActiveRecord::Base
     return false
   end
 
+  def url
+    Rails.application.routes.url_helpers.venue_schedule_url(self)
+  end
 
-  def friendly_name_for_email
-    {
-        :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.venue_schedule_url(self)
-    }
+  def friendly_first_name_for_email
+    "Venue Schedule ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    name = " for Venue ##{self.venue_id} #{self.venue.name}"
+    name += " and Program ##{self.program_id} #{self.program.name}"
+    end
   end
 
   def friendly_name_for_sms
-    name = "Venue Schedule ##{self.id} #{self.venue.name}"
-    name += ", #{self.program.center.name}" unless self.program.nil?
-    name += " (#{self.start_date.strftime('%d %B %Y')})"
+    "Venue Schedule ##{self.id} for #{self.venue.name}"
   end
-
 
   private
 

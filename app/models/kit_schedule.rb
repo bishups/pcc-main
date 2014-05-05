@@ -495,17 +495,27 @@ class KitSchedule < ActiveRecord::Base
     end
   end
 
-  def friendly_name_for_email
-    {
-        :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.kit_schedule_url(self)
-    }
+
+  def url
+    self.program.nil? ? Rails.application.routes.url_helpers.kit_url(self.kit) : Rails.application.routes.url_helpers.kit_schedule_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Kit Schedule ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    name = " for Kit ##{self.kit_id} #{self.kit.name}"
+    if self.program.nil?
+      name += " (#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')})"
+    else
+      name += " and Program ##{self.program_id} #{self.program.name}"
+    end
+    name
   end
 
   def friendly_name_for_sms
-    name = "Kit Schedule ##{self.id} #{self.kit.name}"
-    name += ", #{self.program.center.name}" unless self.program.nil?
-    name += " (#{self.start_date.strftime('%d %B %Y')})"
+    "Kit Schedule ##{self.id} for #{self.kit.name}"
   end
 
 end
