@@ -373,7 +373,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def url
-    Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
+    self.program.nil? ? Rails.application.routes.url_helpers.teacher_teacher_schedule_url(self.teacher)
+                  :Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
   end
 
   def friendly_first_name_for_email

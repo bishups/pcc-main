@@ -35,7 +35,7 @@
             <% object = al.object %>
             <% if object.nil? %>
                 <td>Updated <%= al.text1 + al.text2 %></td>
-                <td><span class="label label-default">Deleted</span></td>
+                <td></td>
             <% else %>
                 <td>Updated <%= link_to al.text1, object.url %> <%= al.text2 %></td>
                 <td><%= send( al.model_state_tag, object) rescue '' %></td>

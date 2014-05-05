@@ -182,10 +182,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "date"
     t.integer  "model_id"
     t.string   "model_type"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.datetime "created_at",                    :null => false
+    t.datetime "updated_at",                    :null => false
     t.string   "text1"
     t.string   "text2"
+    t.boolean  "displayed",  :default => false
   end
 
   add_index "notification_logs", ["model_id"], :name => "index_notification_logs_on_model_id"

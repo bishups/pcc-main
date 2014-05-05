@@ -2,7 +2,7 @@ class ActivityLogsController < ApplicationController
   # GET /activity_logs
   # GET /activity_logs.json
   def index
-    @activity_logs = current_user.activity_logs.where("date > ? ", (Time.zone.now - 1.month.from_now)).all
+    @activity_logs = current_user.activity_logs.where("date > ? ", (Time.zone.now - 1.month.from_now)).order("date DESC").all
 
     respond_to do |format|
       format.html # index.html.erb
@@ -13,6 +13,7 @@ class ActivityLogsController < ApplicationController
   # GET /activity_logs/1
   # GET /activity_logs/1.json
   def show
+=begin
 
     @activity_log = ActivityLog.find(params[:id])
 
@@ -20,7 +21,7 @@ class ActivityLogsController < ApplicationController
       format.html # show.html.erb
       format.json { render json: @activity_log }
     end
-
+=end
   end
 
   # GET /activity_logs/new

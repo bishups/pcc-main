@@ -1,7 +1,7 @@
 class NotificationLog < ActiveRecord::Base
   belongs_to :user
   belongs_to :model, :polymorphic => true
-  attr_accessible :user, :model_id, :model_type, :date, :text1, :text2, :presence
+  attr_accessible :user, :model_id, :model_type, :date, :text1, :text2, :displayed
   validates :user, :model_id, :model_type, :date, :text1, :text2, :presence => true
 
   def model_state_tag
@@ -14,5 +14,8 @@ class NotificationLog < ActiveRecord::Base
     nil
   end
 
+  def displayed!
+    self.update_attribute(:displayed, true) unless self.displayed == true
+  end
 
 end
