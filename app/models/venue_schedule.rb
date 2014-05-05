@@ -468,7 +468,6 @@ class VenueSchedule < ActiveRecord::Base
   def friendly_second_name_for_email
     name = " for Venue ##{self.venue_id} #{self.venue.name}"
     name += " and Program ##{self.program_id} #{self.program.name}"
-    end
   end
 
   def friendly_name_for_sms
