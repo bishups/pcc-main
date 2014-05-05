@@ -17,7 +17,7 @@ class AccessPrivilege < ActiveRecord::Base
   belongs_to :resource, :polymorphic => true
   has_many :permissions, :through => :role
 
-  validates :role,:resource, :presence => true
+  validates :role, :presence => true
 
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role, :user, :user_id
   validate :is_role_valid?
@@ -46,7 +46,7 @@ class AccessPrivilege < ActiveRecord::Base
       when "Center"
         [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
       else
-        []
+        [:super_admin]
     end
     if !valid_roles.include?(role)
       self.errors[:resource] << " does not match the specified role."
