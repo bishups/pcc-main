@@ -27,7 +27,7 @@ Permission:
     :cancan_action: manage
     :subject: :all
 
-KitItems:
+KitItemType:
   ["Sadhguru photo", Carpets, Speakers, Mike, Projector, Amplifier, DVD-Player, "White Clothes","Stationary Items"]
 
 ProgramType:

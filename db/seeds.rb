@@ -3,7 +3,7 @@
 
   # create comments
   comments_yml = File.join(Rails.root, 'db/seed-data', 'comments.yml')
-  YAML::load_file(comments_yml)["comment"].each do |comment|
+  YAML::load_file(comments_yml)["Comment"].each do |comment|
     c=Comment.find_or_initialize_by_model(comment[:model])
     c.attributes=(comment)
     if not c.save
@@ -16,7 +16,7 @@
 
   #  create_default_permissions
   seed_data["Permission"].each do |permission|
-    p=Permission.find_or_initialize_by_model(permission[:name])
+    p=Permission.find_or_initialize_by_name(permission[:name])
     p.attributes=(permission)
     if not p.save
       puts "Permission #{p.name} has not been saved because of #{p.errors.messages}"
@@ -24,16 +24,16 @@
   end
 
   #  create_default_kits
-  seed_data["KitItems"].each do |kit_item|
-    k=KitItem.new(:name=>kit_item)
+  seed_data["KitItemType"].each do |kit_item_type|
+    k=KitItemType.find_or_initialize_by_name(:name=>kit_item_type)
     if not k.save
-      puts "KitItem #{k.name} has not been saved because of #{k.errors.messages}"
+      puts "KitItemType #{k.name} has not been saved because of #{k.errors.messages}"
     end
   end
 
   # create program type
   seed_data["ProgramType"].each do |program_type|
-    pt=ProgramType.find_or_initialize_by_model(program_type[:name])
+    pt=ProgramType.find_or_initialize_by_name(program_type[:name])
     pt.attributes=(program_type)
     if not pt.save
       puts "ProgramType #{pt.name} has not been saved because of #{pt.errors.messages}"
@@ -42,7 +42,7 @@
 
   # create Timing
   seed_data["Timing"].each do |timing|
-    t=Timing.find_or_initialize_by_model(timing[:name])
+    t=Timing.find_or_initialize_by_name(timing[:name])
     t.attributes=(timing)
     if not t.save
       puts "Timing #{t.name} has not been saved because of #{t.errors.messages}"
@@ -214,22 +214,19 @@ notifications = [
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please publish schedule.' },
 
     {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :on_event => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
-    {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::TeacherSchedule::STATE_UNAVAILABLE, :on_event => ::ProgramTeacherSchedule::EVENT_RELEASE, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' }
+    {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::TeacherSchedule::STATE_UNAVAILABLE, :on_event => ::ProgramTeacherSchedule::EVENT_RELEASE, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
-    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' }
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' }
 
 ]
-notifications.each{|n| Notification.create(n)
+notifications.each{|n| Notification.create(n)}
 
 
 ### Dummy users for all the roles used for testing purpose.
   user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123" )
-  ap=AccessPrivilege.new(:user=>user,:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text]).first)
-  if not ap.save
-    puts "Access Privillege  #{user.firstname} has not been saved because of #{ap.errors.messages} and #{user.errors.messages}"
-  end
-
+  user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text]).first)
+  user.save(:validate => false)
 
 
