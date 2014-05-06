@@ -1,29 +1,54 @@
-<h1>Listing notification_logs</h1>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#notification_log_table').dataTable({
+            "sPaginationType": "bootstrap"
+        } );
+    });
+</script>
 
-<table>
-  <tr>
-    <th>User</th>
-    <th>Date</th>
-    <th>Model</th>
-    <th>Text</th>
-    <th></th>
-    <th></th>
-    <th></th>
-  </tr>
 
-<% @notification_logs.each do |notification_log| %>
-  <tr>
-    <td><%= notification_log.user %></td>
-    <td><%= notification_log.date %></td>
-    <td><%= notification_log.model %></td>
-    <td><%= notification_log.text %></td>
-    <td><%= link_to 'Show', notification_log %></td>
-    <td><%= link_to 'Edit', edit_notification_log_path(notification_log) %></td>
-    <td><%= link_to 'Destroy', notification_log, method: :delete, data: { confirm: 'Are you sure?' } %></td>
-  </tr>
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>Notifications
+      <% unless @notification_logs.empty? %>
+          <span class='pull-right'>
+            <%= link_to 'Dismiss all', delete_all_notification_logs_path, method: :delete,  :confirm => "Are you sure you want to delete all the notifications?", :class => 'btn btn-primary btn-sm'%>
+          </span>
+      <% end %>
+      <hr>
+    </h2>
+  </div>
+</div>
+
+
+
+<% if @notification_logs.empty? %>
+    <div class="alert alert-danger"> No Notifications Found.</div>
+<% else %>
+    <table id="notification_log_table" class='display dataTable table table-condensed table-hover table-bordered'>
+      <thead>
+      <tr>
+        <th>Date</th>
+        <th>Notification</th>
+        <th>Current Status</th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @notification_logs.each do |nl| %>
+          <tr>
+            <td><%= nl.date.strftime("%d %B %Y") %></td>
+            <% object = nl.object %>
+            <% if object.nil? %>
+                <td><%= nl.text1 + nl.text2 %></td>
+                <td><span class="label label-default">Deleted</span></td>
+            <% else %>
+                <td><%= link_to nl.text1, object.url %> <%= nl.text2 %></td>
+                <td><%= send( nl.model_state_tag, object) rescue '' %></td>
+            <% end %>
+            <td><%= link_to 'Dismiss', nl, method: :delete, data: { confirm: 'Are you sure you want to delete the notification?' }, :class => 'btn btn-primary btn-sm' %></td>
+          </tr>
+      <% end %>
+      </tbody>
+    </table>
 <% end %>
-</table>
-
-<br />
-
-<%= link_to 'New Notification log', new_notification_log_path %>

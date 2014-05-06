@@ -1,1 +1,1 @@
-Namaskaram <%= @user.firstname %>, Status of <%= @friendly_name_for_sms %> has changed from <%= @from %> to <%= @to %>. <%= @additional_text.chomp('.') + "." unless @additional_text.empty? rescue '' %>Pranam, Isha Foundation
+Namaskaram <%= @user.firstname %>, Status of <%= @object.friendly_name_for_sms %> has changed from <%= @from %> to <%= @to %>. <%= @additional_text.chomp('.') + ". " unless @additional_text.empty? rescue '' %>Pranam, Isha Foundation

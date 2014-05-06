@@ -13,8 +13,16 @@ class Pincode < ActiveRecord::Base
     end
     list do
       field :location_name
-      field :pincode
-      field :center
+      field :pincode do
+        read_only do
+           bindings[:controller].current_user.is?(:center_coordinator)
+        end
+      end
+      field :center do
+        read_only do
+          bindings[:controller].current_user.is?(:sector_coordinator)
+        end
+      end
     end
     edit do
       field :location_name

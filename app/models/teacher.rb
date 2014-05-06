@@ -20,7 +20,8 @@ class Teacher < ActiveRecord::Base
   attr_accessible :center_ids, :centers
   validate :has_centers?
 
-  validate :is_unfit?
+ # Commented for now as there is no definition for this
+ # validate :is_unfit?
 
   has_and_belongs_to_many :program_types
   attr_accessible :program_type_ids, :program_types
@@ -39,7 +40,7 @@ class Teacher < ActiveRecord::Base
 
   attr_accessible :t_no
   validates :t_no, :presence => true, :length => { :in => 1..9}
-  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
+#  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
 
   has_many :teacher_schedules
   has_many :timings, through: :teacher_schedules
@@ -309,17 +310,21 @@ class Teacher < ActiveRecord::Base
     return true
   end
 
-  def friendly_name_for_email
-    {
-        :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.teacher_url(self)
-    }
+  def url
+    Rails.application.routes.url_helpers.teacher_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Teacher ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.user.fullname}"
   end
 
   def friendly_name_for_sms
-    name = "Teacher ##{self.id} #{self.user.firstname} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
+    "Teacher ##{self.id} #{self.user.firstname}"
   end
-
 
 
   rails_admin do
@@ -369,6 +374,9 @@ class Teacher < ActiveRecord::Base
        # inverse_of :teachers
         inline_edit false
         inline_add false
+        read_only do
+          not bindings[:controller].current_user.is?(:zonal_coordinator) or indings[:controller].current_user.is?(:super_admin)
+        end
       end
       field :program_types  do
         inverse_of :teachers

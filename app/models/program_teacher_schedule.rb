@@ -372,16 +372,22 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     return false
   end
 
-  def friendly_name_for_email
-    {
-        :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
-    }
+  def url
+    Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Program-Teacher Schedule ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " for Program ##{self.program.id} #{self.program.name} and Teacher ##{self.teacher.id} #{self.teacher.user.fullname}"
   end
 
   def friendly_name_for_sms
-    "Program-Teacher Schedule ##{self.id} #{self.program.center.name}-#{self.teacher.user.firstname} (#{self.program.start_date.strftime('%d %B %Y')})"
+    "Program-Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
   end
+
 
 end
 

@@ -29,9 +29,15 @@
 
 module UserExtension
   def by_role(role_name)
-    role=Role.where(:name => role_name).first
-    if role
-      find(:all, :conditions => ["access_privileges.role_id = ?", role.id])
+    current_role_values =  User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:text] == role_name }.values
+    if not current_role_values.empty?
+      current_role_access_level = current_role_values.first[:access_level]
+    # Take all the roles above the current role's access level, including the current role.
+    # So that while getting centers for zonal co-ordinator, will be available even if we check it for kit co-ordinator
+    role_names = User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:access_level] >= current_role_access_level  }.values.map{|a|a[:text]}
+    puts role_names.inspect
+    role_ids=Role.where(:name => role_names).map(&:id)
+      find(:all, :conditions => ["access_privileges.role_id in (?)", role_ids])
     else
       find(:all)
     end
@@ -48,6 +54,9 @@ class User < ActiveRecord::Base
 
   acts_as_paranoid
 
+  has_many :notification_logs
+  has_many :activity_logs
+  attr_accessible :notification_logs, :notification_log_ids, :activity_logs, :activity_log_ids
   has_many :access_privileges
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles

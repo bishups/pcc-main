@@ -44,7 +44,7 @@ class Kit < ActiveRecord::Base
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
   attr_accessible :guardian_id, :guardian
 
-  validates :name, :condition, :presence => true
+  validates :name, :condition, :guardian, :presence => true
   validates :capacity, :numericality => {:only_integer => true }
 
   #has_paper_trail
@@ -77,7 +77,23 @@ class Kit < ActiveRecord::Base
   end
 
   def mark_as_available!
-    self.send(EVENT_AVAILABLE)
+
+    #self.send(EVENT_AVAILABLE) if self.state == ::Kit::STATE_UNKNOWN
+
+    # HACK #1 - all this making the centers dirty and reloading the object
+    # due to open rails bug when trying to save a model with habtm in after_create
+    # https://rails.lighthouseapp.com/projects/8994/tickets/4553-habtm-association-failure-to-save-in-join-table-with-after_create-callback
+    # HACK #2 - after HACK #1, some problem with doing a send to state machine
+    # so setting the state directly and logging in the current context only
+    if self.state == STATE_UNKNOWN
+      centers = self.centers
+      self.reload
+      self.state = STATE_AVAILABLE
+      self.centers = centers
+      self.store_last_update!(nil, STATE_UNKNOWN, STATE_AVAILABLE, EVENT_AVAILABLE)
+      self.notify(STATE_UNKNOWN, STATE_AVAILABLE, EVENT_AVAILABLE, self.centers)
+      self.save
+    end
   end
 
   def has_centers?
@@ -108,18 +124,23 @@ class Kit < ActiveRecord::Base
 
 
   def friendly_name
-    ("%s" % [self.name]).parameterize
+    ("#%d %s" % [self.id, self.name])
   end
 
-  def friendly_name_for_email
-    {
-        :text => friendly_name_for_sms,
-        :link => Rails.application.routes.url_helpers.kit_url(self)
-    }
+  def url
+    Rails.application.routes.url_helpers.kit_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Kit ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.name}"
   end
 
   def friendly_name_for_sms
-    "Kit ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
+    "Kit ##{self.id} #{self.name}"
   end
 
 
@@ -206,7 +227,7 @@ class Kit < ActiveRecord::Base
       field :capacity
       field :condition
       field :centers
-      field :kit_item_names
+      field :kit_item_types
     end
     edit do
       # to get the current user from the rails-admin view
@@ -217,7 +238,18 @@ class Kit < ActiveRecord::Base
         end
       end
       field :name
-      field :guardian
+      field :guardian do
+        inline_edit false
+        inline_add false
+        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+          accessible_centers_users = bindings[:controller].current_user.accessible_centers.map(&:users).flatten.uniq
+          Proc.new { |scope|
+            scope = scope.where(:id => accessible_centers_users )
+          }
+        end
+      end
       field :capacity
       field :condition
       #field :kit_items do

@@ -163,7 +163,22 @@ class Venue < ActiveRecord::Base
   end
 
   def mark_as_proposed!
-     self.send(::Venue::EVENT_PROPOSE)
+#   self.send(::Venue::EVENT_PROPOSE) if self.state == ::Venue::STATE_UNKNOWN
+
+    # HACK #1 - all this making the centers dirty and reloading the object
+    # due to open rails bug when trying to save a model with habtm in after_create
+    # https://rails.lighthouseapp.com/projects/8994/tickets/4553-habtm-association-failure-to-save-in-join-table-with-after_create-callback
+    # HACK #2 - after HACK #1, some problem with doing a send to state machine
+    # so setting the state directly and logging in the current context only
+    if self.state == STATE_UNKNOWN
+      centers = self.centers
+      self.reload
+      self.state = STATE_PROPOSED
+      self.centers = centers
+      self.store_last_update!(nil, STATE_UNKNOWN, STATE_PROPOSED, EVENT_PROPOSE)
+      self.notify(STATE_UNKNOWN, STATE_PROPOSED, EVENT_PROPOSE, self.centers)
+      self.save
+    end
   end
 
   def blockable_programs
@@ -285,19 +300,31 @@ def can_reject?
   end
 
   def friendly_name
-    ("%s" % [self.name]).parameterize
+    ("#%d %s" % [self.id, self.name])
   end
 
-  def friendly_name_for_email
-    {
-      :text => friendly_name_for_sms,
-      :link => Rails.application.routes.url_helpers.venue_url(self)
-    }
-  end
 
   def friendly_name_for_sms
     "Venue ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
   end
+
+
+  def url
+    Rails.application.routes.url_helpers.venue_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Venue ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.name}"
+  end
+
+  def friendly_name_for_sms
+    "Venue ##{self.id} #{self.name}"
+  end
+
 
   rails_admin do
     visible do

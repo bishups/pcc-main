@@ -1,13 +1,13 @@
 Namaskaram <%= @user.firstname %>,
-Status of <%= @friendly_name[:text] %> has changed:
+Status of <%= @object.friendly_first_name_for_email %><%= @object.friendly_second_name_for_email %> has changed:
 
 From: <%= @from %>
 To: <%= @to %>
-
 <% unless @additional_text.nil? %>
-<%= @additional_text %>
-<% end %>
 
+<%= @additional_text %>
+
+<% end %>
 Please log-in to <%= @url %> for details.
 
 Pranam,

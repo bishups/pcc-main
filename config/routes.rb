@@ -1,8 +1,6 @@
 PccMain::Application.routes.draw do
 
   resources :notification_logs
-
-
   resources :activity_logs
 
 
@@ -46,6 +44,12 @@ PccMain::Application.routes.draw do
   #namespace :admin do
   #  resources :users
   #end
+
+  resources :notification_logs do
+    collection do
+      delete :delete_all
+    end
+  end
 
   root :to => 'home#index'
 
