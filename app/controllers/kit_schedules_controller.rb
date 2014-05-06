@@ -7,7 +7,7 @@ class KitSchedulesController < ApplicationController
   def index
     @kit = ::Kit.find(params[:kit_id].to_i)
     @kit.current_user = current_user
-    @kit_schedules = @kit.kit_schedules.where(['end_date > ? OR state NOT IN (?) ', (Time.zone.now - 1.month.from_now), ::KitSchedule::FINAL_STATES]).order('start_date ASC')
+    @kit_schedules = @kit.kit_schedules.where(['end_date > ? OR state NOT IN (?) ', (Time.zone.now - 1.month.from_now), ::KitSchedule::FINAL_STATES]).order('start_date DESC')
 
     respond_to do |format|
       if @kit.can_view_schedule?
