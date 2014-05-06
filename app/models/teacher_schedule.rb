@@ -236,7 +236,7 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
   def url
-    Rails.application.routes.url_helpers.teacher_teacher_schedule_url(self.teacher)
+    Rails.application.routes.url_helpers.teacher_teacher_schedule_url(self.teacher, self)
   end
 
   def friendly_first_name_for_email
@@ -244,11 +244,11 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
   def friendly_second_name_for_email
-    " for #{self.user.fullname} (#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}"
+    " for #{self.teacher.user.fullname} (#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}"
   end
 
   def friendly_name_for_sms
-    "Teacher Schedule ##{self.id} for #{self.user.firstname}"
+    "Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
   end
 
 end

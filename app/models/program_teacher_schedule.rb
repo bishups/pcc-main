@@ -288,6 +288,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
       ts.program_id = program.id
       ts.blocked_by_user_id = current_user.id
+      ts.current_user = current_user
       ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
       ts.clear_comments!
       # This is a hack to store the last update
@@ -391,4 +392,3 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
 end
-

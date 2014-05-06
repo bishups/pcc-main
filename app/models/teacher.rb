@@ -20,7 +20,7 @@ class Teacher < ActiveRecord::Base
   attr_accessible :center_ids, :centers
   validate :has_centers?
 
-  validate :is_unfit?
+  #validate :is_unfit?
 
   has_and_belongs_to_many :program_types
   attr_accessible :program_type_ids, :program_types
@@ -39,7 +39,7 @@ class Teacher < ActiveRecord::Base
 
   attr_accessible :t_no
   validates :t_no, :presence => true, :length => { :in => 1..9}
-  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
+  #validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
 
   has_many :teacher_schedules
   has_many :timings, through: :teacher_schedules
