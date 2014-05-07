@@ -288,6 +288,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
       ts.program_id = program.id
       ts.blocked_by_user_id = current_user.id
+      ts.current_user = current_user
       ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
       ts.clear_comments!
       # This is a hack to store the last update
@@ -373,7 +374,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def url
-    Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
+    self.program.nil? ? Rails.application.routes.url_helpers.teacher_teacher_schedule_url(self.teacher)
+                  : Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
   end
 
   def friendly_first_name_for_email
@@ -390,4 +392,3 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
 end
-

@@ -48,6 +48,15 @@
           <td><%= @venue.id %></td>
         </tr>
           <tr>
+            <td><strong>Name</strong></td>
+            <td><%= @venue.name %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Center (s)</strong></td>
+            <td><%= (@venue.centers.map {|c| c[:name]}).join(", ") %></td>
+          </tr>
+          <tr>
             <td width='20%'><strong>Capacity</strong></td>
             <td><%= @venue.capacity %></td>
           </tr>

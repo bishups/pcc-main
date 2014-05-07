@@ -12,7 +12,7 @@ class TeacherSchedulesController < ApplicationController
     center_ids = current_user.accessible_center_ids
     @teacher = Teacher.find(params[:teacher_id])
     @teacher.current_user = current_user
-    @teacher_schedules = @teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where("teacher_schedules.end_date >= ? AND centers_teacher_schedules.center_id IN (?)", (Time.zone.now.to_date - 1.month.from_now.to_date), center_ids).group("coalesce(program_id, created_at)")
+    @teacher_schedules = @teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where("teacher_schedules.end_date >= ? AND centers_teacher_schedules.center_id IN (?)", (Time.zone.now.to_date - 1.month.from_now.to_date), center_ids).group("coalesce(program_id, created_at)").order("teacher_schedules.start_date DESC")
 
     respond_to do |format|
       if @teacher.can_view_schedule?

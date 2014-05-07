@@ -295,11 +295,11 @@ class Program < ActiveRecord::Base
 
 
   def on_drop
-    self.notify_schedules(DROPPED)
+    self.notify_all(DROPPED)
   end
 
   def on_start
-    self.notify_schedules(STARTED)
+    self.notify_all(STARTED)
     # start the timer for close of class notification
     self.delay(:run_at => self.end_date).trigger_program_finish
   end
@@ -502,6 +502,12 @@ class Program < ActiveRecord::Base
   def teachers_connected
     return 0 if !self.teacher_schedules
     self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
+  def teachers_conducted_class
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
 #    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 

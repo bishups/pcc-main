@@ -8,7 +8,7 @@ class VenueSchedulesController < ApplicationController
   def index
     @venue = ::Venue.find(params[:venue_id].to_i)
     @venue.current_user = current_user
-    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.end_date > ? OR venue_schedules.state NOT IN (?) ', (Time.zone.now - 1.month.from_now), ::VenueSchedule::FINAL_STATES]).order('programs.start_date ASC')
+    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.end_date > ? OR venue_schedules.state NOT IN (?) ', (Time.zone.now - 1.month.from_now), ::VenueSchedule::FINAL_STATES]).order('programs.start_date DESC')
 
     respond_to do |format|
       if @venue.can_view_schedule?

@@ -374,9 +374,6 @@ class Teacher < ActiveRecord::Base
        # inverse_of :teachers
         inline_edit false
         inline_add false
-        read_only do
-          not bindings[:controller].current_user.is?(:zonal_coordinator) or indings[:controller].current_user.is?(:super_admin)
-        end
       end
       field :program_types  do
         inverse_of :teachers

@@ -1,4 +1,40 @@
-
+<div class='row'>
+  <div class='col-md-12'>
+    <br><br>
+    <div class="panel panel-info">
+      <div class="panel-heading"><h2>Namaskaram <%= @current_user.firstname %>! </h2></div>
+      <div class="panel-body">
+        <p>
+          <% last_sign_in_at = @current_user.last_sign_in_at %>
+          <% unless last_sign_in_at.nil? %>
+            <b> You last logged in at </b> <i><%= last_sign_in_at.strftime("%I:%M %P") %></i> <b>on</b> <i><%= last_sign_in_at.strftime("%d %B %Y") %></i>
+          <% end %>
+        </p>
+      </div>
+      <!-- List group -->
+      <ul class="list-group">
+        <% no_of = @new_notifications.empty? ? 0 :  @new_notifications.count %>
+        <li class="list-group-item"><b> You have </b> <%= no_of %> <b>new</b> <%= link_to "Notifications", notification_logs_path %> </li>
+        <li class="list-group-item"><b> View your past </b><%= link_to "Activity", activity_logs_path %></li>
+      </ul>
+    </div>
+    <% if false %>
+    <div class='page-header'>
+      <h2>Namaskaram <%= @current_user.firstname %>! </h2>
+    </div>
+    <div class='page-body'>
+      <% last_sign_in_at = @current_user.last_sign_in_at %>
+      <% unless last_sign_in_at.nil? %>
+        <div class="alert alert-success"><b> Last log in </b> <i><%= last_sign_in_at.strftime("%d %B %Y") %></i> <b>at</b> <i><%= last_sign_in_at.strftime("%I:%M %P") %></i> </div>
+      <% end %>
+      <% no_of = @new_notifications.empty? ? 0 :  @new_notifications.count %>
+      <div class="alert alert-warning"><b> You have </b> <%= no_of %> <b>new</b> <%= link_to "Notifications", notification_logs_path %> </div>
+      <div class="alert alert-success"><b> View your past </b><%= link_to "Activity", activity_logs_path %> </div>
+    </div>
+    <% end %>
+  </div>
+</div>
+<% if false %>
 <style type="text/css" title="currentStyle">
       @import "../ext/css/jquery.dataTables.css";
 </style>
@@ -42,3 +78,4 @@
     </div>
   </div>
 </div>
+<% end %>
