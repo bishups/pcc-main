@@ -17,7 +17,7 @@ class AccessPrivilege < ActiveRecord::Base
   belongs_to :resource, :polymorphic => true
   has_many :permissions, :through => :role
 
-  validates :role,:resource, :presence => true
+  validates :role, :presence => true
 
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role, :user, :user_id
   validate :is_role_valid?
@@ -46,7 +46,7 @@ class AccessPrivilege < ActiveRecord::Base
       when "Center"
         [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
       else
-        []
+        [:super_admin]
     end
     if !valid_roles.include?(role)
       self.errors[:resource] << " does not match the specified role."
@@ -85,14 +85,12 @@ class AccessPrivilege < ActiveRecord::Base
         inline_edit false
         inline_add false
         # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
-        associated_collection_cache_all false  # REQUIRED if you want to SORT the list as below
+        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           role = bindings[:object]
           Proc.new { |scope|
             # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
-            scope = scope.where("name IS NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text], ::User::ROLE_ACCESS_HIERARCHY[:any][:text]]) #if role.present?
-            # sorting over association does not work for now -- see open issue  https://github.com/sferik/rails_admin/issues/1395
-            scope = scope.reorder("role.name ASC")
+            scope = scope.where("name NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]]) #if role.present?
           }
         end
       end

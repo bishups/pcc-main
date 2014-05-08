@@ -17,6 +17,7 @@ class Center < ActiveRecord::Base
   has_many :pincodes
   has_one :zone, :through => :sector
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
+  has_many :users, :through => :access_privileges
   has_and_belongs_to_many :teachers
   has_and_belongs_to_many :kits
   has_and_belongs_to_many :venues

@@ -1,0 +1,166 @@
+Comment:
+  - :model: Program
+    :action: Drop
+    :text: Venue not available
+  - :model: Program
+    :action: Drop
+    :text: Teacher not available
+  - :model: Program
+    :action: Drop
+    :text: Kit not available
+  - :model: Program
+    :action: Drop
+    :text: Volunteers not available
+  - :model: Program
+    :action: Drop
+    :text: Other
+  - :model: Program
+    :action: Cancel
+    :text: Venue not available
+  - :model: Program
+    :action: Cancel
+    :text: Teacher not available
+  - :model: Program
+    :action: Cancel
+    :text: Kit not available
+  - :model: Program
+    :action: Cancel
+    :text: Volunteers not available
+  - :model: Program
+    :action: Cancel
+    :text: Other
+  - :model: Program
+    :action: ZAO Close
+    :text: Account closed. Participant data entered.
+  - :model: Program
+    :action: ZAO Close
+    :text: Other
+  - :model: Teacher
+    :action: Unfit
+    :text: Physical ailments
+  - :model: Teacher
+    :action: Unfit
+    :text: Not suitable
+  - :model: Teacher
+    :action: Unfit
+    :text: Needs additional training
+  - :model: Teacher
+    :action: Unfit
+    :text: Other
+  - :model: Teacher
+    :action: Unattach
+    :text: Unfit
+  - :model: Teacher
+    :action: Unattach
+    :text: Relocating to other zone
+  - :model: Teacher
+    :action: Unattach
+    :text: Need retraining
+  - :model: Teacher
+    :action: Unattach
+    :text: Other
+  - :model: ProgramTeacherSchedule
+    :action: Release
+    :text: Teacher requested release
+  - :model: ProgramTeacherSchedule
+    :action: Release
+    :text: Needed for other schedule
+  - :model: ProgramTeacherSchedule
+    :action: Release
+    :text: Unwell
+  - :model: ProgramTeacherSchedule
+    :action: Release
+    :text: Unfit
+  - :model: ProgramTeacherSchedule
+    :action: Release
+    :text: Other
+  - :model: ProgramTeacherSchedule
+    :action: Request Release
+    :text: Unwell
+  - :model: ProgramTeacherSchedule
+    :action: Request Release
+    :text: Emergency
+  - :model: ProgramTeacherSchedule
+    :action: Request Release
+    :text: Other
+  - :model: KitSchedule
+    :action: Cancel
+    :text: Other Kit arranged
+  - :model: KitSchedule
+    :action: Cancel
+    :text: Other
+  - :model: KitSchedule
+    :action: Kit Under Repair
+    :text: Kit Item under repair
+  - :model: KitSchedule
+    :action: Kit Under Repair
+    :text: Kit Item under replacement
+  - :model: KitSchedule
+    :action: Kit Under Repair
+    :text: Adding new kit items
+  - :model: KitSchedule
+    :action: Kit Under Repair
+    :text: Other
+  - :model: KitSchedule
+    :action: Kit Overdue
+    :text: Not returned
+  - :model: KitSchedule
+    :action: Kit Overdue
+    :text: Other
+  - :model: KitSchedule
+    :action: Reserve Kit
+    :text: Reserved for other program
+  - :model: KitSchedule
+    :action: Reserve Kit
+    :text: Other
+  - :model: KitSchedule
+    :action: Returned
+    :text: Issued Condition
+  - :model: KitSchedule
+    :action: Returned
+    :text: Damaged
+  - :model: KitSchedule
+    :action: Returned
+    :text: Other
+  - :model: KitSchedule
+    :action: Close
+    :text: Kit not suitable
+  - :model: KitSchedule
+    :action: Close
+    :text: Other
+  - :model: Venue
+    :action: Reject
+    :text: Venue not suitable
+  - :model: Venue
+    :action: Reject
+    :text: Rent too high
+  - :model: Venue
+    :action: Reject
+    :text: Other
+  - :model: VenueSchedule
+    :action: Reject
+    :text: Venue not available
+  - :model: VenueSchedule
+    :action: Reject
+    :text: Other
+  - :model: VenueSchedule
+    :action: Cancel
+    :text: Other Venue arranged
+  - :model: VenueSchedule
+    :action: Cancel
+    :text: Venue not suitable
+  - :model: VenueSchedule
+    :action: Cancel
+    :text: Other
+  - :model: VenueSchedule
+    :action: Security Refunded
+    :text: Paid and Security Refunded
+  - :model: VenueSchedule
+    :action: Security Refunded
+    :text: Other
+  - :model: VenueSchedule
+    :action: Close
+    :text: Venue not suitable
+  - :model: VenueSchedule
+    :action: Close
+    :text: Other

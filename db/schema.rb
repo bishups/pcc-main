@@ -74,12 +74,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "model"
     t.string   "action"
     t.string   "text"
-    t.datetime "created_at",                    :null => false
-    t.datetime "updated_at",                    :null => false
-    t.boolean  "disabled",   :default => false
-    t.boolean  "enabled",    :default => true
-    t.boolean  "active",     :default => true
+    t.datetime "created_at",                   :null => false
+    t.datetime "updated_at",                   :null => false
     t.datetime "deleted_at"
+    t.boolean  "active",     :default => true
   end
 
   add_index "comments", ["deleted_at"], :name => "index_comments_on_deleted_at"
@@ -124,7 +122,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer "permission_id"
   end
 
-  create_table "kit_item_names", :force => true do |t|
+  create_table "kit_item_types", :force => true do |t|
     t.string   "name"
     t.string   "description"
     t.datetime "created_at",  :null => false
@@ -138,7 +136,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "count"
     t.string   "comments"
     t.integer  "kit_id"
-    t.integer  "kit_item_name_id"
+    t.integer  "kit_item_type_id"
     t.string   "condition"
   end
 
@@ -168,11 +166,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",              :null => false
     t.string   "name"
     t.integer  "capacity"
+    t.datetime "deleted_at"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
     t.datetime "last_updated_at"
-    t.datetime "deleted_at"
   end
 
   add_index "kits", ["deleted_at"], :name => "index_kits_on_deleted_at"
@@ -366,11 +364,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "user_id"
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
+    t.datetime "deleted_at"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
     t.datetime "last_updated_at"
-    t.datetime "deleted_at"
   end
 
   add_index "teachers", ["deleted_at"], :name => "index_teachers_on_deleted_at"
@@ -450,11 +448,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "payment_contact_address"
     t.string   "payment_contact_mobile"
     t.integer  "per_day_price"
+    t.datetime "deleted_at"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
     t.datetime "last_updated_at"
-    t.datetime "deleted_at"
   end
 
   add_index "venues", ["deleted_at"], :name => "index_venues_on_deleted_at"

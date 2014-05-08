@@ -22,6 +22,11 @@ class UserMailer < ActionMailer::Base
     mail(:to => sms_email_id, :subject => Rails.application.config.sms_country_username)
   end
 
+  def approval_email(user)
+    @user = user
+    @url  = 'http://localhost:3000'
+    mail(:to => @user.approver_email, :subject => "Approval Email for User - #{@user.firstname}")
+  end
 
 =begin
 Program #1 Uyir Nokkam Cbe-City starting 01 Apr 2014

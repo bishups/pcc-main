@@ -29,9 +29,15 @@
 
 module UserExtension
   def by_role(role_name)
-    role=Role.where(:name => role_name).first
-    if role
-      find(:all, :conditions => ["access_privileges.role_id = ?", role.id])
+    current_role_values =  User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:text] == role_name }.values
+    if not current_role_values.empty?
+      current_role_access_level = current_role_values.first[:access_level]
+    # Take all the roles above the current role's access level, including the current role.
+    # So that while getting centers for zonal co-ordinator, will be available even if we check it for kit co-ordinator
+    role_names = User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:access_level] >= current_role_access_level  }.values.map{|a|a[:text]}
+    puts role_names.inspect
+    role_ids=Role.where(:name => role_names).map(&:id)
+      find(:all, :conditions => ["access_privileges.role_id in (?)", role_ids])
     else
       find(:all)
     end
@@ -95,12 +101,13 @@ class User < ActiveRecord::Base
 
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
-  validates :firstname, :email, :mobile, :approver_email, :message_to_approver, :presence => true
+  validates :firstname, :email, :mobile, :presence => true
+  validates :approver_email, :message_to_approver, :presence => true,  :unless => Proc.new { |user| user.is_super_admin? }
 
   validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
-  validate :validate_approver_email, on: :create
+  validate :validate_approver_email, :on => :create, :unless => Proc.new { |user| user.is_super_admin? }
 
   before_create do |user|
     if user.approver_email

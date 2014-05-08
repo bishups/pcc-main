@@ -30,7 +30,7 @@ class Kit < ActiveRecord::Base
   attr_accessible :kit_items
   attr_accessor :current_user
 
-  has_many :kit_item_names, :through => :kit_items
+  has_many :kit_item_types, :through => :kit_items
 
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at
@@ -227,7 +227,7 @@ class Kit < ActiveRecord::Base
       field :capacity
       field :condition
       field :centers
-      field :kit_item_names
+      field :kit_item_types
     end
     edit do
       # to get the current user from the rails-admin view
@@ -241,6 +241,14 @@ class Kit < ActiveRecord::Base
       field :guardian do
         inline_edit false
         inline_add false
+        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+          accessible_centers_users = bindings[:controller].current_user.accessible_centers.map(&:users).flatten.uniq
+          Proc.new { |scope|
+            scope = scope.where(:id => accessible_centers_users )
+          }
+        end
       end
       field :capacity
       field :condition

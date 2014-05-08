@@ -2,49 +2,61 @@ class AdminAbility
   include CanCan::Ability
 
   def initialize(user)
-    can :access, :rails_admin
-    can :dashboard
+    can :access, :rails_admin if not user.accessible_centers.empty? # Only user's having at least one center will have this access.
+    can :dashboard  #Check for the count and User specific history.
+
     if user.is?(:super_admin)
       can :manage, :all
-    end
-    if user.is?(:kit_coordinator) or user.is?(:center_coordinator)
-      can :manage, Kit, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text]).map(&:id).uniq}}
-      can :read, Center
-      can :manage, KitItem
-    end
-    if user.is?(:venue_coordinator) or user.is?(:center_coordinator)
-      can :manage, [Venue],{:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text]).map(&:id).uniq}}
-      can :read, Center
-    end
-    if user.is?(:center_coordinator)
-      can :manage, [User, AccessPrivilege]
-      can :read, Role
-      cannot [:create,:destroy], User
-    end
-    if user.is?(:zonal_coordinator)
-      can :manage, Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]).map(&:id).uniq}}
-      cannot [:create,:destroy], Teacher
-      can :manage, [User], {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]).map(&:id).uniq}}
-      can :manage, Zone, {:id => Zone.by_centers(user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]).map(&:id).uniq)}
-      cannot [:create,:destroy], [User,Zone]
-      can :manage, [AccessPrivilege, Sector, Center, Pincode]
-      can :read, Role
-    end
-    if user.is?(:zao)
-      can :manage, User, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:zao][:text]).map(&:id).uniq}}
-      cannot [:create,:destroy], User
-      can :manage, [AccessPrivilege, Pincode]
-      can :read, Role
-    end
-    if user.is?(:sector_coordinator)
-      can :manage, [User], {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
-      can :manage, Sector, {:id => Sector.by_centers(user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq)}
-      cannot [:create,:destroy], [User,Sector]
-      can :manage, [AccessPrivilege, Center, Pincode]
-      can :read, Role
+      cannot :delete, Teacher
     end
 
-    # can :manage, :all
+    if user.is?(:kit_coordinator)
+      can :manage, Kit, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text]).map(&:id).uniq}}
+      can :manage, KitItem, {:kit => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text]).map(&:kits).flatten.map(&:id).uniq}}
+      can :read, KitItemType
+      can :read, User,{:id => user.accessible_centers.map(&:users).flatten.uniq}
+      can :read, Center,{:id => user.accessible_centers}
+    end
+
+    if user.is?(:venue_coordinator)
+      can :manage, [Venue],{:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text]).map(&:id).uniq}}
+      can :read, Center,{:id => user.accessible_centers}
+    end
+
+    if user.is?(:center_coordinator)
+      can :update, Pincode
+    end
+
+    can :read, [Role,ProgramType]
+    can :manage, Sector
+
+    if user.is?(:sector_coordinator)
+      can :manage, [User], {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
+      can :read, Sector, {:id => Sector.by_centers(user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq)}
+      can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
+      can :manage, AccessPrivilege,{ :resource_type =>"Center", :resource_id => user.accessible_centers }
+    #  cannot :destroy, AccessPrivilege, { :role_id => Role.where(:name=>User::ROLE_ACCESS_HIERARCHY[:teacher][:text]).first.id }
+      can [:read,:update], Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
+    end
+
+    can :manage, [Role,ProgramType]
+    if user.is?(:zonal_coordinator) or user.is?(:zao)
+      can :manage, [Role,ProgramType]
+      can [:update,:read], Zone
+      cannot [:create,:destroy], [Zone]
+      cannot :destroy, AccessPrivilege, { :role_id => Role.where(:name=>User::ROLE_ACCESS_HIERARCHY[:teacher][:text]).first.id }
+      can :manage, AccessPrivilege
+      can :manage, Comment
+    end
+
+    # New User - Edit link should be send to the Approver. Returning user can change the approver'e email and remmeber.
+    # Disable the user this for only Zonal and Sector co-ordinator. Shared user cannot be disabled.
+    # All other data should be editable only by Super User. Zonal and Sector co-ordinator can only add access privilleges.
+
+
+    # User drop down - All the Users . In Dropdown show Name + Mobile.
+    # Role - Below their Sector - until treasurer
+
   end
 
 end
