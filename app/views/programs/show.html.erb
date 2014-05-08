@@ -133,7 +133,7 @@
 
   <div class='row'>
   <div class='col-md-12'>
-    <% if @program.no_of_venues_connected > 0 %>
+    <% if !@program.venue_schedules.nil? && @program.venue_schedules.count > 0 %>
         <% @program.venue_schedules.each do |vs| %>
             <%  vs.current_user = current_user %>
             <% if vs.is_connected? %>
@@ -171,7 +171,7 @@
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <% if @program.no_of_kits_connected > 0 %>
+    <% if !@program.kit_schedules.nil? && @program.kit_schedules.count > 0 %>
         <% @program.kit_schedules.each do |ks| %>
             <%  ks.current_user = current_user %>
             <% if ks.is_connected? %>
