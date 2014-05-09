@@ -104,7 +104,8 @@ class User < ActiveRecord::Base
   validates :firstname, :email, :mobile, :presence => true
   validates :approver_email, :message_to_approver, :presence => true,  :unless => Proc.new { |user| user.is_super_admin? }
 
-  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
+  validates :email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
+  validates_uniqueness_of :email, :scope => :deleted_at
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
   validate :validate_approver_email, :on => :create, :unless => Proc.new { |user| user.is_super_admin? }
@@ -117,7 +118,7 @@ class User < ActiveRecord::Base
 
   def validate_approver_email
     approver = User.where(:email => self.approver_email).first
-    unless approver and (approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
+    unless approver and (approver.is?(:super_admin) or  approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
       errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
     end
   end
