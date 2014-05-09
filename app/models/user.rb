@@ -152,11 +152,19 @@ class User < ActiveRecord::Base
   end
 
   def accessible_centers(role_name=nil)
-    self.centers.by_role(role_name) + self.sector_centers.by_role(role_name) +self.zone_centers.by_role(role_name)
+    if self.is?(:super_admin)
+      Center.all
+    else
+      self.centers.by_role(role_name) + self.sector_centers.by_role(role_name) +self.zone_centers.by_role(role_name)
+    end
   end
 
   def accessible_sectors(role_name=nil)
-    self.sectors.by_role(role_name)+self.zone_sectors.by_role(role_name)
+    if self.is?(:super_admin)
+      Sector.all
+    else
+      self.sectors.by_role(role_name)+self.zone_sectors.by_role(role_name)
+    end
   end
 
   def accessible_zone_ids(role_name=nil)
@@ -166,7 +174,11 @@ class User < ActiveRecord::Base
   end
 
   def accessible_zones(role_name=nil)
-    self.zones.by_role(role_name)
+    if self.is?(:super_admin)
+      Zone.all
+    else
+      self.zones.by_role(role_name)
+    end
   end
 
 =begin
