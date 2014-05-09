@@ -24,7 +24,8 @@ class UserMailer < ActionMailer::Base
 
   def approval_email(user)
     @user = user
-    @url  = 'http://localhost:3000'
+    @object = user
+    @url  = Rails.application.routes.default_url_options[:host]
     mail(:to => @user.approver_email, :subject => "Approval Email for User - #{@user.firstname}")
   end
 

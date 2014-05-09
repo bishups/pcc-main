@@ -260,6 +260,22 @@ class User < ActiveRecord::Base
     return false
   end
 
+  def url
+    RailsAdmin::Engine.routes.url_helpers.show_path(model_name: 'user', id: self.id)
+  end
+
+  def friendly_first_name_for_email
+    "User ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.fullname}"
+  end
+
+  def friendly_name_for_sms
+    "User ##{self.id} #{self.fullname}"
+  end
+
 
 
 
@@ -368,6 +384,7 @@ class User < ActiveRecord::Base
       #  children_fields [:role, :resource]
       #end
       field :custom_access_privileges do
+        read_only true
         pretty_value do
           ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
           if ap_str.empty?
