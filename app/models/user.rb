@@ -102,13 +102,13 @@ class User < ActiveRecord::Base
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
   validates :firstname, :email, :mobile, :presence => true
-  validates :approver_email, :message_to_approver, :presence => true,  :unless => Proc.new { |user| user.is_super_admin? }
+  validates :approver_email, :message_to_approver, :presence => true, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
   validates :email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
   validates_uniqueness_of :email, :scope => :deleted_at
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
-  validate :validate_approver_email, :on => :create, :unless => Proc.new { |user| user.is_super_admin? }
+  validate :validate_approver_email, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
   after_create do |user|
     if user.approver_email
@@ -276,9 +276,6 @@ class User < ActiveRecord::Base
     "User ##{self.id} #{self.fullname}"
   end
 
-
-
-
   def fullname
     "%s %s" % [self.firstname.to_s.capitalize, self.lastname.to_s.capitalize]
   end
@@ -336,17 +333,6 @@ class User < ActiveRecord::Base
 
 
   rails_admin do
-=begin
-    configure :custom_access_privileges do
-      pretty_value do
-        ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
-
-        # bindings[:view].link_to "#{contractor.first_name} #{contractor.last_name}", bindings[:view].show_path('contractor', contractor.id)
-        %{<div class="access_privilege_ap"> #{ap_str} </div >}
-      end
-      read_only true # won't be editable in forms (alternatively, hide it in edit section)
-    end
-=end
 
     navigation_label 'Access Privilege'
     weight 0
@@ -363,26 +349,39 @@ class User < ActiveRecord::Base
         label "User information"
         help "Please fill all informations related to user..."
       end
-      field :firstname
-      field :lastname
-      field :address
-      field :mobile
+      field :firstname do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
+      field :lastname do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
+      field :address do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
+      field :mobile do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
       field :phone do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
         help "Optional. Format of stdcode-number (e.g, 0422-2515345)."
       end
       field :email do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
         help "Required"
       end
-      #field :type do
-      #  label "Teacher"
-      #  def render
-      #    bindings[:view].render :partial => "user_type_checkbox", :locals => {:field => self, :f => bindings[:form]}
-      #  end
-      # end
 
-      #field :access_privileges do
-      #  children_fields [:role, :resource]
-      #end
       field :custom_access_privileges do
         read_only true
         pretty_value do
@@ -397,17 +396,25 @@ class User < ActiveRecord::Base
           end
         end
       #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
-
         label "Access Privileges"
         help ""
       end
-      #field :access_privileges  do
-      #  def value
-      #    bindings[:object].access_privileges #.each do {|ap| ap.role.name}
-      #  end
-      #end
-
 
     end
   end
+
+
+
+  #### Hack used to set Current User ######
+
+  class << self
+    def current_user=(user)
+      Thread.current[:current_user] = user
+    end
+
+    def current_user
+      Thread.current[:current_user]
+    end
+  end
+
 end

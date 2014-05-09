@@ -244,7 +244,7 @@ class Kit < ActiveRecord::Base
         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           # bindings[:object] & bindings[:controller] are available, but not in scope's block!
-          accessible_centers_users = bindings[:controller].current_user.accessible_centers.map(&:users).flatten.uniq
+          accessible_centers_users = bindings[:controller].current_user.accessible_centers.map(&:user_ids).flatten.uniq
           Proc.new { |scope|
             scope = scope.where(:id => accessible_centers_users )
           }

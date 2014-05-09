@@ -15,12 +15,12 @@ class Pincode < ActiveRecord::Base
       field :location_name
       field :pincode do
         read_only do
-           bindings[:controller].current_user.is?(:center_coordinator)
+           not bindings[:controller].current_user.is?(:super_admin)
         end
       end
       field :center do
         read_only do
-          bindings[:controller].current_user.is?(:sector_coordinator)
+          not ( bindings[:controller].current_user.is?(:sector_coordinator) or bindings[:controller].current_user.is?(:super_admin) )
         end
       end
     end
