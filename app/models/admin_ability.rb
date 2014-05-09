@@ -47,7 +47,6 @@ class AdminAbility
         cannot [:create, :destroy], [Zone]
         cannot :destroy, AccessPrivilege, {:role_id => Role.where(:name => User::ROLE_ACCESS_HIERARCHY[:teacher][:text]).first.id}
         can :manage, AccessPrivilege
-        can :manage, Comment
       end
 
 
