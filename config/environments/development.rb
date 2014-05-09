@@ -58,5 +58,6 @@ PccMain::Application.configure do
   # TODO - change the default url options here
   config.after_initialize do
     Rails.application.routes.default_url_options[:host] = 'localhost:3000'
+    RailsAdmin::Engine.routes.default_url_options[:host] = 'localhost:3000'
   end
 end

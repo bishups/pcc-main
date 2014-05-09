@@ -109,7 +109,7 @@ class User < ActiveRecord::Base
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
   validate :validate_approver_email, :on => :create, :unless => Proc.new { |user| user.is_super_admin? }
 
-  before_create do |user|
+  after_create do |user|
     if user.approver_email
       UserMailer.approval_email(user).deliver
     end
@@ -260,7 +260,7 @@ class User < ActiveRecord::Base
   end
 
   def url
-    RailsAdmin::Engine.routes.url_helpers.show_path(model_name: 'user', id: self.id)
+    RailsAdmin::Engine.routes.url_helpers.show_url(model_name: 'user', id: self.id)
   end
 
   def friendly_first_name_for_email

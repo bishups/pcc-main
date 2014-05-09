@@ -5,13 +5,12 @@
 </head>
 <body>
 <p>Namaskaram,</p>
-<p>User <%= link_to @object.friendly_first_name_for_email, @object.url %><%= @object.friendly_second_name_for_email %> has requested access to PCC Genie:</p>
+<p>The following user has requested access to PCC Genie:</p>
 <p>Name: <%= @object.fullname %></p>
 <p>Email-id: <%= @object.email %></p>
 <p>Mobile: <%= @object.mobile %></p>
 <p>Address: <%= @object.address %></p>
-<p>Please Add relevant Access Privileges for <%= link_to @object.friendly_first_name_for_email, @object.url %>, to enable the user.</p>
-<p>Please log-in to <%= link_to @url, @url %> for details.</p>
+<p>To approve access please add relevant Access Privileges for the user at <%= link_to @object.url, @object.url %>.</p>
 <p>Pranam,</p>
 <p>Isha Foundation</p>
 </body>

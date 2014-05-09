@@ -1,14 +1,13 @@
 Namaskaram,
 
-User <%= @object.friendly_first_name_for_email %><%= @object.friendly_second_name_for_email %> has requested access to PCC Genie
+The following user has requested access to PCC Genie:
 
 Name: <%= @object.fullname %>
 Email-id: <%= @object.email %>
 Mobile: <%= @object.mobile %>
 Address: <%= @object.address %>
 
-Please add relevant Access Privileges for <%= @object.url %> to enable the user.
-Please log-in to <%= @url %> for details.
+To approve access please add relevant Access Privileges for the user at <%= @object.url %>
 
 Pranam,
 Isha Foundation
