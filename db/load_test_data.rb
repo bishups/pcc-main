@@ -24,6 +24,7 @@ end
 
 27.times do |index|
   center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1))
+  Pincode.create(:pincode=>600000+index,:location_name=>"Pincode--#{index}",:center_id=>center.id)
   ["center_coordinator","volunteer_committee","center_scheduler","kit_coordinator","venue_coordinator","center_treasurer"].each do |role_name|
     user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
                     :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}",
@@ -103,21 +104,14 @@ end
 end
 
 4.times do |index|
-  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => " Venue Address", :centers => Sector.find(2).centers)
+  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => " Venue Address", :centers => Sector.last.centers)
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 4.times do |index|
-  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers.limit(2)+Sector.last.centers )
-  if not v.save
-    puts " Venue not saved due to  #{v.errors.messages}"
-  end
-end
-
-4.times do |index|
-  v=Venue.new(:name=>"#{Sector.first.centers.first.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => Sector.last.centers )
+  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers+Sector.last.centers )
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
@@ -131,12 +125,11 @@ end
 end
 
 7.times do |index|
-  v=Venue.new(:name=>"#{Center.find(index+3).name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => [Center.find(index+1)])
+  v=Venue.new(:name=>"#{Center.find(index+3).name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => [Center.find(index+3)])
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
 end
-
 
 4.times do |index|
   user = User.new(:firstname => "Teacher-#{index}",:email=> "teacher-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
