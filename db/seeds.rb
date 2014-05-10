@@ -31,14 +31,6 @@
     end
   end
 
-  # create program type
-  seed_data["ProgramType"].each do |program_type|
-    pt=ProgramType.find_or_initialize_by_name(program_type[:name])
-    pt.attributes=(program_type)
-    if not pt.save
-      puts "ProgramType #{pt.name} has not been saved because of #{pt.errors.messages}"
-    end
-  end
 
   # create Timing
   seed_data["Timing"].each do |timing|
@@ -48,6 +40,18 @@
       puts "Timing #{t.name} has not been saved because of #{t.errors.messages}"
     end
   end
+
+  # create program type
+  seed_data["ProgramType"].each do |program_type|
+    pt=ProgramType.find_or_initialize_by_name(program_type[:name])
+    pt.attributes=(program_type)
+    pt.timings = Timing.all
+    if not pt.save
+      puts "ProgramType #{pt.name} has not been saved because of #{pt.errors.messages}"
+    end
+  end
+
+
 
 ## create_default_roles
   roles={

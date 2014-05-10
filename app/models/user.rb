@@ -94,8 +94,8 @@ class User < ActiveRecord::Base
 
 
   # Setup accessible (or protected) attributes for your model
-  attr_accessor :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
-  attr_accessible :email, :password, :password_confirmation, :remember_me
+  attr_accessor :username, :provider, :uid, :avatar
+  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
   attr_accessible :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
@@ -118,7 +118,7 @@ class User < ActiveRecord::Base
   end
 
   def validate_approver_email
-    approver = User.where(:email => self.approver_email).first
+    approver = User.where(:email => self.approver_email.strip).first
     unless approver and (approver.is?(:super_admin) or  approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
       errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
     end
@@ -134,6 +134,19 @@ class User < ActiveRecord::Base
       User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name)
     end
   end
+
+  def enabled?
+    enable
+  end
+
+  def active_for_authentication?
+    super && self.enabled? # i.e. super && self.is_active
+  end
+
+  def inactive_message
+    "Failed to Sign In. Your account is not currently active. Please contact your co-ordinator."
+  end
+
 
   def access_privilege_names=(names)
     names.collect do |n|
@@ -386,7 +399,7 @@ class User < ActiveRecord::Base
         end
         help "Required"
       end
-
+      field :enable
       field :custom_access_privileges do
         read_only true
         pretty_value do
@@ -407,8 +420,6 @@ class User < ActiveRecord::Base
 
     end
   end
-
-
 
   #### Hack used to set Current User ######
 
