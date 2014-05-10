@@ -31,6 +31,7 @@ class AdminAbility
       if user.is?(:sector_coordinator)
         can [:read,:update], [User], {:id => user.accessible_centers.map(&:user_ids).flatten.uniq}
         can  :manage ,Sector, {:id => user.accessible_sectors.map(&:id)}
+        cannot [:create, :delete], Sector
         can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
         can :manage, AccessPrivilege, {:resource_type => "Center", :resource_id => user.accessible_centers}
         cannot :destroy, AccessPrivilege, { :role_id => Role.where(:name=>User::ROLE_ACCESS_HIERARCHY[:teacher][:text]).first.id }
@@ -39,8 +40,8 @@ class AdminAbility
 
       if user.is?(:zonal_coordinator) or user.is?(:zao)
         can :manage, Zone, {:id => user.accessible_zones.map(&:id) }
+        cannot [:create, :delete], Zone
       end
-
 
       # New User - Edit link should be send to the Approver. Returning user can change the approver'e email and remmeber.
       # Disable the user this for only Zonal and Sector co-ordinator. Shared user cannot be disabled.
