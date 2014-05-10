@@ -235,6 +235,10 @@ class User < ActiveRecord::Base
     # HACK - for_all is set true if we are looking at [] centers.
     for_all = true if for_center_ids.empty?
     self.access_privileges.each do |ap|
+      # HACK - to allow super-admin to pass all checks
+      if ap.role.name.parameterize.underscore.to_sym == :super_admin
+        return true
+      end
       self_centers = []
       if ap.resource.class.name.demodulize == "Center"
         self_centers = [ap.resource]

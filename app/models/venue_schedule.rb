@@ -290,7 +290,7 @@ class VenueSchedule < ActiveRecord::Base
   def before_block
     return false unless self.is_venue_coordinator?
 
-    if self.block_expiry_date.nil?
+    if self.block_expiry_date.nil? || self.block_expiry_date.blank?
       self.errors[:block_expiry_date] << " cannot be blank."
       return false
     end
