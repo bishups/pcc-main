@@ -85,7 +85,8 @@ class User < ActiveRecord::Base
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
           :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
           :teacher              => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
-          # NOTE: when creating user-id corresponding to pcc_accounts/ finance_department, they need to be added to relevant zones.
+          # NOTE: when creating user-id corresponding to teacher_training/ pcc_accounts/ finance_department, they need to be added to relevant zones.
+          :teacher_training     => {:text => "Teacher Training", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
           :any                  => {:text => "Teacher", :access_level => -1, :group => []}

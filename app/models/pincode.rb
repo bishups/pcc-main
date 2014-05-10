@@ -27,14 +27,10 @@ class Pincode < ActiveRecord::Base
     edit do
       field :location_name
       field :pincode
-      field :center do
-        inline_edit do
-          false
-        end
-        inline_add do
-          false
-        end
-      end
+      #field :center do
+      #  inline_edit false
+      #  inline_add false
+      #end
     end
   end
 

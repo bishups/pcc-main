@@ -362,6 +362,8 @@ class Teacher < ActiveRecord::Base
             [STATE_UNATTACHED, STATE_ATTACHED, STATE_UNFIT]
           elsif bindings[:object].state == STATE_UNFIT && (bindings[:controller].current_user.is? :zonal_coordinator, :center_id => bindings[:object].center_ids)
             [STATE_UNATTACHED, STATE_UNFIT]
+          elsif (bindings[:controller].current_user.is? :teacher_training, :center_id => bindings[:object].center_ids)
+            [STATE_UNATTACHED]
           else
             []
           end
