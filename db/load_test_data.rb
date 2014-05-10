@@ -3,7 +3,7 @@
   ["zonal_coordinator","zao","pcc_accounts","finance_department"].each do |role_name|
     user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
                     :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}",
-                    :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me" )
+                    :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me", :enable => true )
     user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[role_name.to_sym][:text]).first,:resource=>zone)
     if not user.save
       puts " User #{user.email} not saved due to errros #{user.errors.messages} "
@@ -15,7 +15,7 @@ end
   sector=Sector.create(:name=>"Sector--#{index}", :zone=>Zone.find((index/3)+1))
   user = User.new(:firstname => "Sector Co-ordinator-#{index}",:email=> "sector-coordinator-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
                   :password => "sector-coordinator-#{index}", :password_confirmation => "sector-coordinator-#{index}",
-                  :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me" )
+                  :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me", :enable => true )
   user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).first,:resource=>sector)
   if not user.save
     puts " User #{user.email} not saved due to errros #{user.errors.messages} "
@@ -28,7 +28,7 @@ end
   ["center_coordinator","volunteer_committee","center_scheduler","kit_coordinator","venue_coordinator","center_treasurer"].each do |role_name|
     user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
                     :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}",
-                    :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me" )
+                    :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me" , :enable => true  )
     user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[role_name.to_sym][:text]).first,:resource=>center)
     if not user.save
       puts " User #{user.email} not saved due to errros #{user.errors.messages} "
@@ -134,7 +134,7 @@ end
 4.times do |index|
   user = User.new(:firstname => "Teacher-#{index}",:email=> "teacher-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
                   :password => "teacher-#{index}", :password_confirmation => "teacher-#{index}",
-                  :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me" )
+                  :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me",  :enable => true )
   user.save
   if not user.save
     puts "User #{user.firstname}  has not been saved because of #{user.errors.messages}"
