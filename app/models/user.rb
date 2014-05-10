@@ -138,16 +138,12 @@ class User < ActiveRecord::Base
     enable
   end
 
-  def active?
-    super && enabled?
+  def active_for_authentication?
+    super && self.enabled? # i.e. super && self.is_active
   end
 
   def inactive_message
-    if !enabled?
-      :not_approved
-    else
-      super # Use whatever other message
-    end
+    "Sorry, your account has not yet been activated or it might have been de-activated. Please contact Approver."
   end
 
 
