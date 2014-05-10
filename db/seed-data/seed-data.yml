@@ -34,19 +34,19 @@ ProgramType:
   -  name: "Uyir Nokkam"
      language: "Tamil"
      minimum_no_of_teacher:  2
-     no_of_days: "2"
+     no_of_days: 3
 
 Timing:
-  -  name: "Morning"
+  -  name: "Morning (6am-9am)"
      start_time: "6am"
      end_time: "9am"
-  -  name: "Afternoon"
+  -  name: "Afternoon (10am-1pm)"
      start_time: "10am"
      end_time: "1pm"
-  -  name: "Evening"
+  -  name: "Evening (2pm-5pm)"
      start_time: "2pm"
      end_time: "5pm"
-  -  name: "Night"
+  -  name: "Night (6pm-9pm)"
      start_time: "6pm"
      end_time: "9pm"
 

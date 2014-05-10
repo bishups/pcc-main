@@ -252,6 +252,10 @@ class User < ActiveRecord::Base
     # HACK - for_all is set true if we are looking at [] centers.
     for_all = true if for_center_ids.empty?
     self.access_privileges.each do |ap|
+      # HACK - to allow super-admin to pass all checks
+      if ap.role.name.parameterize.underscore.to_sym == :super_admin
+        return true
+      end
       self_centers = []
       if ap.resource.class.name.demodulize == "Center"
         self_centers = [ap.resource]
@@ -405,9 +409,9 @@ class User < ActiveRecord::Base
           ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
           if ap_str.empty?
             #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
-            #%{<div class='btn btn-primary btn-sm'> #{ap_str} </div >}
-            #%{ <div class="btn btn-sm" :hover> #{ap_str} </div>}
-            %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a>}
+            #%{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a></div >}
+            # HACK - putting a button over the link is not working - it re-directs to user update, instead of going to add access privilege
+            %{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New Access Privilege </a></div >}
           else
             %{<div class="access_privilege_ap"> #{ap_str} </div >}
           end
