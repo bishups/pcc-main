@@ -66,6 +66,7 @@
     ::User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text] => ["Program View","Teacher View","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_treasurer][:text] => ["Program View","Teacher View","Kit View","Venue View"],
     ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]  => ["Program View","Teacher Scheduling","Kit View","Venue View"],
+    ::User::ROLE_ACCESS_HIERARCHY[:teacher_training][:text]  => ["Program View","Teacher Scheduling"],
     ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text]  => ["Program Management","Venue Management"],
     ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]  => ["Program View","Venue View"]
   }
@@ -86,6 +87,7 @@ kit_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:kit_coordinat
 venue_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text])
 center_treasurer = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_treasurer][:text])
 teacher = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
+teacher_training = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher_training][:text])
 pcc_accounts = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text])
 finance_department = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text])
 
