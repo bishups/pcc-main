@@ -85,8 +85,8 @@ class User < ActiveRecord::Base
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
           :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
           :teacher              => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
-          # NOTE: when creating user-id corresponding to teacher_training/ pcc_accounts/ finance_department, they need to be added to relevant zones.
-          :teacher_training     => {:text => "Teacher Training", :access_level => 0, :group => [:training]},
+          # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
+          :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
           :any                  => {:text => "Teacher", :access_level => -1, :group => []}
@@ -114,6 +114,12 @@ class User < ActiveRecord::Base
   after_create do |user|
     if user.approver_email
       UserMailer.approval_email(user).deliver
+    end
+  end
+
+  after_save  do |user|
+    if user.enable_changed? && user.enable == true
+      UserMailer.approved_email(user).deliver
     end
   end
 

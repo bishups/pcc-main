@@ -40,7 +40,7 @@ class AccessPrivilege < ActiveRecord::Base
     valid_roles =
     case resource_type
       when "Zone"
-        [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training]
+        [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
       when "Sector"
         [:sector_coordinator]
       when "Center"

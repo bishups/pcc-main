@@ -385,8 +385,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   add_index "timings", ["deleted_at"], :name => "index_timings_on_deleted_at"
 
   create_table "users", :force => true do |t|
-    t.string   "email",                                  :default => "", :null => false
-    t.string   "encrypted_password",                     :default => "", :null => false
+    t.string   "email",                                  :default => "",    :null => false
+    t.string   "encrypted_password",                     :default => "",    :null => false
     t.string   "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
@@ -405,10 +405,13 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "address",                :limit => 3000
     t.string   "phone"
     t.string   "mobile"
-    t.datetime "created_at",                                             :null => false
-    t.datetime "updated_at",                                             :null => false
+    t.datetime "created_at",                                                :null => false
+    t.datetime "updated_at",                                                :null => false
     t.string   "type"
     t.datetime "deleted_at"
+    t.boolean  "enable",                                 :default => false
+    t.string   "approver_email"
+    t.text     "message_to_approver"
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"

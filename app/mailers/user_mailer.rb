@@ -26,8 +26,16 @@ class UserMailer < ActionMailer::Base
     @user = user
     @object = user
     @url  = Rails.application.routes.default_url_options[:host]
+    @message = @user.message_to_approver
     mail(:to => @user.approver_email, :subject => "Approval Email for User - #{@user.firstname}")
   end
+
+  def approved_email(user)
+    @user = user
+    @url  = Rails.application.routes.default_url_options[:host]
+    mail(:to => @user.email, :subject => "PCC Genie Access Approved")
+  end
+
 
 =begin
 Program #1 Uyir Nokkam Cbe-City starting 01 Apr 2014

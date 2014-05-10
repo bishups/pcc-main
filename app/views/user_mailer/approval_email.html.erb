@@ -10,6 +10,8 @@
 <p>Email-id: <%= @object.email %></p>
 <p>Mobile: <%= @object.mobile %></p>
 <p>Address: <%= @object.address %></p>
+<p>Message from requester:</p>
+<p><%= @message %></p>
 <p>To approve access please go to <%= link_to @object.url, @object.url %>, and </p>
 <p>  1. Add relevant Access Privileges for the user </p>
 <p>  2. Mark the user as enabled </p>
