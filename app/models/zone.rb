@@ -52,13 +52,17 @@ class Zone < ActiveRecord::Base
       field :sectors
     end
     edit do
-      field :name
+      field :name do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
       field :sectors   do
          inline_add false
          associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
          associated_collection_scope do
            # bindings[:object] & bindings[:controller] are available, but not in scope's block!
-           accessible_sectors = bindings[:controller].current_user.accessible_sectors(:zonal_coordinator)
+           accessible_sectors = bindings[:controller].current_user.accessible_sectors(:sector_coordinator)
            Proc.new { |scope|
              # scoping all Players currently, let's limit them to the team's league
              # Be sure to limit if there are a lot of Players and order them by position

@@ -40,7 +40,11 @@ class Sector < ActiveRecord::Base
       field :centers
     end
     edit do
-      field :name
+      field :name do
+        read_only do
+          not bindings[:controller].current_user.is?(:zonal_coordinator) or bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
       field :zone  do
         inverse_of  :sectors
         inline_edit do
