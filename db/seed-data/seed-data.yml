@@ -31,7 +31,7 @@ KitItemType:
   ["Sadhguru photo", Carpets, Speakers, Mike, Projector, Amplifier, DVD-Player, "White Clothes","Stationary Items"]
 
 ProgramType:
-  -  name: "Uyir Nookam"
+  -  name: "Uyir Nokkam"
      language: "Tamil"
      minimum_no_of_teacher:  2
      no_of_days: "2"
