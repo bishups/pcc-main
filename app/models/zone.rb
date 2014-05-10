@@ -48,15 +48,15 @@ class Zone < ActiveRecord::Base
     navigation_label 'Geo-graphical informations'
       weight 0
     list do
+      field :name
+      field :sectors
+    end
+    edit do
       field :name do
         read_only do
           not bindings[:controller].current_user.is?(:super_admin)
         end
       end
-      field :sectors
-    end
-    edit do
-      field :name
       field :sectors   do
          inline_add false
          associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
