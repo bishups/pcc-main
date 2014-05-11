@@ -1,7 +1,18 @@
 <script type="text/javascript">
     $(document).ready(function() {
         $('#program_table').dataTable({
-            "sPaginationType": "bootstrap"
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
         } );
     });
 </script>

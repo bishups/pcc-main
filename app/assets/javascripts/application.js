@@ -12,9 +12,11 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require dataTables/jquery.dataTables
-//= require dataTables/jquery.dataTables.bootstrap3
 //= require bootstrap.min
 //= require jquery-ui
 //= require_tree .
 //= require bootstrap-datetimepicker/bootstrap-datetimepicker
+//= require dataTables/jquery.dataTables
+//= require dataTables/jquery.dataTables.bootstrap3
+//= require dataTables/extras/TableTools
+//= require dataTables/extras/ZeroClipboard
