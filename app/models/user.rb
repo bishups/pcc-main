@@ -46,6 +46,7 @@ end
 
 
 class User < ActiveRecord::Base
+  include CommonFunctions
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
@@ -53,6 +54,13 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :registerable, :omniauthable, :omniauth_providers => [:google_oauth2]
 
   acts_as_paranoid
+
+  STATE_UNKNOWN             = "Unknown"
+  STATE_REQUESTED_APPROVAL  = "Requested Approval"
+  STATE_APPROVED            = "Approved"
+
+  EVENT_CREATE              = "Create"
+  EVENT_APPROVE             = "Approve"
 
   has_many :notification_logs
   has_many :activity_logs
@@ -114,12 +122,14 @@ class User < ActiveRecord::Base
   after_create do |user|
     if user.approver_email
       UserMailer.approval_email(user).deliver
+      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
     end
   end
 
   after_save  do |user|
     if user.enable_changed? && user.enable == true
       UserMailer.approved_email(user).deliver
+      user.log_notify(user, STATE_REQUESTED_APPROVAL, STATE_APPROVED, EVENT_APPROVE, "")
     end
   end
 

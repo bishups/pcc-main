@@ -185,6 +185,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "text1"
     t.string   "text2"
     t.boolean  "displayed",  :default => false
+    t.boolean  "disabled",   :default => false
   end
 
   add_index "notification_logs", ["model_id"], :name => "index_notification_logs_on_model_id"

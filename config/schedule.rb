@@ -21,4 +21,6 @@
 
 every 1.day, :at => '00:01 am' do
   runner "TeacherSchedule.mark_as_expired"
+  runner "ActivityLog.delete_old_logs"
+  runner "NofiticationLog.delete_old_logs"
 end

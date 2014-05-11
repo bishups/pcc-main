@@ -2,7 +2,14 @@ class NotificationLogsController < ApplicationController
   # GET /notification_logs
   # GET /notification_logs.json
   def index
-    @notification_logs = current_user.notification_logs.where("date > ? ", (Time.zone.now - 1.month.from_now)).order("date DESC").all
+    # HACK - deleting older logs
+    NotificationLog.delete_old_logs
+
+    if current_user.is? :super_admin
+      @notification_logs = NotificationLog.order("date DESC")
+    else
+      @notification_logs = current_user.notification_logs.where("date > ? AND disabled IS ?", (Time.zone.now - 1.month.from_now), false).order("date DESC").all
+    end
 
     respond_to do |format|
       format.html # index.html.erb
@@ -82,12 +89,14 @@ class NotificationLogsController < ApplicationController
   # DELETE /notification_logs/1
   # DELETE /notification_logs/1.json
   def destroy
+    # We are just removing the notification from display for the current user
+    # The super-user can still access it
     if !params[:id].nil? && params[:id] == 'delete_all'
       @notification_logs = current_user.notification_logs
-      @notification_logs.each {|n| n.destroy}
+      @notification_logs.each {|n| n.update_attribute(:disabled, true) }
     else
       @notification_log = NotificationLog.find(params[:id])
-      @notification_log.destroy
+      @notification_log.update_attribute(:disabled, true)
     end
 
     respond_to do |format|

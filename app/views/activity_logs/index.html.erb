@@ -24,6 +24,9 @@
       <thead>
       <tr>
         <th>Date</th>
+        <% if current_user.is? :super_admin %>
+            <th>User</th>
+        <% end %>
         <th>Activity</th>
         <th>Current Status</th>
       </tr>
@@ -32,6 +35,9 @@
       <% @activity_logs.each do |al| %>
           <tr>
             <td><%= al.date.strftime("%d %B %Y") %></td>
+            <% if current_user.is? :super_admin %>
+                <td><%= link_to al.user.fullname, al.user.url rescue '' %></td>
+            <% end %>
             <% object = al.object %>
             <% if object.nil? %>
                 <td>Updated <%= al.text1 + al.text2 %></td>
