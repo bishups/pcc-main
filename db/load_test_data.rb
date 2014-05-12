@@ -91,12 +91,12 @@ end
   end
 end
 
-7.times do |index|
-  kit=Kit.new(:condition=>"Good",:name=>"#{Center.find(index+1).name} - Kit", :guardian => Center.find(index+1).users.first ,:capacity=>50,:centers=>[Center.find(index+1)])
+Center.all.each do |center|
+  kit=Kit.new(:condition=>"Good",:name=>"#{center.name} - Kit", :guardian => center.users.first ,:capacity=>50,:centers=>[center])
   kit.save
   seed_data["KitItemType"].collect do |kit_item_type|
     kit_item_type=KitItemType.where(:name=>kit_item_type).first
-    kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
+    kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type.name}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
     if not kit_item.save
       puts " Kit Item not saved due to  #{kit_item.errors.messages}"
     end
@@ -124,8 +124,8 @@ end
   end
 end
 
-7.times do |index|
-  v=Venue.new(:name=>"#{Center.find(index+3).name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => [Center.find(index+3)])
+Center.all.each do |center|
+  v=Venue.new(:name=>"#{center.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => [center])
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
