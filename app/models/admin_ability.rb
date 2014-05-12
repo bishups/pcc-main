@@ -8,7 +8,7 @@ class AdminAbility
     if user.is?(:super_admin)
       can :manage, :all
       cannot :destroy, Teacher
-      cannot [:create,:update, :destroy], Role
+      cannot [:create,:update, :destroy], [Role. Permission, ]
     else
       can :read, User, {:id => user.accessible_centers.map(&:user_ids).flatten.uniq }
       can :read, Center, {:id => user.accessible_centers}
