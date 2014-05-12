@@ -142,7 +142,6 @@ class User < ActiveRecord::Base
     end
   end
 
-
   def validate_approver_email
     approver = User.where(:email => self.approver_email.strip).first
     unless approver and (approver.is?(:super_admin) or approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
