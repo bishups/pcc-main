@@ -9,11 +9,12 @@ class AdminAbility
       can :manage, :all
       cannot :destroy, Teacher
       cannot [:create,:update, :destroy], [Role, Permission ]
+      can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.delete_if{|k,v|  [:teacher].include?(k) }.map{|k,v| v[:text]} }
     else
       can :read, User, {:id => user.accessible_centers.map(&:user_ids).flatten.uniq }
       can :read, Center, {:id => user.accessible_centers}
       can :read, Pincode
-      can :read, Role
+
 
       if user.is?(:kit_coordinator)
         can :manage, Kit, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text]).map(&:id).uniq}}
@@ -36,12 +37,21 @@ class AdminAbility
         can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
         can :manage, AccessPrivilege, {:resource_type => "Center", :resource_id => user.accessible_centers}
         can [:read, :update], Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
+        can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer].include?(k)}.compact}
       end
+
       if user.is?(:zonal_coordinator) or user.is?(:zao)
         can :manage, AccessPrivilege, {:resource_type => "Center", :resource_id => user.accessible_centers}
+        can :manage, AccessPrivilege, {:resource_type => "Sector", :resource_id => user.accessible_sectors}
         can :manage, AccessPrivilege, {:resource_type => "Zone", :resource_id => user.accessible_zones}
         can [:read,:update], Zone, {:id => user.accessible_zones.map(&:id) }
         can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
+        can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :zao, :sector_coordinator].include?(k)}.compact}
+      end
+
+      if user.is?(:teacher_training_department)
+        can :manage, Teacher
+        can [:read,:update], [User], {:id => user.accessible_centers.map(&:user_ids).flatten.uniq + User.where(:approver_email => user.email).uniq.map(&:id) }
       end
 
       # User drop down - All the Users . In Dropdown show Name + Mobile.

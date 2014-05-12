@@ -13,7 +13,9 @@ class Sector < ActiveRecord::Base
   belongs_to :zone, :inverse_of => :sectors
   has_many :centers, :inverse_of => :sector
   validates :name,:zone, :presence => true
-#  acts_as_paranoid
+  validates_uniqueness_of :name, :scope => :deleted_at
+
+  acts_as_paranoid
 
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
 

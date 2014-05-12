@@ -12,9 +12,11 @@ class Zone < ActiveRecord::Base
   has_many :sectors
   has_many :centers, :through => :sectors
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
-#  acts_as_paranoid
+  acts_as_paranoid
 
   validates :name, :presence => true
+  validates_uniqueness_of :name, :scope => :deleted_at
+
 
   attr_accessible :name, :sector_ids, :sectors
 

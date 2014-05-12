@@ -25,10 +25,10 @@ class AccessPrivilege < ActiveRecord::Base
 
   scope :by_role, lambda { |role_name| joins(:role).where('roles.name = ?', role_name) }
 #  scope :accessible, lambda { |user| where(:resource_type => "Center",:resource_id => user.accessible_centers ).where('role_id  != ?', Role.where(:name=>User::ROLE_ACCESS_HIERARCHY[:teacher][:text]).first.id) }
-  scope :accessible, lambda { |user| where(:resource_type => "Center",:resource_id => user.accessible_centers ) }
+  scope :accessible, lambda { |user| where(:resource_type => "Center", :resource_id => user.accessible_centers) }
 
   def role_name=(role_name)
-    Role.where(:name => role_name ).first
+    Role.where(:name => role_name).first
   end
 
   def center_name=(center_name)
@@ -40,16 +40,16 @@ class AccessPrivilege < ActiveRecord::Base
     resource_type = self.resource.class.name.demodulize
 
     valid_roles =
-    case resource_type
-      when "Zone"
-        [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
-      when "Sector"
-        [:sector_coordinator]
-      when "Center"
-        [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
-      else
-        [:super_admin]
-    end
+        case resource_type
+          when "Zone"
+            [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
+          when "Sector"
+            [:sector_coordinator]
+          when "Center"
+            [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
+          else
+            [:super_admin]
+        end
     if !valid_roles.include?(role)
       self.errors[:resource] << " does not match the specified role."
     end
@@ -87,7 +87,7 @@ class AccessPrivilege < ActiveRecord::Base
         inline_edit false
         inline_add false
         # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
-        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           role = bindings[:object]
           Proc.new { |scope|
@@ -98,6 +98,12 @@ class AccessPrivilege < ActiveRecord::Base
       end
       field :resource
     end
+    update do
+      configure :user do
+        read_only true
+      end
+    end
+
   end
 
   def role_name

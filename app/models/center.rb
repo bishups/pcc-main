@@ -41,7 +41,11 @@ class Center < ActiveRecord::Base
       field :pincodes
     end
     edit do
-      field :name
+      field :name do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
       field :sector do
         inline_edit false
         inline_add false
