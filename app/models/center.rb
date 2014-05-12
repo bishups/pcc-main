@@ -31,6 +31,9 @@ class Center < ActiveRecord::Base
   rails_admin do
     navigation_label 'Geo-graphical informations'
     weight 2
+    visible do
+      bindings[:controller].current_user.is?(:sector_coordinator)
+    end
     list do
       field :name
       field :sector

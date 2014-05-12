@@ -12,6 +12,7 @@ class Zone < ActiveRecord::Base
   has_many :sectors
   has_many :centers, :through => :sectors
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
+#  acts_as_paranoid
 
   validates :name, :presence => true
 
@@ -47,6 +48,9 @@ class Zone < ActiveRecord::Base
   rails_admin do
     navigation_label 'Geo-graphical informations'
       weight 0
+    visible do
+      bindings[:controller].current_user.is?(:zonal_coordinator)
+    end
     list do
       field :name
       field :sectors

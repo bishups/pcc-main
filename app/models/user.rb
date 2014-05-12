@@ -29,14 +29,14 @@
 
 module UserExtension
   def by_role(role_name)
-    current_role_values =  User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:text] == role_name }.values
+    current_role_values = User::ROLE_ACCESS_HIERARCHY.select { |k, v| v[:text] == role_name }.values
     if not current_role_values.empty?
       current_role_access_level = current_role_values.first[:access_level]
-    # Take all the roles above the current role's access level, including the current role.
-    # So that while getting centers for zonal co-ordinator, will be available even if we check it for kit co-ordinator
-    role_names = User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:access_level] >= current_role_access_level  }.values.map{|a|a[:text]}
-    puts role_names.inspect
-    role_ids=Role.where(:name => role_names).map(&:id)
+      # Take all the roles above the current role's access level, including the current role.
+      # So that while getting centers for zonal co-ordinator, will be available even if we check it for kit co-ordinator
+      role_names = User::ROLE_ACCESS_HIERARCHY.select { |k, v| v[:access_level] >= current_role_access_level }.values.map { |a| a[:text] }
+      puts role_names.inspect
+      role_ids=Role.where(:name => role_names).map(&:id)
       find(:all, :conditions => ["access_privileges.role_id in (?)", role_ids])
     else
       find(:all)
@@ -75,22 +75,22 @@ class User < ActiveRecord::Base
   ROLE_ACCESS_HIERARCHY =
       {
           :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:pcc, :geography, :finance]},
-          :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
-          :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
-          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
-          :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
-          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 0, :group => [:geography]},
-          :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
-          :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
-          :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
-          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
-          :teacher              => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
+          :zonal_coordinator => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
+          :zao => {:text => "ZAO", :access_level => 4, :group => [:geography]},
+          :sector_coordinator => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
+          :center_coordinator => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
+          :volunteer_committee => {:text => "Volunteer Committee", :access_level => 0, :group => [:geography]},
+          :center_scheduler => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
+          :kit_coordinator => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
+          :venue_coordinator => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
+          :center_treasurer => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
+          :teacher => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
           # NOTE: when creating user-id corresponding to teacher_training/ pcc_accounts/ finance_department, they need to be added to relevant zones.
-          :teacher_training     => {:text => "Teacher Training", :access_level => 0, :group => [:training]},
-          :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
-          :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
-          :any                  => {:text => "Teacher", :access_level => -1, :group => []}
-    }
+          :teacher_training => {:text => "Teacher Training", :access_level => 0, :group => [:training]},
+          :pcc_accounts => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
+          :finance_department => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :any => {:text => "Teacher", :access_level => -1, :group => []}
+      }
 
 
   # Setup accessible (or protected) attributes for your model
@@ -111,6 +111,15 @@ class User < ActiveRecord::Base
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
   validate :validate_approver_email, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
+  before_save do |user|
+    if not user.enabled?
+      user.type = "PendingUser"
+    else
+      user.type = nil
+    end
+
+  end
+
   after_create do |user|
     if user.approver_email
       UserMailer.approval_email(user).deliver
@@ -119,7 +128,7 @@ class User < ActiveRecord::Base
 
   def validate_approver_email
     approver = User.where(:email => self.approver_email.strip).first
-    unless approver and (approver.is?(:super_admin) or  approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
+    unless approver and (approver.is?(:super_admin) or approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
       errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
     end
   end
@@ -151,8 +160,8 @@ class User < ActiveRecord::Base
   def access_privilege_names=(names)
     names.collect do |n|
       ap=self.access_privileges.new
-      ap.role=Role.where(:name => n[:role_name] ).first
-      ap.resource=Center.where(:name => n[:center_name] ).first
+      ap.role=Role.where(:name => n[:role_name]).first
+      ap.resource=Center.where(:name => n[:center_name]).first
     end
   end
 
@@ -265,12 +274,12 @@ class User < ActiveRecord::Base
       # b. for_any if self has any center that was asked for
       self_center_ids = self_centers.collect(&:id)
       if (for_all && (for_center_ids - self_center_ids).empty?) ||
-         (!for_all && (for_center_ids - self_center_ids) != for_center_ids )
+          (!for_all && (for_center_ids - self_center_ids) != for_center_ids)
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
-        for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
+        for_ah = ROLE_ACCESS_HIERARCHY[for_role]
         # if for given ap, self has same role, or access_level > access_level than asked for, and part of all groups
-        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level])  &&  (for_ah[:group] - self_ah[:group]).empty?)
+        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level]) && (for_ah[:group] - self_ah[:group]).empty?)
           return true
         end
       end
@@ -299,7 +308,7 @@ class User < ActiveRecord::Base
   end
 
   def access_to_resource?(resource)
-    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s,resource.id)
+    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s, resource.id)
   end
 
   def name
@@ -339,7 +348,7 @@ class User < ActiveRecord::Base
 
   def access_privileges_str(rails_admin)
     role_str = ""
-    self.access_privileges.each {|ap|
+    self.access_privileges.each { |ap|
       #role_path = rails_admin.show_path(:model_name => 'role', :id => ap.role.id)
       resource_path = rails_admin.show_path(:model_name => 'access_privilege', :id => ap.id)
       #role_str << %{ #{ap.role.name} => #{ap.resource.class.name.demodulize} (#{ap.resource.name}) <br>}
@@ -353,6 +362,9 @@ class User < ActiveRecord::Base
   rails_admin do
 
     navigation_label 'Access Privilege'
+    visible do
+      bindings[:controller].current_user.is?(:sector_coordinator)
+    end
     weight 0
     list do
       field :firstname
@@ -399,6 +411,18 @@ class User < ActiveRecord::Base
         end
         help "Required"
       end
+      field :password do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+        help "Required"
+      end
+      field :password_confirmation do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+        help "Required"
+      end
       field :enable
       field :custom_access_privileges do
         read_only true
@@ -413,7 +437,7 @@ class User < ActiveRecord::Base
             %{<div class="access_privilege_ap"> #{ap_str} </div >}
           end
         end
-      #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
+        #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
         label "Access Privileges"
         help ""
       end

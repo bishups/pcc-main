@@ -8,29 +8,24 @@ class Pincode < ActiveRecord::Base
   rails_admin do
     navigation_label 'Geo-graphical informations'
     weight 3
+    visible do
+      bindings[:controller].current_user.is?(:sector_coordinator)
+    end
     object_label_method do
       :location_name
     end
     list do
       field :location_name
-      field :pincode do
-        read_only do
-           not bindings[:controller].current_user.is?(:super_admin)
-        end
-      end
-      field :center do
-        read_only do
-          not ( bindings[:controller].current_user.is?(:sector_coordinator) or bindings[:controller].current_user.is?(:super_admin) )
-        end
-      end
+      field :pincode
+      field :center
     end
     edit do
       field :location_name
-      field :pincode
-      #field :center do
-      #  inline_edit false
-      #  inline_add false
-      #end
+      field :pincode do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
     end
   end
 
