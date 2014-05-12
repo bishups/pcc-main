@@ -1,5 +1,5 @@
 class HomeController < ApplicationController
-    before_filter :authenticate_user!
+    before_filter :authenticate_user!, :except => [:registration_confirmation, :backdoor_login]
 
   def index
 
@@ -20,6 +20,10 @@ class HomeController < ApplicationController
   end
 
   def registration_confirmation
+  end
+
+  def backdoor_login
+    @resource = User.new
   end
   
 end

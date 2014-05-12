@@ -16,8 +16,7 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def after_sign_up_path_for(resource)
-    flash.alert =  "Your account is waiting for Approval. Please login once you have been approved"
-    root_url
+    '/registration_confirmation'
   end
 
 end

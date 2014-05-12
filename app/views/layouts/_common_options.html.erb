@@ -1,10 +1,11 @@
 <ul class="nav navbar-nav navbar-right">
   <% unless user_signed_in? %>
-    <li>
+   <!-- <li>
       <%= link_to "/users/sign_up" do %>
         <i class='icon-desktop'></i> Register
       <% end %>
     </li>
+    -->
     <li>
       <%= link_to "/users/sign_in" do %>
         <i class='icon-signin'></i> Sign-in
@@ -12,9 +13,10 @@
     </li>
   <% else %>
     <li>
-      <%= link_to edit_user_registration_path(current_user) do %>
+     <!-- <%= link_to edit_user_registration_path(current_user) do %>
         <i class='icon-user'></i> Edit Profile
       <% end %>
+      -->
     </li>
     <li>
       <%= link_to "/users/sign_out", :method => :delete do %>

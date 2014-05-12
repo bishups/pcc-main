@@ -169,7 +169,7 @@ class User < ActiveRecord::Base
   end
 
   def inactive_message
-    "Failed to Sign In. Your account is not currently active. Please contact your co-ordinator."
+    "Failed to Sign In. Your account is not currently active. Please contact your Approver."
   end
 
 

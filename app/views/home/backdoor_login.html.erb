@@ -1,0 +1,26 @@
+<div class='col-md-12'>
+  <div class='page-header'>
+    <h2>Protected Sign-in allowed for only for special users</h2>
+  </div>
+
+ <div class='page-body'>
+    <div class='row'>
+      <div class='col-md-6 col-md-offset-1'>
+        <%= form_for(@resource, :url => session_path(@resource), :html => { :class => 'form' }) do |f| %>
+            <div class='form-group'>
+              <%= f.label :email %>
+              <%= f.email_field :email, :class => 'form-control', :autofocus => true %>
+            </div>
+            <div class='form-group'>
+              <%= f.label :password %>
+              <%= f.password_field :password, :class => 'form-control' %>
+            </div>
+            <%= f.submit "Sign-in", :class => 'btn btn-lg btn-primary' %>
+            <%= link_to "Sign in with Google", omniauth_authorize_path(@resource, :google_oauth2), :class => 'btn btn-lg btn-primary' %> <br/>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
