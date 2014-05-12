@@ -18,4 +18,11 @@ class NotificationLog < ActiveRecord::Base
     self.update_attribute(:displayed, true) unless self.displayed == true
   end
 
+  # this is a cron job, run through whenever gem
+  # from the config/schedule.rb file
+  def self.delete_old_logs
+    NotificationLog.where('date < ?', (Time.zone.now - 1.month.from_now)).delete_all
+  end
+
+
 end

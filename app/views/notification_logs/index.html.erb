@@ -1,16 +1,28 @@
 <script type="text/javascript">
     $(document).ready(function() {
         $('#notification_log_table').dataTable({
-            "sPaginationType": "bootstrap"
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
         } );
     });
 </script>
 
+<% super_admin = current_user.is? :super_admin %>
 
 <div class='row'>
   <div class='col-md-12'>
     <h2>Notifications
-      <% unless @notification_logs.empty? %>
+      <% unless @notification_logs.empty? || super_admin %>
           <span class='pull-right'>
             <%= link_to 'Dismiss all', delete_all_notification_logs_path, method: :delete,  :confirm => "Are you sure you want to delete all the notifications?", :class => 'btn btn-primary btn-sm'%>
           </span>
@@ -29,6 +41,9 @@
       <thead>
       <tr>
         <th>Date</th>
+        <% if super_admin %>
+            <th>User</th>
+        <% end %>
         <th>Notification</th>
         <th>Current Status</th>
         <th></th>
@@ -38,8 +53,11 @@
       <% @notification_logs.each do |nl| %>
           <tr>
             <td><%= nl.date.strftime("%d %B %Y") %></td>
+            <% if super_admin %>
+                <td><%= link_to nl.user.fullname, nl.user.url rescue '' %></td>
+            <% end %>
             <% object = nl.object %>
-            <% if object.nil? %>
+            <% if object.nil? || ( nl.model_type == "User" && !super_admin) %>
                 <td>
                   <% if nl.displayed == false %>
                       <span class="badge pull-right alert-warning">New!</span>
@@ -56,9 +74,23 @@
                 </td>
                 <td><%= send( nl.model_state_tag, object) rescue '' %></td>
             <% end %>
-            <td><%= link_to 'Dismiss', nl, method: :delete, data: { confirm: 'Are you sure you want to delete the notification?' }, :class => 'btn btn-primary btn-sm' %></td>
+            <% if super_admin %>
+                <td>
+                <%  if nl.displayed == false %>
+                    <span class="label label-warning">New</span>
+                <%  elsif nl.disabled == true %>
+                    <span class="label label-default">Dismissed</span>
+                <% else %>
+                    <span class="label label-success">Viewed</span>
+                <% end %>
+                </td>
+            <% else %>
+               <td><%= link_to 'Dismiss', nl, method: :delete, data: { confirm: 'Are you sure you want to delete the notification?' }, :class => 'btn btn-primary btn-sm' %></td>
+            <% end %>
           </tr>
-          <% nl.displayed! %>
+          <% unless super_admin %>
+              <% nl.displayed! %>
+          <% end %>
       <% end %>
       </tbody>
     </table>

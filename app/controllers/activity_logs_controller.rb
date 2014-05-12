@@ -2,7 +2,14 @@ class ActivityLogsController < ApplicationController
   # GET /activity_logs
   # GET /activity_logs.json
   def index
-    @activity_logs = current_user.activity_logs.where("date > ? ", (Time.zone.now - 1.month.from_now)).order("date DESC").all
+    # HACK - deleting older logs
+    ActivityLog.delete_old_logs
+
+    if current_user.is? :super_admin
+      @activity_logs = ActivityLog.order("date DESC")
+    else
+      @activity_logs = current_user.activity_logs.where("date > ? ", (Time.zone.now - 1.month.from_now)).order("date DESC").all
+    end
 
     respond_to do |format|
       format.html # index.html.erb

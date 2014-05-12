@@ -46,6 +46,7 @@ end
 
 
 class User < ActiveRecord::Base
+  include CommonFunctions
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
@@ -53,6 +54,13 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :registerable, :omniauthable, :omniauth_providers => [:google_oauth2]
 
   acts_as_paranoid
+
+  STATE_UNKNOWN             = "Unknown"
+  STATE_REQUESTED_APPROVAL  = "Requested Approval"
+  STATE_APPROVED            = "Approved"
+
+  EVENT_CREATE              = "Create"
+  EVENT_APPROVE             = "Approve"
 
   has_many :notification_logs
   has_many :activity_logs
@@ -75,22 +83,22 @@ class User < ActiveRecord::Base
   ROLE_ACCESS_HIERARCHY =
       {
           :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:pcc, :geography, :finance]},
-          :zonal_coordinator => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
-          :zao => {:text => "ZAO", :access_level => 4, :group => [:geography]},
-          :sector_coordinator => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
-          :center_coordinator => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
-          :volunteer_committee => {:text => "Volunteer Committee", :access_level => 0, :group => [:geography]},
-          :center_scheduler => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
-          :kit_coordinator => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
-          :venue_coordinator => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
-          :center_treasurer => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
-          :teacher => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
-          # NOTE: when creating user-id corresponding to teacher_training/ pcc_accounts/ finance_department, they need to be added to relevant zones.
-          :teacher_training => {:text => "Teacher Training", :access_level => 0, :group => [:training]},
-          :pcc_accounts => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
-          :finance_department => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
-          :any => {:text => "Teacher", :access_level => -1, :group => []}
-      }
+          :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
+          :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
+          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
+          :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
+          :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 0, :group => [:geography]},
+          :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
+          :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
+          :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
+          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
+          :teacher              => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
+          # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
+          :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
+          :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
+          :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :any                  => {:text => "Teacher", :access_level => -1, :group => []}
+    }
 
 
   # Setup accessible (or protected) attributes for your model
@@ -123,8 +131,17 @@ class User < ActiveRecord::Base
   after_create do |user|
     if user.approver_email
       UserMailer.approval_email(user).deliver
+      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
     end
   end
+
+  after_save  do |user|
+    if user.enable_changed? && user.enable == true
+      UserMailer.approved_email(user).deliver
+      user.log_notify(user, STATE_REQUESTED_APPROVAL, STATE_APPROVED, EVENT_APPROVE, "")
+    end
+  end
+
 
   def validate_approver_email
     approver = User.where(:email => self.approver_email.strip).first
@@ -274,12 +291,12 @@ class User < ActiveRecord::Base
       # b. for_any if self has any center that was asked for
       self_center_ids = self_centers.collect(&:id)
       if (for_all && (for_center_ids - self_center_ids).empty?) ||
-          (!for_all && (for_center_ids - self_center_ids) != for_center_ids)
+         (!for_all && (for_center_ids - self_center_ids) != for_center_ids )
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
-        for_ah = ROLE_ACCESS_HIERARCHY[for_role]
+        for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
         # if for given ap, self has same role, or access_level > access_level than asked for, and part of all groups
-        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level]) && (for_ah[:group] - self_ah[:group]).empty?)
+        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level])  &&  (for_ah[:group] - self_ah[:group]).empty?)
           return true
         end
       end
@@ -308,7 +325,7 @@ class User < ActiveRecord::Base
   end
 
   def access_to_resource?(resource)
-    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s, resource.id)
+    self.access_privileges.find_by_resource_type_and_resource_id(resource.class.to_s,resource.id)
   end
 
   def name
@@ -348,12 +365,16 @@ class User < ActiveRecord::Base
 
   def access_privileges_str(rails_admin)
     role_str = ""
-    self.access_privileges.each { |ap|
+    self.access_privileges.each {|ap|
       #role_path = rails_admin.show_path(:model_name => 'role', :id => ap.role.id)
       resource_path = rails_admin.show_path(:model_name => 'access_privilege', :id => ap.id)
       #role_str << %{ #{ap.role.name} => #{ap.resource.class.name.demodulize} (#{ap.resource.name}) <br>}
       #role_str << %{<a href=#{role_path}>#{ap.role.name}</a> => <a href=#{resource_path}>#{ap.resource.name}</a> <br>}
-      role_str << %{<a href=#{resource_path}>#{ap.role.name} - #{ap.resource.name}</a> <br>}
+      if ap.resource
+        role_str << %{<a href=#{resource_path}>#{ap.role.name} - #{ap.resource.name}</a> <br>}
+      else
+        role_str << %{<a> #{ap.role.name} </a> <br>}
+      end
     }
     role_str
   end
@@ -437,7 +458,7 @@ class User < ActiveRecord::Base
             %{<div class="access_privilege_ap"> #{ap_str} </div >}
           end
         end
-        #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
+      #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
         label "Access Privileges"
         help ""
       end

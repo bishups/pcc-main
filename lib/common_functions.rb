@@ -89,7 +89,7 @@ module CommonFunctions
             ::User::ROLE_ACCESS_HIERARCHY[:zao][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text],
-          ::User::ROLE_ACCESS_HIERARCHY[:teacher_training][:text]
+          ::User::ROLE_ACCESS_HIERARCHY[:teacher_training_department][:text]
           # search by zones
           users = r.users.by_zones(centers).uniq
         when ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]

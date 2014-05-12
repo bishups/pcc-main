@@ -17,4 +17,11 @@ class ActivityLog < ActiveRecord::Base
     nil
   end
 
+
+  # this is a cron job, run through whenever gem
+  # from the config/schedule.rb file
+  def self.delete_old_logs
+    ActivityLog.where('date < ?', (Time.zone.now - 1.month.from_now)).delete_all
+  end
+
 end
