@@ -110,7 +110,7 @@ class User < ActiveRecord::Base
 
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
-  validates :firstname, :email, :mobile, :presence => true
+  validates :firstname, :email, :mobile, :address, :presence => true
   validates :approver_email, :message_to_approver, :presence => true, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
   validates :email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
@@ -171,7 +171,6 @@ class User < ActiveRecord::Base
   def inactive_message
     "Failed to Sign In. Your account is not currently active. Please contact your Approver."
   end
-
 
   def access_privilege_names=(names)
     names.collect do |n|

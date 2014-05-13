@@ -368,7 +368,10 @@ def can_reject?
       end
       field :description
       field :address
-      field :pincode
+      field :pincode do
+        inline_edit false
+        inline_add false
+      end
       field :capacity
       field :contact_name
       field :contact_phone
