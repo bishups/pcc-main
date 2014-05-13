@@ -2,22 +2,27 @@ class ProgramsController < ApplicationController
   before_filter :authenticate_user!
 
   def index
-    center_ids = current_user.accessible_center_ids
-    @programs = Program.where("center_id IN (?) AND end_date > ?", center_ids, (Time.zone.now - 15.days.from_now)).all
+
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    center_ids = in_geography ? current_user.accessible_center_ids : []
     respond_to do |format|
-      format.html
+      if center_ids.empty?
+        @programs = []
+        format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @programs, status: :unprocessable_entity }
+      else
+        @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 1.month.from_now), ::Program::FINAL_STATES).order('start_date DESC')
+        format.html # index.html.erb
+        format.json { render json: @programs }
+      end
     end
   end
 
   def new
     @program = Program.new
     @program.current_user = current_user
-    center_ids = current_user.accessible_center_ids(:center_scheduler)
-    # TODO - sort it
-    @centers = Center.where("id IN (?)", center_ids)
-    #@program_types = ProgramType.all
-    #@timings = []
 
+    load_centers_program_type_timings!
     respond_to do |format|
       if @program.can_create? :any => true
         format.html # new.html.erb
@@ -56,6 +61,7 @@ class ProgramsController < ApplicationController
           @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
           format.html { redirect_to @program, :notice => 'Program created successfully' }
         else
+          load_centers_program_type_timings!
           format.html { render action: "new" }
           format.json { render json: @program.errors, status: :unprocessable_entity }
         end
@@ -70,10 +76,13 @@ class ProgramsController < ApplicationController
     @program = Program.find(params[:id])
     @program.current_user = current_user
     @trigger = params[:trigger]
+    @program.comment_category = Comment.where('model IS ? AND action IS ?', 'Program', @trigger).pluck(:text)
 
     if !@program.can_update?
-      format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
-      format.json { render json: @program.errors, status: :unprocessable_entity }
+      respond_to do |format|
+        format.html { redirect_to program_path(@program), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -82,7 +91,7 @@ class ProgramsController < ApplicationController
     @program.current_user = current_user
     @trigger = params[:trigger]
     @program.feedback = params[:feedback] if params.has_key?(:feedback)
-    @program.comments = params[:comments] if params.has_key?(:comments)
+    @program.load_comments!(params)
 
     respond_to do |format|
       if @program.can_update?
@@ -104,14 +113,18 @@ class ProgramsController < ApplicationController
   end
 
   def update_timings
-    # TODO - Need to update the slot times based on the program type selected
-    # TODO - Keyword - cascaded drop down
-    # TODO - Complications - 1. accessing formbuilder value from ajax, 2. multiple selection box
-    # updates artists and songs based on program_type selected
+    # updates timings based on selection
     program_type = ProgramType.find(params[:program_type_id])
     # map to name and id for use in our options_for_select
-    @timings = program_type.timings
-    # @timings = program_type.timings.map{|a| [a.name, a.id]}.insert(0, "Select a Slot Time")
+    @timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
+  end
+
+  def load_centers_program_type_timings!
+    center_ids = current_user.accessible_center_ids(:center_scheduler)
+    @centers = Center.where("id IN (?)", center_ids).order('name ASC')
+    @program_types = ProgramType.all.sort_by{|pt| pt[:name]}
+    @selected_program_type = @program_types[0]
+    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
   end
 
   private

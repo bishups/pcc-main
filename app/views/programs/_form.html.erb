@@ -7,7 +7,7 @@
   </div>
   <div class="form-group">
     <%= f.label :program_type %>
-    <%= f.select :program_type_id, options_for_select(ProgramType.all.map {|e| [e.name, e.id]}), {}, :class => 'form-control' %>
+    <%= f.select :program_type_id, options_for_select(@program_types.map {|e| [e.name, e.id]}, [@selected_program_type.name, @selected_program_type.id]), {}, :id => 'program_types_select', :class => 'form-control' %>
     <br/>
     <%= f.label :start_date %>
     <%= f.text_field :start_date, :class => 'form-control dateSelect' %>
@@ -17,34 +17,26 @@
     <%= f.label :center %>
     <%= f.select :center_id, options_for_select(@centers.all.map {|c| [c.name, c.id]}), {}, :class => 'form-control' %>
   </div>
-  <div class="form-group">
-    <%= f.label :slot %>
-    <%= f.select :timing_ids,  options_for_select(Timing.all.map {|e| [e.name, e.id]}), {}, :multiple => true, :class => 'form-control' %>
-  </div>
-
-    <% if false %>
-    <%= collection_select(nil, :program_type_id,  @program_types,  :id, :name, {:prompt   => "Select a Program Type"}, {:id => 'program_types_select'}) %>
-    <br/>
-    <%= collection_select(nil, :timing_id, @timings, :id, :name, {:prompt   => "Select a Slot Time"}, {:id => 'timings_select'}) %>
-    <br/>
-    <% end %>
+    <div class="form-group">
+      <%= f.label :timings %>
+      <%= f.select :timing_ids,  options_for_select(@timings.map {|e| [e.name, e.id]}), {}, :multiple => true, :id => 'timings_select', :class => 'form-control' %>
+    </div>
 
     <%= f.submit 'Create', :class => 'btn btn-lg btn-primary' %>
 <% end %>
 
-<script type='text/javascript'>
-$('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
-</script>
 
-<% if false %>
+
+
+<script type='text/javascript'>
+$('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
+</script>
 
 <script>
     $(document).ready(function() {
-
-
         $('#program_types_select').change(function() {
             $.ajax({
-                url: "<%= update_timings_path %>",
+                url: "<%= update_program_timings_path %>",
                 data: {
                     program_type_id : $('#program_types_select').val()
                 },
@@ -52,15 +44,6 @@ $('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
             });
         });
 
-        $('#program_types_select').change(function() {
-            $.ajax({
-                url: "<%= update_timings_path %>",
-                data: {
-                    program_type_id : $('#program_types_select').val()
-                },
-                dataType: "script"
-            });
-        });
     });
 </script>
-<% end %>
+

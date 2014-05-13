@@ -1,38 +1,65 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#teacher_table').dataTable({
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
+
+
 <div class='row'>
   <div class='col-md-12'>
-    <h2>
-      Available Teachers
-      <span class='pull-right'>
-        <%= render :partial => 'shared/resource_inline_search' %>
-      </span>
-    </h2>
+    <h2>Available Teachers<hr></h2>
   </div>
-  <table class='table table-condensed table-hover table-bordered'>
-    <tr>
-      <th>T No</th>
-      <th>Name</th>
-      <th>Program Types</th>
-      <th>Zone</th>
-      <th>Center(s)</th>
-      <th>Current State</th>
-      <th width='15%'></th>
-    </tr>
-    <% @teachers.each do |teacher| %>
-    <% teacher.current_user = current_user %>
-    <tr>
-      <td><%= teacher.t_no %></td>
-      <td><%= teacher.user.fullname %></td>
-      <td><%= (teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
-      <td><%= teacher.zone.name rescue '' %></td>
-      <td><%= (teacher.centers.map {|c| c[:name]}).join(", ") %></td>
-      <td><%= teacher_state_tag(teacher) %></td>
-      <td>
-        <%= link_to "Show", teacher_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view? || teacher.is_current_user? %>
-        <% if teacher.state == Teacher::STATE_ATTACHED %>
-            <%= link_to "Schedule", teacher_teacher_schedules_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view_schedule?  %>
-        <% end %>
-      </td>
-    </tr>
-    <% end %>
-  </table>
 </div>
+
+<% if @teachers.empty? %>
+    <div class="alert alert-danger"> No Teachers Found.</div>
+<% else %>
+<table id="teacher_table" class='display dataTable table table-condensed table-hover table-bordered'>
+  <thead>
+  <tr>
+    <th>ID #</th>
+    <th>Name</th>
+    <th>Program Types</th>
+    <th>Zone</th>
+    <th>Center(s)</th>
+    <th>Current State</th>
+    <th width='15%'></th>
+  </tr>
+  </thead>
+  <tbody>
+  <% @teachers.each do |teacher| %>
+      <% teacher.current_user = current_user %>
+      <tr>
+        <td><%= teacher.id %></td>
+        <td><%= teacher.user.fullname %></td>
+        <td><%= (teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
+        <td><%= teacher.zone.name rescue '' %></td>
+        <td><%= (teacher.centers.map {|c| c[:name]}).join(", ") %></td>
+        <td><%= teacher_state_tag(teacher) %></td>
+        <td>
+          <%= link_to "Show", teacher_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view? || teacher.is_current_user? %>
+          <% if teacher.state == Teacher::STATE_ATTACHED %>
+              <%= link_to "Schedule", teacher_teacher_schedules_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view_schedule?  %>
+          <% end %>
+        </td>
+      </tr>
+  <% end %>
+  </tbody>
+</table>
+<% end %>
+
+
+

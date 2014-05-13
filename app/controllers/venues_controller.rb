@@ -4,12 +4,19 @@ class VenuesController < ApplicationController
   # GET /venues
   # GET /venues.json
   def index
-    # TODO: Display venue associated with User's Center/Zone only
-    center_ids = current_user.accessible_center_ids
-    @venues = Venue.joins("JOIN centers_venues ON centers_venues.venue_id = venues.id").where('centers_venues.center_id IN (?)', center_ids).uniq.all
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    in_finance = (current_user.is? :any, :in_group => [:finance])
+    center_ids = (in_geography or in_finance) ? current_user.accessible_center_ids : []
     respond_to do |format|
-      format.html # index.html.erb
-      format.json { render json: @venues }
+      if center_ids.empty?
+        @venues = []
+        format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @venues, status: :unprocessable_entity }
+      else
+        @venues = Venue.joins("JOIN centers_venues ON centers_venues.venue_id = venues.id").where('centers_venues.center_id IN (?)', center_ids).uniq.all
+        format.html # index.html.erb
+        format.json { render json: @venues }
+      end
     end
   end
 
@@ -52,6 +59,7 @@ class VenuesController < ApplicationController
     @venue = Venue.find(params[:id])
     @venue.current_user = current_user
     @trigger = params[:trigger]
+    @venue.comment_category = Comment.where('model IS ? AND action IS ?', 'Venue', @trigger).pluck(:text)
 
     respond_to do |format|
       if @venue.can_update?
@@ -92,6 +100,7 @@ class VenuesController < ApplicationController
     @venue = Venue.find(params[:id])
     @venue.current_user = current_user
     @trigger = params[:trigger]
+    @venue.load_comments!(params)
 
     respond_to do |format|
       if @venue.can_update?

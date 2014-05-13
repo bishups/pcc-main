@@ -1,23 +1,16 @@
-<% if (@trigger.nil? || !::ProgramTeacherSchedule::PROCESSABLE_EVENTS.include?(@trigger)) %>
-    <div class='alert alert-danger'>
-<% elsif [::ProgramTeacherSchedule::EVENT_RELEASE, ::ProgramTeacherSchedule::EVENT_WITHDRAW].include?(@trigger)%>
+<% if ::ProgramTeacherSchedule::EVENTS_WITH_COMMENTS.include?(@trigger) %>
     <div class='alert alert-warning'>
 <% else %>
     <div class='alert alert-info'>
 <% end %>
 <h3>Confirmation: </h3>
 <p>
-  <% if @trigger.nil? %>
-  <%else%>
-      <% if @trigger == ::ProgramTeacherSchedule::EVENT_RELEASE %>
+     <% if @trigger == ::ProgramTeacherSchedule::EVENT_RELEASE %>
           <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
       <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE %>
           Are you sure you want to change state of teacher to<strong> Request Release </strong> for this Program?
-      <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_ASSIGN %>
-          Are you sure you want to change state of teacher to<strong> Assign </strong> for this Program?
-      <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_WITHDRAW %>
-          <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
+      <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_BLOCK %>
+          Are you sure you want to change state of teacher to<strong> Block </strong> for this Program?
       <% end %>
-  <%end%>
 </p>
 </div>

@@ -2,7 +2,6 @@ module TeachersHelper
 
   def teacher_state_tag(t)
     proc do
-      # TODO - change this once state machine is added to teacher schedule
       case t.state
         when ::Teacher::STATE_ATTACHED
           '<span class="label label-success">Attached</span>'

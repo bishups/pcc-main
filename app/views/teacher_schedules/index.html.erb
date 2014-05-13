@@ -1,55 +1,82 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#teacher_schedule_table').dataTable({
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
+
 <div class='row'>
   <div class='col-md-12'>
-    <h2>
-      Teacher Schedule
-      <small><%= @teacher.user.name %></small>
+    <h2>Teacher Schedule <small><%= @teacher.user.name %></small>
       <span class='pull-right'>
-        <%  if @teacher.is_current_user? %>
-            <%= link_to "New Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' if @teacher.can_create_schedule? %>
-        <% end %>
-        <%# TODO - put the block teacher here, with the suitable check %>
+        <%= link_to "Publish Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' if @teacher.can_create_schedule? %>
+        <%= link_to "Block Teacher", new_program_teacher_schedule_path(:teacher_id => @teacher.id), :class => 'btn btn-primary btn-sm' if @teacher.can_create_program_schedule? %>
       </span>
-      <span class='pull-right'>
-        <%= render :partial => 'shared/resource_inline_search' %>
-      </span>
+      <hr>
     </h2>
   </div>
-  <table class='table table-condensed table-hover table-bordered'>
+</div>
+
+
+<% if @teacher_schedules.empty? %>
+    <div class="alert alert-danger"> No Teacher Schedules Found.</div>
+<% else %>
+  <table id="teacher_schedule_table" class='display dataTable table table-condensed table-hover table-bordered'>
+    <thead>
     <tr>
       <th>ID #</th>
-      <th>Month</th>
       <th>Start Date</th>
       <th>End Date</th>
       <th>Timing(s)</th>
-      <th>Center</th>
+      <th>Center(s)</th>
       <th>State</th>
       <th></th>
     </tr>
+    </thead>
+    <tbody>
     <% @teacher_schedules.each do |ts| %>
-    <% ts.current_user = current_user %>
-    <tr>
-      <td><%= ts.id %></td>
-      <td><%= ts.start_date.strftime("%B %Y") %></td>
-      <td><%= ts.start_date.strftime('%d %B %Y') %></td>
-      <td><%= ts.end_date.strftime('%d %B %Y') %></td>
-      <td>
-        <% if ts.program_id %>
-            <%=  (ts.program.timings.map {|c| c[:name]}).join(", ") %>
-        <% else %>
-            <%= ts.timing.name %>
-        <% end %>
-      </td>
-      <td><%= ts.center.name %></td>
-      <td><%= teacher_schedule_state_tag(ts) %></td>
-      <td>
-        <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id && ts.can_view_schedule? %>
-        <% if ts.can_update? %>
-            <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if !ts.program_id %>
-            <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if !ts.program_id %>
-        <% end %>
-      </td>
-    </tr>
+        <% ts.current_user = current_user %>
+        <tr>
+          <td><%= ts.id %></td>
+          <td><%= ts.start_date.strftime('%d %B %Y') %></td>
+          <td><%= ts.end_date.strftime('%d %B %Y') %></td>
+          <td>
+            <% if ts.program_id %>
+                <%=  (ts.program.timings.map {|c| c[:name]}).join(", ") %>
+            <% else %>
+                <%= ts.timing.name %>
+            <% end %>
+          </td>
+          <td>
+          <% if ts.program_id %>
+              <%=  ts.program.center.name %>
+          <% else %>
+              <%= (ts.centers.map {|c| c[:name]}).join(", ") %>
+          <% end %>
+          </td>
+          <td><%= teacher_schedule_state_tag(ts) %></td>
+          <td>
+            <%= link_to "Open", program_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.program_id && ts.can_view_schedule? %>
+            <% if ts.can_update? && !ts.program_id && ::TeacherSchedule::STATE_PUBLISHED.include?(ts.state) && ts.start_date >= Time.zone.now.to_date %>
+                <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' %>
+                <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm'%>
+            <% end %>
+          </td>
+        </tr>
     <% end %>
+    </tbody>
   </table>
-</div>
+<% end %>
 

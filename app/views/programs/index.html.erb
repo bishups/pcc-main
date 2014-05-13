@@ -1,25 +1,41 @@
-<div class='row'>
-  <div class='col-md-10'>
-    <h2>
-      Programs
-      <span class='pull-right'>
-        <%= render :partial => 'shared/resource_inline_search' %>
-      </span>
-    </h2>
-  </div>
-  <% if current_user.is? :center_scheduler %>
-      <div class='col-md-2'>
-        <h2>
-          <span>
-            <%= link_to "Propose Program", new_program_path, :class => 'btn btn-primary btn-sm' %>
-          </span>
-        </h2>
-      </div>
-  <% end %>
-</div>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#program_table').dataTable({
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
+
+
 <div class='row'>
   <div class='col-md-12'>
-    <table class='table table-condensed table-hover table-bordered'>
+    <h2>Programs
+      <% if current_user.is? :center_scheduler %>
+          <span class='pull-right'>
+            <%= link_to "Propose Program", new_program_path, :class => 'btn btn-primary btn-sm' %>
+          </span>
+      <% end %>
+      <hr>
+    </h2>
+  </div>
+</div>
+
+<% if @programs.empty? %>
+    <div class="alert alert-danger"> No Programs Found.</div>
+<% else %>
+<table id="program_table" class='display dataTable table table-condensed table-hover table-bordered'>
+      <thead>
       <tr>
         <th>Program #</th>
         <th>Announced Id</th>
@@ -31,6 +47,8 @@
         <th>State</th>
         <th></th>
       </tr>
+      </thead>
+      <tbody>
       <% @programs.each do |program| %>
       <% program.current_user = current_user %>
       <tr>
@@ -59,7 +77,6 @@
         </td>
       </tr>
       <% end %>
+      </tbody>
     </table>
-  </div>
-</div>
-
+<% end %>

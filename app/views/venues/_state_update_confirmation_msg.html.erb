@@ -1,7 +1,7 @@
-<% unless [::Venue::EVENT_INSUFFICIENT_INFO].include?(@trigger) %>
-<div class='alert alert-info'>
+<% if ::Venue::EVENTS_WITH_COMMENTS.include?(@trigger) %>
+    <div class='alert alert-warning'>
 <% else %>
-<div class='alert alert-danger'>
+    <div class='alert alert-info'>
 <% end %>
   <h3>Confirmation: </h3>
   <p>
@@ -9,6 +9,14 @@
       Are you sure you want to <strong>approve</strong> this venue?
     <% elsif @trigger == ::Venue::EVENT_REJECT %>
       Are you sure you want to <strong>reject</strong> this venue?
+    <% elsif @trigger == ::Venue::EVENT_PROPOSE %>
+        Are you sure you want to <strong>propose</strong> this venue?
+    <% elsif @trigger == ::Venue::EVENT_REQUEST_FINANCE_APPROVAL %>
+        Are you sure you want to <strong>request finance approval</strong> for this venue?
+    <% elsif @trigger == ::Venue::EVENT_FINANCE_APPROVAL %>
+        Are you sure you want to mark <strong>finance approval</strong> for this venue?
+    <% elsif @trigger == ::Venue::EVENT_POSSIBLE %>
+        Are you sure you want to mark this venue as <strong>possible</strong>? The venue will now be available for association with programs.
     <% elsif @trigger == ::Venue::EVENT_INSUFFICIENT_INFO %>
       This venue will be in pending state and will not be available for association with programs. Do you want to proceed?
     <% end %>

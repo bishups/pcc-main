@@ -8,7 +8,7 @@ class VenueSchedulesController < ApplicationController
   def index
     @venue = ::Venue.find(params[:venue_id].to_i)
     @venue.current_user = current_user
-    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.end_date > ?', Time.zone.now - 15.days.from_now])
+    @venue_schedules = @venue.venue_schedules.joins(:program).where(['programs.end_date > ? OR venue_schedules.state NOT IN (?) ', (Time.zone.now - 1.month.from_now), ::VenueSchedule::FINAL_STATES]).order('programs.start_date DESC')
 
     respond_to do |format|
       if @venue.can_view_schedule?
@@ -57,7 +57,7 @@ class VenueSchedulesController < ApplicationController
   # POST /venue_schedules
   # POST /venue_schedules.json
   def create
-    # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
+    # HACK - to initialize @venue on create from fix _form.html.erb to pass correct params :-(
     if params.has_key?(:venue_id)
       venue_id = params[:venue_id].to_i
     elsif params.has_key?(:venue_schedule)
@@ -75,7 +75,7 @@ class VenueSchedulesController < ApplicationController
 
     respond_to do |format|
       if @venue_schedule.can_create?
-        if @venue_schedule.send(::VenueSchedule::EVENT_BLOCK) && @venue_schedule.save
+        if @venue_schedule.send(::VenueSchedule::EVENT_BLOCK_REQUEST) && @venue_schedule.save
           format.html { redirect_to @venue_schedule, notice: 'Venue Schedule was successfully created.' }
           format.json { render json: @venue_schedule, status: :created, location: @venue_schedule }
         else
@@ -111,6 +111,7 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule = ::VenueSchedule.find(params[:id].to_i)
     @venue_schedule.current_user = current_user
     @trigger = params[:trigger]
+    @venue_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'VenueSchedule', @trigger).pluck(:text)
     #authorize! :update, @venue
     respond_to do |format|
       if @venue_schedule.can_update?
@@ -130,7 +131,8 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule.current_user = current_user
     @trigger = params[:trigger]
     #authorize! :update, @venue
-    @venue_schedule.blocked_for = params[:blocked_for] if params.has_key?(:blocked_for)
+    @venue_schedule.block_expiry_date = params[:block_expiry_date] if params.has_key?(:block_expiry_date)
+    @venue_schedule.load_comments!(params)
 
     respond_to do |format|
       if @venue_schedule.can_update?

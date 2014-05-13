@@ -17,8 +17,11 @@
 #
 
 class Kit < ActiveRecord::Base
+  include CommonFunctions
+  has_many :activity_logs, :as => :model, :inverse_of => :model
+  has_many :notification_logs, :as => :model, :inverse_of => :model
 
-
+  acts_as_paranoid
 
   attr_accessible :condition,:comments, :name,
                   :state,:capacity
@@ -27,7 +30,10 @@ class Kit < ActiveRecord::Base
   attr_accessible :kit_items
   attr_accessor :current_user
 
-  has_many :kit_item_names, :through => :kit_items
+  has_many :kit_item_types, :through => :kit_items
+
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
 
   has_many :kit_schedules
   has_and_belongs_to_many :centers
@@ -35,17 +41,13 @@ class Kit < ActiveRecord::Base
   validate :has_centers?
   after_create :mark_as_available!
 
-  belongs_to :requester, :class_name => "User"
   belongs_to :guardian, :class_name => "User" #, :foreign_key => "rated_id"
-  attr_accessible :requester_id, :guardian_id, :requester, :guardian
+  attr_accessible :guardian_id, :guardian
 
-  validates :name, :condition, :presence => true
+  validates :name, :condition, :guardian, :presence => true
   validates :capacity, :numericality => {:only_integer => true }
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
-
-  has_paper_trail
+  #has_paper_trail
 
   #after_create :generateKitNameStringAfterCreate
   #before_update :generateKitNameString
@@ -62,6 +64,11 @@ class Kit < ActiveRecord::Base
     event EVENT_AVAILABLE do
       transition STATE_UNKNOWN => STATE_AVAILABLE
     end
+
+    after_transition any => any do |object, transition|
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
+      object.notify(transition.from, transition.to, transition.event, object.centers)
+    end
   end
 
 
@@ -70,25 +77,70 @@ class Kit < ActiveRecord::Base
   end
 
   def mark_as_available!
-    self.send(EVENT_AVAILABLE)
+
+    #self.send(EVENT_AVAILABLE) if self.state == ::Kit::STATE_UNKNOWN
+
+    # HACK #1 - all this making the centers dirty and reloading the object
+    # due to open rails bug when trying to save a model with habtm in after_create
+    # https://rails.lighthouseapp.com/projects/8994/tickets/4553-habtm-association-failure-to-save-in-join-table-with-after_create-callback
+    # HACK #2 - after HACK #1, some problem with doing a send to state machine
+    # so setting the state directly and logging in the current context only
+    if self.state == STATE_UNKNOWN
+      centers = self.centers
+      self.reload
+      self.state = STATE_AVAILABLE
+      self.centers = centers
+      self.store_last_update!(nil, STATE_UNKNOWN, STATE_AVAILABLE, EVENT_AVAILABLE)
+      self.notify(STATE_UNKNOWN, STATE_AVAILABLE, EVENT_AVAILABLE, self.centers)
+      self.save
+    end
   end
 
   def has_centers?
     self.errors.add(:centers, " required field.") if self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    #self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
   end
 
 
 
 
   def blockable_programs
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
+    # NOTE: We **can** add a kit even after the program has started
+    programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if kit.can_be_blocked_by?(program)
+    }
+    blockable_programs
   end
 
+  def can_be_blocked_by?(program)
+    ks = KitSchedule.new
+    ks.assign_dates!(program)
+    ks.kit_id = self.id
+    KitSchedule.overlapping_schedules(ks).count == 0
+  end
+
+
   def friendly_name
-    ("%s" % [self.name]).parameterize
+    ("#%d %s" % [self.id, self.name])
+  end
+
+  def url
+    Rails.application.routes.url_helpers.kit_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Kit ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.name}"
+  end
+
+  def friendly_name_for_sms
+    "Kit ##{self.id} #{self.name}"
   end
 
 
@@ -125,21 +177,21 @@ class Kit < ActiveRecord::Base
   end
 
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user
     return kit_schedule.can_create?(self.center_ids)
   end
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_reserve_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user
     return kit_schedule.can_create_reserve?(self.center_ids)
   end
 
-  # TODO - this is a hack, to route the call through kit object from the UI.
+  # HACK - to route the call through kit object from the UI.
   def can_create_overdue_or_under_repair_schedule?
     kit_schedule = KitSchedule.new
     kit_schedule.current_user = self.current_user
@@ -171,13 +223,33 @@ class Kit < ActiveRecord::Base
     end
     list do
       field :name
+      field :guardian
       field :capacity
       field :condition
       field :centers
-      field :kit_item_names
+      field :kit_item_types
     end
     edit do
+      # to get the current user from the rails-admin view
+      field :current_user, :hidden do
+        read_only true
+        default_value do
+          bindings[:object].current_user = bindings[:view].current_user
+        end
+      end
       field :name
+      field :guardian do
+        inline_edit false
+        inline_add false
+        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          # bindings[:object] & bindings[:controller] are available, but not in scope's block!
+          accessible_centers_users = bindings[:controller].current_user.accessible_centers.map(&:user_ids).flatten.uniq
+          Proc.new { |scope|
+            scope = scope.where(:id => accessible_centers_users )
+          }
+        end
+      end
       field :capacity
       field :condition
       #field :kit_items do

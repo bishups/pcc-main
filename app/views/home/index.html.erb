@@ -1,6 +1,33 @@
-
+<% centers = current_user.accessible_center_ids %>
+<div class='row'>
+  <div class='col-md-12'>
+    <br><br>
+    <% if centers.count > 0 %>
+        <div class="panel panel-info">
+          <div class="panel-heading"><h2>Namaskaram <%= @current_user.firstname %>! </h2></div>
+          <div class="panel-body">
+            <p>
+              <% last_sign_in_at = @current_user.last_sign_in_at %>
+              <% unless last_sign_in_at.nil? %>
+                <b> You last logged in at </b> <i><%= last_sign_in_at.strftime("%I:%M %P") %></i> <b>on</b> <i><%= last_sign_in_at.strftime("%d %B %Y") %></i>
+              <% end %>
+            </p>
+          </div>
+          <!-- List group -->
+          <ul class="list-group">
+            <% no_of = @new_notifications.empty? ? 0 :  @new_notifications.count %>
+            <li class="list-group-item"><b> You have </b> <%= no_of %> <b>new</b> <%= link_to "Notifications", notification_logs_path %> </li>
+            <li class="list-group-item"><b> View your past </b><%= link_to "Activity", activity_logs_path %></li>
+          </ul>
+        </div>
+    <% else %>
+        <div class="alert alert-danger">[ ACCESS DENIED ] Please contact your coordinator for access. </div>
+    <% end %>
+  </div>
+</div>
+<% if false %>
 <style type="text/css" title="currentStyle">
-      @import "../ext/css/jquery.dataTables.css"; 
+      @import "../ext/css/jquery.dataTables.css";
 </style>
 <script src="../ext/js/jquery.dataTables.js"type="text/javascript">
 </script>
@@ -22,6 +49,7 @@
         <li ><a href="#Teachers" data-toggle="pill">Teachers</a></li>
     </ul>
     <div class="row" style="padding: 0.7em"></div>
+      <% if false %>
     <div id="myTabContent" class="tab-content">
       <div class="tab-pane active" id="Programs">
         <%= render :partial => 'home/program_index' %>
@@ -35,8 +63,10 @@
       <div class="tab-pane " id="Teachers">
         <%= render :partial => 'home/teacher_index' %>
       </div>
-        
+
       </div>
-    </div> 
+      <% end %>
+    </div>
   </div>
 </div>
+<% end %>

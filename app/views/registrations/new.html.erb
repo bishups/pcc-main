@@ -10,44 +10,43 @@
               <%= devise_error_messages! %>
               <div class='form-group'>
                 <%= f.label :email %>
-                <%= f.email_field :email, :class => 'form-control', :autofocus => true %>
+                <%= f.email_field :email, :class => 'form-control', :readonly => true %>
               </div>
               <div class='form-group'>
                 <%= f.label :firstname %>
                 <%= f.text_field :firstname, :class => 'form-control' %>
+                <p class="help-block">Required. Length up to 255.</p>
               </div>
               <div class='form-group'>
                 <%= f.label :lastname %>
                 <%= f.text_field :lastname, :class => 'form-control' %>
-              </div>
-              <div class='form-group'>
-                <%= f.label :password %>
-                <%= f.password_field :password, :class => 'form-control' %>
-              </div>
-              <div class='form-group'>
-                <%= f.label :password_confirmation %>
-                <%= f.password_field :password_confirmation, :class => 'form-control' %>
+                <p class="help-block">Optional. Length up to 255.</p>
               </div>
               <div class='form-group'>
                 <%= f.label :phone %>
                 <%= f.text_field :phone, :class => 'form-control' %>
+                <p class="help-block">Optional. Format of stdcode-number (e.g, 0422-2515345).</p>
               </div>
               <div class='form-group'>
                 <%= f.label :mobile %>
                 <%= f.text_field :mobile, :class => 'form-control' %>
+                <p class="help-block">Required. Length of 10.</p>
               </div>
               <div class='form-group'>
                 <%= f.label :address %>
                 <%= f.text_area :address, :class => 'form-control', :rows => 5 %>
+                <p class="help-block">Required. Length up to 3000.</p>
               </div>
               <div class='form-group'>
                 <%= f.label :approver_email %>
                 <%= f.text_field :approver_email, :class => 'form-control' %>
+                <p class="help-block">Required.</p>
               </div>
               <div class='form-group'>
                 <%= f.label :message_to_approver %>
                 <%= f.text_area :message_to_approver, :class => 'form-control', :rows => 7 %>
               </div>
+              <p class="help-block">Required.</p>
               <%= f.submit "Register", :class => 'btn btn-lg btn-primary' %>
           <% end %>
         </div>

@@ -1,102 +1,62 @@
 # This file should contain all the record creation needed to seed the database with its default values.
 # The data can then be loaded with the rake db:seed (or created alongside the db with db:setup).
-#
-# Examples:
-#
-#   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
-#   Mayor.create(name: 'Emanuel', city: cities.first)
-
-
 
   # create comments
-  comments = [
-    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Venue not available'},
-    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Teacher not available'},
-    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Kit not available'},
-    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Volunteers not available'},
-    {:model => 'Program', :action => ::Program::EVENT_DROP, :text => 'Other'},
-    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Venue not available'},
-    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Teacher not available'},
-    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Kit not available'},
-    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Volunteers not available'},
-    {:model => 'Program', :action => ::Program::EVENT_CANCEL, :text => 'Other'},
-
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Physical ailments'},
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Not suitable'},
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Needs additional training'},
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNFIT, :text => 'Other'},
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Unfit'},
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Relocating to other zone'},
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Need retraining'},
-    {:model => 'Teacher', :action => ::Teacher::EVENT_UNATTACH, :text => 'Other'},
-
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Teacher requested release'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Needed for other schedule'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Unwell'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Unfit'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_RELEASE, :text => 'Other'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Teacher requested release'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Needed for other schedule'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Unwell'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Unfit'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_WITHDRAW, :text => 'Other'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Unwell'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Emergency'},
-    {:model => 'ProgramTeacherSchedule', :action => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :text => 'Other'},
-    {:model => 'ProgramTeacherSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
-    {:model => 'ProgramTeacherSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'},
-
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CANCEL, :text => 'Other Kit arranged'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_CANCEL, :text => 'Other'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Kit Item under repair'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Kit Item under replacement'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Adding new kit items'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNDER_REPAIR, :text => 'Other'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :text => 'Not returned'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :text => 'Other'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Issued Condition'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Damaged'},
-    {:model => 'KitSchedule', :action => ::KitSchedule::EVENT_RETURNED, :text => 'Other'},
-    {:model => 'KitSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
-    {:model => 'KitSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'},
-
-    {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Venue not suitable'},
-    {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Rent too high'},
-    {:model => 'Venue', :action => ::Venue::EVENT_REJECT, :text => 'Other'},
-
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_REJECT, :text => 'Venue not available'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_REJECT, :text => 'Other'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CANCEL, :text => 'Other Venue arranged'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CANCEL, :text => 'Venue not suitable'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CANCEL, :text => 'Other'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_SECURITY_REFUNDED, :text => 'Paid and Security Refunded'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_SECURITY_REFUNDED, :text => 'Other'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CLOSE, :text => 'Venue not suitable'},
-    {:model => 'VenueSchedule', :action => ::VenueSchedule::EVENT_CLOSE, :text => 'Other'},
-    {:model => 'VenueSchedule', :action => ::Program::DROPPED, :text => 'Program Dropped'},
-    {:model => 'VenueSchedule', :action => ::Program::CANCELLED, :text => 'Program Cancelled'}
-
-  ]
-  comments.each{|c| Comment.create(c) }
+  comments_yml = File.join(Rails.root, 'db/seed-data', 'comments.yml')
+  YAML::load_file(comments_yml)["Comment"].each do |comment|
+    c=Comment.find_or_initialize_by_model(comment[:model])
+    c.attributes=(comment)
+    if not c.save
+      puts "Comment for model #{c.model} has not been saved because of #{c.errors.messages}"
+    end
+  end
 
 
-#  create_default_permissions
-  permissions = [
-      { :name => "Program Management", :cancan_action => "manage", :subject => "Program"},
-      { :name => "Teacher Scheduling", :cancan_action => "update", :subject => "Teacher"},
-      { :name => "Kit Management", :cancan_action => "manage", :subject => "Kit"},
-      { :name => "Venue Management", :cancan_action => "manage", :subject => "Venue"},
-      { :name => "Teacher View", :cancan_action => "read", :subject => "Teacher"},
-      { :name => "Program View", :cancan_action => "read", :subject => "Program"},
-      { :name => "Kit View", :cancan_action => "read", :subject => "Kit"},
-      { :name => "Venue View", :cancan_action => "read", :subject => "Venue"},
-      { :name => "Master Data Management", :cancan_action => "manage", :subject => :all}
-  ]
-  permissions.each{|p| Permission.create(p) }
+  seed_data = YAML::load_file(File.join(Rails.root, 'db/seed-data', 'seed-data.yml'))
+
+  #  create_default_permissions
+  seed_data["Permission"].each do |permission|
+    p=Permission.find_or_initialize_by_name(permission[:name])
+    p.attributes=(permission)
+    if not p.save
+      puts "Permission #{p.name} has not been saved because of #{p.errors.messages}"
+    end
+  end
+
+  #  create_default_kits
+  seed_data["KitItemType"].each do |kit_item_type|
+    k=KitItemType.find_or_initialize_by_name(:name=>kit_item_type)
+    if not k.save
+      puts "KitItemType #{k.name} has not been saved because of #{k.errors.messages}"
+    end
+  end
+
+
+  # create Timing
+  seed_data["Timing"].each do |timing|
+    t=Timing.find_or_initialize_by_name(timing[:name])
+    t.attributes=(timing)
+    if not t.save
+      puts "Timing #{t.name} has not been saved because of #{t.errors.messages}"
+    end
+  end
+
+  # create program type
+  seed_data["ProgramType"].each do |program_type|
+    pt=ProgramType.find_or_initialize_by_name(program_type[:name])
+    pt.attributes=(program_type)
+    pt.timings = Timing.all
+    if not pt.save
+      puts "ProgramType #{pt.name} has not been saved because of #{pt.errors.messages}"
+    end
+  end
+
+
 
 ## create_default_roles
   roles={
-      ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zao][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
@@ -106,6 +66,7 @@
     ::User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text] => ["Program View","Teacher View","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_treasurer][:text] => ["Program View","Teacher View","Kit View","Venue View"],
     ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]  => ["Program View","Teacher Scheduling","Kit View","Venue View"],
+    ::User::ROLE_ACCESS_HIERARCHY[:teacher_training_department][:text]  => ["Program View","Teacher Scheduling"],
     ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text]  => ["Program Management","Venue Management"],
     ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]  => ["Program View","Venue View"]
   }
@@ -126,6 +87,7 @@ kit_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:kit_coordinat
 venue_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text])
 center_treasurer = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_treasurer][:text])
 teacher = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
+teacher_training_department = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher_training_department][:text])
 pcc_accounts = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text])
 finance_department = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text])
 
@@ -137,6 +99,10 @@ notifications = [
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_DROPPED, :on_event => ::Program::EVENT_DROP, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_DROPPED, :on_event => ::Program::EVENT_DROP, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_DROPPED, :on_event => ::Program::EVENT_DROP, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Proposed Program Expired.' },
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Proposed Program Expired.' },
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Proposed Program Expired.' },
 
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  zonal_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  zao.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -171,10 +137,16 @@ notifications = [
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNAVAILABLE_OVERDUE, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNAVAILABLE_OVERDUE, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
+    {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_RESERVED, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_RESERVED, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNDER_REPAIR, :on_event => ::KitSchedule::EVENT_UNDER_REPAIR, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::KitSchedule::EVENT_DELETE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Kit available for block.' },
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::KitSchedule::EVENT_DELETE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Kit available for block.' },
 
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_BLOCKED, :to_state => ::KitSchedule::STATE_CANCELLED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_BLOCKED, :to_state => ::KitSchedule::STATE_CANCELLED, :on_event => 'any', :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -184,6 +156,11 @@ notifications = [
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_ISSUED, :to_state => ::KitSchedule::STATE_OVERDUE, :on_event => ::KitSchedule::EVENT_OVERDUE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_ISSUED, :to_state => ::KitSchedule::STATE_OVERDUE, :on_event => ::KitSchedule::EVENT_OVERDUE, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::KitSchedule::STATE_ISSUED, :to_state => ::KitSchedule::STATE_OVERDUE, :on_event => ::KitSchedule::EVENT_OVERDUE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::KitSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Kit Not Used.' },
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::KitSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Kit Not Used.' },
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::KitSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Kit Not Used.' },
+    {:model => 'KitSchedule', :from_state => 'any', :to_state => ::KitSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Kit Not Used.' },
 
     {:model => 'Venue', :from_state => ::Venue::STATE_UNKNOWN, :to_state => ::Venue::STATE_PROPOSED, :on_event => ::Venue::EVENT_PROPOSE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue pending your approval.' },
 
@@ -203,19 +180,18 @@ notifications = [
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_UNKNOWN, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_REQUEST, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_UNKNOWN, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_REQUEST, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
-    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired.' },
-    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired.' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired !' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired !' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired !' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired !' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_PAYMENT_PENDING, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired. Please Cancel Payment Request.' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_PAYMENT_PENDING, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_EXPIRED, :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired. Please Cancel Payment Request.' },
 
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :to_state => ::VenueSchedule::STATE_BLOCKED, :on_event => ::VenueSchedule::EVENT_BLOCK, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :to_state => ::VenueSchedule::STATE_BLOCKED, :on_event => ::VenueSchedule::EVENT_BLOCK, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :to_state => ::VenueSchedule::STATE_UNAVAILABLE, :on_event => ::VenueSchedule::EVENT_REJECT, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :to_state => ::VenueSchedule::STATE_UNAVAILABLE, :on_event => ::VenueSchedule::EVENT_REJECT, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_CANCELLED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
-    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_CANCELLED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::EVENT_REQUEST_APPROVAL, :to_state => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :on_event => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue schedule pending your approval.' },
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_BLOCKED, :to_state => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :on_event => ::VenueSchedule::EVENT_REQUEST_APPROVAL, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_BLOCKED, :to_state => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :on_event => ::VenueSchedule::EVENT_REQUEST_APPROVAL, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_BLOCKED, :to_state => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :on_event => ::VenueSchedule::EVENT_REQUEST_APPROVAL, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Venue schedule pending your approval.' },
 
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :to_state => ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT, :on_event => ::VenueSchedule::EVENT_AUTHORIZE_FOR_PAYMENT, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_APPROVAL_REQUESTED, :to_state => ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT, :on_event => ::VenueSchedule::EVENT_AUTHORIZE_FOR_PAYMENT, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -226,144 +202,37 @@ notifications = [
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT, :to_state => ::VenueSchedule::STATE_PAID, :on_event => ::VenueSchedule::EVENT_PAID, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_AUTHORIZED_FOR_PAYMENT, :to_state => ::VenueSchedule::STATE_PAID, :on_event => ::VenueSchedule::EVENT_PAID, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_IN_PROGRESS, :to_state => ::VenueSchedule::STATE_CONDUCTED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
-    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_IN_PROGRESS, :to_state => ::VenueSchedule::STATE_CONDUCTED, :on_event => 'any', :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_IN_PROGRESS, :to_state => ::VenueSchedule::STATE_CONDUCTED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_IN_PROGRESS, :to_state => ::VenueSchedule::STATE_CONDUCTED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Venue Not Used !' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Venue Not Used !' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Venue Not Used !' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Venue Not Used !' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_PAYMENT_PENDING, :to_state => ::VenueSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired. Please Cancel Payment Request.' },
+    {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_PAYMENT_PENDING, :to_state => ::VenueSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => 'Venue Block Expired. Please Cancel Payment Request.' },
+
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please publish schedule.' },
 
-    {:model => 'Teacher', :from_state => ::Teacher::STATE_ATTACHED, :to_state => 'any', :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please publish schedule.' },
-
     {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :on_event => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
-    {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => 'any', :on_event => ::ProgramTeacherSchedule::EVENT_RELEASE, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' }
+    {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::TeacherSchedule::STATE_UNAVAILABLE, :on_event => ::ProgramTeacherSchedule::EVENT_RELEASE, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' }
+
 ]
-notifications.each{|n| Notification.create(n) }
-
-  ### Add a dummy user
-  user=User.find_or_initialize_by_email("test@ishadb.com")
-  user.firstname= "test"
-  user.password= "test123"
-  user.password_confirmation = "test123"
-  user.mobile = 9999999999
-  user.save
-  if not user.save
-    puts "User #{user.firstname} has not been saved because of #{user.errors.messages}"
-  end
-
-  item = KitItem.find_or_initialize_by_kit_item_name("Carpet")
-  if not item.save
-    puts "User #{item.kit_item_name} has not been saved because of #{kititem.errors.messages}"
-  end
-  item = KitItem.find_or_initialize_by_kit_item_name_id("Sadhguru Photo")
-  if not item.save
-    puts "User #{item.kit_item_name} has not been saved because of #{kititem.errors.messages}"
-  end
-
-  #timing = Timing.find_or_initialize_by_name("Morning (6am-9am)")
-  #timing = Timing.find_or_initialize_by_name("Afternoon (10am-1pm)")
-  #timing = Timing.find_or_initialize_by_name("Evening (2pm-5pm)")
-  #timing = Timing.find_or_initialize_by_name("Night (6pm-9pm)")
+notifications.each{|n| Notification.create(n)}
 
 
-
-# create geo_graphical_locations
-  workbook = RubyXL::Parser.parse("master-data.xlsx")
-  sheet=workbook["Centre-Sector-Zone"].get_table
-  sheet[:table].each do |row|
-
-    ####### Creating or Finding a Zone #######
-
-    zone=Zone.find_or_create_by_name(row["Zone"])
-    zonal_coordinator = User.find_or_initialize_by_email(row["Email Id  Isha Zonal Coordinator"].strip)
-    if zonal_coordinator.new_record?
-      zonal_coordinator.firstname =row["Name  Isha Zonal Coordinator"]
-      zonal_coordinator.mobile=row["Contact No  Isha Zonal Coordinator"]
-      zonal_coordinator.address = " "
-      zonal_coordinator.access_privileges.build(:role=>Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]),:resource=>zone)
-    elsif not zonal_coordinator.access_to_resource?(zone)
-      zonal_coordinator.access_privileges.build(:role=>Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text]),:resource=>zone)
-    end
-    zonal_coordinator.password = zonal_coordinator.firstname.squeeze.gsub(" ","_") if zonal_coordinator.firstname
-    zonal_coordinator.password_confirmation = zonal_coordinator.firstname.squeeze.gsub(" ","_") if zonal_coordinator.firstname
-    if not zonal_coordinator.save
-      puts "Zonal cooridnator for #{zone.name} has not been saved because of  #{zonal_coordinator.errors.messages}"
-    end
-    ####### Creating or Finding a Sector #######
-
-    sector=Sector.find_or_create_by_name_and_zone_id(row["Isha Sector"].strip,zone.id)
-    sector_coordinator = User.find_or_initialize_by_email(row["Name - Isha Sector Coordinator"].downcase.squeeze.gsub(" ","-")+"@ishafoundation.org")
-    if sector_coordinator.new_record?
-      sector_coordinator.firstname= row["Name - Isha Sector Coordinator"]
-      sector_coordinator.mobile= " "
-      sector_coordinator.address = " "
-
-      sector_coordinator.access_privileges.build(:role=>Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]),:resource=>sector)
-    elsif not sector_coordinator.access_to_resource?(sector)
-      sector_coordinator.access_privileges.build(:role=>Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]),:resource=>sector)
-    end
-    sector_coordinator.password = sector_coordinator.firstname.squeeze.gsub(" ","_")  if sector_coordinator.firstname
-    sector_coordinator.password_confirmation = sector_coordinator.firstname.squeeze.gsub(" ","_") if sector_coordinator.firstname
-    if not sector_coordinator.save
-      puts "Sector cooridnator for #{sector.name} has not been saved becuase of  #{sector_coordinator.errors.messages}"
-    end
-
-    ####### Creating or Finding a Center #######
-
-    center=Center.find_or_create_by_name_and_sector_id(row["Isha Center"].strip,sector.id)
-    center.pincodes.build(:pincode => row["Pincode"],:location_name => row["Isha Center"])
-    center_coordinator = User.find_or_initialize_by_email(row["Email Id - Isha Center Coordinator"])
-    if center_coordinator.new_record?
-      center_coordinator.firstname= row["Name - Isha Center Coordinator"]
-      center_coordinator.mobile= row["Contact No - Isha Center Coordinator"]
-      center_coordinator.address = row["Address - Isha Center Coordinator"]
-      center_coordinator.access_privileges.build(:role=>Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text]),:resource=>center)
-    elsif not center_coordinator.access_to_resource?(center)
-      center_coordinator.access_privileges.build(:role=>Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text]),:resource=>center)
-    end
-    center_coordinator.password = center_coordinator.firstname.squeeze.gsub(" ","_")  if center_coordinator.firstname
-    center_coordinator.password_confirmation = center_coordinator.firstname.squeeze.gsub(" ","_") if center_coordinator.firstname
-    if not center_coordinator.save
-      puts "Center cooridnator for #{center.name} has not been saved becuase of  #{center_coordinator.errors.messages}"
-    end
-  end
-
-
-##### Importing Teacher #####
-  workbook1 = RubyXL::Parser.parse("Teacher.xlsx")
-  sheet1=workbook1["PersonalDetails"].get_table
-  sheet1[:table].each do |row|
-    teacher=Teacher.find_or_initialize_by_t_no(row["TraineeID"])
-    if teacher.new_record?
-      teacher.t_no = row["TraineeID"]
-      teacher.state = Teacher::STATE_UNATTACHED.to_s
-      user=User.find_or_initialize_by_email(row["teacher_email_address"])
-      if user.new_record?
-        user.firstname=row["name"]
-        user.address="#{row['teacher_addressline1']}\n#{row['teacher_addressline2']}"
-        user.mobile=row["teacher_phoneno_mobile"]
-      end
-    elsif
-      user = User.find_by_id(teacher.user_id)
-    end
-
-    #teacher.access_privileges.build(:role=>Role.find_by_name("Teacher") ) #,:resource=>sector)
-    #elsif not teacher.access_to_resource?(zone)
-    #  teacher.access_privileges.build(:role=>Role.find_by_name("Teacher")) #,:resource=>sector)
-    #end
-
-    user.password= teacher.firstname.squeeze.gsub(" ","_")  if teacher.firstname
-    user.password_confirmation = teacher.firstname.squeeze.gsub(" ","_") if teacher.firstname
-    user.save
-    if not user.save
-      puts "Teacher #{teacher.firstname} has not been saved because of #{teacher.errors.messages}"
-    end
-
-    if not teacher.save
-      puts "Teacher #{teacher.firstname} has not been saved because of #{teacher.errors.messages}"
-    end
-
-  end
-
-
+### Dummy users for all the roles used for testing purpose.
+  user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :address=> "IYC", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123",:enable => true )
+  user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text]).first)
+  user.save(:validate => false)
 
 

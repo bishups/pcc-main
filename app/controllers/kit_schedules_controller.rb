@@ -1,5 +1,4 @@
 class KitSchedulesController < ApplicationController
-
   # GET /kit_schedules
   # GET /kit_schedules.json
   before_filter :authenticate_user!
@@ -8,7 +7,7 @@ class KitSchedulesController < ApplicationController
   def index
     @kit = ::Kit.find(params[:kit_id].to_i)
     @kit.current_user = current_user
-    @kit_schedules = @kit.kit_schedules.where(['end_date > ?', Time.zone.now - 15.days.from_now])
+    @kit_schedules = @kit.kit_schedules.where(['end_date > ? OR state NOT IN (?) ', (Time.zone.now - 1.month.from_now), ::KitSchedule::FINAL_STATES]).order('start_date DESC')
 
     respond_to do |format|
       if @kit.can_view_schedule?
@@ -76,6 +75,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule = KitSchedule.new
     @kit_schedule.current_user = current_user
     @kit_schedule.kit_id = @kit.id
+    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_create_on_trigger?
@@ -94,6 +94,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.current_user = current_user
 
     @trigger = params[:trigger]
+    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_update?
@@ -110,12 +111,13 @@ class KitSchedulesController < ApplicationController
   def create_on_trigger
     @kit_schedule = KitSchedule.new(params[:kit_schedule])
     @kit = @kit_schedule.kit
-    @trigger = params[:trigger]
     @kit_schedule.current_user = current_user
+    @trigger = params[:trigger]
+    @kit_schedule.load_comments!(params)
 
     respond_to do |format|
       if @kit_schedule.can_create_on_trigger?
-        if @kit_schedule.send(@trigger) && @kit_schedule.save
+        if @kit_schedule.valid? && @kit_schedule.send(@trigger) && @kit_schedule.save
           format.html { redirect_to kit_schedules_path(:kit_id => @kit.id)}
           format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
         else
@@ -139,7 +141,7 @@ class KitSchedulesController < ApplicationController
       return create_on_trigger
     end
 
-    # TODO - fix this hack to initialize @venue on create from fix _form.html.erb to pass correct params :-(
+    # HACK - to initialize @venue on create from fix _form.html.erb to pass correct params :-(
     if params.has_key?(:kit_id)
       kit_id = params[:kit_id].to_i
     elsif params.has_key?(:kit_schedule)
@@ -154,7 +156,7 @@ class KitSchedulesController < ApplicationController
     respond_to do |format|
       if @kit_schedule.can_create?
         if @kit_schedule.send(::KitSchedule::EVENT_BLOCK) && @kit_schedule.save
-          redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.'
+          format.html { redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.'}
           format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
         else
           #render :action => 'new'
@@ -178,12 +180,11 @@ class KitSchedulesController < ApplicationController
     @kit_schedule = KitSchedule.find(params[:id])
     @kit_schedule.current_user = current_user
     @trigger = params[:trigger]
-    @kit_schedule.comments = params[:comment]
 
+    @kit_schedule.load_comments!(params)
     @kit_schedule.issued_to = params[:issued_to] unless params[:issued_to].nil?
-    @kit_schedule.due_date_time = params[:due_date_time] unless params[:due_date_time].nil?
-    @kit_schedule.comments = params[:comments] unless params[:comments].nil?
-    @kit_schedule.issue_for_schedules = params[:issue_for_schedules].split(' ').map(&:to_i) unless params[:issue_for_schedules].nil?
+#    @kit_schedule.due_date_time = params[:due_date_time] unless params[:due_date_time].nil?
+#    @kit_schedule.issue_for_schedules = params[:issue_for_schedules].split(' ').map(&:to_i) unless params[:issue_for_schedules].nil?
 
     respond_to do |format|
 
@@ -213,7 +214,7 @@ class KitSchedulesController < ApplicationController
     # only users making reserve call can delete the corresponding reserved schedules
     if @kit_schedule.can_delete?
       kit_id = @kit_schedule.kit_id
-      @kit_schedule.destroy
+      @kit_schedule.delete_reserve!
       respond_to do |format|
           format.html { redirect_to kit_schedules_path(:kit_id => kit_id) }
           format.json { head :no_content }

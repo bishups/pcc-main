@@ -1,4 +1,5 @@
 <%= form_for(@venue_schedule, :html => { :class => 'form' }) do |f| %>
+    <% submit_disabled = false %>
     <%= resource_error_messages!(@venue_schedule) %>
     <% if @venue_schedule.program_id %>
         <div class='form-group'>
@@ -7,7 +8,13 @@
         </div>
         <div class='form-group'>
           <label for='venue_id'>Venue</label>
-          <%= f.select :venue_id, options_for_select(@venue_schedule.program.blockable_venues.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+          <% blockable = @venue_schedule.program.blockable_venues %>
+          <% if blockable.count > 0 %>
+              <%= f.select :venue_id, options_for_select(blockable.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+          <% else %>
+              <% submit_disabled = true %>
+              <%= f.select :venue_id, options_for_select(['None Available']), {:disabled => true}, :class => 'form-control' %>
+          <% end %>
         </div>
     <% elsif @venue %>
         <%= hidden_field_tag 'venue_id', @venue.id %>
@@ -15,12 +22,18 @@
           <label for='venue_id'>Venue ID</label>
           <%= f.text_field :venue_id, :value=> @venue.id, :readonly => true, :class => 'form-control' %>
           <label for='program_id'>Program</label>
-          <%= f.select :program_id, options_for_select(@venue.blockable_programs.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+          <% blockable = @venue.blockable_programs %>
+          <% if blockable.count > 0 %>
+              <%= f.select :program_id, options_for_select(blockable.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+          <% else %>
+              <% submit_disabled = true %>
+              <%= f.select :program_id, options_for_select(['None Available']), {:disabled => true}, :class => 'form-control' %>
+          <% end %>
         </div>
     <% end %>
-    <%= f.submit 'Associated Venue with Program', :class => 'btn btn-lg btn-primary' %>
+    <%= f.submit 'Associated Venue with Program', :disabled => submit_disabled, :class => 'btn btn-lg btn-primary' %>
 <% end %>
 
 <script type='text/javascript'>
-    $('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
+    $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
 </script>

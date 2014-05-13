@@ -1,17 +1,14 @@
-<% if (!@trigger.nil? && ::Teacher::PROCESSABLE_EVENTS.include?(@trigger)) %>
+<% if ::Teacher::EVENTS_WITH_COMMENTS.include?(@trigger) %>
     <div class='alert alert-warning'>
 <% else %>
-    <div class='alert-alert-danger'>
+    <div class='alert alert-info'>
 <% end %>
 <h3>Confirmation: </h3>
 <p>
-  <% if @trigger.nil? %>
-  <%else%>
-      <% if @trigger == ::Teacher::EVENT_UNATTACH %>
-          <strong>WARNING: </strong> This will remove the teacher from all center(s) and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
-      <% elsif @trigger == ::Teacher::EVENT_UNFIT %>
-          <strong>WARNING: </strong> This will mark teacher as unfit and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
-      <% end %>
-  <%end%>
+  <% if @trigger == ::Teacher::EVENT_UNATTACH %>
+      <strong>WARNING: </strong> This will remove the teacher from all center(s) and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
+  <% elsif @trigger == ::Teacher::EVENT_UNFIT %>
+      <strong>WARNING: </strong> This will mark teacher as unfit and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
+  <% end %>
 </p>
 </div>

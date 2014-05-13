@@ -1,13 +1,32 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#venue_table').dataTable({
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
+
 <div class='row'>
   <div class='col-md-12'>
-    <h2>
-      Available Venues
-      <span class='pull-right'>
-        <%= render :partial => 'shared/resource_inline_search' %>
-      </span>
-    </h2>
+    <h2>Available Venues<hr></h2>
   </div>
-  <table class='table table-condensed table-hover table-bordered'>
+</div>
+<% if @venues.empty? %>
+    <div class="alert alert-danger"> No Venues Found.</div>
+<% else %>
+<table id="venue_table" class='display dataTable table table-condensed table-hover table-bordered'>
+  <thead>
     <tr>
       <th>ID #</th>
       <th>Name</th>
@@ -16,18 +35,20 @@
       <th>Capacity</th>
       <th>Contact</th>
       <th>State</th>
-      <th width='12%'></th>
+      <th></th>
     </tr>
+  </thead>
+  <tbody>
     <% @venues.each do |venue| %>
     <% venue.current_user = current_user %>
     <tr>
       <td><%= venue.id %></td>
       <td><%= venue.name %></td>
       <td><%= (venue.centers.map {|c| c[:name]}).join(", ") %></td>
-      <td><%= venue.pin_code %></td>
+      <td><%= venue.pincode.pincode %></td>
       <td><%= venue.capacity %></td>
       <td><%= venue.contact_name %></td>
-      <td><span class='label label-warning'><%= venue.state %></span></td>
+      <td><%= venue_state_tag(venue) %></span></td>
       <td>
         <%= link_to "Show", venue_path(venue), :class => 'btn btn-primary btn-sm' if venue.can_view? %>
         <% if venue.possible? && venue.can_view_schedule? %>
@@ -37,6 +58,6 @@
       </td>
     </tr>
     <% end %>
+    </tbody>
   </table>
-</div>
-
+<% end %>

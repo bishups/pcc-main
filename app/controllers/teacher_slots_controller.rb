@@ -55,7 +55,6 @@ class TeacherSlotsController < ApplicationController
 
 private
   
-  # TODO: Enforce role
   def load_teacher!
     @teacher = current_user
   end

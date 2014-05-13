@@ -1,10 +1,20 @@
-<% if @trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL && @venue_schedule.approval_requested_for_other_venue? %>
-    <label>Comment</label> <small>(mandatory)</small>
-    <textarea name='comment' class='form-control'></textarea>
-    </div>
-<% else %>
 <div class='form-group'>
-  <label>Comment</label> <small>(optional)</small>
-  <textarea name='comment' class='form-control'></textarea>
+  <% if ::VenueSchedule::EVENTS_WITH_COMMENTS.include?(@trigger) || (@trigger == ::VenueSchedule::EVENT_REQUEST_APPROVAL && @venue_schedule.approval_requested_for_other_venue?) %>
+      <% unless @venue_schedule.comment_category.empty? %>
+          <label for='comment_category'>Comments</label> <small>(required)</small>
+          <%= select_tag 'comment_category', options_for_select(@venue_schedule.comment_category), :class => 'form-control' %>
+          <br>
+          <label>Details</label>
+          <textarea name='comments' class='form-control'></textarea>
+      <% else %>
+          <label>Comments</label> <small>(required)</small>
+          <textarea name='comments' class='form-control'></textarea>
+      <% end %>
+  <% elsif ::VenueSchedule::EVENTS_WITH_FEEDBACK.include?(@trigger) %>
+      <label>Feedback</label> <small>(required)</small>
+      <textarea name='feedback' class='form-control'></textarea>
+  <% else %>
+      <label>Comments</label> <small>(optional)</small>
+      <textarea name='comments' class='form-control'></textarea>
+  <% end %>
 </div>
-<% end %>

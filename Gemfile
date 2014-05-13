@@ -18,12 +18,14 @@ group :assets do
   # gem 'therubyracer', :platforms => :ruby
 
   gem 'uglifier', '>= 1.0.3'
+  gem 'jquery-datatables-rails', :git =>  'https://github.com/ricardodovalle/jquery-datatables-rails'
 end
 
 gem 'jquery-rails'
-
+gem 'whenever', :require => false
 gem 'delayed_job_active_record'
 gem 'bootstrap-datetime-picker-for-rails'
+gem "letter_opener", :group => :development
 
 # To use ActiveModel has_secure_password
 # gem 'bcrypt-ruby', '~> 3.0.0'
@@ -51,4 +53,4 @@ gem 'annotate', ">=2.6.0"
 gem 'validates_overlap'
 gem 'rubyXL'
 gem 'omniauth-google-oauth2'
-
+gem "paranoia", "~> 1.0"

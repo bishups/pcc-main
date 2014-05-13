@@ -10,11 +10,14 @@
     <span class="sr-only">Toggle Dropdown</span>
   </button>
   <ul class="dropdown-menu" role="menu">
-     <% @program.state_events.each do |ev| %>
-        <li>
-           <%= link_to ev, edit_program_path(@program, :trigger => ev) %>
-        </li>
-     <% end %>
+    <% events = (@program.state_events - ::Program::INTERNAL_NOTIFICATIONS) %>
+    <% if events.count > 0 %>
+        <% events.each do |ev| %>
+            <li> <%= link_to ev, edit_program_path(@program, :trigger => ev) %> </li>
+        <% end %>
+    <% else %>
+        <li class="disabled"><a href="#">No Action Available</a></li>
+    <% end %>
   </ul>
 </div>
   <% if @program.can_create? %>

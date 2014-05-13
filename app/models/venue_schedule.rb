@@ -15,6 +15,8 @@
 #
 
 class VenueSchedule < ActiveRecord::Base
+  include CommonFunctions
+
   # attr_accessible :title, :body
   attr_accessible :program_id, :program
 
@@ -22,10 +24,10 @@ class VenueSchedule < ActiveRecord::Base
   validates :program_id, :presence => true
 
   # Overlap validation
-  validates_with VenueScheduleValidator
+  validates_with VenueScheduleValidator, :on => :create
   #validates_uniqueness_of :program_id
 
-  attr_accessor :blocked_for, :current_user
+  attr_accessor :block_expiry_date, :current_user
   #attr_accessible :blocked_for
 
   belongs_to :venue
@@ -36,9 +38,11 @@ class VenueSchedule < ActiveRecord::Base
 
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   has_many :timings, :through => :program
 
@@ -47,6 +51,9 @@ class VenueSchedule < ActiveRecord::Base
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
   scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
+
+  # given a venue and program, returns a relation containing all overlapping venue_schedule(s) for that venue (including the program itself - if present)
+  scope :all_overlapping, lambda { |venue, program| joins(:program).merge(Program.all_overlapping(program)).where('venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', ::VenueSchedule::FINAL_STATES, venue.id) }
 
   # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
   scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
@@ -65,13 +72,17 @@ class VenueSchedule < ActiveRecord::Base
   STATE_CLOSED                    = "Closed"
   STATE_CANCELLED                 = "Cancelled"
   STATE_UNAVAILABLE               = "Unavailable"
+  STATE_EXPIRED                   = "Expired"
+  STATE_AVAILABLE_EXPIRED         = "Available (Expired)"
 
   # connected to program
 
   PAID_STATES = [STATE_PAID, STATE_ASSIGNED, STATE_IN_PROGRESS, STATE_CONDUCTED, STATE_SECURITY_REFUNDED, STATE_CLOSED]
   CONNECTED_STATES = (PAID_STATES + [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING])
+  BLOCKED_STATES = (CONNECTED_STATES - [STATE_BLOCK_REQUESTED])
   # final states
-  FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED]
+  FINAL_STATES = [STATE_UNAVAILABLE, STATE_CANCELLED, STATE_CLOSED, STATE_EXPIRED, STATE_AVAILABLE_EXPIRED]
+
 
   EVENT_BLOCK_REQUEST     = "Block Request"
   EVENT_BLOCK             = "Block"
@@ -85,14 +96,15 @@ class VenueSchedule < ActiveRecord::Base
   EVENT_SECURITY_REFUNDED = "Security Refunded"
   EVENT_CLOSE             = "Close"
 
-  EVENTS_WITH_COMMENT_TYPE = [EVENT_REJECT, EVENT_CANCEL, EVENT_SECURITY_REFUNDED, EVENT_CLOSE, ::Program::DROPPED, ::Program::CANCELLED]
-  EVENTS_WITH_ONLY_COMMENTS = []
-
   PROCESSABLE_EVENTS = [
     EVENT_BLOCK, EVENT_REJECT, EVENT_REQUEST_APPROVAL, EVENT_AUTHORIZE_FOR_PAYMENT, EVENT_REQUEST_PAYMENT, EVENT_PAID, EVENT_CANCEL, EVENT_CLOSE
   ]
 
+  EVENTS_WITH_COMMENTS = [EVENT_REJECT, EVENT_CANCEL, EVENT_SECURITY_REFUNDED]
+  EVENTS_WITH_FEEDBACK = [EVENT_CLOSE]
+
   NOTIFICATIONS = [EVENT_BLOCK_EXPIRED]
+
 
   def initialize(*args)
     super(*args)
@@ -105,12 +117,14 @@ class VenueSchedule < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_BLOCK_REQUEST do
-      transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED
+      transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED, :if => lambda {|t| t.can_create?}
     end
+    before_transition STATE_UNKNOWN => STATE_BLOCK_REQUESTED, :do => :can_block?
 
     event EVENT_REJECT do
-      transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE
+      transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :if => lambda {|t| t.is_venue_coordinator? }
     end
+    before_transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :do => :is_venue_coordinator?
 
     event EVENT_BLOCK do
       transition STATE_BLOCK_REQUESTED => STATE_BLOCKED
@@ -119,8 +133,13 @@ class VenueSchedule < ActiveRecord::Base
     after_transition any => STATE_BLOCKED, :do => :after_block
 
     event EVENT_CANCEL do
-      transition STATE_BLOCK_REQUESTED => STATE_CANCELLED
+      transition STATE_BLOCK_REQUESTED => STATE_CANCELLED, :if => lambda {|t| t.is_center_scheduler? }
+      transition STATE_BLOCKED => STATE_CANCELLED, :if => lambda {|t| t.is_center_scheduler? }
+      transition STATE_APPROVAL_REQUESTED => STATE_CANCELLED, :if => lambda {|t| t.is_sector_coordinator? }
     end
+    before_transition STATE_BLOCK_REQUESTED => STATE_CANCELLED, :do => :is_center_scheduler?
+    before_transition STATE_BLOCKED => STATE_CANCELLED, :do => :can_cancel_block?
+    before_transition STATE_APPROVAL_REQUESTED => STATE_CANCELLED, :do => :can_cancel_approval_request?
 
     event ::Program::DROPPED do
       transition [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED] => STATE_CANCELLED
@@ -131,18 +150,22 @@ class VenueSchedule < ActiveRecord::Base
     end
 
     event EVENT_REQUEST_APPROVAL do
-      transition STATE_BLOCKED => STATE_APPROVAL_REQUESTED
+      transition STATE_BLOCKED => STATE_APPROVAL_REQUESTED, :if => lambda {|t| t.is_center_scheduler? }
     end
     before_transition any => STATE_APPROVAL_REQUESTED, :do => :can_request_approval?
 
 
     event EVENT_AUTHORIZE_FOR_PAYMENT do
-      transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT
+      transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT, :if => lambda {|t| t.is_sector_coordinator? }
     end
+    before_transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT, :do => :is_sector_coordinator?
     after_transition any => STATE_AUTHORIZED_FOR_PAYMENT, :do => :on_authorization_for_payment?
 
     event EVENT_REQUEST_PAYMENT do
       transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING, :if => lambda {|vs| !vs.venue_free?}
+    end
+    before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING do |vs, transition|
+        return !vs.venue_free?
     end
 
     event EVENT_BLOCK_EXPIRED do
@@ -151,13 +174,18 @@ class VenueSchedule < ActiveRecord::Base
 
     event EVENT_PAID do
       transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAID, :if => lambda {|vs| vs.venue_free?}
-      transition STATE_PAYMENT_PENDING => STATE_PAID, :if => lambda {|vs| !vs.venue_free?}
+      transition STATE_PAYMENT_PENDING => STATE_PAID, :if => lambda {|vs| !vs.venue_free? && vs.is_pcc_accounts? }
+    end
+    before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAID, :do => :venue_free?
+    before_transition STATE_PAYMENT_PENDING => STATE_PAID do |vs, transition|
+        return !vs.venue_free? && vs.is_pcc_accounts?
     end
     after_transition any => STATE_PAID, :do => :on_paid
 
     event ::Program::ANNOUNCED do
       transition STATE_PAID => STATE_ASSIGNED
     end
+    after_transition STATE_PAID => STATE_ASSIGNED, :do => :on_assigned
 
     event ::Program::STARTED do
       transition STATE_ASSIGNED => STATE_IN_PROGRESS
@@ -167,15 +195,74 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
 
+    event ::Program::FINISHED do
+      transition (BLOCKED_STATES - PAID_STATES) => STATE_AVAILABLE_EXPIRED
+    end
+
+    event ::Program::FINISHED do
+      transition STATE_BLOCK_REQUESTED => STATE_EXPIRED
+    end
+
     event EVENT_SECURITY_REFUNDED do
-      transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free?}
+      transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free? && vs.is_venue_coordinator? }
+    end
+    before_transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED do |vs, transition|
+      return !vs.venue_free? && vs.is_venue_coordinator?
     end
 
     event EVENT_CLOSE do
-      transition STATE_CONDUCTED => STATE_CLOSED, :if => lambda {|vs| vs.venue_free?}
-      transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free?}
+      transition STATE_CONDUCTED => STATE_CLOSED, :if => lambda {|vs| vs.venue_free? && vs.is_center_coordinator? }
+      transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free? && vs.is_center_coordinator? }
+    end
+    before_transition STATE_CONDUCTED => STATE_CLOSED do |vs, transition|
+      return vs.venue_free? && vs.is_center_coordinator?
+    end
+    before_transition STATE_SECURITY_REFUNDED => STATE_CLOSED do |vs, transition|
+      return !vs.venue_free? && vs.is_center_coordinator?
     end
 
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
+      end
+    end
+
+    after_transition any => any do |object, transition|
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
+      object.notify(transition.from, transition.to, transition.event, object.program.center)
+    end
+
+  end
+
+  def can_cancel_block?
+    return false unless self.is_center_scheduler?
+    if self.program.no_of_venues_blocked <= 1
+      self.errors[:base] << "Cannot remove the only blocked venue. Please block another venue and try again."
+      return false
+    end
+    return true
+  end
+
+  def can_cancel_approval_request?
+    return false unless self.is_sector_coordinator?
+    if self.program.no_of_venues_blocked <= 1
+      self.errors[:base] << "Cannot remove the only blocked venue. Please block another venue and try again."
+      return false
+    end
+    return true
+  end
+
+
+  def can_block?
+    return true if self.can_create?
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def reloaded?
@@ -193,28 +280,53 @@ class VenueSchedule < ActiveRecord::Base
   def trigger_block_expire
     return if !self.reloaded?
     if [STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_AUTHORIZED_FOR_PAYMENT, STATE_PAYMENT_PENDING].include?(self.state)
-      self.send(EVENT_BLOCK_EXPIRED)
-      self.save if self.errors.empty?
+      if self.program.end_date > Time.zone.now
+        self.send(EVENT_BLOCK_EXPIRED)
+        self.save if self.errors.empty?
+      end
     end
   end
 
   def before_block
-    blocked_for = self.blocked_for ? self.blocked_for.to_i : 0
-    if !blocked_for.between?(1,90)
-      self.errors[:blocked_for] << "Venue can be blocked from 1 to 90 days."
-      false
+    return false unless self.is_venue_coordinator?
+
+    if self.block_expiry_date.nil? || self.block_expiry_date.blank?
+      self.errors[:block_expiry_date] << " cannot be blank."
+      return false
     end
+
+    expiry_date = Time.zone.parse(self.block_expiry_date) + 1.day - 1.minute
+    self.block_expiry_date = expiry_date
+
+    current_date = Time.zone.now
+    days = (expiry_date.to_date - current_date.to_date).to_i
+
+    unless days.between?(1,90)
+      self.errors[:block_expiry_date] << " can be between 1 to 90 days."
+      return false
+    end
+
+    if self.block_expiry_date > self.program.end_date
+      self.errors[:block_expiry_date] << " cannot be beyond program close date."
+      return false
+    end
+
+    return true
   end
 
   def after_block
-    self.delay(:run_at => self.blocked_for.to_i.days.from_now).trigger_block_expire
-    true
+    self.delay(:run_at => self.block_expiry_date).trigger_block_expire
+    # They have to manually opt for permission, even if the program has started
+    #self.send(EVENT_REQUEST_APPROVAL) if self.program.is_announced? && self.program.is_active?
+    return true
   end
 
   def on_paid
-    if self.program.is_announced?
-      self.send(::Program::ANNOUNCED)
-    end
+    self.send(::Program::ANNOUNCED) if self.program.is_announced? && self.program.is_active?
+  end
+
+  def on_assigned
+    self.send(::Program::STARTED) if self.program.in_progress?
   end
 
   def venue_free?
@@ -227,59 +339,58 @@ class VenueSchedule < ActiveRecord::Base
 
   def is_active?
     return false if FINAL_STATES.include?(self.state)
-    return false if !self.program.is_active?
-    true
+    return false unless self.program.is_active?
+    return true
   end
 
   def on_authorization_for_payment?
-    if self.errors.empty?
-      #self.save
-      event = self.venue_free? ? EVENT_PAID : EVENT_REQUEST_PAYMENT
-      self.send(event)
-    end
+    event = self.venue_free? ? EVENT_PAID : EVENT_REQUEST_PAYMENT
+    self.send(event) if self.program.is_active?
   end
 
   def can_request_approval?
+    return false unless self.is_center_scheduler?
+
     if approval_requested_for_other_venue?
-      # TODO - make sure that the comments have been entered
+      return false unless self.has_comments?
     end
 
     # approve if program already announced
-    return true if self.program.is_announced?
+    return true if self.program.is_announced? && self.program.is_active?
 
     # If a proposed program is not announced, and other resources are available for announcement
-    if self.program.in_final_state?
+    unless self.program.is_active?
       self.errors[:base] << "Program is already closed. Cannot request approval."
       return false
     end
-    if !self.program.kit_connected?
+    if self.program.no_of_kits_connected <= 0
       self.errors[:base] << "Kit is not added to the program. Please add a kit and try again."
       return false
     end
 
-    if !self.program.minimum_teachers_connected?
+    unless self.program.minimum_teachers_connected?
       self.errors[:base] << "Minimum number of teachers are not added to the program. Please add teacher(s) and try again."
       return false
     end
 
-    true
+    return true
   end
 
   def approval_requested_for_other_venue?
     self.program.venue_schedules.each { |vs|
       return true if vs.approval_requested?
     }
-    false
+    return false
   end
 
   # have we requested the approval for the venue?
   def approval_requested?
-    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED, STATE_AVAILABLE_EXPIRED].include?(self.state))
   end
 
   # has the payment been approved for the venue?
   def approved?
-    !([STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED].include?(self.state))
+    !([STATE_UNKNOWN, STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED, STATE_UNAVAILABLE, STATE_CANCELLED, STATE_EXPIRED, STATE_AVAILABLE_EXPIRED].include?(self.state))
   end
 
   def on_program_event(event)
@@ -288,12 +399,13 @@ class VenueSchedule < ActiveRecord::Base
         ::Program::DROPPED => [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED],
         ::Program::ANNOUNCED => [STATE_PAID],
         ::Program::STARTED => [STATE_ASSIGNED],
-        ::Program::FINISHED => [STATE_IN_PROGRESS],
+        ::Program::FINISHED => [STATE_IN_PROGRESS] + (CONNECTED_STATES - PAID_STATES),
 
     }
 
     # verify when all the events can come
     if valid_states[event].include?(self.state)
+      self.comments = event
       self.send(event)
       # also call save on the model
       # TODO - check if this is really needed
@@ -301,6 +413,36 @@ class VenueSchedule < ActiveRecord::Base
     else
       # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
     end
+  end
+
+  def is_center_coordinator?
+    return true if self.current_user.is? :center_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
+  def is_venue_coordinator?
+    return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
+  def is_sector_coordinator?
+    return true if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
+  def is_center_scheduler?
+    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
+  def is_pcc_accounts?
+    return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def can_create?(center_ids = self.program.center_id)
@@ -313,6 +455,23 @@ class VenueSchedule < ActiveRecord::Base
     return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
     return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
     return false
+  end
+
+  def url
+    Rails.application.routes.url_helpers.venue_schedule_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Venue Schedule ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    name = " for Venue ##{self.venue_id} #{self.venue.name}"
+    name += " and Program ##{self.program_id} #{self.program.name}"
+  end
+
+  def friendly_name_for_sms
+    "Venue Schedule ##{self.id} for #{self.venue.name}"
   end
 
   private

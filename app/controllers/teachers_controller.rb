@@ -6,18 +6,25 @@ class TeachersController < ApplicationController
   # GET /teachers
   # GET /teachers.json
   def index
-    center_ids = current_user.accessible_center_ids
-    @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).uniq.all
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    in_training = (current_user.is? :any, :in_group => [:training])
+    center_ids = (in_geography or in_training) ? current_user.accessible_center_ids : []
     # any teachers who are attached to zones, but not to the centers
     zone_ids = current_user.accessible_zone_ids
-    if !zone_ids.empty?
-      @teachers_in_zones = Teacher.where("zone_id IN (?)", zone_ids).uniq.all
-      @teachers = @teachers + (@teachers_in_zones - @teachers)
-    end
-
     respond_to do |format|
-      format.html # index.html.erb
-      format.json { render json: @teachers }
+      if center_ids.empty? && zone_ids.empty?
+        @teachers = []
+        format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @teachers, status: :unprocessable_entity }
+      else
+        @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).order('teachers.t_no ASC').uniq.all
+        if !zone_ids.empty?
+          @teachers_in_zones = Teacher.where("zone_id IN (?)", zone_ids).uniq.all
+          @teachers = @teachers + (@teachers_in_zones - @teachers)
+        end
+        format.html # index.html.erb
+        format.json { render json: @teachers }
+      end
     end
   end
 
@@ -64,6 +71,7 @@ class TeachersController < ApplicationController
       @teacher.current_user = current_user
     end
     @trigger = params[:trigger]
+    @teacher.comment_category = Comment.where('model IS ? AND action IS ?', 'Teacher', @trigger).pluck(:text)
 
     respond_to do |format|
       if @teacher.can_update?
@@ -104,7 +112,7 @@ class TeachersController < ApplicationController
     @teacher = Teacher.find(params[:id])
     @teacher.current_user = current_user
     @trigger = params[:trigger]
-    @teacher.comments = params[:comments] if params.has_key?(:comments)
+    @teacher.load_comments!(params)
 
     respond_to do |format|
       if @teacher.can_update?

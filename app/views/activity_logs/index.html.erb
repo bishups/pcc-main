@@ -1,0 +1,64 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#activity_log_table').dataTable({
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
+
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>Activity Log
+      <hr>
+    </h2>
+  </div>
+</div>
+
+
+
+<% if @activity_logs.empty? %>
+    <div class="alert alert-danger"> No Activity Log Found.</div>
+<% else %>
+    <table id="activity_log_table" class='display dataTable table table-condensed table-hover table-bordered'>
+      <thead>
+      <tr>
+        <th>Date</th>
+        <% if current_user.is? :super_admin %>
+            <th>User</th>
+        <% end %>
+        <th>Activity</th>
+        <th>Current Status</th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @activity_logs.each do |al| %>
+          <tr>
+            <td><%= al.date.strftime("%d %B %Y") %></td>
+            <% if current_user.is? :super_admin %>
+                <td><%= link_to al.user.fullname, al.user.url rescue '' %></td>
+            <% end %>
+            <% object = al.object %>
+            <% if object.nil? %>
+                <td>Updated <%= al.text1 + al.text2 %></td>
+                <td></td>
+            <% else %>
+                <td>Updated <%= link_to al.text1, object.url %> <%= al.text2 %></td>
+                <td><%= send( al.model_state_tag, object) rescue '' %></td>
+            <% end %>
+          </tr>
+      <% end %>
+      </tbody>
+    </table>
+<% end %>

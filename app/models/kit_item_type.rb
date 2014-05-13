@@ -1,5 +1,6 @@
-class KitItemName < ActiveRecord::Base
+class KitItemType < ActiveRecord::Base
   attr_accessible :name, :description
+  acts_as_paranoid
 
   validates :name, :presence => true
   rails_admin do

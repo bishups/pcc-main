@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201404252110930) do
+ActiveRecord::Schema.define(:version => 201405012120301) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -25,18 +25,39 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
   add_index "access_privileges", ["role_id"], :name => "index_access_privileges_on_role_id"
   add_index "access_privileges", ["user_id"], :name => "index_access_privileges_on_user_id"
 
+  create_table "activity_logs", :force => true do |t|
+    t.integer  "user_id"
+    t.datetime "date"
+    t.integer  "model_id"
+    t.string   "model_type"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+    t.string   "text1"
+    t.string   "text2"
+  end
+
+  add_index "activity_logs", ["model_id"], :name => "index_activity_logs_on_model_id"
+  add_index "activity_logs", ["user_id"], :name => "index_activity_logs_on_user_id"
+
   create_table "centers", :force => true do |t|
     t.string   "name"
     t.integer  "sector_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.datetime "deleted_at"
   end
 
+  add_index "centers", ["deleted_at"], :name => "index_centers_on_deleted_at"
   add_index "centers", ["sector_id"], :name => "index_centers_on_sector_id"
 
   create_table "centers_kits", :force => true do |t|
     t.integer "center_id"
     t.integer "kit_id"
+  end
+
+  create_table "centers_teacher_schedules", :force => true do |t|
+    t.integer "center_id"
+    t.integer "teacher_schedule_id"
   end
 
   create_table "centers_teachers", :force => true do |t|
@@ -53,12 +74,13 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "model"
     t.string   "action"
     t.string   "text"
-    t.datetime "created_at",                    :null => false
-    t.datetime "updated_at",                    :null => false
-    t.boolean  "disabled",   :default => false
-    t.boolean  "enabled",    :default => true
+    t.datetime "created_at",                   :null => false
+    t.datetime "updated_at",                   :null => false
+    t.datetime "deleted_at"
     t.boolean  "active",     :default => true
   end
+
+  add_index "comments", ["deleted_at"], :name => "index_comments_on_deleted_at"
 
   create_table "delayed_jobs", :force => true do |t|
     t.integer  "priority",   :default => 0, :null => false
@@ -100,12 +122,15 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer "permission_id"
   end
 
-  create_table "kit_item_names", :force => true do |t|
+  create_table "kit_item_types", :force => true do |t|
     t.string   "name"
     t.string   "description"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
+    t.datetime "deleted_at"
   end
+
+  add_index "kit_item_types", ["deleted_at"], :name => "index_kit_item_types_on_deleted_at"
 
   create_table "kit_items", :force => true do |t|
     t.datetime "created_at",       :null => false
@@ -114,7 +139,7 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "count"
     t.string   "comments"
     t.integer  "kit_id"
-    t.integer  "kit_item_name_id"
+    t.integer  "kit_item_type_id"
     t.string   "condition"
   end
 
@@ -127,14 +152,13 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.string   "issued_to"
-    t.date     "due_date"
     t.datetime "due_date_time"
     t.datetime "start_date"
     t.datetime "end_date"
-    t.integer  "comment_id"
     t.text     "comments"
     t.text     "feedback"
     t.string   "last_update"
+    t.datetime "last_updated_at"
   end
 
   create_table "kits", :force => true do |t|
@@ -143,14 +167,32 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "condition"
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
-    t.integer  "requester_id"
     t.string   "name"
     t.integer  "capacity"
-    t.integer  "comment_id"
+    t.datetime "deleted_at"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
   end
+
+  add_index "kits", ["deleted_at"], :name => "index_kits_on_deleted_at"
+
+  create_table "notification_logs", :force => true do |t|
+    t.integer  "user_id"
+    t.datetime "date"
+    t.integer  "model_id"
+    t.string   "model_type"
+    t.datetime "created_at",                    :null => false
+    t.datetime "updated_at",                    :null => false
+    t.string   "text1"
+    t.string   "text2"
+    t.boolean  "displayed",  :default => false
+    t.boolean  "disabled",   :default => false
+  end
+
+  add_index "notification_logs", ["model_id"], :name => "index_notification_logs_on_model_id"
+  add_index "notification_logs", ["user_id"], :name => "index_notification_logs_on_user_id"
 
   create_table "notifications", :force => true do |t|
     t.string   "model"
@@ -184,9 +226,11 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "center_id"
     t.datetime "created_at",                 :null => false
     t.datetime "updated_at",                 :null => false
+    t.datetime "deleted_at"
   end
 
   add_index "pincodes", ["center_id"], :name => "index_pincodes_on_center_id"
+  add_index "pincodes", ["deleted_at"], :name => "index_pincodes_on_deleted_at"
 
   create_table "program_teacher_schedules", :force => true do |t|
     t.integer  "program_id"
@@ -207,7 +251,10 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "minimum_no_of_teacher"
     t.datetime "created_at",            :null => false
     t.datetime "updated_at",            :null => false
+    t.datetime "deleted_at"
   end
+
+  add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
 
   create_table "program_types_teachers", :force => true do |t|
     t.integer "program_type_id"
@@ -234,8 +281,8 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
-    t.integer  "comment_id"
     t.string   "last_update"
+    t.datetime "last_updated_at"
   end
 
   create_table "programs_timings", :force => true do |t|
@@ -277,8 +324,10 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "zone_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.datetime "deleted_at"
   end
 
+  add_index "sectors", ["deleted_at"], :name => "index_sectors_on_deleted_at"
   add_index "sectors", ["zone_id"], :name => "index_sectors_on_zone_id"
 
   create_table "sessions", :force => true do |t|
@@ -303,11 +352,11 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "center_id"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
-    t.integer  "comment_id"
     t.text     "comments"
-    t.text     "teacher_comments"
     t.text     "feedback"
     t.string   "last_update"
+    t.datetime "last_updated_at"
+    t.integer  "program_type_id"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -326,11 +375,14 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.integer  "user_id"
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
+    t.datetime "deleted_at"
     t.text     "comments"
-    t.integer  "comment_id"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
   end
+
+  add_index "teachers", ["deleted_at"], :name => "index_teachers_on_deleted_at"
 
   create_table "timings", :force => true do |t|
     t.string   "name"
@@ -338,11 +390,14 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.time     "end_time"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.datetime "deleted_at"
   end
 
+  add_index "timings", ["deleted_at"], :name => "index_timings_on_deleted_at"
+
   create_table "users", :force => true do |t|
-    t.string   "email",                                  :default => "", :null => false
-    t.string   "encrypted_password",                     :default => "", :null => false
+    t.string   "email",                                  :default => "",    :null => false
+    t.string   "encrypted_password",                     :default => "",    :null => false
     t.string   "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
@@ -361,12 +416,17 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "address",                :limit => 3000
     t.string   "phone"
     t.string   "mobile"
-    t.datetime "created_at",                                             :null => false
-    t.datetime "updated_at",                                             :null => false
+    t.datetime "created_at",                                                :null => false
+    t.datetime "updated_at",                                                :null => false
     t.string   "type"
+    t.datetime "deleted_at"
+    t.boolean  "enable",                                 :default => false
+    t.string   "approver_email"
+    t.text     "message_to_approver"
   end
 
-  add_index "users", ["email"], :name => "index_users_on_email", :unique => true
+  add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"
+  add_index "users", ["email"], :name => "index_users_on_email"
   add_index "users", ["reset_password_token"], :name => "index_users_on_reset_password_token", :unique => true
 
   create_table "venue_schedules", :force => true do |t|
@@ -377,19 +437,17 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "state"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
-    t.integer  "comment_id"
     t.text     "comments"
     t.text     "feedback"
     t.string   "last_update"
+    t.datetime "last_updated_at"
   end
 
   create_table "venues", :force => true do |t|
     t.string   "name"
     t.text     "description"
     t.text     "address"
-    t.string   "pin_code"
     t.string   "capacity"
-    t.integer  "seats"
     t.string   "state"
     t.string   "contact_name"
     t.string   "contact_email"
@@ -403,11 +461,15 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "payment_contact_address"
     t.string   "payment_contact_mobile"
     t.integer  "per_day_price"
-    t.integer  "comment_id"
+    t.datetime "deleted_at"
+    t.integer  "pincode_id"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
   end
+
+  add_index "venues", ["deleted_at"], :name => "index_venues_on_deleted_at"
 
   create_table "versions", :force => true do |t|
     t.string   "item_type",      :null => false
@@ -425,6 +487,9 @@ ActiveRecord::Schema.define(:version => 201404252110930) do
     t.string   "name"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.datetime "deleted_at"
   end
+
+  add_index "zones", ["deleted_at"], :name => "index_zones_on_deleted_at"
 
 end

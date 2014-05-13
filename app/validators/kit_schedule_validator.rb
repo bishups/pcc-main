@@ -4,16 +4,18 @@
 class KitScheduleValidator < ActiveModel::Validator
   def validate(record)
 
-    if record.start_date < -10.minutes.from_now
-      record.errors[:start_date] << "cannot be in the past"
-      return false
+#    if record.start_date < -10.minutes.from_now
+    if record.start_date.nil? || record.end_date.nil?
+      # error will be returned from other place
+    elsif record.start_date.to_date < Time.zone.now.to_date
+      record.errors[:start_date] << " for kit schedule cannot be in the past"
+    elsif record.end_date < record.start_date
+      record.errors[:end_date] << " cannot be before start date"
+    elsif KitSchedule.overlapping_schedules(record).count() > 0
+      record.errors[:base] << "Dates overlaps with existing schedule."
     end
 
-    if record.end_date < record.start_date
-      record.errors[:end_date] << "cannot be before start date"
-      return false
-    end
-
+=begin
     if KitSchedule.overlapping_reserves(record).count() > 0
       record.errors[:base] << "Dates overlaps with existing schedule."
       return false
@@ -29,6 +31,6 @@ class KitScheduleValidator < ActiveModel::Validator
         return false
       end
     end
-
+=end
   end
 end

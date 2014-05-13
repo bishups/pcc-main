@@ -5,4 +5,3 @@ class EditDatesKitSchedules < ActiveRecord::Migration
     add_column :kit_schedules, :end_date, :datetime
   end
 end
-

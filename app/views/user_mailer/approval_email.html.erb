@@ -4,13 +4,18 @@
   <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
 </head>
 <body>
-<h1> Please approve user <%= @user.firstname %>  <%= @user.lastname %> with email id <%= @user.email %></h1>
-<p>
-  Below is the note from the user.
-  <p> <%= @user.message_to_approver %> </p>
-</p>
-<p>
-  To approve the user please login to the site, just follow this link: <%= @url %> and add corresponsding access privillages.
-</p>
+<p>Namaskaram,</p>
+<p>The following user has requested access to PCC Genie:</p>
+<p>Name: <%= @object.fullname %></p>
+<p>Email-id: <%= @object.email %></p>
+<p>Mobile: <%= @object.mobile %></p>
+<p>Address: <%= @object.address %></p>
+<p>Message from requester:</p>
+<p><%= @message %></p>
+<p>To approve access please go to <%= link_to @object.url, @object.url %>, and </p>
+<p>  1. Add relevant Access Privileges for the user </p>
+<p>  2. Mark the user as enabled </p>
+<p>Pranam,</p>
+<p>Isha Foundation</p>
 </body>
 </html>

@@ -17,9 +17,13 @@ module KitSchedulesHelper
       elsif ks.state == ::KitSchedule::STATE_RESERVED
         '<span class="label label-warning">Reserved</span>'
       elsif ks.state == ::KitSchedule::STATE_UNAVAILABLE_OVERDUE
-        '<span class="label label-danger">Overdue</span>'
+        '<span class="label label-danger">Kit Overdue</span>'
       elsif ks.state == ::KitSchedule::STATE_UNDER_REPAIR
         '<span class="label label-danger">Under Repair</span>'
+      elsif ks.state == ::KitSchedule::STATE_CLOSED
+        '<span class="label label-info">Closed</span>'
+      elsif prog.state == ::KitSchedule::STATE_AVAILABLE_EXPIRED
+        '<span class="label label-danger">Available (Expired)</span>'
       else
         '<span class="label label-default">Unknown</span>'
       end

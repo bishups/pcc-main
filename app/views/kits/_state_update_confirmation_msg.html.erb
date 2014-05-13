@@ -1,18 +1,10 @@
-<% if (!@trigger.nil? && ::Kit::PROCESSABLE_EVENTS.include?(@trigger)) %>
   <div class='alert alert-info'>
-<% else %>
-  <div class='alert-alert-danger'>
-<% end %>
   <h3>Confirmation: </h3>
   <p>
     <% if @trigger.nil? %>
     <%else%>
       <% if @trigger == ::Kit::EVENT_AVAILABLE %>
           Are you sure you want to change state to<strong>Available</strong> for this Kit?
-      <% elsif @trigger == ::Kit::EVENT_UNAVAILABLE %>
-          Are you sure you want to change state to<strong>Unavailable</strong> for this Kit?
-      <% elsif @trigger == ::Kit::EVENT_UNDER_REPAIR %>
-          Are you sure you want to change state to<strong> Under Repair </strong> for this Kit?
       <% end %>
     <%end%>
   </p>

@@ -10,7 +10,6 @@
 #  address         :text
 #  pin_code        :string(255)
 #  capacity        :string(255)
-#  seats           :integer
 #  state           :string(255)
 #  contact_name    :string(255)
 #  contact_email   :string(255)
@@ -23,9 +22,14 @@
 #
 
 class Venue < ActiveRecord::Base
+  include CommonFunctions
+
+
+  acts_as_paranoid
+
   # attr_accessible :title, :body
   attr_accessor :current_user
-  attr_accessible :name, :description, :address, :pin_code, :capacity, :seats, :contact_name, :contact_phone,
+  attr_accessible :name, :description, :address, :capacity, :contact_name, :contact_phone,
   :contact_mobile, :contact_email, :contact_address, :commercial, :payment_contact_name,
   :payment_contact_address,:payment_contact_mobile,:per_day_price
 
@@ -36,17 +40,26 @@ class Venue < ActiveRecord::Base
   validate :has_per_day_price?
   validate :has_commercial?
 
+  belongs_to :pincode
+  attr_accessible :pincode, :pincode_id
+
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
+
   has_many :venue_schedules
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   validates_presence_of :address
   #validates_presence_of :center_id
-  validates :name, :presence => true, :uniqueness => true
+  validates :name, :presence => true
+  validates_uniqueness_of :name, :scope => :deleted_at
+
   validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
   validates :contact_mobile, :presence => true, :length => { is: 10}, :numericality => {:only_integer => true }
-  validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
+  validates :pincode, :presence => true
+  #validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
   validates :per_day_price, :numericality => true, :allow_nil => true
 
   validates :payment_contact_mobile, :length => { is: 10}, :numericality => {:only_integer => true }, :allow_blank => true
@@ -61,6 +74,8 @@ class Venue < ActiveRecord::Base
   STATE_PENDING_FINANCE_APPROVAL = "Pending Finance Approval"
   STATE_INSUFFICIENT_INFO = "Insufficient Info"
 
+  FINAL_STATES = []
+
   EVENT_PROPOSE          = "Propose"
   EVENT_APPROVE          = "Approve"
   EVENT_REJECT           = "Reject"
@@ -73,18 +88,22 @@ class Venue < ActiveRecord::Base
     EVENT_APPROVE, EVENT_REJECT, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL, EVENT_REQUEST_FINANCE_APPROVAL
   ]
 
+  EVENTS_WITH_COMMENTS = [EVENT_REJECT]
+  EVENTS_WITH_FEEDBACK = []
+
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_PROPOSE do
-      transition STATE_UNKNOWN => STATE_PROPOSED
+      transition STATE_UNKNOWN => STATE_PROPOSED #, :if => lambda {|t| t.can_create?}
     end
+    #before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_propose?
 
     event EVENT_APPROVE do
-      transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED
+      transition [STATE_PROPOSED, STATE_REJECTED] => STATE_APPROVED, :if => lambda {|t| t.is_sector_coordinator? }
     end
+    before_transition any => STATE_APPROVED, :do => :is_sector_coordinator?
 
     after_transition any => STATE_APPROVED do |venue, transition|
-      # TODO: check if paid venue or not
       if venue.free?
         venue.send(EVENT_POSSIBLE)
       else
@@ -93,58 +112,107 @@ class Venue < ActiveRecord::Base
     end
 
     event EVENT_REQUEST_FINANCE_APPROVAL do
-      transition [STATE_APPROVED, STATE_INSUFFICIENT_INFO] => STATE_PENDING_FINANCE_APPROVAL
+      transition STATE_APPROVED => STATE_PENDING_FINANCE_APPROVAL
+      transition STATE_INSUFFICIENT_INFO => STATE_PENDING_FINANCE_APPROVAL, :if => lambda {|t| t.is_pcc_accounts? }
     end
-    after_transition any => STATE_PENDING_FINANCE_APPROVAL, :do => :notify_finance
+    before_transition STATE_INSUFFICIENT_INFO => STATE_PENDING_FINANCE_APPROVAL, :do => :is_pcc_accounts?
 
     event EVENT_FINANCE_APPROVAL do
-      transition [STATE_PENDING_FINANCE_APPROVAL] => STATE_POSSIBLE
+      transition STATE_PENDING_FINANCE_APPROVAL => STATE_POSSIBLE, :if => lambda {|t| t.is_pcc_accounts? }
     end
+    before_transition STATE_PENDING_FINANCE_APPROVAL => STATE_POSSIBLE, :do => :is_pcc_accounts?
 
     event EVENT_POSSIBLE do
-      transition [STATE_APPROVED] => STATE_POSSIBLE
+      transition STATE_APPROVED => STATE_POSSIBLE
     end
-    after_transition any => STATE_POSSIBLE, :do => :notify_all
 
     event EVENT_REJECT do
-      transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED
+      transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED, :if => lambda {|t| t.is_sector_coordinator? }
     end
-    before_transition STATE_POSSIBLE => STATE_REJECTED, :do => :can_reject?
+    before_transition [STATE_PROPOSED, STATE_POSSIBLE] => STATE_REJECTED, :do => :can_reject?
 
     event EVENT_INSUFFICIENT_INFO do
-      transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO
+      transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO, :if => lambda {|t| t.is_pcc_accounts? }
+    end
+    before_transition STATE_PENDING_FINANCE_APPROVAL => STATE_INSUFFICIENT_INFO, :do => :is_pcc_accounts?
+
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
+      end
     end
 
-   end
+    after_transition any => any do |object, transition|
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
+      object.notify(transition.from, transition.to, transition.event, object.centers)
+    end
+
+  end
+
+  def can_propose?
+    unless self.can_create?
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+    return true
+  end
+
 
   def initialize(*args)
     super(*args)
   end
 
   def mark_as_proposed!
-     self.send(::Venue::EVENT_PROPOSE)
+#   self.send(::Venue::EVENT_PROPOSE) if self.state == ::Venue::STATE_UNKNOWN
+
+    # HACK #1 - all this making the centers dirty and reloading the object
+    # due to open rails bug when trying to save a model with habtm in after_create
+    # https://rails.lighthouseapp.com/projects/8994/tickets/4553-habtm-association-failure-to-save-in-join-table-with-after_create-callback
+    # HACK #2 - after HACK #1, some problem with doing a send to state machine
+    # so setting the state directly and logging in the current context only
+    if self.state == STATE_UNKNOWN
+      centers = self.centers
+      self.reload
+      self.state = STATE_PROPOSED
+      self.centers = centers
+      self.store_last_update!(nil, STATE_UNKNOWN, STATE_PROPOSED, EVENT_PROPOSE)
+      self.notify(STATE_UNKNOWN, STATE_PROPOSED, EVENT_PROPOSE, self.centers)
+      self.save
+    end
   end
 
   def blockable_programs
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Program.where('programs.center_id IN (?) AND programs.start_date > ? AND programs.state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::FINAL_STATES)
+    # NOTE: We **can** add a venue even after the program has started
+    programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
+    blockable_programs = []
+    programs.each {|program|
+      blockable_programs << program if venue.can_be_blocked_by?(program)
+    }
+    blockable_programs
   end
 
-  def notify_finance
-    # TODO - notify finance
+  def can_be_blocked_by?(program)
+    VenueSchedule.all_overlapping(self, program).count == 0
   end
 
-  def notify_all
-    # TODO - notify the relevant people
-  end
 
-  def can_reject?
+def can_reject?
+    unless self.is_sector_coordinator?
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
+    end
+
     if self.is_active?
       self.errors[:base] << "Cannot reject the venue, it has active schedules. Please close the schedules and try again."
       return false
     end
-    true
+    return true
   end
 
   def is_active?
@@ -152,7 +220,7 @@ class Venue < ActiveRecord::Base
     self.venue_schedules.each { |vs|
       return true if vs.is_active?
     }
-    false
+    return false
   end
 
   def free?
@@ -174,7 +242,8 @@ class Venue < ActiveRecord::Base
 
   def has_centers?
     self.errors.add(:centers, "- required field.") if self.centers.blank?
-    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
+    self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
+#    self.errors.add(:centers, " should belong to one sector.") if !::Sector::all_centers_in_one_sector?(self.centers)
   end
 
   def has_per_day_price?
@@ -183,6 +252,18 @@ class Venue < ActiveRecord::Base
 
   def has_commercial?
     self.errors.add(:commercial, "should be selected for venue with per day price.") if self.commercial.blank? && !self.per_day_price.blank?
+  end
+
+  def is_pcc_accounts?
+    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
+  def is_sector_coordinator?
+    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def can_view?
@@ -217,7 +298,7 @@ class Venue < ActiveRecord::Base
     return false
   end
 
-  # TODO - this is a hack, to route the call through venue object from the UI.
+  # HACK - to route the call through venue object from the UI.
   def can_create_schedule?
     venue_schedule = VenueSchedule.new
     venue_schedule.current_user = self.current_user
@@ -225,8 +306,31 @@ class Venue < ActiveRecord::Base
   end
 
   def friendly_name
-    ("%s" % [self.name]).parameterize
+    ("#%d %s" % [self.id, self.name])
   end
+
+
+  def friendly_name_for_sms
+    "Venue ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
+  end
+
+
+  def url
+    Rails.application.routes.url_helpers.venue_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Venue ##{self.id}"
+  end
+
+  def friendly_second_name_for_email
+    " #{self.name}"
+  end
+
+  def friendly_name_for_sms
+    "Venue ##{self.id} #{self.name}"
+  end
+
 
   rails_admin do
     visible do
@@ -240,6 +344,12 @@ class Venue < ActiveRecord::Base
       field :centers
     end
     edit do
+      field :current_user, :hidden do
+        visible false
+        default_value do
+          bindings[:view]._current_user
+        end
+      end
       field :name
       field :centers do
         help 'Required. Type any character to search for center ...'
@@ -258,9 +368,11 @@ class Venue < ActiveRecord::Base
       end
       field :description
       field :address
-      field :pin_code
+      field :pincode do
+        inline_edit false
+        inline_add false
+      end
       field :capacity
-      field :seats
       field :contact_name
       field :contact_phone
       field :contact_mobile
@@ -270,7 +382,9 @@ class Venue < ActiveRecord::Base
       field :payment_contact_name
       field :payment_contact_address
       field :payment_contact_mobile
-      field :per_day_price
+      field :per_day_price do
+        help "Required (for commerical venues)."
+      end
     end
 
   end

@@ -1,0 +1,52 @@
+Permission:
+  - :name: Program Management
+    :cancan_action: manage
+    :subject: Program
+  - :name: Teacher Scheduling
+    :cancan_action: update
+    :subject: Teacher
+  - :name: Kit Management
+    :cancan_action: manage
+    :subject: Kit
+  - :name: Venue Management
+    :cancan_action: manage
+    :subject: Venue
+  - :name: Teacher View
+    :cancan_action: read
+    :subject: Teacher
+  - :name: Program View
+    :cancan_action: read
+    :subject: Program
+  - :name: Kit View
+    :cancan_action: read
+    :subject: Kit
+  - :name: Venue View
+    :cancan_action: read
+    :subject: Venue
+  - :name: Master Data Management
+    :cancan_action: manage
+    :subject: :all
+
+KitItemType:
+  ["Sadhguru photo", Carpets, Speakers, Mike, Projector, Amplifier, DVD-Player, "White Clothes","Stationary Items"]
+
+ProgramType:
+  -  name: "Uyir Nokkam"
+     language: "Tamil"
+     minimum_no_of_teacher:  2
+     no_of_days: 3
+
+Timing:
+  -  name: "Morning (6am-9am)"
+     start_time: "6am"
+     end_time: "9am"
+  -  name: "Afternoon (10am-1pm)"
+     start_time: "10am"
+     end_time: "1pm"
+  -  name: "Evening (2pm-5pm)"
+     start_time: "2pm"
+     end_time: "5pm"
+  -  name: "Night (6pm-9pm)"
+     start_time: "6pm"
+     end_time: "9pm"
+

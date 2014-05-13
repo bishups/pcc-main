@@ -8,14 +8,16 @@
      <%= text_field_tag 'issued_to', nil, :value=> @kit_schedule.issued_to, :readonly => true, :class => 'form-control' %>
    <% end %>
 </div>
-<div class='form-group'>
-  <label>Due Date (and Time) </label>
-  <% if @kit_schedule.issue_for_schedules.blank? %>
-      <%= text_field_tag 'due_date_time', nil, :value=> @kit_schedule.due_date_time, :class => 'form-control datetimeSelect' %>
-  <% else %>
-      <%= text_field_tag 'due_date_time', nil, :value=> @kit_schedule.due_date_time, :readonly => true, :class => 'form-control datetimeSelect' %>
-  <% end %>
-</div>
+<% if false %>
+    <div class='form-group'>
+      <label>Due Date (and Time) </label>
+      <% if @kit_schedule.issue_for_schedules.blank? %>
+          <%= text_field_tag 'due_date_time', nil, :value=> @kit_schedule.due_date_time, :class => 'form-control datetimeSelect' %>
+      <% else %>
+          <%= text_field_tag 'due_date_time', nil, :value=> @kit_schedule.due_date_time, :readonly => true, :class => 'form-control datetimeSelect' %>
+      <% end %>
+    </div>
+<% end %>
 <% end %>
 
 <script type="text/javascript">
@@ -23,10 +25,11 @@
         format: "dd MM yyyy - HH:ii P",
         showMeridian: true,
         autoclose: true,
-        todayBtn: true
+        todayBtn: true,
+        minuteStep: 15
     });
 </script>
 
 <script type='text/javascript'>
-    $('.dateSelect').datepicker({dateFormat: 'yy-mm-dd'});
+    $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
 </script>

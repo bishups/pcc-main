@@ -1,19 +1,25 @@
-<% if @teacher.can_update? %>
-<div class='btn-group'>
-  <button type="button" class="btn btn-danger">Update State</button>
-  <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-    <span class="caret"></span>
-    <span class="sr-only">Toggle Dropdown</span>
-  </button>
-  <ul class="dropdown-menu" role="menu">
-    <% @teacher.state_events.each do |ev| %>
-        <li>
-          <%= link_to ev, edit_teacher_path(:id => @teacher.id, :trigger => ev) %>
-        </li>
+<h2>
+  <small><%= teacher_state_tag(@teacher) %></small> Teacher <small><%= @teacher.user.fullname %></small>
+    <% if !::Teacher::FINAL_STATES.include?(@teacher.state) && @teacher.can_update? %>
+        <div class='btn-group'>
+          <button type="button" class="btn btn-danger">Update State</button>
+          <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+            <span class="caret"></span>
+            <span class="sr-only">Toggle Dropdown</span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <% events = @teacher.state_events %>
+            <% if events.count > 0 %>
+                <% events.each do |ev| %>
+                    <li> <%= link_to ev, edit_teacher_path(:id => @teacher.id, :trigger => ev) %> </li>
+                <% end %>
+            <% else %>
+                <li class="disabled"><a href="#">No Action Available</a></li>
+            <% end %>
+          </ul>
+        </div>
     <% end %>
-  </ul>
-</div>
-<% end %>
-<span class='pull-right'>
-    <%= link_to "Back to Teachers", teachers_path, :class => 'btn btn-primary' %>
-</span>
+    <span class='pull-right'>
+        <%= link_to "Back to Teachers", teachers_path, :class => 'btn btn-primary' %>
+    </span>
+</h2>

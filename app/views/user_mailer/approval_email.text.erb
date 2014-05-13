@@ -1,13 +1,21 @@
-Please approve user <%= @user.firstname %>  <%= @user.lastname %> with email id <%= @user.email %>
+Namaskaram,
 
-==============================================================================================
+The following user has requested access to PCC Genie:
+
+Name: <%= @object.fullname %>
+Email-id: <%= @object.email %>
+Mobile: <%= @object.mobile %>
+Address: <%= @object.address %>
+
+Message from requester:
+<%= @message %>
+
+To approve access please go to  <%= @object.url %>, and
+1. Add relevant Access Privileges for the user
+2. Mark the user as enabled
+
+Pranam,
+Isha Foundation
 
 
-Below is the note from the user.
 
-<%= @user.message_to_approver %>
-
-To approve the user please login to the site, just follow this link: <%= @url %> and add corresponsding access privillages.
-
-
-==============================================================================================

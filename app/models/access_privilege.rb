@@ -17,16 +17,18 @@ class AccessPrivilege < ActiveRecord::Base
   belongs_to :resource, :polymorphic => true
   has_many :permissions, :through => :role
 
-  validates :role,:resource, :presence => true
+  validates :role, :presence => true
 
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role, :user, :user_id
   validate :is_role_valid?
   before_destroy :is_teacher_attached?
 
-  scope :by_role,lambda { |role_name| joins(:role).where('roles.name = ?', role_name) }
+  scope :by_role, lambda { |role_name| joins(:role).where('roles.name = ?', role_name) }
+#  scope :accessible, lambda { |user| where(:resource_type => "Center",:resource_id => user.accessible_centers ).where('role_id  != ?', Role.where(:name=>User::ROLE_ACCESS_HIERARCHY[:teacher][:text]).first.id) }
+  scope :accessible, lambda { |user| where(:resource_type => "Center", :resource_id => user.accessible_centers) }
 
   def role_name=(role_name)
-    Role.where(:name => role_name ).first
+    Role.where(:name => role_name).first
   end
 
   def center_name=(center_name)
@@ -38,16 +40,16 @@ class AccessPrivilege < ActiveRecord::Base
     resource_type = self.resource.class.name.demodulize
 
     valid_roles =
-    case resource_type
-      when "Zone"
-        [:zonal_coordinator, :zao, :pcc_accounts, :finance_department]
-      when "Sector"
-        [:sector_coordinator]
-      when "Center"
-        [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
-      else
-        []
-    end
+        case resource_type
+          when "Zone"
+            [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
+          when "Sector"
+            [:sector_coordinator]
+          when "Center"
+            [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
+          else
+            [:super_admin]
+        end
     if !valid_roles.include?(role)
       self.errors[:resource] << " does not match the specified role."
     end
@@ -85,19 +87,23 @@ class AccessPrivilege < ActiveRecord::Base
         inline_edit false
         inline_add false
         # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
-        associated_collection_cache_all false  # REQUIRED if you want to SORT the list as below
+        associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           role = bindings[:object]
           Proc.new { |scope|
             # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
-            scope = scope.where("name IS NOT ?", ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]) #if role.present?
-            # sorting over association does not work for now -- see open issue  https://github.com/sferik/rails_admin/issues/1395
-            scope = scope.reorder("role.name ASC")
+            scope = scope.where("name NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]]) #if role.present?
           }
         end
       end
       field :resource
     end
+    update do
+      configure :user do
+        read_only true
+      end
+    end
+
   end
 
   def role_name

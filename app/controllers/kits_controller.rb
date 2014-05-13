@@ -3,11 +3,19 @@ class KitsController < ApplicationController
   # GET /kits.json
   before_filter :authenticate_user!
   def index
-    center_ids = current_user.accessible_center_ids
-    @kits = Kit.joins("JOIN centers_kits ON centers_kits.kit_id = kits.id").where('centers_kits.center_id IN (?)', center_ids).uniq.all
+
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    center_ids = in_geography ? current_user.accessible_center_ids : []
     respond_to do |format|
-      format.html # index.html.erb
-      format.json { render json: @kits }
+      if center_ids.empty?
+        @kits = []
+        format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @kits, status: :unprocessable_entity }
+      else
+        @kits = Kit.joins("JOIN centers_kits ON centers_kits.kit_id = kits.id").where('centers_kits.center_id IN (?)', center_ids).uniq.all
+        format.html # index.html.erb
+        format.json { render json: @kits }
+      end
     end
   end
 

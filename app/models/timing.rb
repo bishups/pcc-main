@@ -1,4 +1,7 @@
 class Timing < ActiveRecord::Base
+
+  acts_as_paranoid
+
   attr_accessible :end_time, :name, :start_time
   belongs_to :timing, :polymorphic => true
   has_and_belongs_to_many :program_types
@@ -11,6 +14,7 @@ class Timing < ActiveRecord::Base
   has_many :teachers, through: :teacher_schedules
   validates :name, :start_time, :end_time, :presence => true
   validate :start_end_time?
+  validates_uniqueness_of :name, :scope => :deleted_at
 
   before_validation :remove_date
 

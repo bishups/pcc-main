@@ -1,5 +1,9 @@
 PccMain::Application.routes.draw do
 
+  resources :notification_logs
+  resources :activity_logs
+
+
   resources :notifications
 
 
@@ -11,8 +15,9 @@ PccMain::Application.routes.draw do
   # Misc. static pages
   get '/about'                            => 'home#about'
   get '/registration_confirmation'        => 'home#registration_confirmation'
-  get 'programs/update_timings', :as => 'update_timings'
-
+  get '/backdoor_login'        => 'home#backdoor_login'
+  get 'programs/update_timings', :as => 'update_program_timings'
+  get 'teacher_schedules/update_timings', :as => 'update_teacher_schedule_timings'
   # Resources
   resources :enquiries
   resources :programs
@@ -40,6 +45,12 @@ PccMain::Application.routes.draw do
   #namespace :admin do
   #  resources :users
   #end
+
+  resources :notification_logs do
+    collection do
+      delete :delete_all
+    end
+  end
 
   root :to => 'home#index'
 

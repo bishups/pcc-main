@@ -23,15 +23,22 @@
 class Program < ActiveRecord::Base
   include CommonFunctions
 
-  validates :start_date, :presence => true
+  has_many :activity_logs, :as => :model, :inverse_of => :model
+  has_many :notification_logs, :as => :model, :inverse_of => :model
+
+  validates :start_date, :center_id, :name, :program_type_id, :timings, :presence => true
 #  validates :end_date, :presence => true
-  validates :center_id, :presence => true
+
+  belongs_to :proposer, :class_name => "User" #, :foreign_key => "rated_id"
+  attr_accessible :proposer_id, :proposer
+
   validates :proposer_id, :presence => true
+  validates_with ProgramValidator, :on => :create
 
   attr_accessor :current_user
   attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date, :feedback
 
-  before_create :assign_dates!
+  before_validation :assign_dates!
 
   belongs_to :center
   belongs_to :program_type
@@ -47,8 +54,11 @@ class Program < ActiveRecord::Base
   has_and_belongs_to_many :timings, :join_table => :programs_timings
   attr_accessible :timing_ids, :timings
 
-  belongs_to :comment_type, :class_name => "Comment", :foreign_key => "comment_id"
-  attr_accessible :comment_type
+  belongs_to :last_updated_by_user, :class_name => User
+  attr_accessible :last_update, :last_updated_at
+
+  attr_accessor :comment_category
+  attr_accessible :comment_category
 
   STATE_UNKNOWN       = "Unknown"
   STATE_PROPOSED      = "Proposed"
@@ -59,9 +69,13 @@ class Program < ActiveRecord::Base
   STATE_IN_PROGRESS   = "In Progress"
   STATE_CONDUCTED     = "Conducted"
   STATE_TEACHER_CLOSED = "Teacher Closed"
+  STATE_ZAO_CLOSED    = "ZAO Closed"
   STATE_CLOSED        = "Closed"
+  STATE_EXPIRED       = "Expired"
 
-  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CONDUCTED, STATE_CLOSED]
+  FINAL_STATES = [STATE_DROPPED, STATE_CANCELLED, STATE_CLOSED, STATE_EXPIRED]
+  CLOSED_STATES = (FINAL_STATES + [STATE_CONDUCTED, STATE_TEACHER_CLOSED, STATE_ZAO_CLOSED])
+
 
   EVENT_PROPOSE       = "Propose"
   EVENT_ANNOUNCE      = "Announce"
@@ -72,12 +86,19 @@ class Program < ActiveRecord::Base
   EVENT_DROP          = "Drop"
   EVENT_CANCEL        = "Cancel"
   EVENT_TEACHER_CLOSE = "Teacher Close"
+  EVENT_ZAO_CLOSE = "ZAO Close"
+  EVENT_EXPIRE = "Expire"
 
   PROCESSABLE_EVENTS = [
-      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE
+      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE, EVENT_ZAO_CLOSE
   ]
 
-  ### TODO -
+  INTERNAL_NOTIFICATIONS = [EVENT_START, EVENT_FINISH, EVENT_EXPIRE]
+
+  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL, EVENT_ZAO_CLOSE]
+  EVENTS_WITH_FEEDBACK = [EVENT_TEACHER_CLOSE]
+
+  ###
   # http://www.sitepoint.com/comparing-ruby-background-processing-libraries-delayed-job/
   # Program will be sending four notifications - two on timers, two on user action
   # timer can be set using the delayed action for the program state machine
@@ -104,6 +125,9 @@ class Program < ActiveRecord::Base
   scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND programs.id IS NOT ? ',
                                                                                program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
 
+# given a program, returns a relation with all overlapping program(s) (including itself)
+  scope :all_overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?)',
+                                                                                                                                       program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids) }
   # given a program, returns a relation with other overlapping program(s)
   scope :overlapping_date_time, lambda { |start_date, end_date| Program.where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?))',
                                                                                                                                    start_date, end_date, start_date, end_date, start_date, end_date) }
@@ -115,11 +139,13 @@ class Program < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNKNOWN do
 
     event EVENT_PROPOSE do
-      transition STATE_UNKNOWN => STATE_PROPOSED
+      transition STATE_UNKNOWN => STATE_PROPOSED, :if => lambda {|t| t.can_create? }
     end
+    before_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :can_propose?
+    after_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :fill_proposer_id!
 
     event EVENT_ANNOUNCE do
-      transition STATE_PROPOSED => STATE_ANNOUNCED, :if => lambda {|p| p.can_announce?}
+      transition STATE_PROPOSED => STATE_ANNOUNCED
     end
     before_transition any => STATE_ANNOUNCED, :do => :can_announce?
     after_transition any => STATE_ANNOUNCED, :do => :on_announce
@@ -140,21 +166,29 @@ class Program < ActiveRecord::Base
     end
     after_transition any => STATE_IN_PROGRESS, :do => :on_start
 
+    event EVENT_EXPIRE do
+      transition STATE_PROPOSED => STATE_EXPIRED
+    end
+
     event EVENT_FINISH do
-      transition [STATE_IN_PROGRESS] => STATE_CONDUCTED
+      transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
     after_transition any => STATE_CONDUCTED, :do => :on_finish
 
     event EVENT_TEACHER_CLOSE do
-      transition STATE_CONDUCTED => STATE_TEACHER_CLOSED, :if => lambda {|p| p.is_teacher?(current_user)}
+      transition STATE_CONDUCTED => STATE_TEACHER_CLOSED, :if => lambda {|p| p.is_teacher?}
     end
     before_transition any => STATE_TEACHER_CLOSED, :do => :can_teacher_close?
 
+    event EVENT_ZAO_CLOSE do
+      transition STATE_TEACHER_CLOSED => STATE_ZAO_CLOSED, :if => lambda {|p| p.is_zao? }
+    end
+    before_transition any => STATE_ZAO_CLOSED, :do => :can_zao_close?
+
     event EVENT_CLOSE do
-      transition STATE_TEACHER_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_scheduler, :center_id => p.center_id}
+      transition STATE_ZAO_CLOSED => STATE_CLOSED, :if => lambda {|p| p.current_user.is? :center_coordinator, :center_id => p.center_id}
     end
     before_transition any => STATE_CLOSED, :do => :can_close?
-    # TODO - enable or disable the button based on whether conditions are met
 
     event EVENT_CANCEL do
       transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zonal_coordinator, :center_id => p.center_id }
@@ -162,6 +196,28 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
 
+    # check for comments, before any transition
+    before_transition any => any do |object, transition|
+      # Don't return here, else LocalJumpError will occur
+      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
+        false
+      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
+        false
+      else
+        true
+      end
+    end
+
+    # send notifications, after any transition
+    after_transition any => any do |object, transition|
+      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
+      object.notify(transition.from, transition.to, transition.event, object.center)
+    end
+
+  end
+
+  def fill_proposer_id!
+    self.proposer = current_user
   end
 
   def reloaded?
@@ -176,6 +232,11 @@ class Program < ActiveRecord::Base
     return if !self.reloaded?
     if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
       self.send(EVENT_START)
+      self.save if self.errors.empty?
+    end
+    if [STATE_PROPOSED].include?(self.state)
+      self.send(EVENT_EXPIRE)
+      self.save if self.errors.empty?
     end
   end
 
@@ -183,35 +244,32 @@ class Program < ActiveRecord::Base
     return if !self.reloaded?
     if [STATE_IN_PROGRESS].include?(self.state)
       self.send(EVENT_FINISH)
+      self.save if self.errors.empty?
     end
   end
 
   def can_announce?
     if ready_for_announcement?
       return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
-      self.errors[:base] << "Insufficient privileges to update the state."
-      false
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
     else
       self.errors[:base] << "Program cannot be announced yet."
-      false
+      return false
     end
   end
 
   def on_announce
     self.generate_program_id!
-    self.notify_schedules(ANNOUNCED)
+    self.notify_all(ANNOUNCED)
     # start the timer for start of class notification
     self.delay(:run_at => self.start_date).trigger_program_start
   end
 
   def can_open_registration?
     return true if (self.current_user.is? :center_treasurer, :center_id => self.center_id)
-    self.errors[:base] << "Insufficient privileges to update the state."
-    false
-  end
-
-  def before_any
-    puts "I am here"
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def can_drop?
@@ -231,105 +289,128 @@ class Program < ActiveRecord::Base
       return true
     end
 
-    if (self.comment_type.nil?)
-      self.errors[:comment_type] << " is mandatory field."
-      return false
-    end
-
-    if (self.comment_type.text.casecmp("Other") == 0  && self.comments.nil?)
-      self.errors[:comments] << " is mandatory field."
-      return false
-    end
-
-    return false unless self.has_comments?
-
-    self.errors[:base] << "Insufficient privileges to update the state."
-    false
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
 
   def on_drop
-    self.notify_schedules(DROPPED)
+    self.notify_all(DROPPED)
   end
 
   def on_start
-    self.notify_schedules(STARTED)
+    self.notify_all(STARTED)
     # start the timer for close of class notification
     self.delay(:run_at => self.end_date).trigger_program_finish
   end
 
   def on_finish
-    self.notify_schedules(FINISHED)
+    self.notify_all(FINISHED)
   end
 
   def is_active?
-    !(self.end_date < Time.zone.now || FINAL_STATES.include?(self.state))
+    !(::Program::CLOSED_STATES.include?(self.state))
   end
 
   def can_teacher_close?
-    if !is_teacher?(current_user)
-      self.errors[:base] << "Insufficient privileges to update the state."
-      false
-    end
-
-    if (self.feedback.nil?)
-      self.errors[:feedback] << " is mandatory field."
+    unless is_teacher?
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
-    true
+    return true
   end
+
+  def can_zao_close?
+    return false unless self.is_zao?
+
+    unless account_closed?
+      self.errors[:base] << "Cannot ZAO Close program, accounts for program are not closed."
+      return false
+    end
+
+    unless participant_data_entered?
+      self.errors[:base] << "Cannot ZAO Close program, participant data for program has not been entered."
+      return false
+    end
+    return true
+  end
+
+
+
+  def account_closed?
+    # TODO - need to implement account_closed??
+    return true
+  end
+
+  def participant_data_entered?
+    # TODO - need to implement participant_data_entered?
+    return true
+  end
+
+
+  def is_zao?
+    return true if self.current_user.is? :zao, :center_id => self.center_id
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
 
   def can_close?
     if ready_for_close?
-      return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
-      self.errors[:base] << "Insufficient privileges to update the state."
-      false
+      return true if self.current_user.is? :center_coordinator, :center_id => self.center_id
+      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+      return false
     else
       self.errors[:base] << "Program cannot be closed yet."
-      false
+      return false
     end
   end
 
   def can_cancel?
-    if (self.comments.nil?)
-      self.errors[:comments] << " is mandatory field."
-      return false
-    end
     return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
-    self.errors[:base] << "Insufficient privileges to update the state."
-    false
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
   end
 
   def on_cancel
-    self.notify_schedules(CANCELLED)
-    # TODO - cancel the timer for start of the class, no need for now, we will just ignore it once the timer comes
-  end
-
-  def in_final_state?
-    ::Program::FINAL_STATES.include?(self.state)
+    self.notify_all(CANCELLED)
   end
 
   def friendly_name
-    ("%s %s %s" % [self.center.name, self.start_date.strftime('%d-%m-%Y'), self.program_type.name]).parameterize
+    ("#%d %s (%s, %s, %s)" % [self.id, self.name, self.start_date.strftime('%d %B %Y'), self.center.name, self.program_type.name])
   end
+
+
+  def url
+    Rails.application.routes.url_helpers.program_url(self)
+  end
+
+  def friendly_first_name_for_email
+    "Program ##{self.id}"
+   end
+
+  def friendly_second_name_for_email
+    "  #{self.name} (#{self.center.name} #{self.program_type.name}) #{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}"
+  end
+
+  def friendly_name_for_sms
+    "Program ##{self.id} #{self.name}"
+  end
+
 
   def is_announced?
     self.announce_program_id && !self.announce_program_id.empty?
   end
 
-  def is_started?
+  def in_progress?
     self.state == STATE_IN_PROGRESS
-  end
-
-  def is_finished?
-    self.state == STATE_CONDUCTED
   end
 
   def generate_program_id!
     self.announce_program_id = ("%s %s %d" % 
       [self.center.name, self.start_date.strftime('%B%Y'), self.id]
     ).parameterize
-    self.save!
+    #self.save!
   end
   
   def proposer
@@ -340,7 +421,7 @@ class Program < ActiveRecord::Base
     !self.venue_schedules.empty?
   end
 
-  def notify_schedules(event)
+  def notify_all(event)
     # send the event to each of the state machines
     # ideally we can register the state machine and the specific callback they want to be called
     self.teacher_schedules.each{|ts|
@@ -368,9 +449,6 @@ class Program < ActiveRecord::Base
   #  self.save!
   #end
 
-  def kit_connected?
-    self.kit_schedules && !self.kit_schedules.empty?
-  end
 
   #def connect_kit(kit)
   #  self.kit_schedule_id = kit.id
@@ -384,19 +462,29 @@ class Program < ActiveRecord::Base
 
 
   def blockable_venues
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ?', self.center_id)
+    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND venues.state IS ?', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
+    blockable_venues = []
+    venues.each {|venue|
+      blockable_venues << venue if venue.can_be_blocked_by?(self)
+    }
+    blockable_venues
   end
 
+
   def blockable_kits
-    # the list returned here is not a confirmed list, it is a tentative list which might fail validations later
-    # TODO - writing the query for confirmed list is too db intensive for now, so skipping it
-    Kit.joins("JOIN centers_kits ON kits.id = centers_kits.kit_id").where('centers_kits.center_id = ?', self.center_id)
+    kits = Kit.joins("JOIN centers_kits ON kits.id = centers_kits.kit_id").where('centers_kits.center_id = ?', self.center_id).all
+    blockable_kits = []
+    kits.each {|kit|
+      blockable_kits << kit if kit.can_be_blocked_by?(self)
+    }
+    blockable_kits
   end
 
   def assign_dates!
-    self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
+    if !self.start_date.nil? && !self.program_type.nil?
+      self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
+    end
+    #@program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
   end
 
 
@@ -423,6 +511,12 @@ class Program < ActiveRecord::Base
 #    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
+  def teachers_conducted_class
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
   def minimum_no_of_teacher
     self.program_type.minimum_no_of_teacher
   end
@@ -431,13 +525,13 @@ class Program < ActiveRecord::Base
     self.no_of_teachers_connected >= self.minimum_no_of_teacher
   end
 
-  def is_teacher?(current_user)
+  def is_teacher?
     self.teacher_schedules.each { |ts|
-      if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == current_user)
+      if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == self.current_user)
         return true
       end
     }
-    false
+    return false
   end
 
   def no_of_kits_connected
@@ -445,9 +539,19 @@ class Program < ActiveRecord::Base
     self.kit_schedules.where('state IN (?)', ::KitSchedule::CONNECTED_STATES).count
   end
 
+  def no_of_kits_assigned
+    return 0 if !self.kit_schedules
+    self.kit_schedules.where('state IN (?)', ::KitSchedule::ASSIGNED_STATES).count
+  end
+
   def no_of_venues_connected
     return 0 if !self.venue_schedules
     self.venue_schedules.where('state IN (?)', ::VenueSchedule::CONNECTED_STATES).count
+  end
+
+  def no_of_venues_blocked
+    return 0 if !self.venue_schedules
+    self.venue_schedules.where('state IN (?)', ::VenueSchedule::BLOCKED_STATES).count
   end
 
   def no_of_venues_paid
@@ -469,18 +573,17 @@ class Program < ActiveRecord::Base
     self.venue_schedules.each { |vs|
       return true if vs.approval_requested?
     }
-    false
+    return false
   end
 
   def venue_approved?
     self.venue_schedules.each { |vs|
       return true if vs.approved?
     }
-    false
+    return false
   end
 
   def ready_for_close?
-    # TODO - add condition here that teacher adds program feedback,
     if (self.no_of_venues_connected > 0)
       self.errors[:base] << "Cannot close program, linked venue is not closed. Please close it and try again."
       return false
@@ -496,26 +599,6 @@ class Program < ActiveRecord::Base
       return false
     end
 
-    if !account_closed?
-      self.errors[:base] << "Cannot close program, accounts for program are not closed."
-      return false
-    end
-
-    if !participant_data_entered?
-      self.errors[:base] << "Cannot close program, participant data for program has not been entered."
-      return false
-    end
-
-    true
-  end
-
-  def account_closed?
-    # TODO - need to implement account_closed??
-    return true
-  end
-
-  def participant_data_entered?
-    # TODO - need to implment participant_data_entered?
     return true
   end
 
@@ -523,13 +606,17 @@ class Program < ActiveRecord::Base
     return false unless self.no_of_venues_paid > 0
     return false unless self.no_of_kits_connected > 0
     return false unless self.minimum_teachers_connected?
-    true
+    return true
   end
 
 
   def can_view?
     return true if self.current_user.is? :any, :center_id => self.center_id
     return false
+  end
+
+  def can_propose?
+    return self.can_create?
   end
 
   # Usage --
