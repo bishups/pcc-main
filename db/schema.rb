@@ -127,7 +127,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "description"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
+    t.datetime "deleted_at"
   end
+
+  add_index "kit_item_types", ["deleted_at"], :name => "index_kit_item_types_on_deleted_at"
 
   create_table "kit_items", :force => true do |t|
     t.datetime "created_at",       :null => false
@@ -223,9 +226,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "center_id"
     t.datetime "created_at",                 :null => false
     t.datetime "updated_at",                 :null => false
+    t.datetime "deleted_at"
   end
 
   add_index "pincodes", ["center_id"], :name => "index_pincodes_on_center_id"
+  add_index "pincodes", ["deleted_at"], :name => "index_pincodes_on_deleted_at"
 
   create_table "program_teacher_schedules", :force => true do |t|
     t.integer  "program_id"
@@ -246,7 +251,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "minimum_no_of_teacher"
     t.datetime "created_at",            :null => false
     t.datetime "updated_at",            :null => false
+    t.datetime "deleted_at"
   end
+
+  add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
 
   create_table "program_types_teachers", :force => true do |t|
     t.integer "program_type_id"
@@ -316,8 +324,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "zone_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.datetime "deleted_at"
   end
 
+  add_index "sectors", ["deleted_at"], :name => "index_sectors_on_deleted_at"
   add_index "sectors", ["zone_id"], :name => "index_sectors_on_zone_id"
 
   create_table "sessions", :force => true do |t|
@@ -416,7 +426,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"
-  add_index "users", ["email"], :name => "index_users_on_email", :unique => true
+  add_index "users", ["email"], :name => "index_users_on_email"
   add_index "users", ["reset_password_token"], :name => "index_users_on_reset_password_token", :unique => true
 
   create_table "venue_schedules", :force => true do |t|
@@ -433,8 +443,33 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "last_updated_at"
   end
 
-# Could not dump table "venues" because of following StandardError
-#   Unknown type 'belongs_to' for column 'pincode'
+  create_table "venues", :force => true do |t|
+    t.string   "name"
+    t.text     "description"
+    t.text     "address"
+    t.string   "capacity"
+    t.string   "state"
+    t.string   "contact_name"
+    t.string   "contact_email"
+    t.string   "contact_phone"
+    t.string   "contact_mobile"
+    t.text     "contact_address"
+    t.boolean  "commercial"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+    t.string   "payment_contact_name"
+    t.string   "payment_contact_address"
+    t.string   "payment_contact_mobile"
+    t.integer  "per_day_price"
+    t.datetime "deleted_at"
+    t.integer  "pincode_id"
+    t.text     "comments"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
+  end
+
+  add_index "venues", ["deleted_at"], :name => "index_venues_on_deleted_at"
 
   create_table "versions", :force => true do |t|
     t.string   "item_type",      :null => false
@@ -452,6 +487,9 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "name"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.datetime "deleted_at"
   end
+
+  add_index "zones", ["deleted_at"], :name => "index_zones_on_deleted_at"
 
 end
