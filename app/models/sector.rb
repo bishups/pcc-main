@@ -13,6 +13,9 @@ class Sector < ActiveRecord::Base
   belongs_to :zone, :inverse_of => :sectors
   has_many :centers, :inverse_of => :sector
   validates :name,:zone, :presence => true
+  validates_uniqueness_of :name, :scope => :deleted_at
+
+  acts_as_paranoid
 
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
 
@@ -53,15 +56,18 @@ class Sector < ActiveRecord::Base
         inline_add do
           false
         end
+        read_only do
+          not bindings[:controller].current_user.is?(:zonal_coordinator) or bindings[:controller].current_user.is?(:super_admin)
+        end
         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           # bindings[:object] & bindings[:controller] are available, but not in scope's block!
-          accessible_zones = bindings[:controller].current_user.accessible_zones(:zonal_coordinator)
+          accessible_zones = Zone.by_centers(bindings[:controller].current_user.accessible_centers.uniq).uniq
           Proc.new { |scope|
             # scoping all Players currently, let's limit them to the team's league
             # Be sure to limit if there are a lot of Players and order them by position
             # scope = scope.where(:id => accessible_centers )
-            scope = scope.where(:id => accessible_zones )
+            scope = scope.where(:id => accessible_zones.map(&:id) )
           }
         end
       end

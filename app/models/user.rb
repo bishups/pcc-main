@@ -29,14 +29,14 @@
 
 module UserExtension
   def by_role(role_name)
-    current_role_values =  User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:text] == role_name }.values
+    current_role_values = User::ROLE_ACCESS_HIERARCHY.select { |k, v| v[:text] == role_name }.values
     if not current_role_values.empty?
       current_role_access_level = current_role_values.first[:access_level]
-    # Take all the roles above the current role's access level, including the current role.
-    # So that while getting centers for zonal co-ordinator, will be available even if we check it for kit co-ordinator
-    role_names = User::ROLE_ACCESS_HIERARCHY.select{|k,v| v[:access_level] >= current_role_access_level  }.values.map{|a|a[:text]}
-    puts role_names.inspect
-    role_ids=Role.where(:name => role_names).map(&:id)
+      # Take all the roles above the current role's access level, including the current role.
+      # So that while getting centers for zonal co-ordinator, will be available even if we check it for kit co-ordinator
+      role_names = User::ROLE_ACCESS_HIERARCHY.select { |k, v| v[:access_level] >= current_role_access_level }.values.map { |a| a[:text] }
+      puts role_names.inspect
+      role_ids=Role.where(:name => role_names).map(&:id)
       find(:all, :conditions => ["access_privileges.role_id in (?)", role_ids])
     else
       find(:all)
@@ -119,6 +119,15 @@ class User < ActiveRecord::Base
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
   validate :validate_approver_email, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
+  before_save do |user|
+    if not user.enabled?
+      user.type = "PendingUser"
+    else
+      user.type = nil
+    end
+
+  end
+
   after_create do |user|
     if user.approver_email
       UserMailer.approval_email(user).deliver
@@ -135,7 +144,7 @@ class User < ActiveRecord::Base
 
   def validate_approver_email
     approver = User.where(:email => self.approver_email.strip).first
-    unless approver and (approver.is?(:super_admin) or  approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
+    unless approver and (approver.is?(:super_admin) or approver.is?(:teacher_training_department) or approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
       errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
     end
   end
@@ -160,15 +169,15 @@ class User < ActiveRecord::Base
   end
 
   def inactive_message
-    "Failed to Sign In. Your account is not currently active. Please contact your co-ordinator."
+    "Failed to Sign In. Your account is not currently active. Please contact your Approver."
   end
 
 
   def access_privilege_names=(names)
     names.collect do |n|
       ap=self.access_privileges.new
-      ap.role=Role.where(:name => n[:role_name] ).first
-      ap.resource=Center.where(:name => n[:center_name] ).first
+      ap.role=Role.where(:name => n[:role_name]).first
+      ap.resource=Center.where(:name => n[:center_name]).first
     end
   end
 
@@ -370,7 +379,11 @@ class User < ActiveRecord::Base
       resource_path = rails_admin.show_path(:model_name => 'access_privilege', :id => ap.id)
       #role_str << %{ #{ap.role.name} => #{ap.resource.class.name.demodulize} (#{ap.resource.name}) <br>}
       #role_str << %{<a href=#{role_path}>#{ap.role.name}</a> => <a href=#{resource_path}>#{ap.resource.name}</a> <br>}
-      role_str << %{<a href=#{resource_path}>#{ap.role.name} - #{ap.resource.name}</a> <br>}
+      if ap.resource
+        role_str << %{<a href=#{resource_path}>#{ap.role.name} - #{ap.resource.name}</a> <br>}
+      else
+        role_str << %{<a> #{ap.role.name} </a> <br>}
+      end
     }
     role_str
   end
@@ -379,6 +392,9 @@ class User < ActiveRecord::Base
   rails_admin do
 
     navigation_label 'Access Privilege'
+    visible do
+      bindings[:controller].current_user.is?(:sector_coordinator)
+    end
     weight 0
     list do
       field :firstname
@@ -420,6 +436,18 @@ class User < ActiveRecord::Base
         help "Optional. Format of stdcode-number (e.g, 0422-2515345)."
       end
       field :email do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+        help "Required"
+      end
+      field :password do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+        help "Required"
+      end
+      field :password_confirmation do
         read_only do
           not bindings[:controller].current_user.is?(:super_admin)
         end

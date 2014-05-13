@@ -2,7 +2,24 @@
   <div class='page-header'>
     <h2>Sign-in to PCC Portal</h2>
   </div>
+
+
   <div class='page-body'>
+    <div class='row'>
+      <div >
+        <div class="panel-heading">
+          <p>Namaskaram! Please use your Google account or Isha email account ( @ishafoundation.org ) to sing in</p>
+          <%= link_to "Sign in with Google", omniauth_authorize_path(resource_name, :google_oauth2), :class => 'btn btn-lg btn-primary' %> <br/>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+
+
+
+<!--  <div class='page-body'>
     <div class='row'>
       <div class='col-md-6 col-md-offset-1'>
         <%= form_for(resource, :as => resource_name, :url => session_path(resource_name), :html => { :class => 'form' }) do |f| %>
@@ -16,10 +33,10 @@
             </div>
             <%= f.submit "Sign-in", :class => 'btn btn-lg btn-primary' %>
             <%= link_to "Sign in with Google", omniauth_authorize_path(resource_name, :google_oauth2), :class => 'btn btn-lg btn-primary' %> <br/>
-            <%= link_to "Forgot Password?", new_password_path(resource_name) %> <br/>
         <% end %>
       </div>
     </div>
   </div>
+ -->
 </div>
 </div>

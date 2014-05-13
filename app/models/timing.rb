@@ -14,6 +14,7 @@ class Timing < ActiveRecord::Base
   has_many :teachers, through: :teacher_schedules
   validates :name, :start_time, :end_time, :presence => true
   validate :start_end_time?
+  validates_uniqueness_of :name, :scope => :deleted_at
 
   before_validation :remove_date
 

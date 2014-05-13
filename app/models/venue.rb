@@ -53,7 +53,9 @@ class Venue < ActiveRecord::Base
 
   validates_presence_of :address
   #validates_presence_of :center_id
-  validates :name, :presence => true, :uniqueness => true
+  validates :name, :presence => true
+  validates_uniqueness_of :name, :scope => :deleted_at
+
   validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
   validates :contact_mobile, :presence => true, :length => { is: 10}, :numericality => {:only_integer => true }
   validates :pincode, :presence => true
