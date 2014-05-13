@@ -117,6 +117,7 @@ class User < ActiveRecord::Base
   validates_uniqueness_of :email, :scope => :deleted_at
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
+  validates_uniqueness_of :mobile, :scope => :deleted_at
   validate :validate_approver_email, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
   before_save do |user|

@@ -1,7 +1,9 @@
 3.times do |index|
   zone=Zone.create(:name=>"Zone--#{index}")
+  count = 0
   ["zonal_coordinator","zao","pcc_accounts","finance_department", "teacher_training_department"].each do |role_name|
-    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
+    count = count + 1
+    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=> (9999999900 + index * 10 + count).to_s,
                     :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}", :address => "Zone--#{index}",
                     :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me", :enable => true )
     user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[role_name.to_sym][:text]).first,:resource=>zone)
@@ -13,7 +15,7 @@ end
 
 9.times do |index|
   sector=Sector.create(:name=>"Sector--#{index}", :zone=>Zone.find((index/3)+1))
-  user = User.new(:firstname => "Sector Co-ordinator-#{index}",:email=> "sector-coordinator-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
+  user = User.new(:firstname => "Sector Co-ordinator-#{index}",:email=> "sector-coordinator-#{index}@pcc-ishayoga.org",:mobile=> (9999999000 + index).to_s,
                   :password => "sector-coordinator-#{index}", :password_confirmation => "sector-coordinator-#{index}", :address => "Sector--#{index}",
                   :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me", :enable => true )
   user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).first,:resource=>sector)
@@ -25,8 +27,10 @@ end
 27.times do |index|
   center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1))
   Pincode.create(:pincode=>600000+index,:location_name=>"Pincode--#{index}",:center_id=>center.id)
+  count = 0
   ["center_coordinator","volunteer_committee","center_scheduler","kit_coordinator","venue_coordinator","center_treasurer"].each do |role_name|
-    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
+    count = count + 1
+    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>(9999900000 + index * 1000 + count).to_s,
                     :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}", :address => "Center--#{index}",
                     :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me" , :enable => true  )
     user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[role_name.to_sym][:text]).first,:resource=>center)
@@ -132,8 +136,8 @@ Center.all.each do |center|
 end
 
 4.times do |index|
-  user = User.new(:firstname => "Teacher-#{index}",:email=> "teacher-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
-                  :password => "teacher-#{index}", :password_confirmation => "teacher-#{index}", :address => " ",
+  user = User.new(:firstname => "Teacher-#{index}",:email=> "teacher-#{index}@pcc-ishayoga.org",:mobile=>(9999000000 + index).to_s,
+                  :password => "teacher-#{index}", :password_confirmation => "teacher-#{index}", :address => "IYC",
                   :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me",  :enable => true )
   user.save
   if not user.save
