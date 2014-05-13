@@ -2,7 +2,9 @@ class ProgramsController < ApplicationController
   before_filter :authenticate_user!
 
   def index
-    center_ids = current_user.accessible_center_ids
+
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    center_ids = in_geography ? current_user.accessible_center_ids : []
     respond_to do |format|
       if center_ids.empty?
         @programs = []

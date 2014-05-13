@@ -104,28 +104,28 @@ end
 end
 
 4.times do |index|
-  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => " Venue Address", :centers => Sector.last.centers)
+  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900, :pincode => Sector.last.centers.last.pincodes.last, :per_day_price => 100, :address => " Venue Address", :centers => Sector.last.centers)
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 4.times do |index|
-  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers+Sector.last.centers )
+  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900, :pincode => Sector.first.centers.last.pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers+Sector.last.centers )
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 3.times do |index|
-  v=Venue.new(:name=>"#{Sector.find(index+1).centers.first.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => Sector.find(index+1).centers)
+  v=Venue.new(:name=>"#{Sector.find(index+1).centers.first.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900, :pincode => Sector.find(index+1).centers.first.pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => Sector.find(index+1).centers)
   if not v.save
     puts "Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 7.times do |index|
-  v=Venue.new(:name=>"#{Center.find(index+3).name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => [Center.find(index+3)])
+  v=Venue.new(:name=>"#{Center.find(index+3).name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900, :pincode => Center.find(index+3).pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => [Center.find(index+3)])
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end

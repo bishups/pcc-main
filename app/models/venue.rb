@@ -29,7 +29,7 @@ class Venue < ActiveRecord::Base
 
   # attr_accessible :title, :body
   attr_accessor :current_user
-  attr_accessible :name, :description, :address, :pin_code, :capacity, :contact_name, :contact_phone,
+  attr_accessible :name, :description, :address, :capacity, :contact_name, :contact_phone,
   :contact_mobile, :contact_email, :contact_address, :commercial, :payment_contact_name,
   :payment_contact_address,:payment_contact_mobile,:per_day_price
 
@@ -39,6 +39,9 @@ class Venue < ActiveRecord::Base
   validate :has_centers?
   validate :has_per_day_price?
   validate :has_commercial?
+
+  belongs_to :pincode
+  attr_accessible :pincode, :pincode_id
 
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at
@@ -53,7 +56,8 @@ class Venue < ActiveRecord::Base
   validates :name, :presence => true, :uniqueness => true
   validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
   validates :contact_mobile, :presence => true, :length => { is: 10}, :numericality => {:only_integer => true }
-  validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
+  validates :pincode, :presence => true
+  #validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
   validates :per_day_price, :numericality => true, :allow_nil => true
 
   validates :payment_contact_mobile, :length => { is: 10}, :numericality => {:only_integer => true }, :allow_blank => true
@@ -362,7 +366,7 @@ def can_reject?
       end
       field :description
       field :address
-      field :pin_code
+      field :pincode
       field :capacity
       field :contact_name
       field :contact_phone

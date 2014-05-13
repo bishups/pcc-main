@@ -82,22 +82,22 @@ class User < ActiveRecord::Base
 
   ROLE_ACCESS_HIERARCHY =
       {
-          :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:pcc, :geography, :finance]},
-          :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
+          :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:geography, :finance, :training]},
+          :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:geography]},
           :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
-          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
+          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:geography]},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
           :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 0, :group => [:geography]},
           :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
           :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
           :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
-          :teacher              => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
+          :teacher              => {:text => "Teacher", :access_level => 0, :group => [:geography]},
           # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
-          :any                  => {:text => "Teacher", :access_level => -1, :group => []}
+          :any                  => {:text => "Any", :access_level => -1, :group => []}
     }
 
 
@@ -250,6 +250,9 @@ class User < ActiveRecord::Base
   # --  if user.is? :zonal_coordinator, :for => :any, :center_id => [1,2,3]
   # --  if user.is? :zonal_coordinator, :for => :all, :center_id => [1,2,3]
   # if :for option is not specified, be default it is assumed to be :for => :all
+  # 4. user is in specific group(s)
+  # -- if user.is? :any, :in_group => :geography
+  # NOTE: you should use :in_group option only with :any role. It can be though combined with :center_id option
   #
   # NOTE: 12 Apr 14 - From rails_admin :teacher role cannot be associated with users via access_privileges
   # 1. because teacher checks can be handled simply by checking with current_user.teacher.id, rather than
@@ -257,10 +260,15 @@ class User < ActiveRecord::Base
   # 2. teachers are associated separately with center(s) through the teacher admin interface.
   def is?(for_role, options={})
     for_center_ids = []
+    in_groups = []
     if options.has_key?(:center_id)
       for_center_ids = options[:center_id].class == Array ? options[:center_id] : [options[:center_id]]
       for_center_ids = for_center_ids.map(&:to_i).compact
     end
+    if options.has_key?(:in_group)
+      in_groups = options[:in_group].class == Array ? options[:in_group] : [options[:in_group]]
+    end
+
     for_all = (options.has_key?(:for) && options[:for] == :any) ? false : true
     # HACK - for_all is set true if we are looking at [] centers.
     for_all = true if for_center_ids.empty?
@@ -285,8 +293,10 @@ class User < ActiveRecord::Base
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
         for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
+        self_ah_groups = self_ah[:group]
+        for_ah_groups = in_groups == [] ? for_ah[:group] : in_groups
         # if for given ap, self has same role, or access_level > access_level than asked for, and part of all groups
-        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level])  &&  (for_ah[:group] - self_ah[:group]).empty?)
+        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level])  &&  (for_ah_groups - self_ah_groups).empty?)
           return true
         end
       end

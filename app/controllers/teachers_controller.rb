@@ -6,7 +6,9 @@ class TeachersController < ApplicationController
   # GET /teachers
   # GET /teachers.json
   def index
-    center_ids = current_user.accessible_center_ids
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    in_training = (current_user.is? :any, :in_group => [:training])
+    center_ids = (in_geography or in_training) ? current_user.accessible_center_ids : []
     # any teachers who are attached to zones, but not to the centers
     zone_ids = current_user.accessible_zone_ids
     respond_to do |format|
