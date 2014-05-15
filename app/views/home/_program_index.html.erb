@@ -5,7 +5,7 @@
           <tr>
             <th>#</th>
             <th>Name</th>
-            <th>Announced Id</th>
+            <th>PID</th>
             <th>Type</th>
             <th>Start</th>
             <th>Slot</th>
@@ -17,16 +17,7 @@
           <tr>
             <td><%= program.id %></td>
             <td><%= link_to program.name, program_path(program)%></td>
-            <td>
-              <% unless program.is_announced? %>
-                <span class='label label-danger'>pending</span>
-                <% if program.ready_for_announcement? %>
-                <span class='label label-success'>Ready</span>
-                <% end %>
-              <% else %>
-                <%= program.announce_program_id.to_s %>
-              <% end %>
-            </td>
+            <td><%= program.pid %></td>
             <td><%= (program.program_donation.name rescue '')%></td>
             <td><%= program.start_date.strftime('%d %B %Y') %></td>
             <td><%= (program.timings.map {|c| c[:name]}).join(", ") %></td>

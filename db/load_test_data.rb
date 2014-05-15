@@ -25,7 +25,7 @@ end
 end
 
 27.times do |index|
-  center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1))
+  center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1), :program_donations=> [ProgramDonation.find((index/9)+1)])
   Pincode.create(:pincode=>600000+index,:location_name=>"Pincode--#{index}",:center_id=>center.id)
   count = 0
   ["center_coordinator","volunteer_committee","center_scheduler","kit_coordinator","venue_coordinator","center_treasurer"].each do |role_name|

@@ -103,7 +103,7 @@ class User < ActiveRecord::Base
 
   # Setup accessible (or protected) attributes for your model
   attr_accessor :username, :provider, :uid, :avatar
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable
+  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
   attr_accessible :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
@@ -130,10 +130,10 @@ class User < ActiveRecord::Base
   end
 
   after_create do |user|
-    if user.approver_email
-      UserMailer.approval_email(user).deliver
-      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
-    end
+    user.reload
+    UserMailer.approval_email(user).deliver
+    user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
+    user.update_attribute(:approval_email_sent, true)
   end
 
   after_save  do |user|
@@ -386,6 +386,18 @@ class User < ActiveRecord::Base
       end
     }
     role_str
+  end
+
+
+  # this is a cron job, run through whenever gem
+  # from the config/schedule.rb file
+  def self.send_pending_approval_emails
+    users = User.where("approval_email_sent IS ?", false).all
+    users.each {|user|
+      UserMailer.approval_email(user).deliver
+      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
+      user.update_attribute(:approval_email_sent, true)
+    }
   end
 
 

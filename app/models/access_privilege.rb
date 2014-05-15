@@ -46,7 +46,8 @@ class AccessPrivilege < ActiveRecord::Base
           when "Sector"
             [:sector_coordinator]
           when "Center"
-            [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
+            # HACK - TODO - need to clean this up - using :treasurer, rather than :center_treasurer
+            [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer, :teacher]
           else
             [:super_admin]
         end

@@ -53,7 +53,7 @@ class Role < ActiveRecord::Base
           :permissions => ["Teacher Scheduling","Venue Scheduling","Kit Scheduling"]
       },
       {
-          :name => "Center Treasurer",
+          :name => "Treasurer",
           :desc => "Allows access to particular center treasurer",
           :permissions => ["Venue Read"]
       },

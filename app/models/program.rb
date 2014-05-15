@@ -39,7 +39,7 @@ class Program < ActiveRecord::Base
   validates_with ProgramValidator, :on => :create
 
   attr_accessor :current_user
-  attr_accessible :name, :start_date, :center_id, :end_date, :feedback
+  attr_accessible :name, :start_date, :center_id, :end_date, :feedback, :pid, :announced
 
   before_validation :assign_dates!
 
@@ -137,6 +137,12 @@ class Program < ActiveRecord::Base
 
   def initialize(*args)
     super(*args)
+  end
+
+
+  after_create do |program|
+    program.reload
+    program.update_attribute(:pid, "P#{1000+program.id}")
   end
 
   state_machine :state, :initial => STATE_UNKNOWN do
@@ -263,7 +269,8 @@ class Program < ActiveRecord::Base
   end
 
   def on_announce
-    self.generate_program_id!
+    self.announced = true
+    # generate_program_id!
     self.notify_all(ANNOUNCED)
     # start the timer for start of class notification
     self.delay(:run_at => self.start_date).trigger_program_start
@@ -380,7 +387,7 @@ class Program < ActiveRecord::Base
   end
 
   def friendly_name
-    ("#%d %s (%s, %s, %s)" % [self.id, self.name, self.start_date.strftime('%d %B %Y'), self.center.name, self.program_donation.program_type.name])
+    ("#%s %s (%s, %s, %s)" % [self.pid, self.name, self.start_date.strftime('%d %B %Y'), self.center.name, self.program_donation.program_type.name])
   end
 
 
@@ -389,7 +396,7 @@ class Program < ActiveRecord::Base
   end
 
   def friendly_first_name_for_email
-    "Program ##{self.id}"
+    "Program #{self.pid}"
    end
 
   def friendly_second_name_for_email
@@ -397,24 +404,26 @@ class Program < ActiveRecord::Base
   end
 
   def friendly_name_for_sms
-    "Program ##{self.id} #{self.name}"
+    "Program #{self.pid} #{self.name}"
   end
 
 
   def is_announced?
-    self.announce_program_id && !self.announce_program_id.empty?
+    self.announced == true
   end
 
   def in_progress?
     self.state == STATE_IN_PROGRESS
   end
 
+=begin
   def generate_program_id!
     self.announce_program_id = ("%s %s %d" % 
       [self.center.name, self.start_date.strftime('%B%Y'), self.id]
     ).parameterize
     #self.save!
   end
+=end
   
   def proposer
     ::User.find(self.proposer_id)
