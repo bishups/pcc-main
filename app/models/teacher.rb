@@ -306,7 +306,7 @@ class Teacher < ActiveRecord::Base
     program.timings.each {|t|
       ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? AND teacher_schedules.program_type_id IS ?',
                                         program.start_date.to_date, program.end_date.to_date, t.id,
-                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).first
+                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_donation.program_type_id).first
       return false if ts.nil?
     }
     return true

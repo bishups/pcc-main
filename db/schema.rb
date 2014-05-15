@@ -55,6 +55,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer "kit_id"
   end
 
+  create_table "centers_program_donations", :force => true do |t|
+    t.integer "center_id"
+    t.integer "program_donation_id"
+  end
+
   create_table "centers_teacher_schedules", :force => true do |t|
     t.integer "center_id"
     t.integer "teacher_schedule_id"
@@ -232,6 +237,18 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   add_index "pincodes", ["center_id"], :name => "index_pincodes_on_center_id"
   add_index "pincodes", ["deleted_at"], :name => "index_pincodes_on_deleted_at"
 
+  create_table "program_donations", :force => true do |t|
+    t.integer  "program_type_id"
+    t.integer  "donation"
+    t.string   "name"
+    t.datetime "deleted_at"
+    t.datetime "created_at",      :null => false
+    t.datetime "updated_at",      :null => false
+  end
+
+  add_index "program_donations", ["deleted_at"], :name => "index_program_donations_on_deleted_at"
+  add_index "program_donations", ["program_type_id"], :name => "index_program_donations_on_program_type_id"
+
   create_table "program_teacher_schedules", :force => true do |t|
     t.integer  "program_id"
     t.integer  "user_id"
@@ -270,7 +287,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "name"
     t.text     "description"
     t.string   "center_id"
-    t.integer  "program_type_id"
     t.integer  "proposer_id"
     t.string   "state"
     t.datetime "start_date"
@@ -283,6 +299,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.text     "comments"
     t.string   "last_update"
     t.datetime "last_updated_at"
+    t.integer  "program_donation_id"
   end
 
   create_table "programs_timings", :force => true do |t|

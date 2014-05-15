@@ -26,7 +26,10 @@ class Program < ActiveRecord::Base
   has_many :activity_logs, :as => :model, :inverse_of => :model
   has_many :notification_logs, :as => :model, :inverse_of => :model
 
-  validates :start_date, :center_id, :name, :program_type_id, :timings, :presence => true
+  belongs_to :program_donation
+  attr_accessible :program_donation, :program_donation_id
+
+  validates :start_date, :center_id, :name, :program_donation_id, :timings, :presence => true
 #  validates :end_date, :presence => true
 
   belongs_to :proposer, :class_name => "User" #, :foreign_key => "rated_id"
@@ -36,12 +39,12 @@ class Program < ActiveRecord::Base
   validates_with ProgramValidator, :on => :create
 
   attr_accessor :current_user
-  attr_accessible :name, :program_type_id, :start_date, :center_id, :end_date, :feedback
+  attr_accessible :name, :start_date, :center_id, :end_date, :feedback
 
   before_validation :assign_dates!
 
   belongs_to :center
-  belongs_to :program_type
+
   has_many :venue_schedules
   attr_accessible :venue_schedules, :venue_schedule_ids
   has_many :kit_schedules
@@ -377,7 +380,7 @@ class Program < ActiveRecord::Base
   end
 
   def friendly_name
-    ("#%d %s (%s, %s, %s)" % [self.id, self.name, self.start_date.strftime('%d %B %Y'), self.center.name, self.program_type.name])
+    ("#%d %s (%s, %s, %s)" % [self.id, self.name, self.start_date.strftime('%d %B %Y'), self.center.name, self.program_donation.program_type.name])
   end
 
 
@@ -390,7 +393,7 @@ class Program < ActiveRecord::Base
    end
 
   def friendly_second_name_for_email
-    "  #{self.name} (#{self.center.name} #{self.program_type.name}) #{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}"
+    "  #{self.name} (#{self.center.name} #{self.program_donation.program_type.name}) #{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}"
   end
 
   def friendly_name_for_sms
@@ -481,8 +484,8 @@ class Program < ActiveRecord::Base
   end
 
   def assign_dates!
-    if !self.start_date.nil? && !self.program_type.nil?
-      self.end_date = self.start_date + (self.program_type.no_of_days.to_i.days - 1.day)
+    if !self.start_date.nil? && !self.program_donation.program_type.nil?
+      self.end_date = self.start_date + (self.program_donation.program_type.no_of_days.to_i.days - 1.day)
     end
     #@program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
   end
@@ -518,7 +521,7 @@ class Program < ActiveRecord::Base
   end
 
   def minimum_no_of_teacher
-    self.program_type.minimum_no_of_teacher
+    self.program_donation.program_type.minimum_no_of_teacher
   end
 
   def minimum_teachers_connected?

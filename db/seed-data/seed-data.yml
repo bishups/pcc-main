@@ -36,6 +36,16 @@ ProgramType:
      minimum_no_of_teacher:  2
      no_of_days: 3
 
+ProgramDonation:
+  - name: "Uyir_Nokkam_250"
+    donation: 250
+  - name: "Uyir_Nokkam_350"
+    donation: 350
+  - name: "Uyir_Nokkam_500"
+    donation: 500
+  - name: "Uyir_Nokkam_600"
+    donation: 600
+
 Timing:
   -  name: "Morning (6am-9am)"
      start_time: "6am"

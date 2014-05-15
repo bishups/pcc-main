@@ -24,6 +24,9 @@ class Center < ActiveRecord::Base
   has_and_belongs_to_many :teacher_schedules, :join_table => "centers_teacher_schedules"
   attr_accessible :name, :sector_id, :sector, :pincodes, :pincode_ids, :zone, :zone_id, :teacher_schedules, :teacher_schedule_ids
 
+  has_and_belongs_to_many :program_donations
+  attr_accessible :program_donations, :program_donation_ids
+
   validates :name,:sector, :presence => true
 
 
@@ -39,6 +42,7 @@ class Center < ActiveRecord::Base
       field :sector
       field :zone
       field :pincodes
+      field :program_donations
     end
     edit do
       field :name do
@@ -54,6 +58,9 @@ class Center < ActiveRecord::Base
         inline_add do
           false
         end
+      end
+      field :program_donations do
+        inline_add false
       end
     end
   end

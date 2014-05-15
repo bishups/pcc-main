@@ -114,18 +114,57 @@ class ProgramsController < ApplicationController
 
   def update_timings
     # updates timings based on selection
-    program_type = ProgramType.find(params[:program_type_id])
+    program_donation = ProgramDonation.find(params[:program_donation_id])
     # map to name and id for use in our options_for_select
-    @timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
+    @disable_create_button = true
+    timings = program_donation.program_type.timings.sort_by{|t| t[:start_time]}
+    unless timings.empty?
+      @timings = timings.map{|a| [a.name, a.id]}
+      @disable_create_button = false
+    end
+  end
+
+  def update_program_donations
+   # @program_donations = center.program_donations.sort_by{|pd| pd[:name]}.map{|a| [a.name, a.id]}
+    # updates program donation based on selection
+    center = Center.find(params[:center_id].to_i)
+    # map to name and id for use in our options_for_select
+    program_donations = center.program_donations.sort_by{|pd| pd[:name]}
+    if program_donations.empty?
+      @program_donations = ['None Available']
+      @timings = ['None Available']
+      @disable_create_button = true
+    else
+      timings =  program_donations[0].program_type.timings
+      if timings.empty?
+        @disable_create_button = true
+      else
+        @disable_create_button = false
+        @timings = timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
+      end
+      @program_donations = program_donations.map{|a| [a.name, a.id]}
+    end
+    @selected_program_donation = @program_donations[0]
   end
 
   def load_centers_program_type_timings!
     center_ids = current_user.accessible_center_ids(:center_scheduler)
     @centers = Center.where("id IN (?)", center_ids).order('name ASC')
-    @program_types = ProgramType.all.sort_by{|pt| pt[:name]}
-    @selected_program_type = @program_types[0]
-    @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
+    @selected_center = @centers[0]
+    @program_donations = @selected_center.program_donations.sort_by{|pd| pd[:name]}
+    if @program_donations.empty?
+      @selected_program_donation = ['None Available']
+      @timings = []
+      @disable_create_button = true
+    else
+      @selected_program_donation = @program_donations[0]
+      @timings =  @selected_program_donation.program_type.timings.sort_by{|t| t[:start_time]}
+      @disable_create_button = false
+    end
   end
+
+
+
 
   private
 

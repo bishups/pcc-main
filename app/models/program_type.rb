@@ -19,8 +19,14 @@ class ProgramType < ActiveRecord::Base
   validates :minimum_no_of_teacher, :length => { is: 1}, :numericality => {:only_integer => true }
   validates_uniqueness_of :name, :scope => :deleted_at
 
+  has_many :program_donations
+  attr_accessible :program_donations, :program_donation_ids
+
   has_and_belongs_to_many :timings
   attr_accessible :timing_ids, :timings
+
+  has_and_belongs_to_many :centers
+  attr_accessible :centers, :center_ids
 
   acts_as_paranoid
 
@@ -36,6 +42,7 @@ class ProgramType < ActiveRecord::Base
       field :no_of_days
       field :minimum_no_of_teacher
       field :timings
+      field :program_donations
     end
     edit do
       field :name
@@ -48,6 +55,9 @@ class ProgramType < ActiveRecord::Base
         label "Minimum number of teachers"
       end
       field :timings do
+        inline_add false
+      end
+      field :program_donations do
         inline_add false
       end
     end

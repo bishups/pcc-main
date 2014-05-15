@@ -51,6 +51,18 @@
     end
   end
 
+  # create program donation
+  seed_data["ProgramDonation"].each do |program_donation|
+    program_donation_name = program_donation["name"]
+    pd=ProgramDonation.find_or_initialize_by_name(program_donation[:name])
+    pd.attributes=(program_donation)
+    program_type_name = program_donation_name.humanize.split[0..-2].join(" ")
+    pd.program_type = ProgramType.where('lower(name) = ?', program_type_name.downcase).first
+    if not pd.save
+      puts "ProgramDonation #{pd.name} has not been saved because of #{pd.errors.messages}"
+    end
+  end
+
 
 
 ## create_default_roles

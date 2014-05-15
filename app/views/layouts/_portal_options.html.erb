@@ -3,7 +3,7 @@
 <% in_training = (current_user.is? :any, :in_group => [:training]) %>
 <% in_finance = (current_user.is? :any, :in_group => [:finance]) %>
 <ul class="nav navbar-nav">
-  <% if centers.count > 0 %>
+  <% if (current_user.is? :super_admin) or center_ids.count > 0 %>
       <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Schedules <b class="caret"></b></a>
         <ul class="dropdown-menu">
