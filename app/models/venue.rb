@@ -34,6 +34,8 @@ class Venue < ActiveRecord::Base
   :payment_contact_address,:payment_contact_mobile,:per_day_price
 
   after_create :mark_as_proposed!
+  after_save :notify_price_change
+
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
@@ -83,6 +85,7 @@ class Venue < ActiveRecord::Base
   EVENT_INSUFFICIENT_INFO = "Insufficient Info"
   EVENT_REQUEST_FINANCE_APPROVAL = "Request Finance Approval"
   EVENT_FINANCE_APPROVAL  = "Finance Approval"
+  EVENT_PER_DAY_PRICE_CHANGE = "Per Day Price Change"
 
   PROCESSABLE_EVENTS = [
     EVENT_APPROVE, EVENT_REJECT, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL, EVENT_REQUEST_FINANCE_APPROVAL
@@ -184,6 +187,18 @@ class Venue < ActiveRecord::Base
       self.store_last_update!(nil, STATE_UNKNOWN, STATE_PROPOSED, EVENT_PROPOSE)
       self.notify(STATE_UNKNOWN, STATE_PROPOSED, EVENT_PROPOSE, self.centers)
       self.save
+    end
+  end
+
+  def notify_price_change
+    if self.per_day_price_changed?
+      last_price = changes[:per_day_price][0]
+      last_price = last_price.nil? ? 0 : last_price
+      new_price = changes[:per_day_price][1]
+      new_price = new_price.nil? ? 0 : new_price
+      # HACK - to make use of existing log update mechanism
+      self.store_last_update!(nil, "Per Day Price=#{last_price}", "#{new_price}", EVENT_PER_DAY_PRICE_CHANGE)
+      self.notify(:any, :any, EVENT_PER_DAY_PRICE_CHANGE, self.centers)
     end
   end
 
@@ -383,7 +398,7 @@ def can_reject?
       field :payment_contact_address
       field :payment_contact_mobile
       field :per_day_price do
-        help "Required (for commerical venues)."
+        help "Required (for commercial venues)."
       end
     end
 

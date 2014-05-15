@@ -466,6 +466,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",              :null => false
     t.integer  "program_id"
     t.string   "state"
+    t.integer  "per_day_price"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.text     "comments"
