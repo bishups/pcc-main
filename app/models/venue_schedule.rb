@@ -194,13 +194,7 @@ class VenueSchedule < ActiveRecord::Base
 
     event ::Program::FINISHED do
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
-    end
-
-    event ::Program::FINISHED do
       transition (BLOCKED_STATES - PAID_STATES) => STATE_AVAILABLE_EXPIRED
-    end
-
-    event ::Program::FINISHED do
       transition STATE_BLOCK_REQUESTED => STATE_EXPIRED
     end
 
@@ -400,7 +394,7 @@ class VenueSchedule < ActiveRecord::Base
         ::Program::DROPPED => [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED],
         ::Program::ANNOUNCED => [STATE_PAID],
         ::Program::STARTED => [STATE_ASSIGNED],
-        ::Program::FINISHED => [STATE_IN_PROGRESS] + (CONNECTED_STATES - PAID_STATES),
+        ::Program::FINISHED => [STATE_IN_PROGRESS] + (BLOCKED_STATES - PAID_STATES) + STATE_BLOCK_REQUESTED,
 
     }
 

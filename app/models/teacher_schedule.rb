@@ -135,12 +135,11 @@ class TeacherSchedule < ActiveRecord::Base
 
   def on_program_event(event)
     valid_states = {
-            ::Program::CANCELLED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
-            ::Program::DROPPED => [::ProgramTeacherSchedule::STATE_BLOCKED],
-            ::Program::ANNOUNCED => [::ProgramTeacherSchedule::STATE_BLOCKED],
-            ::Program::STARTED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
-            ::Program::FINISHED => [::ProgramTeacherSchedule::STATE_IN_CLASS],
-
+        ::Program::CANCELLED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
+        ::Program::DROPPED => [::ProgramTeacherSchedule::STATE_BLOCKED],
+        ::Program::ANNOUNCED => [::ProgramTeacherSchedule::STATE_BLOCKED],
+        ::Program::STARTED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
+        ::Program::FINISHED => [::ProgramTeacherSchedule::STATE_IN_CLASS, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED]
     }
 
     # first create the temporary object
