@@ -200,7 +200,7 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_CLOSED, :do => :can_close?
 
     event EVENT_CANCEL do
-      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zonal_coordinator, :center_id => p.center_id }
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zao, :center_id => p.center_id }
     end
     before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
@@ -377,7 +377,7 @@ class Program < ActiveRecord::Base
   end
 
   def can_cancel?
-    return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
+    return true if (self.current_user.is? :zao, :center_id => self.center_id)
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
