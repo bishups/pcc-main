@@ -5,7 +5,7 @@ class KitItem < ActiveRecord::Base
   belongs_to :kit_item_type
   attr_accessible :kit_item_type_id, :kit_item_type
   validates :kit, :kit_item_type, :condition, :presence => true
-  validates :count, :numericality => {:only_integer => true }
+  validates :count, :length => {:within => 1..3}, :numericality => {:only_integer => true }
 
   rails_admin do
     navigation_label 'Kit Management'

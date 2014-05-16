@@ -3,9 +3,9 @@ class ProgramDonation < ActiveRecord::Base
 
   belongs_to :program_type
   attr_accessible :donation, :name, :program_type, :program_type_id
-  validates :donation, :name, :program_type, :presence => true
+  validates :name, :program_type, :presence => true
   validates_uniqueness_of :name, :scope => :deleted_at
-  validates :donation, :numericality => {:only_integer => true}
+  validates :donation, :presence => true,  :length => {:within => 1..6}, :numericality => {:only_integer => true }
 
   has_and_belongs_to_many :centers
   attr_accessible :centers, :center_ids

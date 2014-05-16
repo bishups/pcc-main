@@ -189,7 +189,7 @@ notifications = [
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_REJECTED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_REJECTED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
-    {:model => 'Venue', :from_state => 'any', :to_state => 'any', :on_event => ::Venue::EVENT_PER_DAY_PRICE_CHANGE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Please re-submit venue for finance approval.' },
+    {:model => 'Venue', :from_state => 'any', :to_state => 'any', :on_event => ::Venue::EVENT_PER_DAY_PRICE_CHANGE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Check if finance approval needed.' },
 
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_UNKNOWN, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_REQUEST, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_UNKNOWN, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_REQUEST, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },

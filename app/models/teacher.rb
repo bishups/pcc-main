@@ -66,7 +66,8 @@ class Teacher < ActiveRecord::Base
 
   # The attach functionality need to be exercised through the admin interface only,
   # since zone(s) and center(s) need to be linked again
-  # EVENT_ATTACH      = 'Attach '
+  # It is still defined here only for logging and notification purposes
+  EVENT_ATTACH      = 'Attach '
 
   EVENT_UNATTACH    = 'Unattach'
   EVENT_UNFIT       = 'Unfit'
@@ -130,7 +131,7 @@ class Teacher < ActiveRecord::Base
       object.store_last_update!(nil, last_state, current_state, nil)
       # turning off validation when saving, since it is a minimal update in a callback
       object.save(:validate => false)
-      object.notify(:any, STATE_ATTACHED, :any, self.centers)
+      object.notify(last_state, STATE_ATTACHED, EVENT_ATTACH, self.centers)
     end
     if last_state == STATE_ATTACHED && current_state != STATE_ATTACHED
       # if we have published TeacherSchedules, means we are coming through the rails_admin
@@ -143,7 +144,8 @@ class Teacher < ActiveRecord::Base
         # turning off validation when saving, since it is a minimal update in a callback
         object.save(:validate => false)
       end
-      object.notify(STATE_ATTACHED, :any, :any, self.centers)
+      event = current_state == STATE_UNATTACHED ? EVENT_UNATTACH : EVENT_UNFIT
+      object.notify(STATE_ATTACHED, current_state, event, self.centers)
     end
 
   end
