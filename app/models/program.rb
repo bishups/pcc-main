@@ -623,7 +623,7 @@ class Program < ActiveRecord::Base
 
 
   def can_view?
-    return true if self.current_user.is? :any, :center_id => self.center_id
+    return true if self.current_user.is? :any, :in_group => [:geography], :center_id => self.center_id
     return false
   end
 

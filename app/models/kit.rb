@@ -147,7 +147,7 @@ class Kit < ActiveRecord::Base
 
 
   def can_view?
-    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
     return false
   end
 
