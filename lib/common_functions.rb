@@ -147,6 +147,14 @@ module CommonFunctions
     end
   end
 
+  def record_state
+    ReportStateRecord.new do |rs|
+      rs.record_name = self.class.name
+      rs.record_id = self.id
+      rs.state = self.state
+      rs.save!
+    end
+  end
 
 
 end
