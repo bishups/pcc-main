@@ -379,7 +379,9 @@ class Teacher < ActiveRecord::Base
         inline_edit false
         inline_add false
         read_only do
-           bindings[:controller].current_user.is?(:teacher_training_department)
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          bindings[:controller].current_user.is?(:teacher_training_department) if not bindings[:controller].current_user.is?(:super_admin)
         end
       end
       field :program_types  do
@@ -395,7 +397,9 @@ class Teacher < ActiveRecord::Base
         #inline_edit false
         inline_add false
         read_only do
-           bindings[:controller].current_user.is?(:teacher_training_department)
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          bindings[:controller].current_user.is?(:teacher_training_department) if not bindings[:controller].current_user.is?(:super_admin)
         end
         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
