@@ -62,7 +62,7 @@ class Venue < ActiveRecord::Base
   validates :contact_mobile, :presence => true, :length => { is: 10}, :numericality => {:only_integer => true }
   validates :pincode, :presence => true
   #validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
-  validates :per_day_price, :numericality => true, :allow_nil => true
+  validates :per_day_price, :length => {:within => 1..6},:numericality => {:only_integer => true }, :allow_nil => true
 
   validates :payment_contact_mobile, :length => { is: 10}, :numericality => {:only_integer => true }, :allow_blank => true
   validates :contact_email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}, :allow_blank => true
@@ -197,8 +197,10 @@ class Venue < ActiveRecord::Base
       new_price = changes[:per_day_price][1]
       new_price = new_price.nil? ? 0 : new_price
       # HACK - to make use of existing log update mechanism
-      self.store_last_update!(nil, "Per Day Price=#{last_price}", "#{new_price}", EVENT_PER_DAY_PRICE_CHANGE)
-      self.notify(:any, :any, EVENT_PER_DAY_PRICE_CHANGE, self.centers)
+      last_state = "Per Day Price of Rs #{last_price}"
+      current_state = "Rs #{new_price}"
+      self.store_last_update!(nil, last_state, current_state, EVENT_PER_DAY_PRICE_CHANGE)
+      self.notify(last_state, current_state, EVENT_PER_DAY_PRICE_CHANGE, self.centers)
     end
   end
 
@@ -282,7 +284,8 @@ def can_reject?
   end
 
   def can_view?
-    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
+    return true if self.current_user.is? :any, :for => :any, :in_group => [:finance], :center_id => self.center_ids
     return false
   end
 

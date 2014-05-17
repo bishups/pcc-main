@@ -15,8 +15,8 @@ class ProgramType < ActiveRecord::Base
   attr_accessible :language, :minimum_no_of_teacher, :name, :no_of_days
   has_and_belongs_to_many :teachers
   validates :language, :name, :presence => true
-  validates :no_of_days, :length => { is: 1}, :numericality => {:only_integer => true }
-  validates :minimum_no_of_teacher, :length => { is: 1}, :numericality => {:only_integer => true }
+  validates :no_of_days, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
+  validates :minimum_no_of_teacher, :presence => true, :length => { is: 1}, :numericality => {:only_integer => true }
   validates_uniqueness_of :name, :scope => :deleted_at
 
   has_many :program_donations

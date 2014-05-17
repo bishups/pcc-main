@@ -25,7 +25,7 @@
                 <td><strong> Comments </strong></td>
                 <td><%= teacher_schedule.comments %></td>
               </tr>
-              <% if current_user.is? :zonal_coordinator, :center_id => teacher_schedule.program.center_id %>
+              <% if current_user.is? :zao, :center_id => teacher_schedule.program.center_id %>
                   <% unless teacher_schedule.feedback.nil? %>
                       <tr>
                         <td><strong> Feedback </strong></td>

@@ -34,7 +34,7 @@ class VenueSchedule < ActiveRecord::Base
   validates :venue_id, :presence => true
   attr_accessible :venue_id, :venue
   validates_uniqueness_of :program_id, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
-  validates :per_day_price, :numericality => true, :allow_nil => true
+  validates :per_day_price, :length => {:within => 1..6},:numericality => {:only_integer => true }, :allow_nil => true
 
 
   belongs_to :blocked_by_user, :class_name => User
@@ -194,13 +194,7 @@ class VenueSchedule < ActiveRecord::Base
 
     event ::Program::FINISHED do
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
-    end
-
-    event ::Program::FINISHED do
       transition (BLOCKED_STATES - PAID_STATES) => STATE_AVAILABLE_EXPIRED
-    end
-
-    event ::Program::FINISHED do
       transition STATE_BLOCK_REQUESTED => STATE_EXPIRED
     end
 
@@ -400,7 +394,7 @@ class VenueSchedule < ActiveRecord::Base
         ::Program::DROPPED => [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED],
         ::Program::ANNOUNCED => [STATE_PAID],
         ::Program::STARTED => [STATE_ASSIGNED],
-        ::Program::FINISHED => [STATE_IN_PROGRESS] + (CONNECTED_STATES - PAID_STATES),
+        ::Program::FINISHED => [STATE_IN_PROGRESS] + (BLOCKED_STATES - PAID_STATES) + STATE_BLOCK_REQUESTED,
 
     }
 

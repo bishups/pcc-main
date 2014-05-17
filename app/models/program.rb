@@ -112,10 +112,11 @@ class Program < ActiveRecord::Base
   DROPPED    = 'Program Dropped'      # -> after_transition any => STATE_DROPPED
   ANNOUNCED  = 'Program Announced'    # -> after_transition any => STATE_ANNOUNCED
   STARTED    = 'Program Started'      # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
+  EXPIRED    = 'Program Expired'      # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
   FINISHED   = 'Program Finished'     # -> on timer notification, provided program still in valid state (on receiving modules will independently validate their state before processing this event)
   #CLOSED     = 'Program Closed'       # -> after_transition any => STATE_CLOSED
   NOTIFICATIONS = [
-      CANCELLED, DROPPED, ANNOUNCED, STARTED, FINISHED
+      CANCELLED, DROPPED, ANNOUNCED, STARTED, EXPIRED, FINISHED
   ]
 
 
@@ -178,6 +179,7 @@ class Program < ActiveRecord::Base
     event EVENT_EXPIRE do
       transition STATE_PROPOSED => STATE_EXPIRED
     end
+    after_transition any => STATE_EXPIRED, :do => :on_expire
 
     event EVENT_FINISH do
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
@@ -200,7 +202,7 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_CLOSED, :do => :can_close?
 
     event EVENT_CANCEL do
-      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zonal_coordinator, :center_id => p.center_id }
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zao, :center_id => p.center_id }
     end
     before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
@@ -254,6 +256,9 @@ class Program < ActiveRecord::Base
     if [STATE_IN_PROGRESS].include?(self.state)
       self.send(EVENT_FINISH)
       self.save if self.errors.empty?
+    elsif [STATE_EXPIRED].include?(self.state)
+      # Expire other attached resources
+      self.notify_all(FINISHED)
     end
   end
 
@@ -311,6 +316,19 @@ class Program < ActiveRecord::Base
   def on_start
     self.notify_all(STARTED)
     # start the timer for close of class notification
+    self.delay(:run_at => self.end_date).trigger_program_finish
+  end
+
+  def on_expire
+    # We won't notify expiry here, we will wait till the end of the class
+    # Other alternative is
+    # 1. to inform of expiry to resources and free the relevant resources?
+    # 2. to send notification to all the attached resources and their owners
+    # We are doing neither here, since on expiry we are notifying the relevant schedulers.
+    # They are expected to manually free the resources which are blocked for the program.
+    #self.notify_all(EXPIRED)
+
+    # start the timer for close of class notification, this is needed to expire other resource, if they are still attached
     self.delay(:run_at => self.end_date).trigger_program_finish
   end
 
@@ -377,7 +395,7 @@ class Program < ActiveRecord::Base
   end
 
   def can_cancel?
-    return true if (self.current_user.is? :zonal_coordinator, :center_id => self.center_id)
+    return true if (self.current_user.is? :zao, :center_id => self.center_id)
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
@@ -623,7 +641,7 @@ class Program < ActiveRecord::Base
 
 
   def can_view?
-    return true if self.current_user.is? :any, :center_id => self.center_id
+    return true if self.current_user.is? :any, :in_group => [:geography], :center_id => self.center_id
     return false
   end
 

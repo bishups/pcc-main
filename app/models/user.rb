@@ -145,7 +145,7 @@ class User < ActiveRecord::Base
 
   def validate_approver_email
     approver = User.where(:email => self.approver_email.strip).first
-    unless approver and (approver.is?(:super_admin) or approver.is?(:teacher_training_department) or approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
+    unless approver and (approver.is?(:super_admin) or approver.is?(:teacher_training_department) or approver.is?(:sector_coordinator))
       errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
     end
   end

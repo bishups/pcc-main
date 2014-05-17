@@ -227,8 +227,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     return false
   end
 
-  def is_zonal_coordinator?
-    return true if self.current_user.is? :zonal_coordinator, :center_id => self.program.center_id
+  def is_zao?
+    return true if self.current_user.is? :zao, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
