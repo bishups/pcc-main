@@ -21,6 +21,9 @@
                 <td width='25%'><strong>Venue Status</strong></td>
                 <td>
                   <% if @program.no_of_venues_connected > 0 %>
+                      <% if @program.no_of_venues_paid == 0 %>
+                        No Venue Paid. <br>
+                      <% end %>
                     <%= (@program.venue_schedules.map {|vs| "#{vs.venue[:name]} => #{vs[:state]}" if vs.is_connected?}).join(", ") %>
                   <% else %>
                     No Venue Attached.
