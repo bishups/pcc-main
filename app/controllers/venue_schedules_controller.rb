@@ -69,6 +69,7 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule = VenueSchedule.new(params[:venue_schedule])
     @venue_schedule.current_user = current_user
     @venue_schedule.venue_id = @venue.id
+    @venue_schedule.per_day_price = @venue.per_day_price
 
     @venue_schedule.blocked_by_user_id = current_user.id
     #@venue_schedule.setup_details!

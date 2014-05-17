@@ -51,6 +51,18 @@
     end
   end
 
+  # create program donation
+  seed_data["ProgramDonation"].each do |program_donation|
+    program_donation_name = program_donation["name"]
+    pd=ProgramDonation.find_or_initialize_by_name(program_donation[:name])
+    pd.attributes=(program_donation)
+    program_type_name = program_donation_name.humanize.split[0..-2].join(" ")
+    pd.program_type = ProgramType.where('lower(name) = ?', program_type_name.downcase).first
+    if not pd.save
+      puts "ProgramDonation #{pd.name} has not been saved because of #{pd.errors.messages}"
+    end
+  end
+
 
 
 ## create_default_roles
@@ -124,6 +136,8 @@ notifications = [
     {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_OPEN, :on_event => ::Program::EVENT_CANCEL, :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_CONDUCTED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please enter feedback' },
+    {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_TEACHER_CLOSED, :on_event => 'any', :role_id => zao.id, :send_sms => true, :send_email => true, :additional_text => 'Please mark as closed' },
+    {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_ZAO_CLOSED, :on_event => 'any', :role_id => center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Please mark as closed' },
 
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CLOSED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CLOSED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -176,6 +190,8 @@ notifications = [
 
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_REJECTED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_REJECTED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'Venue', :from_state => 'any', :to_state => 'any', :on_event => ::Venue::EVENT_PER_DAY_PRICE_CHANGE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Check if finance approval needed.' },
 
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_UNKNOWN, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_REQUEST, :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
     {:model => 'VenueSchedule', :from_state => ::VenueSchedule::STATE_UNKNOWN, :to_state => ::VenueSchedule::STATE_BLOCK_REQUESTED, :on_event => ::VenueSchedule::EVENT_BLOCK_REQUEST, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -231,7 +247,7 @@ notifications.each{|n| Notification.create(n)}
 
 
 ### Dummy users for all the roles used for testing purpose.
-  user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123",:enable => true )
+  user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :address=> "IYC", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123",:enable => true )
   user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text]).first)
   user.save(:validate => false)
 

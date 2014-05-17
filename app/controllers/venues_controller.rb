@@ -4,7 +4,9 @@ class VenuesController < ApplicationController
   # GET /venues
   # GET /venues.json
   def index
-    center_ids = current_user.accessible_center_ids
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    in_finance = (current_user.is? :any, :in_group => [:finance])
+    center_ids = (in_geography or in_finance) ? current_user.accessible_center_ids : []
     respond_to do |format|
       if center_ids.empty?
         @venues = []

@@ -1,8 +1,10 @@
 3.times do |index|
   zone=Zone.create(:name=>"Zone--#{index}")
+  count = 0
   ["zonal_coordinator","zao","pcc_accounts","finance_department", "teacher_training_department"].each do |role_name|
-    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
-                    :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}",
+    count = count + 1
+    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=> (9999999900 + index * 10 + count).to_s,
+                    :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}", :address => "Zone--#{index}",
                     :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me", :enable => true )
     user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[role_name.to_sym][:text]).first,:resource=>zone)
     if not user.save
@@ -13,8 +15,8 @@ end
 
 9.times do |index|
   sector=Sector.create(:name=>"Sector--#{index}", :zone=>Zone.find((index/3)+1))
-  user = User.new(:firstname => "Sector Co-ordinator-#{index}",:email=> "sector-coordinator-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
-                  :password => "sector-coordinator-#{index}", :password_confirmation => "sector-coordinator-#{index}",
+  user = User.new(:firstname => "Sector Co-ordinator-#{index}",:email=> "sector-coordinator-#{index}@pcc-ishayoga.org",:mobile=> (9999999000 + index).to_s,
+                  :password => "sector-coordinator-#{index}", :password_confirmation => "sector-coordinator-#{index}", :address => "Sector--#{index}",
                   :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me", :enable => true )
   user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).first,:resource=>sector)
   if not user.save
@@ -23,11 +25,13 @@ end
 end
 
 27.times do |index|
-  center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1))
+  center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1), :program_donations=> [ProgramDonation.find((index/9)+1)])
   Pincode.create(:pincode=>600000+index,:location_name=>"Pincode--#{index}",:center_id=>center.id)
+  count = 0
   ["center_coordinator","volunteer_committee","center_scheduler","kit_coordinator","venue_coordinator","center_treasurer"].each do |role_name|
-    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
-                    :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}",
+    count = count + 1
+    user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=>(9999900000 + index * 1000 + count).to_s,
+                    :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}", :address => "Center--#{index}",
                     :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me" , :enable => true  )
     user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[role_name.to_sym][:text]).first,:resource=>center)
     if not user.save
@@ -91,12 +95,12 @@ end
   end
 end
 
-Center.all.each do |center|
-  kit=Kit.new(:condition=>"Good",:name=>"#{center.name} - Kit", :guardian => center.users.first ,:capacity=>50,:centers=>[center])
+7.times do |index|
+  kit=Kit.new(:condition=>"Good",:name=>"#{Center.find(index+1).name} - Kit", :guardian => Center.find(index+1).users.first ,:capacity=>50,:centers=>[Center.find(index+1)])
   kit.save
   seed_data["KitItemType"].collect do |kit_item_type|
     kit_item_type=KitItemType.where(:name=>kit_item_type).first
-    kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type.name}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
+    kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
     if not kit_item.save
       puts " Kit Item not saved due to  #{kit_item.errors.messages}"
     end
@@ -104,36 +108,36 @@ Center.all.each do |center|
 end
 
 4.times do |index|
-  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => " Venue Address", :centers => Sector.last.centers)
+  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.last.centers.last.pincodes.last, :per_day_price => 100, :address => " Venue Address", :centers => Sector.last.centers)
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 4.times do |index|
-  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers+Sector.last.centers )
+  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.first.centers.last.pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers+Sector.last.centers )
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 3.times do |index|
-  v=Venue.new(:name=>"#{Sector.find(index+1).centers.first.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => Sector.find(index+1).centers)
+  v=Venue.new(:name=>"#{Sector.find(index+1).centers.first.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.find(index+1).centers.first.pincodes.first, :per_day_price => 100, :address => "Venue Address", :centers => Sector.find(index+1).centers)
   if not v.save
     puts "Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 Center.all.each do |center|
-  v=Venue.new(:name=>"#{center.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pin_code => 560031, :per_day_price => 100, :address => "Venue Address", :centers => [center])
+  v=Venue.new(:name=>"#{center.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => center.pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => [center])
   if not v.save
     puts " Venue not saved due to  #{v.errors.messages}"
   end
 end
 
 4.times do |index|
-  user = User.new(:firstname => "Teacher-#{index}",:email=> "teacher-#{index}@pcc-ishayoga.org",:mobile=>"9999999999",
-                  :password => "teacher-#{index}", :password_confirmation => "teacher-#{index}",
+  user = User.new(:firstname => "Teacher-#{index}",:email=> "teacher-#{index}@pcc-ishayoga.org",:mobile=>(9999000000 + index).to_s,
+                  :password => "teacher-#{index}", :password_confirmation => "teacher-#{index}", :address => "IYC",
                   :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me",  :enable => true )
   user.save
   if not user.save

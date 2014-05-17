@@ -82,41 +82,42 @@ class User < ActiveRecord::Base
 
   ROLE_ACCESS_HIERARCHY =
       {
-          :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:pcc, :geography, :finance]},
-          :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:pcc, :geography]},
+          :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:geography, :finance, :training]},
+          :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:geography]},
           :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
-          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:pcc, :geography]},
+          :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:geography]},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
           :volunteer_committee  => {:text => "Volunteer Committee", :access_level => 0, :group => [:geography]},
           :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
           :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
-          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
-          :teacher              => {:text => "Teacher", :access_level => 0, :group => [:pcc]},
+          :center_treasurer     => {:text => "Treasurer", :access_level => 0, :group => [:geography]},
+          :teacher              => {:text => "Teacher", :access_level => 0, :group => [:geography]},
           # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
-          :any                  => {:text => "Teacher", :access_level => -1, :group => []}
+          :any                  => {:text => "Any", :access_level => -1, :group => []}
     }
 
 
   # Setup accessible (or protected) attributes for your model
   attr_accessor :username, :provider, :uid, :avatar
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable
+  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
   attr_accessible :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
 
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
-  validates :firstname, :email, :mobile, :presence => true
+  validates :firstname, :email, :mobile, :address, :presence => true
   validates :approver_email, :message_to_approver, :presence => true, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
   validates :email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
   validates_uniqueness_of :email, :scope => :deleted_at
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
   validates :mobile, :length => {is: 10}, :numericality => {:only_integer => true}
+  validates_uniqueness_of :mobile, :scope => :deleted_at
   validate :validate_approver_email, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
   before_save do |user|
@@ -129,10 +130,10 @@ class User < ActiveRecord::Base
   end
 
   after_create do |user|
-    if user.approver_email
-      UserMailer.approval_email(user).deliver
-      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
-    end
+    user.reload
+    UserMailer.approval_email(user).deliver
+    user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
+    user.update_attribute(:approval_email_sent, true)
   end
 
   after_save  do |user|
@@ -144,7 +145,7 @@ class User < ActiveRecord::Base
 
   def validate_approver_email
     approver = User.where(:email => self.approver_email.strip).first
-    unless approver and (approver.is?(:super_admin) or approver.is?(:teacher_training_department) or approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
+    unless approver and (approver.is?(:super_admin) or approver.is?(:teacher_training_department) or approver.is?(:sector_coordinator))
       errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
     end
   end
@@ -171,7 +172,6 @@ class User < ActiveRecord::Base
   def inactive_message
     "Failed to Sign In. Your account is not currently active. Please contact your Approver."
   end
-
 
   def access_privilege_names=(names)
     names.collect do |n|
@@ -259,6 +259,9 @@ class User < ActiveRecord::Base
   # --  if user.is? :zonal_coordinator, :for => :any, :center_id => [1,2,3]
   # --  if user.is? :zonal_coordinator, :for => :all, :center_id => [1,2,3]
   # if :for option is not specified, be default it is assumed to be :for => :all
+  # 4. user is in specific group(s)
+  # -- if user.is? :any, :in_group => :geography
+  # NOTE: you should use :in_group option only with :any role. It can be though combined with :center_id option
   #
   # NOTE: 12 Apr 14 - From rails_admin :teacher role cannot be associated with users via access_privileges
   # 1. because teacher checks can be handled simply by checking with current_user.teacher.id, rather than
@@ -266,10 +269,15 @@ class User < ActiveRecord::Base
   # 2. teachers are associated separately with center(s) through the teacher admin interface.
   def is?(for_role, options={})
     for_center_ids = []
+    in_groups = []
     if options.has_key?(:center_id)
       for_center_ids = options[:center_id].class == Array ? options[:center_id] : [options[:center_id]]
       for_center_ids = for_center_ids.map(&:to_i).compact
     end
+    if options.has_key?(:in_group)
+      in_groups = options[:in_group].class == Array ? options[:in_group] : [options[:in_group]]
+    end
+
     for_all = (options.has_key?(:for) && options[:for] == :any) ? false : true
     # HACK - for_all is set true if we are looking at [] centers.
     for_all = true if for_center_ids.empty?
@@ -294,8 +302,10 @@ class User < ActiveRecord::Base
         #self_ah = (ROLE_ACCESS_HIERARCHY.select {|k, v| v[:text] == ap.role.name}).values.first
         self_ah = ROLE_ACCESS_HIERARCHY[ap.role.name.parameterize.underscore.to_sym]
         for_ah =  ROLE_ACCESS_HIERARCHY[for_role]
+        self_ah_groups = self_ah[:group]
+        for_ah_groups = in_groups == [] ? for_ah[:group] : in_groups
         # if for given ap, self has same role, or access_level > access_level than asked for, and part of all groups
-        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level])  &&  (for_ah[:group] - self_ah[:group]).empty?)
+        if (self_ah == for_ah) || ((self_ah[:access_level] > for_ah[:access_level])  &&  (for_ah_groups - self_ah_groups).empty?)
           return true
         end
       end
@@ -376,6 +386,18 @@ class User < ActiveRecord::Base
       end
     }
     role_str
+  end
+
+
+  # this is a cron job, run through whenever gem
+  # from the config/schedule.rb file
+  def self.send_pending_approval_emails
+    users = User.where("approval_email_sent IS ?", false).all
+    users.each {|user|
+      UserMailer.approval_email(user).deliver
+      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
+      user.update_attribute(:approval_email_sent, true)
+    }
   end
 
 

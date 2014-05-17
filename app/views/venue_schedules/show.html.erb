@@ -73,6 +73,10 @@
             <td><strong>Blocked By</strong></td>
             <td><%= @venue_schedule.blocked_by_user.fullname rescue ' '%></td>
           </tr>
+          <tr>
+            <td><strong>Per Day Price (Rs) </strong></td>
+            <td><%= @venue_schedule.per_day_price rescue 0 %></td>
+          </tr>
         </table>
       </div>
     </div>

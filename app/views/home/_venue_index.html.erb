@@ -18,7 +18,7 @@
           <td><%= venue.id %></td>
           <td><%= link_to venue.name, venue_path(venue)%></td>           
           <td><%= (venue.centers.map {|c| c[:name]}).join(", ") %></td>
-          <td><%= venue.pin_code %></td>
+          <td><%= venue.pincode.pincode %></td>
           <td><%= venue.capacity %></td>
           <td><%= venue.contact_name %></td>
           <td>

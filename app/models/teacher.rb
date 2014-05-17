@@ -66,7 +66,8 @@ class Teacher < ActiveRecord::Base
 
   # The attach functionality need to be exercised through the admin interface only,
   # since zone(s) and center(s) need to be linked again
-  # EVENT_ATTACH      = 'Attach '
+  # It is still defined here only for logging and notification purposes
+  EVENT_ATTACH      = 'Attach '
 
   EVENT_UNATTACH    = 'Unattach'
   EVENT_UNFIT       = 'Unfit'
@@ -81,13 +82,13 @@ class Teacher < ActiveRecord::Base
   state_machine :state, :initial => STATE_UNATTACHED do
 
     event EVENT_UNATTACH do
-      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|t| t.current_user.is? :zonal_coordinator, :center_id => t.center_ids }
+      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|t| t.current_user.is? :zao, :center_id => t.center_ids }
     end
     before_transition any => STATE_UNATTACHED, :do => :before_unattach!
     after_transition any => STATE_UNATTACHED, :do => :after_unattach
 
     event EVENT_UNFIT do
-      transition [STATE_ATTACHED] => STATE_UNFIT, :if => lambda {|t| t.current_user.is? :zonal_coordinator, :center_id => t.center_ids }
+      transition [STATE_ATTACHED] => STATE_UNFIT, :if => lambda {|t| t.current_user.is? :zao, :center_id => t.center_ids }
     end
     before_transition any => STATE_UNFIT, :do => :can_mark_unfit?
     after_transition any => STATE_UNFIT, :do => :on_unfit
@@ -130,7 +131,7 @@ class Teacher < ActiveRecord::Base
       object.store_last_update!(nil, last_state, current_state, nil)
       # turning off validation when saving, since it is a minimal update in a callback
       object.save(:validate => false)
-      object.notify(:any, STATE_ATTACHED, :any, self.centers)
+      object.notify(last_state, STATE_ATTACHED, EVENT_ATTACH, self.centers)
     end
     if last_state == STATE_ATTACHED && current_state != STATE_ATTACHED
       # if we have published TeacherSchedules, means we are coming through the rails_admin
@@ -143,7 +144,8 @@ class Teacher < ActiveRecord::Base
         # turning off validation when saving, since it is a minimal update in a callback
         object.save(:validate => false)
       end
-      object.notify(STATE_ATTACHED, :any, :any, self.centers)
+      event = current_state == STATE_UNATTACHED ? EVENT_UNATTACH : EVENT_UNFIT
+      object.notify(STATE_ATTACHED, current_state, event, self.centers)
     end
 
   end
@@ -151,7 +153,7 @@ class Teacher < ActiveRecord::Base
 
   def before_unattach!
     center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
-    if !self.current_user.is? :zonal_coordinator, :center_id => center_ids
+    if !self.current_user.is? :zao, :center_id => center_ids
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -175,7 +177,7 @@ class Teacher < ActiveRecord::Base
 
   def can_mark_unfit?
     center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
-    if !self.current_user.is? :zonal_coordinator, :center_id => center_ids
+    if !self.current_user.is? :zao, :center_id => center_ids
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -283,7 +285,7 @@ class Teacher < ActiveRecord::Base
     else
       center_ids = self.center_ids
     end
-    return true if self.current_user.is? :zonal_coordinator, :center_id => center_ids
+    return true if self.current_user.is? :zao, :center_id => center_ids
     return false
   end
 
@@ -306,7 +308,7 @@ class Teacher < ActiveRecord::Base
     program.timings.each {|t|
       ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? AND teacher_schedules.program_type_id IS ?',
                                         program.start_date.to_date, program.end_date.to_date, t.id,
-                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_type_id).first
+                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_donation.program_type_id).first
       return false if ts.nil?
     }
     return true
@@ -358,11 +360,11 @@ class Teacher < ActiveRecord::Base
           # This is a HACK to represent some sort of state machine through rails_admin
           if bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :super_admin, :center_id => bindings[:object].center_ids)
             [STATE_UNATTACHED, STATE_ATTACHED]
-          elsif bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :zonal_coordinator, :center_id => bindings[:object].center_ids)
+          elsif bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
             [STATE_UNATTACHED]
-          elsif bindings[:object].state == STATE_ATTACHED && (bindings[:controller].current_user.is? :zonal_coordinator, :center_id => bindings[:object].center_ids)
+          elsif bindings[:object].state == STATE_ATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
             [STATE_UNATTACHED, STATE_ATTACHED, STATE_UNFIT]
-          elsif bindings[:object].state == STATE_UNFIT && (bindings[:controller].current_user.is? :zonal_coordinator, :center_id => bindings[:object].center_ids)
+          elsif bindings[:object].state == STATE_UNFIT && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
             [STATE_UNATTACHED, STATE_UNFIT]
           elsif (bindings[:controller].current_user.is? :teacher_training_department, :center_id => bindings[:object].center_ids)
             [STATE_UNATTACHED]
@@ -404,7 +406,7 @@ class Teacher < ActiveRecord::Base
         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           # bindings[:object] & bindings[:controller] are available, but not in scope's block!
-        accessible_centers = bindings[:controller].current_user.accessible_centers(:zonal_coordinator)
+        accessible_centers = bindings[:controller].current_user.accessible_centers(:zao)
           Proc.new { |scope|
             # scoping all Players currently, let's limit them to the team's league
             # Be sure to limit if there are a lot of Players and order them by position

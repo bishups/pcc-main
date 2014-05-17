@@ -17,6 +17,7 @@ PccMain::Application.routes.draw do
   get '/registration_confirmation'        => 'home#registration_confirmation'
   get '/backdoor_login'        => 'home#backdoor_login'
   get 'programs/update_timings', :as => 'update_program_timings'
+  get 'programs/update_program_donations', :as => 'update_program_donations'
   get 'teacher_schedules/update_timings', :as => 'update_teacher_schedule_timings'
   # Resources
   resources :enquiries

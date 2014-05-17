@@ -45,7 +45,9 @@ class Kit < ActiveRecord::Base
   attr_accessible :guardian_id, :guardian
 
   validates :name, :condition, :guardian, :presence => true
-  validates :capacity, :numericality => {:only_integer => true }
+  validates_uniqueness_of :name, :scope => :deleted_at
+
+  validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
 
   #has_paper_trail
 
@@ -145,7 +147,7 @@ class Kit < ActiveRecord::Base
 
 
   def can_view?
-    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
     return false
   end
 

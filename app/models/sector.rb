@@ -45,7 +45,7 @@ class Sector < ActiveRecord::Base
     edit do
       field :name do
         read_only do
-          not bindings[:controller].current_user.is?(:zonal_coordinator) or bindings[:controller].current_user.is?(:super_admin)
+          not bindings[:controller].current_user.is?(:zao) or bindings[:controller].current_user.is?(:super_admin)
         end
       end
       field :zone  do
@@ -57,7 +57,7 @@ class Sector < ActiveRecord::Base
           false
         end
         read_only do
-          not bindings[:controller].current_user.is?(:zonal_coordinator) or bindings[:controller].current_user.is?(:super_admin)
+          not bindings[:controller].current_user.is?(:zao) or bindings[:controller].current_user.is?(:super_admin)
         end
         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
@@ -78,7 +78,7 @@ class Sector < ActiveRecord::Base
           associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
           associated_collection_scope do
             # bindings[:object] & bindings[:controller] are available, but not in scope's block!
-            accessible_centers = bindings[:controller].current_user.accessible_centers(:zonal_coordinator)
+            accessible_centers = bindings[:controller].current_user.accessible_centers(:zao)
             Proc.new { |scope|
               # scoping all Players currently, let's limit them to the team's league
               # Be sure to limit if there are a lot of Players and order them by position
