@@ -126,7 +126,7 @@ class User < ActiveRecord::Base
     else
       user.type = nil
     end
-
+    self.password_reset_at = Time.now if self.encrypted_password_changed?
   end
 
   after_create do |user|
@@ -141,6 +141,10 @@ class User < ActiveRecord::Base
       UserMailer.approved_email(user).deliver
       user.log_notify(user, STATE_REQUESTED_APPROVAL, STATE_APPROVED, EVENT_APPROVE, "")
     end
+  end
+
+  def force_password_reset?
+    self.password_reset_at.nil? or ((Time.now - self.password_reset_at) > 30.days)
   end
 
   def validate_approver_email
