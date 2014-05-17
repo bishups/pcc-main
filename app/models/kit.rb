@@ -167,7 +167,8 @@ class Kit < ActiveRecord::Base
   end
 
   def can_update?
-    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    # This condition is not needed
+    #return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
     return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
     return false
   end
