@@ -299,15 +299,15 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "end_date"
     t.datetime "created_at",                                 :null => false
     t.datetime "updated_at",                                 :null => false
-    t.integer  "program_donation_id"
-    t.integer  "sync_id"
-    t.string   "pid"
-    t.boolean  "announced",               :default => false
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
     t.string   "last_update"
     t.datetime "last_updated_at"
+    t.integer  "program_donation_id"
+    t.integer  "sync_id"
+    t.string   "pid"
+    t.boolean  "announced",               :default => false
   end
 
   create_table "programs_timings", :force => true do |t|
@@ -403,11 +403,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
     t.datetime "last_updated_at"
+    t.integer  "sync_id"
   end
 
   add_index "teachers", ["deleted_at"], :name => "index_teachers_on_deleted_at"
@@ -454,6 +454,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.text     "message_to_approver"
     t.integer  "sync_id"
     t.boolean  "approval_email_sent",                    :default => false
+    t.datetime "password_reset_at"
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"
@@ -466,13 +467,13 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",              :null => false
     t.integer  "program_id"
     t.string   "state"
-    t.integer  "per_day_price"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.text     "comments"
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
+    t.integer  "per_day_price"
   end
 
   create_table "venues", :force => true do |t|
