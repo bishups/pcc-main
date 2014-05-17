@@ -121,6 +121,7 @@ notifications = [
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
@@ -129,11 +130,13 @@ notifications = [
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_OPEN, :on_event => ::Program::EVENT_CANCEL, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_OPEN, :on_event => ::Program::EVENT_CANCEL, :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_OPEN, :on_event => ::Program::EVENT_CANCEL, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_CONDUCTED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please enter feedback' },
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_TEACHER_CLOSED, :on_event => 'any', :role_id => zao.id, :send_sms => true, :send_email => true, :additional_text => 'Please mark as closed' },
@@ -145,6 +148,8 @@ notifications = [
 
     {:model => 'Kit', :from_state => ::Kit::STATE_UNKNOWN, :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::Kit::EVENT_AVAILABLE, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Kit', :from_state => ::Kit::STATE_UNKNOWN, :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::Kit::EVENT_AVAILABLE, :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Kit', :from_state => ::Kit::STATE_UNKNOWN, :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::Kit::EVENT_AVAILABLE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Kit', :from_state => ::Kit::STATE_UNKNOWN, :to_state => ::Kit::STATE_AVAILABLE, :on_event => ::Kit::EVENT_AVAILABLE, :role_id =>  kit_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNAVAILABLE_OVERDUE, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'KitSchedule', :from_state => ::Kit::STATE_AVAILABLE, :to_state => ::KitSchedule::STATE_UNAVAILABLE_OVERDUE, :on_event => ::KitSchedule::EVENT_UNAVAILABLE_OVERDUE, :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -187,6 +192,8 @@ notifications = [
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_POSSIBLE, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_POSSIBLE, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_POSSIBLE, :on_event => 'any',:role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_POSSIBLE, :on_event => 'any',:role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_POSSIBLE, :on_event => 'any',:role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_REJECTED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Venue', :from_state => 'any', :to_state => ::Venue::STATE_REJECTED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
