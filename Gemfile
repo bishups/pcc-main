@@ -18,7 +18,7 @@ group :assets do
   # gem 'therubyracer', :platforms => :ruby
 
   gem 'uglifier', '>= 1.0.3'
-  gem 'jquery-datatables-rails', :git =>  'https://github.com/ricardodovalle/jquery-datatables-rails'
+  gem 'jquery-datatables-rails' #, :git =>  'https://github.com/ricardodovalle/jquery-datatables-rails'
 end
 
 gem 'jquery-rails'
@@ -37,7 +37,8 @@ gem "letter_opener", :group => :development
 #gem 'unicorn'
 
 # Deploy with Capistrano
-gem 'capistrano'
+gem 'capistrano', '~> 2.15'
+
 
 # To use debugger
 # gem 'debugger'
