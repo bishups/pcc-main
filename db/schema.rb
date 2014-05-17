@@ -220,7 +220,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",    :null => false
     t.string   "cancan_action"
     t.string   "subject"
-    t.integer  "sync_id"
   end
 
   create_table "permissions_roles", :id => false, :force => true do |t|
@@ -235,24 +234,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",                 :null => false
     t.datetime "updated_at",                 :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
   end
 
   add_index "pincodes", ["center_id"], :name => "index_pincodes_on_center_id"
   add_index "pincodes", ["deleted_at"], :name => "index_pincodes_on_deleted_at"
-
-  create_table "program_donations", :force => true do |t|
-    t.integer  "program_type_id"
-    t.integer  "donation"
-    t.string   "name"
-    t.datetime "deleted_at"
-    t.datetime "created_at",      :null => false
-    t.datetime "updated_at",      :null => false
-    t.integer  "sync_id"
-  end
-
-  add_index "program_donations", ["deleted_at"], :name => "index_program_donations_on_deleted_at"
-  add_index "program_donations", ["program_type_id"], :name => "index_program_donations_on_program_type_id"
 
   create_table "program_teacher_schedules", :force => true do |t|
     t.integer  "program_id"
@@ -273,11 +258,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "minimum_no_of_teacher"
     t.datetime "created_at",            :null => false
     t.datetime "updated_at",            :null => false
-    t.datetime "deleted_at"
-    t.integer  "sync_id"
   end
-
-  add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
 
   create_table "program_types_teachers", :force => true do |t|
     t.integer "program_type_id"
@@ -293,16 +274,14 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "name"
     t.text     "description"
     t.string   "center_id"
+    t.integer  "program_type_id"
     t.integer  "proposer_id"
     t.string   "state"
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                                 :null => false
-    t.datetime "updated_at",                                 :null => false
-    t.integer  "program_donation_id"
-    t.integer  "sync_id"
-    t.string   "pid"
-    t.boolean  "announced",               :default => false
+    t.string   "announce_program_id"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
@@ -332,7 +311,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "name"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
-    t.integer  "sync_id"
   end
 
   create_table "roles_users", :force => true do |t|
@@ -350,11 +328,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "zone_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
-    t.datetime "deleted_at"
-    t.integer  "sync_id"
   end
 
-  add_index "sectors", ["deleted_at"], :name => "index_sectors_on_deleted_at"
   add_index "sectors", ["zone_id"], :name => "index_sectors_on_zone_id"
 
   create_table "sessions", :force => true do |t|
@@ -403,7 +378,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
@@ -419,7 +393,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
   end
 
   add_index "timings", ["deleted_at"], :name => "index_timings_on_deleted_at"
@@ -452,12 +425,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.boolean  "enable",                                 :default => false
     t.string   "approver_email"
     t.text     "message_to_approver"
-    t.integer  "sync_id"
-    t.boolean  "approval_email_sent",                    :default => false
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"
-  add_index "users", ["email"], :name => "index_users_on_email"
+  add_index "users", ["email"], :name => "index_users_on_email", :unique => true
   add_index "users", ["reset_password_token"], :name => "index_users_on_reset_password_token", :unique => true
 
   create_table "venue_schedules", :force => true do |t|
@@ -466,7 +437,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",              :null => false
     t.integer  "program_id"
     t.string   "state"
-    t.integer  "per_day_price"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.text     "comments"
@@ -479,6 +449,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "name"
     t.text     "description"
     t.text     "address"
+    t.string   "pin_code"
     t.string   "capacity"
     t.string   "state"
     t.string   "contact_name"
@@ -494,7 +465,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "payment_contact_mobile"
     t.integer  "per_day_price"
     t.datetime "deleted_at"
-    t.integer  "pincode_id"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
@@ -519,10 +489,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "name"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
-    t.datetime "deleted_at"
-    t.integer  "sync_id"
   end
-
-  add_index "zones", ["deleted_at"], :name => "index_zones_on_deleted_at"
 
 end
