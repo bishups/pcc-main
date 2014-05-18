@@ -18,33 +18,21 @@
           <div class='col-md-12'>
             <table class='table table-bordered'>
               <tr>
-                <td width='25%'><strong>Venue Status</strong></td>
+                <td width='25%'><strong>Venue</strong></td>
                 <td>
-                  <% if @program.no_of_venues_connected > 0 %>
-                      <% if @program.no_of_venues_paid == 0 %>
-                        No Venue Paid. <br>
-                      <% end %>
-                    <%= (@program.venue_schedules.map {|vs| "#{vs.venue[:name]} => #{vs[:state]}" if vs.is_connected?}).join(", ") %>
-                  <% else %>
-                    No Venue Attached.
-                  <% end %>
+                  <%= (@program.venue_status.map {|vs| vs}).join("<br/>").html_safe %>
                 </td>
               </tr>
               <tr>
-                <td><strong>Kit Status</strong></td>
+                <td><strong>Kit</strong></td>
                 <td>
-                  <% if @program.no_of_kits_connected > 0 %>
-                    <%= (@program.kit_schedules.map {|ks| "#{ks.kit[:name]} => #{ks[:state]}" if ks.is_connected?}).join(", ") %>
-                  <% else %>
-                      No Kit Attached.
-                  <% end %>
+                  <%= (@program.kit_status.map {|ks| ks}).join("<br/>").html_safe %>
                 </td>
               </tr>
               <tr>
-                <td><strong>Teacher Status</strong></td>
+                <td><strong>Teacher</strong></td>
                 <td>
-                  Teacher Required: <%= @program.minimum_no_of_teacher %> <br/>
-                  Teacher Associated: <%= @program.no_of_teachers_connected %>
+                     <%=(@program.teacher_status.map {|ts| ts}).join("<br/>").html_safe %>
                 </td>
               </tr>
             </table>
