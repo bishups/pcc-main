@@ -35,7 +35,7 @@ gem "letter_opener", :group => :development
 # gem 'jbuilder'
 
 # Use unicorn as the app server
-#gem 'unicorn'
+gem 'unicorn'
 
 # Deploy with Capistrano
 gem 'capistrano', '~> 2.15'
