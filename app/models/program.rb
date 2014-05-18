@@ -66,7 +66,6 @@ class Program < ActiveRecord::Base
   STATE_UNKNOWN       = "Unknown"
   STATE_PROPOSED      = "Proposed"
   STATE_ANNOUNCED     = "Announced"
-  STATE_REGISTRATION_OPEN = "Registration Open"
   STATE_DROPPED       = "Dropped"
   STATE_CANCELLED     = "Cancelled"
   STATE_IN_PROGRESS   = "In Progress"
@@ -82,7 +81,6 @@ class Program < ActiveRecord::Base
 
   EVENT_PROPOSE       = "Propose"
   EVENT_ANNOUNCE      = "Announce"
-  EVENT_REGISTRATION_OPEN = "Registration Open"
   EVENT_START         = "Start"
   EVENT_FINISH        = "Finish"
   EVENT_CLOSE         = "Close"
@@ -93,7 +91,7 @@ class Program < ActiveRecord::Base
   EVENT_EXPIRE = "Expire"
 
   PROCESSABLE_EVENTS = [
-      EVENT_ANNOUNCE, EVENT_REGISTRATION_OPEN, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE, EVENT_ZAO_CLOSE
+      EVENT_ANNOUNCE, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE, EVENT_ZAO_CLOSE
   ]
 
   INTERNAL_NOTIFICATIONS = [EVENT_START, EVENT_FINISH, EVENT_EXPIRE]
@@ -166,13 +164,8 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_DROPPED, :do => :can_drop?
     after_transition any => STATE_DROPPED, :do => :on_drop
 
-    event EVENT_REGISTRATION_OPEN do
-      transition STATE_ANNOUNCED => STATE_REGISTRATION_OPEN, :if => lambda {|p| p.current_user.is? :center_treasurer, :center_id => p.center_id}
-    end
-    before_transition any => STATE_REGISTRATION_OPEN, :do => :can_open_registration?
-
     event EVENT_START do
-      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_IN_PROGRESS
+      transition STATE_ANNOUNCED => STATE_IN_PROGRESS
     end
     after_transition any => STATE_IN_PROGRESS, :do => :on_start
 
@@ -202,7 +195,7 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_CLOSED, :do => :can_close?
 
     event EVENT_CANCEL do
-      transition [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zao, :center_id => p.center_id }
+      transition STATE_ANNOUNCED => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zao, :center_id => p.center_id }
     end
     before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
@@ -241,7 +234,7 @@ class Program < ActiveRecord::Base
 
   def trigger_program_start
     return if !self.reloaded?
-    if [STATE_ANNOUNCED, STATE_REGISTRATION_OPEN].include?(self.state)
+    if [STATE_ANNOUNCED].include?(self.state)
       self.send(EVENT_START)
       self.save if self.errors.empty?
     end
@@ -279,12 +272,6 @@ class Program < ActiveRecord::Base
     self.notify_all(ANNOUNCED)
     # start the timer for start of class notification
     self.delay(:run_at => self.start_date).trigger_program_start
-  end
-
-  def can_open_registration?
-    return true if (self.current_user.is? :center_treasurer, :center_id => self.center_id)
-    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    return false
   end
 
   def can_drop?
@@ -668,7 +655,6 @@ class Program < ActiveRecord::Base
 
   def can_update?
     return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
-    return true if self.current_user.is? :center_treasurer, :center_id => self.center_id
     return false
   end
 end

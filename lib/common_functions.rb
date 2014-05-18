@@ -59,6 +59,8 @@ module CommonFunctions
     activity = ::ActivityLog.new
     activity.user = user
     activity.model_type = self.class.name
+    #activity.model_type = "ProgramTeacherSchedule" if activity.model_type == "TeacherSchedule" and !self.program.nil?
+    #activity.model_type = "TeacherSchedule" if activity.model_type == "ProgramTeacherSchedule" and self.program.nil?
     activity.model_id = self.id
     activity.date = date.nil? ? Time.zone.now : date
     activity.text1 = self.friendly_first_name_for_email
@@ -135,6 +137,8 @@ module CommonFunctions
     notification = ::NotificationLog.new
     notification.user = user
     notification.model_type = self.class.name
+    #notification.model_type = "ProgramTeacherSchedule" if notification.model_type == "TeacherSchedule" and !self.program.nil?
+    #notification.model_type = "TeacherSchedule" if notification.model_type == "ProgramTeacherSchedule" and self.program.nil?
     notification.model_id = self.id
     notification.date = Time.zone.now
     notification.text1 = self.friendly_first_name_for_email
