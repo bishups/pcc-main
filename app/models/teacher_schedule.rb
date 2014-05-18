@@ -44,6 +44,8 @@ class TeacherSchedule < ActiveRecord::Base
 
   validate :teacher_enabled?
 
+  # Unknown state is just used for logging
+  STATE_UNKNOWN = 'Unknown'
   STATE_AVAILABLE = 'Available'
   STATE_UNAVAILABLE = 'Not Available'
   STATE_AVAILABLE_EXPIRED = 'Available (Expired)'
@@ -53,8 +55,33 @@ class TeacherSchedule < ActiveRecord::Base
 
   # This event is just for logging/ notification purposes
   EVENT_EXPIRED = "Expired"
+  EVENT_PUBLISH = "Publish"
+  EVENT_EDIT = "Edit"
+  EVENT_DELETE = "Delete"
 
   #validates_with TeacherScheduleValidator
+
+
+  after_create do |ts|
+    if ts.program.nil?
+      ts.log_last_activity(ts.current_user, STATE_UNKNOWN, ts.state, EVENT_PUBLISH)
+    end
+  end
+
+  after_update  do |ts|
+    if ts.program.nil?
+      current_state = ts.state
+      last_state = self.state_changed? ? changes[:state][0] : ts.state
+      ts.log_last_activity(ts.current_user, last_state, current_state, EVENT_EDIT)
+    end
+  end
+
+  before_destroy do |ts|
+    if ts.program.nil?
+      ts.log_last_activity(ts.current_user, ts.state, STATE_UNKNOWN, EVENT_DELETE)
+    end
+  end
+
 
 #  def teacher
 #    self.teacher.user
@@ -242,19 +269,23 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
   def url
-    Rails.application.routes.url_helpers.teacher_teacher_schedule_url(self.teacher, self)
+    self.program.nil? ? Rails.application.routes.url_helpers.teacher_teacher_schedules_url(self.teacher)
+    : Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
   end
 
   def friendly_first_name_for_email
-    "Teacher Schedule ##{self.id}"
+    self.program.nil? ? "Teacher Schedule ##{self.id}"
+    :  "Program-Teacher Schedule ##{self.id}"
   end
 
   def friendly_second_name_for_email
-    " for #{self.teacher.user.fullname} (#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}"
+    self.program.nil? ? " for #{self.teacher.user.fullname}, #{self.timing.name}(#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}) "
+    : " for Program ##{self.program.id} #{self.program.name} and Teacher ##{self.teacher.id} #{self.teacher.user.fullname}"
   end
 
   def friendly_name_for_sms
-    "Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
+    self.program.nil? ? "Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
+    : "Program-Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
   end
 
 end

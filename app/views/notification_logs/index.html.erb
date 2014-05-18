@@ -12,7 +12,10 @@
                         "aButtons":    [ "csv", "xls", "pdf" ]
                     }
                 ]
-            }
+            },
+            "columnDefs": [
+                { "type": "date-de", targets: 0 }
+            ]
         } );
     });
 </script>
@@ -52,7 +55,7 @@
       <tbody>
       <% @notification_logs.each do |nl| %>
           <tr>
-            <td><%= nl.date.strftime("%d %B %Y") %></td>
+            <td><%= nl.date.strftime("%d.%m.%Y %H:%M hrs")  %></td>
             <% if super_admin %>
                 <td><%= link_to nl.user.fullname, nl.user.url rescue '' %></td>
             <% end %>

@@ -12,7 +12,10 @@
                         "aButtons":    [ "csv", "xls", "pdf" ]
                     }
                 ]
-            }
+            },
+            "columnDefs": [
+                { "type": "date-de", targets: 0 }
+            ]
         } );
     });
 </script>
@@ -45,7 +48,7 @@
       <tbody>
       <% @activity_logs.each do |al| %>
           <tr>
-            <td><%= al.date.strftime("%d %B %Y") %></td>
+            <td><%= al.date.strftime("%d.%m.%Y %H:%M hrs") %></td>
             <% if current_user.is? :super_admin %>
                 <td><%= link_to al.user.fullname, al.user.url rescue '' %></td>
             <% end %>
