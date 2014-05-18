@@ -8,9 +8,10 @@
         <div class='col-md-6 col-md-offset-1'>
           <%= form_for(resource, :as => resource_name, :url => registration_path(resource_name), :html => {:class => 'form'}) do |f| %>
               <%= devise_error_messages! %>
+              <%= f.hidden_field :provider, :value => session["devise.user_attributes"]["provider"]  if session["devise.user_attributes"] %>
               <div class='form-group'>
                 <%= f.label :email %>
-                <%= f.email_field :email, :class => 'form-control', :readonly => true %>
+                <%= f.email_field :email, :class => 'form-control', :readonly => (session["devise.user_attributes"] and session["devise.user_attributes"]["provider"]) %>
               </div>
               <div class='form-group'>
                 <%= f.label :firstname %>
@@ -22,6 +23,16 @@
                 <%= f.text_field :lastname, :class => 'form-control' %>
                 <p class="help-block">Optional. Length up to 255.</p>
               </div>
+              <% unless session["devise.user_attributes"] and session["devise.user_attributes"]["provider"] %>
+                  <div class='form-group'>
+                    <%= f.label :password %>
+                    <%= f.password_field :password, :class => 'form-control' %>
+                  </div>
+                  <div class='form-group'>
+                    <%= f.label :password_confirmation %>
+                    <%= f.password_field :password_confirmation, :class => 'form-control' %>
+                  </div>
+              <% end %>
               <div class='form-group'>
                 <%= f.label :phone %>
                 <%= f.text_field :phone, :class => 'form-control' %>
