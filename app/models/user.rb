@@ -102,7 +102,7 @@ class User < ActiveRecord::Base
 
 
   # Setup accessible (or protected) attributes for your model
-  attr_accessor :username, :provider, :uid, :avatar
+  attr_accessor :username, :uid, :avatar
   attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
@@ -155,14 +155,16 @@ class User < ActiveRecord::Base
   end
 
   def self.from_omniauth(auth)
-    logger.debug("auth --> #{auth.inspect}")
+    user = nil
     if user = User.find_by_email(auth.info.email)
       user.provider = auth.provider
       user.uid = auth.uid
       user
     else
-      User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name)
+     user= User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name, :provider => auth.provider)
+     user.provider = auth.provider
     end
+    user
   end
 
   def enabled?
@@ -174,7 +176,11 @@ class User < ActiveRecord::Base
   end
 
   def inactive_message
-    "Failed to Sign In. Your account is not currently active. Please contact your Approver."
+    if !enabled?
+      :not_approved
+    else
+      super # Use whatever other message
+    end
   end
 
   def access_privilege_names=(names)

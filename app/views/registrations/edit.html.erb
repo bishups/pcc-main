@@ -1,35 +1,70 @@
 <div class='row'>
-  <div class='col-md-6'>
-    <% if current_user.force_password_reset? %>
-    <div class='alert alert-danger'>
-      You must change your password to continue.
+  <div class='col-md-12'>
+    <div class='page-header'>
+      <h2> Edit Profile </h2>
     </div>
+    <% if current_user.force_password_reset? %>
+        <div class='alert alert-danger'>
+          You must change your password to continue.
+        </div>
     <% end %>
-
-  <h2>Edit <%= resource_name.to_s.humanize %></h2>
-
-  <%= form_for(resource, :as => resource_name, :url => registration_path(resource_name), :html => { :method => :put }) do |f| %>
-    <%= devise_error_messages! %>
-
-    <div><%= f.label :email %><br />
-    <%= f.email_field :email, :disabled => true %></div>
-
-    <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-      <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
-    <% end %>
-
-    <div><%= f.label :password %> <i>(leave blank if you don't want to change it)</i><br />
-    <%= f.password_field :password, :autocomplete => "off" %></div>
-
-    <div><%= f.label :password_confirmation %><br />
-    <%= f.password_field :password_confirmation %></div>
-
-    <div><%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i><br />
-    <%= f.password_field :current_password %></div>
-
-    <br/>
-    <div><%= f.submit "Update" %></div>
-  <% end %>
-
+    <div class='page-body'>
+      <div class='row'>
+        <div class='col-md-6 col-md-offset-1'>
+          <%= form_for(resource, :as => resource_name, :url => registration_path(resource_name), :html => {:class => 'form'}) do |f| %>
+              <%= devise_error_messages! %>
+              <div class='form-group'>
+                <%= f.label :email %>
+                <%= f.email_field :email, :class => 'form-control', :readonly => true %>
+              </div>
+              <div class='form-group'>
+                <%= f.label :firstname %>
+                <%= f.text_field :firstname, :class => 'form-control' %>
+                <p class="help-block">Required. Length up to 255.</p>
+              </div>
+              <div class='form-group'>
+                <%= f.label :lastname %>
+                <%= f.text_field :lastname, :class => 'form-control' %>
+                <p class="help-block">Optional. Length up to 255.</p>
+              </div>
+              <% unless resource.provider %>
+                  <div class='form-group'>
+                    <%= f.label :password %>
+                    <%= f.password_field :password,:autocomplete => "off" ,:class => 'form-control' %>
+                    <p class="help-block"> Leave this blank if you don't want to change it.</p>
+                  </div>
+                  <div class='form-group'>
+                    <%= f.label :password_confirmation %>
+                    <%= f.password_field :password_confirmation, :class => 'form-control' %>
+                    <p class="help-block"> Leave this blank if you don't want to change it.</p>
+                  </div>
+                  <div class='form-group'>
+                    <%= f.label :current_password %>
+                    <%= f.password_field :current_password,  :class => 'form-control' %>
+                    <p class="help-block"> Current Password is needed to confirm your password change.</p>
+                  </div>
+               <% end %>
+              <div class='form-group'>
+                <%= f.label :phone %>
+                <%= f.text_field :phone, :class => 'form-control' %>
+                <p class="help-block">Optional. Format of stdcode-number (e.g, 0422-2515345).</p>
+              </div>
+              <div class='form-group'>
+                <%= f.label :mobile %>
+                <%= f.text_field :mobile, :class => 'form-control' %>
+                <p class="help-block">Required. Length of 10.</p>
+              </div>
+              <div class='form-group'>
+                <%= f.label :address %>
+                <%= f.text_area :address, :class => 'form-control', :rows => 5 %>
+                <p class="help-block">Required. Length up to 3000.</p>
+              </div>
+              <p class="help-block">Required.</p>
+              <%= f.submit "Update", :class => 'btn btn-lg btn-primary' %>
+          <% end %>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+

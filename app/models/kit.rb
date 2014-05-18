@@ -27,7 +27,8 @@ class Kit < ActiveRecord::Base
                   :state,:capacity
 
   has_many :kit_items
-  attr_accessible :kit_items
+  attr_accessible :kit_items, :kit_items_attributes
+  accepts_nested_attributes_for :kit_items, :allow_destroy => true
   attr_accessor :current_user
 
   has_many :kit_item_types, :through => :kit_items
@@ -273,7 +274,8 @@ class Kit < ActiveRecord::Base
             scope = scope.where(:id => accessible_centers )
           }
         end
-       end
+      end
+      field :kit_items
     end
   end
 end
