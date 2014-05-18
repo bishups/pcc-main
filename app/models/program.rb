@@ -556,6 +556,8 @@ class Program < ActiveRecord::Base
   end
 
   def is_teacher?
+    # super_admin can perform actions on behalf of the teacher
+    return true if self.current_user.is? :super_admin
     self.teacher_schedules.each { |ts|
       if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == self.current_user)
         return true

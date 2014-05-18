@@ -208,6 +208,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
   def is_teacher?
+    # super_admin can perform actions on behalf of the teacher
+    return true if self.current_user.is? :super_admin
     if self.current_user != self.teacher.user
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
