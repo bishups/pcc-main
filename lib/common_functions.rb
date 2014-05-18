@@ -58,7 +58,7 @@ module CommonFunctions
   def log_last_activity(user, from, to, on, date = Time.zone.now)
     activity = ::ActivityLog.new
     activity.user = user
-    activity.model_type = self.class.name == "ProgramTeacherSchedule" ? "TeacherSchedule" : self.class.name
+    activity.model_type = self.class.name
     activity.model_id = self.id
     activity.date = date.nil? ? Time.zone.now : date
     activity.text1 = self.friendly_first_name_for_email
@@ -134,7 +134,7 @@ module CommonFunctions
   def log_notify(user, from, to, on, additional_text)
     notification = ::NotificationLog.new
     notification.user = user
-    notification.model_type = self.class.name == "ProgramTeacherSchedule" ? "TeacherSchedule" : self.class.name
+    notification.model_type = self.class.name
     notification.model_id = self.id
     notification.date = Time.zone.now
     notification.text1 = self.friendly_first_name_for_email

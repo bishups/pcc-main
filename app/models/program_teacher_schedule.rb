@@ -208,6 +208,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
   def is_teacher?
+    # super_admin can perform actions on behalf of the teacher
+    return true if self.current_user.is? :super_admin
     if self.current_user != self.teacher.user
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
@@ -374,20 +376,23 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def url
-    self.program.nil? ? Rails.application.routes.url_helpers.teacher_teacher_schedule_url(self.teacher)
-                  : Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
+    self.program.nil? ? Rails.application.routes.url_helpers.teacher_teacher_schedules_url(self.teacher)
+    : Rails.application.routes.url_helpers.program_teacher_schedule_url(self)
   end
 
   def friendly_first_name_for_email
-    "Program-Teacher Schedule ##{self.id}"
+    self.program.nil? ? "Teacher Schedule ##{self.id}"
+    :  "Program-Teacher Schedule ##{self.id}"
   end
 
   def friendly_second_name_for_email
-    " for Program ##{self.program.id} #{self.program.name} and Teacher ##{self.teacher.id} #{self.teacher.user.fullname}"
+    self.program.nil? ? " for #{self.teacher.user.fullname}, #{self.timing.name}(#{self.start_date.strftime('%d %B')}-#{self.end_date.strftime('%d %B %Y')}) "
+    : " for Program ##{self.program.id} #{self.program.name} and Teacher ##{self.teacher.id} #{self.teacher.user.fullname}"
   end
 
   def friendly_name_for_sms
-    "Program-Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
+    self.program.nil? ? "Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
+    : "Program-Teacher Schedule ##{self.id} for #{self.teacher.user.firstname}"
   end
 
 
