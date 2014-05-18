@@ -9,7 +9,11 @@ class NotificationLog < ActiveRecord::Base
   end
 
   def object
-    model_type.constantize.find(model_id)
+    if model_type == "ProgramTeacherSchedule"
+      TeacherSchedule.find(model_id)
+    else
+      model_type.constantize.find(model_id)
+    end
   rescue ActiveRecord::RecordNotFound => e
     nil
   end
