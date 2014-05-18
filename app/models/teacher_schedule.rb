@@ -169,11 +169,15 @@ class TeacherSchedule < ActiveRecord::Base
 
   def can_create?
     return true if self.current_user == self.teacher.user
+    # super_admin can create schedule on behalf of the teacher
+    return true if self.current_user.is? :super_admin
     return false
   end
 
   def can_update?
     return true if self.current_user == self.teacher.user
+    # super_admin can update schedule on behalf of the teacher
+    return true if self.current_user.is? :super_admin
     return false
   end
 
