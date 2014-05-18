@@ -659,25 +659,25 @@ class Program < ActiveRecord::Base
   end
 
   def teacher_status
-    return ["[Number of teacher added = #{self.no_of_teachers_connected}] Please add #{self.minimum_no_of_teacher-self.no_of_teachers_connected} more teacher."] if self.no_of_teachers_connected < self.minimum_no_of_teacher
-    return ["Ready"] if self.no_of_teachers_connected >= self.minimum_no_of_teacher
+    return ["(Number of teacher added = #{self.no_of_teachers_connected}) Please add #{self.minimum_no_of_teacher-self.no_of_teachers_connected} more teacher."] if self.no_of_teachers_connected < self.minimum_no_of_teacher
+    return ['<span class="label label-success">Ready</span>'] if self.no_of_teachers_connected >= self.minimum_no_of_teacher
   end
 
   def venue_status
     return ["Please Add a Venue (Venue should be in Proposed state)"] if self.no_of_venues_connected == 0
-    return ["Ready"] if self.no_of_venues_paid > 0
+    return ['<span class="label label-success">Ready</span>'] if self.no_of_venues_paid > 0
     status = []
     self.venue_schedules.each { |vs|
       next unless vs.is_connected?
       case vs.state
         when ::VenueSchedule::STATE_BLOCK_REQUESTED
-          status << "[Block Requested for #{vs.venue.name}] Please ask Venue Coordinator to approve the request."
+          status << "(#{vs.venue.name} Block Requested) Please ask Venue Coordinator to approve the request."
         when ::VenueSchedule::STATE_BLOCKED
-          status << "[#{vs.venue.name} Blocked] Please send Approval Request to Sector Coordinator if Kit and Teacher is Ready."
+          status << "(#{vs.venue.name} Blocked) Please send Approval Request to Sector Coordinator if Kit and Teacher is Ready."
         when ::VenueSchedule::STATE_APPROVAL_REQUESTED
-          status << "[Approval Requested for #{vs.venue.name}] Please ask Sector Coordinator to approve the request."
+          status << "(#{vs.venue.name} Approval Requested) Please ask Sector Coordinator to approve the request."
         when ::VenueSchedule::STATE_PAYMENT_PENDING
-          status << "[Payment Pending for #{vs.venue.name}] Please ask PCC Accounts to approve the request."
+          status << "(#{vs.venue.name} Payment Pending) Please ask PCC Accounts to approve the request."
         else
           status << "#{vs.venue.name} => #{vs.state}"
       end
@@ -687,6 +687,6 @@ class Program < ActiveRecord::Base
 
   def kit_status
     return ["Please Add a Kit"] if self.no_of_kits_connected == 0
-    return ["Ready"] if self.no_of_kits_connected > 0
+    return ['<span class="label label-success">Ready</span>'] if self.no_of_kits_connected > 0
   end
 end
