@@ -4,14 +4,21 @@ class KitItem < ActiveRecord::Base
   attr_accessible :kit_id, :kit
   belongs_to :kit_item_type
   attr_accessible :kit_item_type_id, :kit_item_type
-  validates :kit, :kit_item_type, :condition, :presence => true
-  validates :count, :length => {:within => 1..3}, :numericality => {:only_integer => true }
+#  validates :kit, :kit_item_type, :condition, :presence => true
+#  validates :count, :length => {:within => 1..3}, :numericality => {:only_integer => true }
+
+  def kit_item_type_name
+    self.kit_item_type.name
+  end
 
   rails_admin do
     navigation_label 'Kit Management'
     weight 1
     visible do
-      bindings[:controller].current_user.is?(:kit_coordinator)
+      false #bindings[:controller].current_user.is?(:kit_coordinator)
+    end
+    object_label_method do
+      :kit_item_type_name
     end
     list do
       field :kit
@@ -21,10 +28,10 @@ class KitItem < ActiveRecord::Base
       field :count
     end
     edit do
-      field :kit  do
-        #inline_add false
-        inline_edit false
-      end
+      #field :kit  do
+      #  #inline_add false
+      #  inline_edit false
+      #end
       field :kit_item_type  do
         inline_add false
         inline_edit false
