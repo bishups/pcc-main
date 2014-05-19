@@ -209,7 +209,7 @@ class Venue < ActiveRecord::Base
     programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
     blockable_programs = []
     programs.each {|program|
-      blockable_programs << program if venue.can_be_blocked_by?(program)
+      blockable_programs << program if self.can_be_blocked_by?(program)
     }
     blockable_programs
   end
@@ -326,12 +326,6 @@ def can_reject?
   def friendly_name
     ("#%d %s" % [self.id, self.name])
   end
-
-
-  def friendly_name_for_sms
-    "Venue ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
-  end
-
 
   def url
     Rails.application.routes.url_helpers.venue_url(self)

@@ -59,6 +59,8 @@ module CommonFunctions
     activity = ::ActivityLog.new
     activity.user = user
     activity.model_type = self.class.name
+    #activity.model_type = "ProgramTeacherSchedule" if activity.model_type == "TeacherSchedule" and !self.program.nil?
+    #activity.model_type = "TeacherSchedule" if activity.model_type == "ProgramTeacherSchedule" and self.program.nil?
     activity.model_id = self.id
     activity.date = date.nil? ? Time.zone.now : date
     activity.text1 = self.friendly_first_name_for_email
@@ -105,7 +107,7 @@ module CommonFunctions
       # check if the user already exists, if it does make a OR of send_sms, send_email. Add additional text
       # insert into the hash
       users.each { |user|
-        old_value = notify[user] if notify.has_key?(user)
+        old_value = notify.has_key?(user) ? notify[user] : nil
         new_value = {:send_sms => n.send_sms, :send_email => n.send_email, :additional_text => (n.additional_text.nil? || n.additional_text.blank? ? "" : "#{n.additional_text}") }
         if old_value.nil?
           old_value = new_value
@@ -135,6 +137,8 @@ module CommonFunctions
     notification = ::NotificationLog.new
     notification.user = user
     notification.model_type = self.class.name
+    #notification.model_type = "ProgramTeacherSchedule" if notification.model_type == "TeacherSchedule" and !self.program.nil?
+    #notification.model_type = "TeacherSchedule" if notification.model_type == "ProgramTeacherSchedule" and self.program.nil?
     notification.model_id = self.id
     notification.date = Time.zone.now
     notification.text1 = self.friendly_first_name_for_email
