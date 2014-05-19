@@ -528,12 +528,6 @@ class Program < ActiveRecord::Base
 #    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
-  def teachers_conducted_class
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) ', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
-#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
-  end
-
   def minimum_no_of_teacher
     self.program_donation.program_type.minimum_no_of_teacher
   end

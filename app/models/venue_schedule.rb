@@ -166,7 +166,7 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING, :if => lambda {|vs| !vs.venue_free?}
     end
     before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING do |vs, transition|
-        return !vs.venue_free?
+        !vs.venue_free?
     end
 
     event EVENT_BLOCK_EXPIRED do
@@ -179,7 +179,7 @@ class VenueSchedule < ActiveRecord::Base
     end
     before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAID, :do => :venue_free?
     before_transition STATE_PAYMENT_PENDING => STATE_PAID do |vs, transition|
-        return !vs.venue_free? && vs.is_pcc_accounts?
+        !vs.venue_free? && vs.is_pcc_accounts?
     end
     after_transition any => STATE_PAID, :do => :on_paid
 
@@ -202,7 +202,7 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free? && vs.is_venue_coordinator? }
     end
     before_transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED do |vs, transition|
-      return !vs.venue_free? && vs.is_venue_coordinator?
+      !vs.venue_free? && vs.is_venue_coordinator?
     end
 
     event EVENT_CLOSE do
@@ -210,10 +210,10 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free? && vs.is_center_coordinator? }
     end
     before_transition STATE_CONDUCTED => STATE_CLOSED do |vs, transition|
-      return vs.venue_free? && vs.is_center_coordinator?
+      vs.venue_free? && vs.is_center_coordinator?
     end
     before_transition STATE_SECURITY_REFUNDED => STATE_CLOSED do |vs, transition|
-      return !vs.venue_free? && vs.is_center_coordinator?
+      !vs.venue_free? && vs.is_center_coordinator?
     end
 
     # check for comments, before any transition
@@ -334,7 +334,8 @@ class VenueSchedule < ActiveRecord::Base
 
   def is_active?
     return false if FINAL_STATES.include?(self.state)
-    return false unless self.program.is_active?
+    # EVEN if program is not active, we not mark venue as inactive, unless it is specifically marked so.
+    #return false unless self.program.is_active?
     return true
   end
 

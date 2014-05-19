@@ -327,12 +327,6 @@ def can_reject?
     ("#%d %s" % [self.id, self.name])
   end
 
-
-  def friendly_name_for_sms
-    "Venue ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
-  end
-
-
   def url
     Rails.application.routes.url_helpers.venue_url(self)
   end

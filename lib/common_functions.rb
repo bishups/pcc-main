@@ -107,7 +107,7 @@ module CommonFunctions
       # check if the user already exists, if it does make a OR of send_sms, send_email. Add additional text
       # insert into the hash
       users.each { |user|
-        old_value = notify[user] if notify.has_key?(user)
+        old_value = notify.has_key?(user) ? notify[user] : nil
         new_value = {:send_sms => n.send_sms, :send_email => n.send_email, :additional_text => (n.additional_text.nil? || n.additional_text.blank? ? "" : "#{n.additional_text}") }
         if old_value.nil?
           old_value = new_value
