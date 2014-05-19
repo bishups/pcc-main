@@ -128,7 +128,7 @@ class VenueSchedule < ActiveRecord::Base
     before_transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :do => :is_venue_coordinator?
 
     event EVENT_BLOCK do
-      transition STATE_BLOCK_REQUESTED => STATE_BLOCKED
+      transition STATE_BLOCK_REQUESTED => STATE_BLOCKED, :if => lambda {|t| t.is_venue_coordinator? }
     end
     before_transition any => STATE_BLOCKED, :do => :before_block
     after_transition any => STATE_BLOCKED, :do => :after_block
