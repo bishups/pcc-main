@@ -673,7 +673,7 @@ class Program < ActiveRecord::Base
         when ::VenueSchedule::STATE_BLOCK_REQUESTED
           status << "(#{vs.venue.name} Block Requested) Please ask Venue Coordinator to approve the request."
         when ::VenueSchedule::STATE_BLOCKED
-          status << "(#{vs.venue.name} Blocked) Please send Approval Request to Sector Coordinator if Kit and Teacher is Ready."
+          status << "(#{vs.venue.name} Blocked) Please send Approval Request to Sector Coordinator once Kit and Teacher are Ready."
         when ::VenueSchedule::STATE_APPROVAL_REQUESTED
           status << "(#{vs.venue.name} Approval Requested) Please ask Sector Coordinator to approve the request."
         when ::VenueSchedule::STATE_PAYMENT_PENDING
