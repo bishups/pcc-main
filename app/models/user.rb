@@ -476,23 +476,24 @@ class User < ActiveRecord::Base
         help "Required"
       end
       field :enable
-      field :custom_access_privileges do
-        read_only true
-        pretty_value do
-          ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
-          if ap_str.empty?
-            #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
-            #%{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a></div >}
-            # HACK - putting a button over the link is not working - it re-directs to user update, instead of going to add access privilege
-            %{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New Access Privilege </a></div >}
-          else
-            %{<div class="access_privilege_ap"> #{ap_str} </div >}
-          end
-        end
-      #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
-        label "Access Privileges"
-        help ""
-      end
+      field :access_privileges
+      #field :custom_access_privileges do
+      #  read_only true
+      #  pretty_value do
+      #    ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
+      #    if ap_str.empty?
+      #      #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
+      #      #%{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a></div >}
+      #      # HACK - putting a button over the link is not working - it re-directs to user update, instead of going to add access privilege
+      #      %{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New Access Privilege </a></div >}
+      #    else
+      #      %{<div class="access_privilege_ap"> #{ap_str} </div >}
+      #    end
+      #  end
+      ##  read_only true # won't be editable in forms (alternatively, hide it in edit section)
+      #  label "Access Privileges"
+      #  help ""
+      #end
 
     end
   end

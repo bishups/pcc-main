@@ -70,20 +70,16 @@ class AccessPrivilege < ActiveRecord::Base
   rails_admin do
     navigation_label 'Access Privilege'
     weight 1
-    #visible false
-    #object_label_method do
-    #  :role_name
-    #end
+    visible false
+    object_label_method do
+      :display_name
+    end
     list do
       field :user
       field :role
       field :resource
     end
     edit do
-      field :user do
-        inline_edit false
-        inline_add false
-      end
       field :role do
         inline_edit false
         inline_add false
@@ -99,16 +95,14 @@ class AccessPrivilege < ActiveRecord::Base
       end
       field :resource
     end
-    update do
-      configure :user do
-        read_only true
-      end
-    end
-
   end
 
   def role_name
     self.role.name if self.role
+  end
+
+  def display_name
+    "#{self.role_name} - #{self.resource_type} #{self.resource.name if self.resource}"
   end
 
 end
