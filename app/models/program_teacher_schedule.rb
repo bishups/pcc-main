@@ -47,7 +47,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
   #STATE_UNKNOWN  = :unknown
-  STATE_UNKNOWN             = 'Unknown'
+  #STATE_UNKNOWN             = 'Unknown'
   STATE_BLOCKED             = 'Blocked'
   STATE_ASSIGNED            = 'Assigned'
   STATE_RELEASE_REQUESTED   = 'Release Requested'
@@ -72,12 +72,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   EVENTS_WITH_FEEDBACK = []
 
 
-  state_machine :state, :initial => STATE_UNKNOWN do
+  state_machine :state, :initial => ::TeacherSchedule::STATE_AVAILABLE do
 
     event EVENT_BLOCK do
-      transition STATE_UNKNOWN => STATE_BLOCKED, :if => lambda {|t| t.can_create?}
+      transition ::TeacherSchedule::STATE_AVAILABLE => STATE_BLOCKED, :if => lambda {|t| t.can_create?}
     end
-    before_transition STATE_UNKNOWN => STATE_BLOCKED, :do => :can_block?
+    before_transition ::TeacherSchedule::STATE_AVAILABLE => STATE_BLOCKED, :do => :can_block?
     after_transition any => STATE_BLOCKED, :do => :if_program_announced!
 
     event ::Program::DROPPED do
@@ -106,9 +106,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     event ::Program::ANNOUNCED do
-      transition STATE_BLOCKED => STATE_ASSIGNED
+      transition [STATE_BLOCKED, STATE_RELEASE_REQUESTED] => STATE_ASSIGNED
     end
-    after_transition STATE_BLOCKED => STATE_ASSIGNED, :do => :if_program_started!
+    after_transition [STATE_BLOCKED, STATE_RELEASE_REQUESTED] => STATE_ASSIGNED, :do => :if_program_started!
 
     event ::Program::STARTED do
       transition STATE_ASSIGNED => STATE_IN_CLASS
@@ -294,7 +294,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
       ts.clear_comments!
       # This is a hack to store the last update
-      ts.store_last_update!(current_user, ::ProgramTeacherSchedule::STATE_UNKNOWN, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
+      ts.store_last_update!(current_user, ::TeacherSchedule::STATE_AVAILABLE, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
       #ts.save(:validate => false)
       ts.save!
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
@@ -305,9 +305,9 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       self.teacher_schedule_id = ts.id
     }
     # This is a hack to store in the activity_log
-    self.log_last_activity(current_user, ::ProgramTeacherSchedule::STATE_UNKNOWN, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
+    self.log_last_activity(current_user, ::TeacherSchedule::STATE_AVAILABLE, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
     # This is a hack, just to make sure the relevant notifications are sent out
-    self.state = ::ProgramTeacherSchedule::STATE_UNKNOWN
+    self.state = ::TeacherSchedule::STATE_AVAILABLE
     # TODO - check whether errors need to be checked here
     self.send(::ProgramTeacherSchedule::EVENT_BLOCK) if self.errors.empty?
 
@@ -328,7 +328,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     # TeacherSchedule.where('program_id = ? AND teacher_id = ?', self.program.id, self.teacher_id).update_all(
     #     {:state => self.state, :program_id => program_id, :blocked_by_user_id => self.blocked_by_user_id})
 
-    old_state = ::ProgramTeacherSchedule::STATE_UNKNOWN
+    old_state = ::TeacherSchedule::STATE_UNKNOWN
     teacher_schedules = TeacherSchedule.where('program_id = ? AND teacher_id = ?', self.program_id, self.teacher_id)
     teacher_schedules.each {|ts|
       # 1. update the state of all teacher_schedule(s) for a teacher, and program

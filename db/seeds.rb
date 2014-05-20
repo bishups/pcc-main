@@ -242,6 +242,7 @@ notifications = [
 
     {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :on_event => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
     {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::TeacherSchedule::STATE_UNAVAILABLE, :on_event => ::ProgramTeacherSchedule::EVENT_RELEASE, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::ProgramTeacherSchedule::STATE_ASSIGNED, :on_event => ::Program::ANNOUNCED, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
