@@ -235,6 +235,8 @@ notifications = [
     {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  venue_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'VenueSchedule', :from_state => 'any', :to_state => ::VenueSchedule::STATE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
+    {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  zonal_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  zao.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please publish schedule.' },
 
