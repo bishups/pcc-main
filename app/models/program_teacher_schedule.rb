@@ -62,7 +62,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   EVENT_BLOCK              = 'Block'
   EVENT_REQUEST_RELEASE    = 'Request Release'
   EVENT_RELEASE            = 'Release'
-
+  # Unknown Event, used only for logging
+  EVENT_UNKNOWN = 'Unknown'
 
   PROCESSABLE_EVENTS = [
       EVENT_REQUEST_RELEASE, EVENT_RELEASE
@@ -315,7 +316,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
   # NOTE: ProgramTeacherSchedule is **NOT** using ActiveRecord class functions like save
-  def update(trigger)
+  def update(trigger=EVENT_UNKNOWN)
     # if the state was updated to ::TeacherSchedule::STATE_AVAILABLE or ::TeacherSchedule::STATE_UNAVAILABLE
     if (::TeacherSchedule::STATE_PUBLISHED + [::TeacherSchedule::STATE_AVAILABLE_EXPIRED]).include?(self.state)
       program_id = nil
