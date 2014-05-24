@@ -1,4 +1,5 @@
 class ActivityLogsController < ApplicationController
+  before_filter :authenticate_user!
   # GET /activity_logs
   # GET /activity_logs.json
   def index

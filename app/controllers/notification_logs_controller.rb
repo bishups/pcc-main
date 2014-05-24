@@ -1,4 +1,5 @@
 class NotificationLogsController < ApplicationController
+  before_filter :authenticate_user!
   # GET /notification_logs
   # GET /notification_logs.json
   def index

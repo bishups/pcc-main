@@ -144,6 +144,8 @@ class Teacher < ActiveRecord::Base
         # turning off validation when saving, since it is a minimal update in a callback
         object.save(:validate => false)
       end
+      # TODO - internally we are not sending a notification when the teacher is being unattached.
+      # This can be changed by making change in seed data or in the notification log
       event = current_state == STATE_UNATTACHED ? EVENT_UNATTACH : EVENT_UNFIT
       object.notify(STATE_ATTACHED, current_state, event, self.centers)
     end
@@ -191,8 +193,8 @@ class Teacher < ActiveRecord::Base
   end
 
   def on_unfit
-    # if marked unfit remove all published teacher_schedules
-    TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).delete_all
+    # if marked unfit remove all future published teacher_schedules
+    self.delete_published_schedules
 
     # Also remove all attached centers
     CentersTeachers.where(:teacher_id => self.id).delete_all
@@ -253,6 +255,7 @@ class Teacher < ActiveRecord::Base
 
   def can_view?
     return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if self.current_user.is? :teacher_training_department, :for => :any, :center_id => self.center_ids
     return true if self.is_current_user?
     return false
   end
