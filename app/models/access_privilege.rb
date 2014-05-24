@@ -35,11 +35,12 @@ class AccessPrivilege < ActiveRecord::Base
     Center.where(:name => center_name).first
   end
 
-  def is_role_valid?
-    role = self.role.name.parameterize.underscore.to_sym
-    resource_type = self.resource.class.name.demodulize
+  def is_role_valid? 
+    if self.role 
+      role = self.role.name.parameterize.underscore.to_sym
+      resource_type = self.resource.class.name.demodulize
 
-    valid_roles =
+      valid_roles =
         case resource_type
           when "Zone"
             [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
@@ -51,8 +52,9 @@ class AccessPrivilege < ActiveRecord::Base
           else
             [:super_admin]
         end
-    if !valid_roles.include?(role)
-      self.errors[:resource] << " does not match the specified role."
+      if !valid_roles.include?(role)
+        self.errors[:resource] << " does not match the specified role."
+      end
     end
   end
 
