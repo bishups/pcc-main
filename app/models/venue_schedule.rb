@@ -33,7 +33,7 @@ class VenueSchedule < ActiveRecord::Base
   belongs_to :venue
   validates :venue_id, :presence => true
   attr_accessible :venue_id, :venue
-  validates_uniqueness_of :program_id, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
+  validates_uniqueness_of :program_id, :on => :create, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
   validates :per_day_price, :length => {:within => 1..6},:numericality => {:only_integer => true }, :allow_nil => true
 
 

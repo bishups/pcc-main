@@ -73,7 +73,7 @@ class KitSchedule < ActiveRecord::Base
 
   validates :start_date, :end_date, :kit_id, :state, :presence => true
   validates :program_id, :presence => true, :unless => :kit_available_or_reserved?
-  validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_available_reserved_or_cancelled?, :message => " is already associated with the Kit."
+  validates_uniqueness_of :program_id, :on => :create, :scope => "kit_id", :unless => :kit_available_reserved_or_cancelled?, :message => " is already associated with the Kit."
 
   #checking for overlap validation
   validates_with KitScheduleValidator, :on => :create
