@@ -153,7 +153,7 @@ class Program < ActiveRecord::Base
     after_transition STATE_UNKNOWN => STATE_PROPOSED, :do => :fill_proposer_id!
 
     event EVENT_ANNOUNCE do
-      transition STATE_PROPOSED => STATE_ANNOUNCED
+      transition STATE_PROPOSED => STATE_ANNOUNCED, :if => lambda {|t| t.can_announce? }
     end
     before_transition any => STATE_ANNOUNCED, :do => :can_announce?
     after_transition any => STATE_ANNOUNCED, :do => :on_announce
