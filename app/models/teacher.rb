@@ -135,7 +135,7 @@ class Teacher < ActiveRecord::Base
     end
     if last_state == STATE_ATTACHED && current_state != STATE_ATTACHED
       # if we have published TeacherSchedules, means we are coming through the rails_admin
-      if TeacherSchedule.where('teacher_id IS ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).count > 0
+      if TeacherSchedule.where('(teacher_id = ? OR teacher_id IS NULL) AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).count > 0
         # remove all published teacher schedules
         object.delete_published_schedules
         # HACK - store the last update for rails_admin
@@ -202,7 +202,7 @@ class Teacher < ActiveRecord::Base
 
 
   def delete_published_schedules
-    TeacherSchedule.where('teacher_id IS ? AND state IN (?) AND start_date >= ?', self.id, ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date).delete_all
+    TeacherSchedule.where('(teacher_id = ? OR teacher_id IS NULL) AND state IN (?) AND start_date >= ?', self.id, ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date).delete_all
   end
 
   def in_schedule?
@@ -309,7 +309,7 @@ class Teacher < ActiveRecord::Base
 
   def can_be_blocked_by?(program)
     program.timings.each {|t|
-      ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? AND teacher_schedules.program_type_id IS ?',
+      ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? AND (teacher_schedules.program_type_id = ? OR teacher_schedules.program_type_id IS NULL)',
                                         program.start_date.to_date, program.end_date.to_date, t.id,
                                         ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_donation.program_type_id).first
       return false if ts.nil?

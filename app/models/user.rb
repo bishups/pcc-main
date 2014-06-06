@@ -402,7 +402,7 @@ class User < ActiveRecord::Base
   # this is a cron job, run through whenever gem
   # from the config/schedule.rb file
   def self.send_pending_approval_emails
-    users = User.where("approval_email_sent IS ?", false).all
+    users = User.where("approval_email_sent = ?", false).all
     users.each {|user|
       UserMailer.approval_email(user).deliver
       user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")

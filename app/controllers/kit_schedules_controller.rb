@@ -75,7 +75,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule = KitSchedule.new
     @kit_schedule.current_user = current_user
     @kit_schedule.kit_id = @kit.id
-    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
+    @kit_schedule.comment_category = Comment.where('model = ? AND action = ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_create_on_trigger?
@@ -94,7 +94,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.current_user = current_user
 
     @trigger = params[:trigger]
-    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
+    @kit_schedule.comment_category = Comment.where('model = ? AND action = ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_update?

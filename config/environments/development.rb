@@ -50,13 +50,15 @@ PccMain::Application.configure do
 
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-      :user_name => '20254ed98fef9d3d3',
-      :password => 'c1fb623005261e',
-      :address => 'mailtrap.io',
-      :domain => 'mailtrap.io',
-      :port => '2525',
-      :authentication => :cram_md5,
-      :enable_starttls_auto => true
+  #    :user_name => '20254ed98fef9d3d3',
+  #    :password => 'c1fb623005261e',
+  #    :address => 'mailtrap.io',
+  #    :domain => 'mailtrap.io',
+  #    :port => '2525',
+  #    :authentication => :cram_md5,
+  #    :enable_starttls_auto => true
+      :address => 'localhost',
+      :port => '1025'
   }
   # sms country configuration
   # TODO - fill the sms country user name here

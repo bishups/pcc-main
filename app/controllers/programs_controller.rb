@@ -76,7 +76,7 @@ class ProgramsController < ApplicationController
     @program = Program.find(params[:id])
     @program.current_user = current_user
     @trigger = params[:trigger]
-    @program.comment_category = Comment.where('model IS ? AND action IS ?', 'Program', @trigger).pluck(:text)
+    @program.comment_category = Comment.where('model = ? AND action = ?', 'Program', @trigger).pluck(:text)
 
     if !@program.can_update?
       respond_to do |format|

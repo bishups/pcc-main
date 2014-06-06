@@ -328,6 +328,14 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
 
   add_index "rails_admin_histories", ["item", "table", "month", "year"], :name => "index_rails_admin_histories"
 
+  create_table "report_state_records", :force => true do |t|
+    t.string   "record_name"
+    t.integer  "record_id"
+    t.string   "state"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+  end
+
   create_table "roles", :force => true do |t|
     t.string   "name"
     t.datetime "created_at", :null => false
@@ -455,6 +463,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "sync_id"
     t.boolean  "approval_email_sent",                    :default => false
     t.datetime "password_reset_at"
+    t.string   "provider"
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"

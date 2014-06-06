@@ -120,11 +120,11 @@ class Program < ActiveRecord::Base
 
   # timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
   # given a program, returns a relation with other non-overlapping program(s)
-  scope :available, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('(programs.start_date NOT BETWEEN ? AND ?) AND (programs.end_date NOT BETWEEN ? AND ?) AND NOT (programs.start_date <= ? AND programs.end_date >= ?) AND programs_timings.timing_id NOT IN (?) AND programs.id IS NOT ? ',
+  scope :available, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('(programs.start_date NOT BETWEEN ? AND ?) AND (programs.end_date NOT BETWEEN ? AND ?) AND NOT (programs.start_date <= ? AND programs.end_date >= ?) AND programs_timings.timing_id NOT IN (?) AND (programs.id != ? OR programs.id IS NOT NULL) ',
                                                                              program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
 
   # given a program, returns a relation with other overlapping program(s)
-  scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND programs.id IS NOT ? ',
+  scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND (programs.id != ? OR programs.id IS NOT NULL) ',
                                                                                program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id) }
 
 # given a program, returns a relation with all overlapping program(s) (including itself)
@@ -479,7 +479,7 @@ class Program < ActiveRecord::Base
 
 
   def blockable_venues
-    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND venues.state IS ?', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
+    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND (venues.state = ? OR venues.state IS NULL) ', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
     blockable_venues = []
     venues.each {|venue|
       blockable_venues << venue if venue.can_be_blocked_by?(self)

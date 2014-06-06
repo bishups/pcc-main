@@ -84,7 +84,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       @program_teacher_schedule = load_program_teacher_schedule!(params)
     end
     @trigger = params[:trigger]
-    @program_teacher_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
+    @program_teacher_schedule.comment_category = Comment.where('model = ? AND action = ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
 
     unless @program_teacher_schedule.can_update?
       respond_to do |format|
@@ -123,8 +123,9 @@ class ProgramTeacherSchedulesController < ApplicationController
             format.json { render :json => @program_teacher_schedule }
           end
         else
-          flash[:program_teacher_schedule] = @program_teacher_schedule
-          format.html { redirect_to :action => :edit, :trigger => params[:trigger], :id => params[:id]}
+          #flash[:program_teacher_schedule] = @program_teacher_schedule
+          #format.html { redirect_to :action => :edit, :trigger => params[:trigger], :id => params[:id]}
+          format.html { render :action => :edit, :trigger => params[:trigger], :id => params[:id]}
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         end
       else

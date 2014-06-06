@@ -207,13 +207,13 @@ class TeacherSchedulesController < ApplicationController
   end
 
   def load_program_type_timings!(teacher)
-    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', teacher.id).all.sort_by{|pt| pt[:name]}
+    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id = ? OR program_types_teachers.teacher_id IS NULL', teacher.id).all.sort_by{|pt| pt[:name]}
     @selected_program_type = @program_types[0]
     @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
   end
 
   def load_program_type_timings_on_update!(teacher_schedule)
-    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id IS ?', teacher_schedule.teacher.id).all.sort_by{|pt| pt[:name]}
+    @program_types = ProgramType.joins('JOIN program_types_teachers ON program_types.id = program_types_teachers.program_type_id').where('program_types_teachers.teacher_id = ? OR program_types_teachers.teacher_id IS NULL', teacher_schedule.teacher.id).all.sort_by{|pt| pt[:name]}
     @selected_program_type = teacher_schedule.program_type
     @timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
   end
