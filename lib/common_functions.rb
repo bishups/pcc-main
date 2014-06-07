@@ -83,7 +83,7 @@ module CommonFunctions
     centers = centers.class == Array ? centers : [centers]
 
     notify = {}
-    notifications = Notification.where('model IS ? AND from_state IN (?) AND to_state IN (?)  AND on_event IN (?) ', model, from, to, on).all
+    notifications = Notification.where('model = ? AND from_state IN (?) AND to_state IN (?)  AND on_event IN (?) ', model, from, to, on).all
     notifications.each { |n|
       r = Role.find(n.role_id)
       case r.name
