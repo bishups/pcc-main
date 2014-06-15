@@ -361,7 +361,11 @@ class Teacher < ActiveRecord::Base
       ts = TeacherSchedule.new
       ts.program = program
       ts.teacher_id = self.id
-      return false if ts.schedule_overlaps?
+      program.timing_ids.each { |timing_id|
+        ts.timing_id = timing_id
+        # if program schedule does not overlap any other schedule for the teacher
+        return false if ts.schedule_overlaps?
+      }
     else
       # check if teacher has matching program_type
       return false unless self.program_types.include?(program.program_donation.program_type)

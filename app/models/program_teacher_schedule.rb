@@ -357,8 +357,6 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     return [] if self.program.nil?
 
     program = self.program
-    ts = TeacherSchedule.new
-    ts.program = program
 
     # don't check specific program type if teacher is marked as co-teacher
     if co_teacher
@@ -372,10 +370,22 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     teacher_ids = teacher_ids.uniq
     blockable_teacher_ids = []
+
+    ts = TeacherSchedule.new
+    ts.program = program
+    # For each of timing(s) check if the teacher_schedule overlaps with any existing schedule
     teacher_ids.each {|teacher_id|
-      ts.teacher_id = teacher_id
-      # if program schedule does not overlap any other schedule for the teacher
-      blockable_teacher_ids << teacher_id unless ts.schedule_overlaps?
+      overlaps = false
+      program.timing_ids.each { |timing_id|
+        ts.timing_id = timing_id
+        ts.teacher_id = teacher_id
+        # if program schedule does not overlap any other schedule for the teacher
+        if ts.schedule_overlaps?
+          overlaps = true
+          break
+        end
+      }
+      blockable_teacher_ids << teacher_id unless overlaps
     }
     Teacher.find(blockable_teacher_ids)
   end
@@ -456,7 +466,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       # This is a hack to store the last update
       ts.store_last_update!(current_user, ::TeacherSchedule::STATE_AVAILABLE, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
       #ts.save(:validate => false)
-      ts.save!
+      ts.save
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         self.errors[:base] << ts.errors.full_messages
@@ -486,7 +496,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       # This is a hack to store the last update
       ts.store_last_update!(current_user, ::TeacherSchedule::STATE_AVAILABLE, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::EVENT_BLOCK)
       #ts.save(:validate => false)
-      ts.save!
+      ts.save
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         self.errors[:base] << ts.errors.full_messages
@@ -546,7 +556,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       ts.blocked_by_user_id = blocked_by_user_id
       ts.comments = self.comments.nil? ? "" : self.comments
       ts.feedback = self.feedback unless self.feedback.nil?
-      ts.save!
+      ts.save
       ## TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         self.errors[:base] << ts.errors.full_messages

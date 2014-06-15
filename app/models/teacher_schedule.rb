@@ -76,8 +76,8 @@ class TeacherSchedule < ActiveRecord::Base
   #validates_with TeacherScheduleValidator
 
   # given a teacher schedule (linked to a program), returns a relation with all overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
-  # --  ts.id = NULL, ts.teacher_id, ts.program
-  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.all_overlapping(ts.program)).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL)', ts.id, ts.id, states, ts.teacher_id) }
+  # --  ts.id = NULL, ts.timing, ts.teacher_id, ts.program
+  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.all_overlapping(ts.program)).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL) AND teacher_schedules.timing_id = ?', ts.id, ts.id, states, ts.teacher_id, ts.timing_id) }
 
   # given a teacher schedule (not linked to program), returns a relation with other overlapping teacher schedules(s) (linked to programs) for the specific teacher, not in specified states
   # -- ts.id = NULL, ts.teacher_id, ts.start_date, ts.end_date
