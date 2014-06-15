@@ -209,7 +209,7 @@ class Program < ActiveRecord::Base
     before_transition any => STATE_CLOSED, :do => :can_close?
 
     event EVENT_CANCEL do
-      transition STATE_ANNOUNCED => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zao, :center_id => p.center_id }
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_CLOSED] => STATE_CANCELLED, :if => lambda {|p| p.current_user.is? :zao, :center_id => p.center_id }
     end
     before_transition any => STATE_CANCELLED, :do => :can_cancel?
     after_transition any => STATE_CANCELLED, :do => :on_cancel
@@ -248,7 +248,7 @@ class Program < ActiveRecord::Base
 
   def trigger_program_start
     return if !self.reloaded?
-    if [STATE_ANNOUNCED].include?(self.state)
+    if [STATE_ANNOUNCED, STATE_REGISTRATION_CLOSED].include?(self.state)
       self.send(EVENT_START)
       self.save if self.errors.empty?
     end

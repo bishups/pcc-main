@@ -264,10 +264,12 @@ notifications = [
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_ACTIVITY, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_BREAK, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_RESERVED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_TRAVEL, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_ACTIVITY, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_BREAK, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
-    {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_RESERVED, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' }
+    {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_RESERVED, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_TRAVEL, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' }
 ]
 notifications.each{|n| Notification.create(n)}
 

@@ -17,6 +17,8 @@ module TeacherSchedulesHelper
         '<span class="label label-warning">Reserved</span>'
       when ::TeacherSchedule::STATE_BREAK
         '<span class="label label-danger">Break</span>'
+      when ::TeacherSchedule::STATE_TRAVEL
+        '<span class="label label-warning">Travel</span>'
       else
         program_teacher_schedule_state_tag(ts)
       end
