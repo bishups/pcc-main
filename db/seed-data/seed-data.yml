@@ -34,7 +34,21 @@ ProgramType:
   -  name: "Uyir Nokkam"
      language: "Tamil"
      minimum_no_of_teacher:  2
+     minimum_no_of_co_teacher:  -1
+     registration_close_timeout: 3
      no_of_days: 3
+  -  name: "IE 7 Day E"
+     language: "English"
+     minimum_no_of_teacher:  1
+     minimum_no_of_co_teacher: 0
+     registration_close_timeout: 3
+     no_of_days: 7
+  -  name: "BSP T"
+     language: "Tamil"
+     minimum_no_of_teacher:  1
+     minimum_no_of_co_teacher: 2
+     registration_close_timeout: -24
+     no_of_days: 4
 
 ProgramDonation:
   - name: "Uyir_Nokkam_250"
@@ -45,6 +59,12 @@ ProgramDonation:
     donation: 500
   - name: "Uyir_Nokkam_600"
     donation: 600
+  - name: "IE_7_Day_E_1000"
+    donation: 1000
+  - name: "IE_7_Day_E_1500"
+    donation: 1500
+  - name: "BSP_T_1500"
+    donation: 1500
 
 Timing:
   -  name: "Morning (6am-9am)"
@@ -59,4 +79,10 @@ Timing:
   -  name: "Night (6pm-9pm)"
      start_time: "6pm"
      end_time: "9pm"
+  -  name: "Evening (6pm-9pm)"
+     start_time: "6pm"
+     end_time: "9pm"
+  -  name: "Full Day"
+     start_time: "0:01am"
+     end_time: "11:59pm"
 

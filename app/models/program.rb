@@ -33,7 +33,7 @@ class Program < ActiveRecord::Base
 #  validates :end_date, :presence => true
 
   belongs_to :proposer, :class_name => "User" #, :foreign_key => "rated_id"
-  attr_accessible :proposer_id, :proposer
+  attr_accessible :proposer_id, :proposer, :capacity
 
   validates :proposer_id, :presence => true
   validates_with ProgramValidator, :on => :create
@@ -68,6 +68,7 @@ class Program < ActiveRecord::Base
   STATE_ANNOUNCED     = "Announced"
   STATE_DROPPED       = "Dropped"
   STATE_CANCELLED     = "Cancelled"
+  STATE_REGISTRATION_CLOSED = "Registration Closed"
   STATE_IN_PROGRESS   = "In Progress"
   STATE_CONDUCTED     = "Conducted"
   STATE_TEACHER_CLOSED = "Teacher Closed"
@@ -82,6 +83,8 @@ class Program < ActiveRecord::Base
   EVENT_PROPOSE       = "Propose"
   EVENT_ANNOUNCE      = "Announce"
   EVENT_START         = "Start"
+  EVENT_CLOSE_REGISTRATION = "Close Registration"
+  EVENT_REGISTRATION_CLOSE_TIMEOUT = "Registration Close Timeout"
   EVENT_FINISH        = "Finish"
   EVENT_CLOSE         = "Close"
   EVENT_DROP          = "Drop"
@@ -91,12 +94,12 @@ class Program < ActiveRecord::Base
   EVENT_EXPIRE = "Expire"
 
   PROCESSABLE_EVENTS = [
-      EVENT_ANNOUNCE, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE, EVENT_ZAO_CLOSE
+      EVENT_ANNOUNCE, EVENT_CLOSE, EVENT_CANCEL, EVENT_DROP, EVENT_TEACHER_CLOSE, EVENT_ZAO_CLOSE, EVENT_CLOSE_REGISTRATION
   ]
 
-  INTERNAL_NOTIFICATIONS = [EVENT_START, EVENT_FINISH, EVENT_EXPIRE]
+  INTERNAL_NOTIFICATIONS = [EVENT_START, EVENT_FINISH, EVENT_EXPIRE, EVENT_REGISTRATION_CLOSE_TIMEOUT]
 
-  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL, EVENT_ZAO_CLOSE]
+  EVENTS_WITH_COMMENTS = [EVENT_DROP, EVENT_CANCEL, EVENT_ZAO_CLOSE, EVENT_CLOSE_REGISTRATION]
   EVENTS_WITH_FEEDBACK = [EVENT_TEACHER_CLOSE]
 
   ###
@@ -155,17 +158,17 @@ class Program < ActiveRecord::Base
     event EVENT_ANNOUNCE do
       transition STATE_PROPOSED => STATE_ANNOUNCED, :if => lambda {|t| t.can_announce? }
     end
-    before_transition any => STATE_ANNOUNCED, :do => :can_announce?
+    before_transition any => STATE_ANNOUNCED, :do => :before_announce
     after_transition any => STATE_ANNOUNCED, :do => :on_announce
 
     event EVENT_DROP do
-      transition STATE_PROPOSED => STATE_DROPPED, :if => lambda {|p| p.current_user.is? :center_scheduler, :center_id => p.center_id}
+      transition STATE_PROPOSED => STATE_DROPPED, :if => lambda {|p| (p.current_user.is? :center_scheduler, :center_id => p.center_id) && !p.can_announce? }
     end
     before_transition any => STATE_DROPPED, :do => :can_drop?
     after_transition any => STATE_DROPPED, :do => :on_drop
 
     event EVENT_START do
-      transition STATE_ANNOUNCED => STATE_IN_PROGRESS
+      transition [STATE_ANNOUNCED, STATE_REGISTRATION_CLOSED] => STATE_IN_PROGRESS
     end
     after_transition any => STATE_IN_PROGRESS, :do => :on_start
 
@@ -178,6 +181,17 @@ class Program < ActiveRecord::Base
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
     end
     after_transition any => STATE_CONDUCTED, :do => :on_finish
+
+    event EVENT_CLOSE_REGISTRATION do
+      transition STATE_ANNOUNCED => STATE_REGISTRATION_CLOSED, :if => lambda {|p| p.current_user.is? :center_scheduler, :center_id => p.center_id}
+    end
+    before_transition any => STATE_REGISTRATION_CLOSED, :do => :can_close_registration?
+    after_transition any => STATE_REGISTRATION_CLOSED, :do => :close_registration
+
+    event EVENT_REGISTRATION_CLOSE_TIMEOUT do
+      transition STATE_ANNOUNCED => STATE_REGISTRATION_CLOSED
+    end
+    after_transition any => STATE_REGISTRATION_CLOSED, :do => :close_registration
 
     event EVENT_TEACHER_CLOSE do
       transition STATE_CONDUCTED => STATE_TEACHER_CLOSED, :if => lambda {|p| p.is_teacher?}
@@ -215,7 +229,7 @@ class Program < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center)
+      object.notify(transition.from, transition.to, transition.event, object.center, object.teachers_connected_or_conducted_class)
     end
 
   end
@@ -244,6 +258,20 @@ class Program < ActiveRecord::Base
     end
   end
 
+  def trigger_registration_close
+    return if !self.reloaded?
+    if [STATE_ANNOUNCED].include?(self.state)
+      self.send(EVENT_REGISTRATION_CLOSE_TIMEOUT)
+      self.save if self.errors.empty?
+    elsif [STATE_IN_PROGRESS].include?(self.state)
+      self.close_registration
+      self.save if self.errors.empty?
+      # We need to manually send the notifications here, to avoid sending unnecessary notifications
+      object.store_last_update!(self.current_user, STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT)
+      object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class)
+    end
+  end
+
   def trigger_program_finish
     return if !self.reloaded?
     if [STATE_IN_PROGRESS].include?(self.state)
@@ -266,12 +294,41 @@ class Program < ActiveRecord::Base
     end
   end
 
+  def kit_capacity
+    self.kit_schedules.joins('JOIN kits ON kits.id = kit_schedules.kit_id').where('kit_schedules.state = ?', ::KitSchedule::STATE_BLOCKED).pluck('kits.capacity').map{|v| v.to_i}.sum
+  end
+
+  def venue_capacity
+    self.venue_schedules.joins('JOIN venues ON venues.id = venue_schedules.venue_id').where('venue_schedules.state = ?', ::VenueSchedule::STATE_PAID).pluck('venues.capacity').map{|v| v.to_i}.max
+  end
+
+  def before_announce
+    if self.capacity.nil? || self.capacity <= 0
+      self.errors[:capacity] << " should be non-zero."
+      return false
+    end
+    return can_announce?
+  end
+
   def on_announce
     self.announced = true
     # generate_program_id!
     self.notify_all(ANNOUNCED)
     # start the timer for start of class notification
     self.delay(:run_at => self.start_date).trigger_program_start
+    # start the timer for registration close
+    self.delay(:run_at => (self.start_date + self.program_donation.program_type.registration_close_timeout.hours)).trigger_registration_close
+
+  end
+
+  def can_close_registration?
+    return true if (self.current_user.is? :center_scheduler, :center_id => self.center_id)
+    self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
+    return false
+  end
+
+  def close_registration
+    self.registration_closed = true
   end
 
   def can_drop?
@@ -506,34 +563,74 @@ class Program < ActiveRecord::Base
 
 
 
-  def no_of_teachers_connected_or_conducted
+  def no_of_main_teachers_connected_or_conducted
     return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS])).group('teacher_id').length
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), false).group('teacher_id').length
   end
 
-  def no_of_teachers_connected
+  def no_of_co_teachers_connected_or_conducted
     return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), true).group('teacher_id').length
   end
 
-  def teachers_connected
+  def no_of_main_teachers_connected
     return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id')
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, false).group('teacher_id').length
+  end
+
+  def no_of_co_teachers_connected
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ? ', ::ProgramTeacherSchedule::CONNECTED_STATES, true).group('teacher_id').length
+  end
+
+  def main_teachers_connected
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, false).group('teacher_id')
 #    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
-  def teachers_conducted_class
+  def co_teachers_connected
     return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) ', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, true).group('teacher_id')
 #    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
-  def minimum_no_of_teacher
+  def main_teachers_conducted_class
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], false).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
+  def co_teachers_conducted_class
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], true).group('teacher_id')
+#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  end
+
+  def has_co_teacher?
+    self.program_donation.program_type.minimum_no_of_co_teacher >= 0
+  end
+
+  def teachers_connected_or_conducted_class
+    return 0 if !self.teacher_schedules
+    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
+  end
+
+  def minimum_no_of_main_teacher
     self.program_donation.program_type.minimum_no_of_teacher
   end
 
+  def minimum_no_of_co_teacher
+    self.program_donation.program_type.minimum_no_of_co_teacher
+  end
+
   def minimum_teachers_connected?
-    self.no_of_teachers_connected >= self.minimum_no_of_teacher
+    self.no_of_main_teachers_connected >= self.minimum_no_of_main_teacher &&
+        self.no_of_co_teachers_connected >= self.minimum_no_of_co_teacher
+  end
+
+  def program_needs_co_teacher?
+    self.program_donation.program_type.minimum_no_of_co_teacher > -1
   end
 
   def is_teacher?
@@ -607,8 +704,13 @@ class Program < ActiveRecord::Base
       return false
     end
 
-    if (self.no_of_teachers_connected > 0)
+    if (self.no_of_main_teachers_connected > 0)
       self.errors[:base] << "Cannot close program, teacher(s) are still linked to the program."
+      return false
+    end
+
+    if (self.no_of_co_teachers_connected > 0)
+      self.errors[:base] << "Cannot close program, co-teacher(s) are still linked to the program."
       return false
     end
 
@@ -625,6 +727,7 @@ class Program < ActiveRecord::Base
 
   def can_view?
     return true if self.current_user.is? :any, :in_group => [:geography], :center_id => self.center_id
+    return true if self.current_user.is? :any, :in_group => [:pcc], :center_id => self.center_id
     return false
   end
 
@@ -653,8 +756,12 @@ class Program < ActiveRecord::Base
   end
 
   def teacher_status
-    return ["(Number of teacher added = #{self.no_of_teachers_connected}) Please add #{self.minimum_no_of_teacher-self.no_of_teachers_connected} more teacher."] if self.no_of_teachers_connected < self.minimum_no_of_teacher
-    return ['<span class="label label-success">Ready</span>'] if self.no_of_teachers_connected >= self.minimum_no_of_teacher
+    errors = []
+    main_teacher_str = self.minimum_no_of_co_teacher >=0 ? "Main teacher" : "teacher"
+    errors << "(Number of #{main_teacher_str} added = #{self.no_of_main_teachers_connected}) Please add #{self.minimum_no_of_main_teacher-self.no_of_main_teachers_connected} more teacher." if self.no_of_main_teachers_connected < self.minimum_no_of_main_teacher
+    errors << "(Number of Co-teacher added = #{self.no_of_co_teachers_connected}) Please add #{self.minimum_no_of_co_teacher-self.no_of_co_teachers_connected} more teacher." if self.no_of_co_teachers_connected < self.minimum_no_of_co_teacher
+    return errors unless errors.empty?
+    return ['<span class="label label-success">Ready</span>'] if self.no_of_main_teachers_connected >= self.minimum_no_of_main_teacher && self.no_of_co_teachers_connected >= self.minimum_no_of_co_teacher
   end
 
   def venue_status

@@ -69,6 +69,7 @@
   roles={
     ::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
+    ::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text] => ["Program Management","Teacher Scheduling","Kit View","Venue View"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zao][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
@@ -90,6 +91,7 @@
 # create notifications
 
 zonal_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text])
+full_time_teacher_scheduler = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text])
 zao = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zao][:text])
 sector_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text])
 center_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text])
@@ -125,6 +127,12 @@ notifications = [
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
+    {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  zonal_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  zao.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -137,6 +145,9 @@ notifications = [
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_CONDUCTED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please enter feedback' },
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_TEACHER_CLOSED, :on_event => 'any', :role_id => zao.id, :send_sms => true, :send_email => true, :additional_text => 'Please mark as closed' },
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_ZAO_CLOSED, :on_event => 'any', :role_id => center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Please mark as closed' },
+
+    {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id => center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id => center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CLOSED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CLOSED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -240,14 +251,23 @@ notifications = [
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Teacher', :from_state => 'any', :to_state => ::Teacher::STATE_ATTACHED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please publish schedule.' },
 
+    {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_BLOCKED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_ASSIGNED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
     {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :on_event => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
     {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::TeacherSchedule::STATE_UNAVAILABLE, :on_event => ::ProgramTeacherSchedule::EVENT_RELEASE, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
-    {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::ProgramTeacherSchedule::STATE_ASSIGNED, :on_event => ::Program::ANNOUNCED, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
     {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
-    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' }
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE_EXPIRED, :on_event => 'any', :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => 'Blocked Teacher Not Used !' },
 
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_ACTIVITY, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_BREAK, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'TeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_RESERVED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+
+    {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_ACTIVITY, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_BREAK, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'TeacherSchedule', :from_state => ::TeacherSchedule::STATE_RESERVED, :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' }
 ]
 notifications.each{|n| Notification.create(n)}
 

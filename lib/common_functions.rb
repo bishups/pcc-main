@@ -61,7 +61,7 @@ module CommonFunctions
     activity.model_type = self.class.name
     #activity.model_type = "ProgramTeacherSchedule" if activity.model_type == "TeacherSchedule" and !self.program.nil?
     #activity.model_type = "TeacherSchedule" if activity.model_type == "ProgramTeacherSchedule" and self.program.nil?
-    activity.model_id = self.id
+    activity.model_id =  self.id
     activity.date = date.nil? ? Time.zone.now : date
     activity.text1 = self.friendly_first_name_for_email
     activity.text2 = " #{self.friendly_second_name_for_email} from #{self.update_str(from, to, on)}."
@@ -74,13 +74,14 @@ module CommonFunctions
   end
 
 
-  def notify(from_state, to_state, on_event, centers)
+  def notify(from_state, to_state, on_event, centers, teachers = [])
 
     model = self.class.name
     from = from_state != :any ? [from_state, "any"] : ["any"]
     to = to_state != :any ? [to_state, "any"] : ["any"]
     on = on_event != :any ? [on_event, "any"] : ["any"]
     centers = centers.class == Array ? centers : [centers]
+    teachers = teachers.class == Array ? teachers : [teachers]
 
     notify = {}
     notifications = Notification.where('model = ? AND from_state IN (?) AND to_state IN (?)  AND on_event IN (?) ', model, from, to, on).all
@@ -88,6 +89,7 @@ module CommonFunctions
       r = Role.find(n.role_id)
       case r.name
         when ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text],
+            ::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:zao][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text],
@@ -97,11 +99,23 @@ module CommonFunctions
         when ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]
           # search by sectors
           users = r.users.by_sectors(centers).uniq
+        when ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]
+          if teachers.empty?
+            # search by centers
+            users = r.users.by_centers(centers).uniq
+          else
+            # specific teachers only
+            users = teachers.map{|t| t.user}
+          end
         else
           # search by centers
           users = r.users.by_centers(centers).uniq
       end
 
+      if self.methods.include?(:update_users_for_notification!)
+        updated_users = self.update_users_for_notification!(users, r, from, to, on, centers, teachers)
+        users = updated_users
+      end
 
       # for each of the users, add the flags send_sms, send_email, and additional_text
       # check if the user already exists, if it does make a OR of send_sms, send_email. Add additional text

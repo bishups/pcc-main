@@ -1,7 +1,11 @@
 class TeacherScheduleValidator < ActiveModel::Validator
   def validate(record)
     validate_dates(record)
-    validate_schedule_overlap(record)
+    if record.teacher.full_time?
+      record.errors[:base] << "Dates overlap existing schedule" if record.schedule_overlaps?
+    else
+      validate_schedule_overlap(record)
+    end
   end
 
   # Validator

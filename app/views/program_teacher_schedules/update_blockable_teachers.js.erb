@@ -1,0 +1,10 @@
+<% if @blockable_teachers.count > 0 %>
+    <% blockable_teachers = @blockable_teachers.map{|t| [t.user.fullname, t.id]} %>
+    $('#teachers_select').html("<%= escape_javascript(options_for_select(blockable_teachers)) %>");
+    $('#teachers_select').prop('disabled', false)
+    $('#submit_button').prop('disabled', false)
+<% else %>
+    $('#teachers_select').html("<%= escape_javascript(options_for_select(['None Available'])) %>");
+    $('#teachers_select').prop('disabled', true)
+    $('#submit_button').prop('disabled', true)
+<% end %>

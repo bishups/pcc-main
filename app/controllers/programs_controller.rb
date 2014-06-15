@@ -4,7 +4,8 @@ class ProgramsController < ApplicationController
   def index
 
     in_geography = (current_user.is? :any, :in_group => [:geography])
-    center_ids = in_geography ? current_user.accessible_center_ids : []
+    in_pcc = (current_user.is? :any, :in_group => [:pcc])
+    center_ids = (in_geography or in_pcc) ? current_user.accessible_center_ids : []
     respond_to do |format|
       if center_ids.empty?
         @programs = []
@@ -91,6 +92,7 @@ class ProgramsController < ApplicationController
     @program.current_user = current_user
     @trigger = params[:trigger]
     @program.feedback = params[:feedback] if params.has_key?(:feedback)
+    @program.capacity = params[:capacity] if params.has_key?(:capacity)
     @program.load_comments!(params)
 
     respond_to do |format|

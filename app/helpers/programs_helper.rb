@@ -7,6 +7,8 @@ module ProgramsHelper
         '<span class="label label-success">Announced</span>'
       elsif prog.state == ::Program::STATE_CANCELLED
         '<span class="label label-danger">Cancelled</span>'
+      elsif prog.state == ::Program::STATE_REGISTRATION_CLOSED
+        '<span class="label label-warning">Registration Closed</span>'
       elsif prog.state == ::Program::STATE_IN_PROGRESS
         '<span class="label label-info">In-Progress</span>'
       elsif prog.state == ::Program::STATE_CONDUCTED

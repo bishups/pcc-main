@@ -32,6 +32,7 @@
   <tr>
     <th>ID #</th>
     <th>Name</th>
+    <th>Part-Time</th>
     <th>Program Types</th>
     <th>Zone</th>
     <th>Center(s)</th>
@@ -45,9 +46,14 @@
       <tr>
         <td><%= teacher.id %></td>
         <td><%= teacher.user.fullname %></td>
-        <td><%= (teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
+        <td><%= teacher.full_time? ? "No" : "Yes" %></td>
+        <td><%= (teacher.program_types.map{|pt| pt[:name]}).sort.join(", ") %></td>
         <td><%= teacher.zone.name rescue '' %></td>
-        <td><%= (teacher.centers.map {|c| c[:name]}).join(", ") %></td>
+        <% if teacher.full_time? %>
+            <td><%= '[All Centers in Zone]' %></td>
+        <% else %>
+            <td><%= (teacher.centers.map {|c| c[:name]}).join(", ") %></td>
+        <% end %>
         <td><%= teacher_state_tag(teacher) %></td>
         <td>
           <%= link_to "Show", teacher_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view? || teacher.is_current_user? %>

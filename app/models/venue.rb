@@ -58,7 +58,7 @@ class Venue < ActiveRecord::Base
   validates :name, :presence => true
   validates_uniqueness_of :name, :scope => :deleted_at
 
-  validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
+  validates :capacity, :presence => true,  :length => {:within => 1..5}, :numericality => {:only_integer => true }
   validates :contact_mobile, :presence => true, :length => { is: 10}, :numericality => {:only_integer => true }
   validates :pincode, :presence => true
   #validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
@@ -393,7 +393,9 @@ def can_reject?
       field :commercial
       field :payment_contact_name
       field :payment_contact_address
-      field :payment_contact_mobile
+      field :payment_contact_mobile do
+        help "Required (for commercial venues)."
+      end
       field :per_day_price do
         help "Required (for commercial venues)."
       end

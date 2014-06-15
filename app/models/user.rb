@@ -84,6 +84,7 @@ class User < ActiveRecord::Base
       {
           :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:geography, :finance, :training]},
           :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:geography]},
+          :full_time_teacher_scheduler   => {:text => "Full-Time Teacher Scheduler", :access_level => 0, :group => [:pcc]},
           :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
           :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:geography]},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},

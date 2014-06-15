@@ -1,0 +1,7 @@
+<% if @trigger == ::Program::EVENT_ANNOUNCE %>
+    <div class='form-group'>
+      <label> Program Capacity </label><small> (Required. Enter value as per Kit and Venue capacity. Current capacity of <b> Kit = <%= @program.kit_capacity %> </b> and <b> Venue = <%= @program.venue_capacity %> </b>) </small>
+      <%= text_field_tag 'capacity', nil, :value=> @program.capacity, :class => 'form-control' %>
+    </div>
+<% end %>
+

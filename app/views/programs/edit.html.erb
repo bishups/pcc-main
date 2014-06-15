@@ -12,11 +12,13 @@
 <%= resource_error_messages!(@program) %>
 <%= hidden_field_tag 'trigger', @trigger %>
 
+<% unless @program.errors.any? %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'programs/state_update_confirmation_msg' %>
   </div>
 </div>
+<% end %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'programs/state_additional_data' %>

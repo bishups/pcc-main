@@ -5,38 +5,78 @@
   <% if @program_teacher_schedule.program_id %>
       <div class='form-group'>
         <label for='program_id'>Program ID</label>
-        <%= f.text_field :program_id, :value=> params[:program_id], :readonly => true, :class => 'form-control' %>
+        <%= f.text_field :program_id, :value=> params[:program_id], :readonly => true, :id => 'program_id_field', :class => 'form-control' %>
       </div>
+      <% if @program_teacher_schedule.program.has_co_teacher? %>
+          <div class='form-group'>
+            <label for='teacher_role'>Role</label>
+            <%= f.select :teacher_role, options_for_select(@teacher_roles, [@selected_teacher_role]), {}, :id => 'teacher_role_select_1', :class => 'form-control' %>
+          </div>
+      <% end %>
       <div class='form-group'>
         <label for='teacher_id'>Teacher</label>
-        <% blockable = @program_teacher_schedule.blockable_teachers %>
+        <% blockable =  @blockable_teachers %>
         <% if blockable.count > 0 %>
-            <%= f.select :teacher_id, options_for_select(blockable.map {|t| [t.user.fullname, t.id] }), {}, :class => 'form-control' %>
+            <%= f.select :teacher_id, options_for_select(blockable.map {|t| [t.user.fullname, t.id] }), {}, :id => 'teachers_select', :class => 'form-control' %>
         <% else %>
             <% submit_disabled = true %>
-            <%= f.select :teacher_id, options_for_select(['None Available']), {:disabled => true}, :class => 'form-control' %>
+            <%= f.select :teacher_id, options_for_select(['None Available']), {:disabled => true}, :id => 'teachers_select', :class => 'form-control' %>
         <% end %>
       </div>
    <% elsif @program_teacher_schedule.teacher %>
         <%#= hidden_field_tag 'teacher_id', @program_teacher_schedule.teacher_id %>
         <div class='form-group'>
           <label for='teacher_id'>Teacher ID</label>
-          <%= f.text_field :teacher_id, :value=> @program_teacher_schedule.teacher_id, :readonly => true, :class => 'form-control' %>
+          <%= f.text_field :teacher_id, :value=> @program_teacher_schedule.teacher_id, :readonly => true, :id => 'teacher_id_field', :class => 'form-control' %>
+        </div>
+          <% if @program_teacher_schedule.teacher.full_time? %>
+              <div class='form-group'>
+                <label for='teacher_role'>Role</label>
+                <%= f.select :teacher_role, options_for_select(@teacher_roles, [@selected_teacher_role]), {}, :id => 'teacher_role_select_2', :class => 'form-control' %>
+              </div>
+          <% end %>
+          <div class='form-group'>
           <label for='program_id'>Program</label>
           <% blockable = @program_teacher_schedule.blockable_programs %>
           <% if blockable.count > 0 %>
-              <%= f.select :program_id, options_for_select(blockable.map {|e| [e.friendly_name, e.id] }), {}, :class => 'form-control' %>
+              <%= f.select :program_id, options_for_select(blockable.map {|e| [e.friendly_name, e.id] }), {}, :id => 'programs_select', :class => 'form-control' %>
           <% else %>
               <% submit_disabled = true %>
-              <%= f.select :program_id, options_for_select(['None Available']), {:disabled => true}, :class => 'form-control' %>
+              <%= f.select :program_id, options_for_select(['None Available']), {:disabled => true}, :id => 'programs_select', :class => 'form-control' %>
           <% end %>
         </div>
     <% end %>
 
-  <%= f.submit 'Associated Teacher with Program', :disabled => submit_disabled, :class => 'btn btn-lg btn-primary' %>
+  <%= f.submit 'Associate Teacher with Program', :disabled => submit_disabled, :id => 'submit_button', :class => 'btn btn-lg btn-primary' %>
 <% end %>
 
 
 <script type='text/javascript'>
 $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
+</script>
+
+<script>
+    $(document).ready(function() {
+        $('#teacher_role_select_1').change(function() {
+            $.ajax({
+                url: "<%= update_program_teacher_schedule_blockable_teachers_path %>",
+                data: {
+                    teacher_role_val : $('#teacher_role_select_1').val(),
+                    program_id : $('#program_id_field').val()
+                },
+                dataType: "script"
+            });
+        });
+        $('#teacher_role_select_2').change(function() {
+            $.ajax({
+                url: "<%= update_program_teacher_schedule_blockable_programs_path %>",
+                data: {
+                    teacher_role_val : $('#teacher_role_select_2').val(),
+                    teacher_id : $('#teacher_id_field').val()
+                },
+                dataType: "script"
+            });
+        });
+
+    });
 </script>

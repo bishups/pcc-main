@@ -3,7 +3,7 @@ module VenueSchedulesHelper
   def venue_schedule_state_tag(vs)
     proc do
       if vs.state == ::VenueSchedule::STATE_BLOCK_REQUESTED
-        '<span class="label label-info">Blocked Requested</span>'
+        '<span class="label label-info">Block Requested</span>'
       elsif vs.state == ::VenueSchedule::STATE_BLOCKED
         '<span class="label label-info">Blocked</span>'
       elsif vs.state == ::VenueSchedule::STATE_UNAVAILABLE

@@ -10,11 +10,13 @@
 <%= hidden_field_tag 'trigger', @trigger %>
 <%= hidden_field_tag 'id', @program_teacher_schedule.teacher_schedule_id %>
 
+<% unless @program_teacher_schedule.errors.any? %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'program_teacher_schedules/state_update_confirmation_msg' %>
   </div>
 </div>
+<% end %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'program_teacher_schedules/state_additional_data' %>

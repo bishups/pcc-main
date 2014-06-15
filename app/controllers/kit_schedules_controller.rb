@@ -206,8 +206,6 @@ class KitSchedulesController < ApplicationController
   # DELETE /kit_schedules/1
   # DELETE /kit_schedules/1.json
   def destroy
-    # not allowing to delete for now
-
     @kit_schedule = KitSchedule.find(params[:id])
     @kit_schedule.current_user = current_user
 

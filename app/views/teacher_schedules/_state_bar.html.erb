@@ -1,0 +1,6 @@
+<h2>
+  <small><%= teacher_schedule_state_tag(@teacher_schedule) %></small> Teacher Schedule  <small><%= @teacher_schedule.teacher.user.fullname %> </small>
+  <span class='pull-right'>
+    <%= link_to "Back to Schedules", teacher_teacher_schedules_path(@teacher_schedule.teacher), :class => 'btn btn-primary' %>
+  </span>
+</h2>

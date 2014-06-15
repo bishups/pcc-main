@@ -43,7 +43,8 @@ class AccessPrivilege < ActiveRecord::Base
       valid_roles =
         case resource_type
           when "Zone"
-            [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
+            # HACK - full_time_teacher_scheduler is a person who is allowed to only schedule full time teachers in a given zone
+            [:zonal_coordinator, :full_time_teacher_scheduler, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
           when "Sector"
             [:sector_coordinator]
           when "Center"

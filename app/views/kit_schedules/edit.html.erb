@@ -9,11 +9,13 @@
 <%= resource_error_messages!(@kit_schedule) %>
 <%= hidden_field_tag 'trigger', @trigger %>
 
+<% unless @kit_schedule.errors.any? %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'kit_schedules/state_update_confirmation_msg' %>
   </div>
 </div>
+<% end %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'kit_schedules/state_additional_data' %>
