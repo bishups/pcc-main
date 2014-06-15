@@ -226,7 +226,7 @@ class TeacherSchedule < ActiveRecord::Base
     pts.teacher_id = pts.teacher_schedule.teacher_id
     pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
     pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
-    pts.co_teacher = pts.teacher_schedule.co_teacher ? ::TeacherSchedule::ROLE_CO_TEACHER : ::TeacherSchedule::ROLE_MAIN_TEACHER
+    pts.teacher_role = pts.teacher_schedule.co_teacher ? ::TeacherSchedule::ROLE_CO_TEACHER : ::TeacherSchedule::ROLE_MAIN_TEACHER
     pts.current_user = self.current_user
 
     # verify when all the events can come
