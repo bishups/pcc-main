@@ -75,18 +75,18 @@ class TeacherSchedule < ActiveRecord::Base
 
   #validates_with TeacherScheduleValidator
 
-  # given a teacher schedule (linked to a program), returns a relation with other overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
+  # given a teacher schedule (linked to a program), returns a relation with all overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
   # --  ts.id = NULL, ts.teacher_id, ts.program
-  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.overlapping(ts.program)).where('(teacher_schedules.id != ? OR teacher_schedules.id IS NOT NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL)', ts.id, states, ts.teacher_id) }
+  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.all_overlapping(ts.program)).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL)', ts.id, ts.id, states, ts.teacher_id) }
 
   # given a teacher schedule (not linked to program), returns a relation with other overlapping teacher schedules(s) (linked to programs) for the specific teacher, not in specified states
   # -- ts.id = NULL, ts.teacher_id, ts.start_date, ts.end_date
-  scope :overlapping_date_blocks, lambda { |ts, states| joins(:program).merge(Program.overlapping_date_time(ts.start_date, (ts.end_date.nil? ? ts.end_date: ts.end_date + 1.day - 1.minute))).where('(teacher_schedules.id != ? OR teacher_schedules.id IS NOT NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL)', ts.id, states, ts.teacher_id) }
+  scope :overlapping_date_blocks, lambda { |ts, states| joins(:program).merge(Program.overlapping_date_time(ts.start_date, (ts.end_date.nil? ? ts.end_date: ts.end_date + 1.day - 1.minute))).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL)', ts.id, ts.id, states, ts.teacher_id) }
 
   # given a teacher schedule, returns a relation with other overlapping teacher schedule(s) (not linked to program), for the specific teacher, in specified states
   # -- ts.id = NULL, ts.teacher_id
-  scope :overlapping_reserves, lambda { |ts, start_date, end_date| where('teacher_schedules.program_id IS NULL AND (teacher_schedules.id != ? OR teacher_schedules.id IS NOT NULL) AND teacher_schedules.state IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL) AND ((teacher_schedules.start_date BETWEEN ? AND ?) OR (teacher_schedules.end_date BETWEEN ? AND ?) OR  (teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ?))',
-                                                   ts.id, RESERVED_STATES, ts.teacher_id, start_date, end_date, start_date, end_date, start_date, end_date)}
+  scope :overlapping_reserves, lambda { |ts, start_date, end_date| where('teacher_schedules.program_id IS NULL AND (teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL) AND ((teacher_schedules.start_date BETWEEN ? AND ?) OR (teacher_schedules.end_date BETWEEN ? AND ?) OR  (teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ?))',
+                                                   ts.id, ts.id, RESERVED_STATES, ts.teacher_id, start_date, end_date, start_date, end_date, start_date, end_date)}
 
   def schedule_overlaps?
     if self.program.nil?
