@@ -51,13 +51,13 @@ class VenueSchedule < ActiveRecord::Base
   #after_create :connect_program!
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
-  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('(venue_schedules.id != ? OR venue_schedules.id IS NOT NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
+  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('(venue_schedules.id != ? OR venue_schedules.id IS NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   # given a venue and program, returns a relation containing all overlapping venue_schedule(s) for that venue (including the program itself - if present)
   scope :all_overlapping, lambda { |venue, program| joins(:program).merge(Program.all_overlapping(program)).where('venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', ::VenueSchedule::FINAL_STATES, venue.id) }
 
   # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
-  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('(venue_schedules.id != ? OR venue_schedules.id IS NOT NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
+  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('(venue_schedules.id != ? OR venue_schedules.id IS NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   STATE_UNKNOWN                   = "Unknown"
   STATE_BLOCK_REQUESTED           = "Block Requested"

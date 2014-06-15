@@ -95,7 +95,7 @@ class KitSchedule < ActiveRecord::Base
 =end
 
   # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit
-  scope :overlapping_schedules, lambda { |ks| where('(kit_schedules.id != ? OR kit_schedules.id IS NOT NULL) AND kit_schedules.state NOT IN (?) AND (kit_schedules.kit_id = ? OR kit_schedules.kit_id IS NULL) AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
+  scope :overlapping_schedules, lambda { |ks| where('(kit_schedules.id != ? OR kit_schedules.id IS NULL) AND kit_schedules.state NOT IN (?) AND (kit_schedules.kit_id = ? OR kit_schedules.kit_id IS NULL) AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
                                                    ks.id, FINAL_STATES, ks.kit_id, ks.start_date, ks.end_date, ks.start_date, ks.end_date, ks.start_date, ks.end_date)}
 
 
