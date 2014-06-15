@@ -14,7 +14,7 @@ module ProgramsHelper
       elsif prog.state == ::Program::STATE_CONDUCTED
         '<span class="label label-info">Conducted</span>'
       elsif prog.state == ::Program::STATE_CLOSED
-        '<span class="label label-info">Closed</span>'
+        '<span class="label label-default">Closed</span>'
       elsif prog.state == ::Program::STATE_DROPPED
         '<span class="label label-default">Dropped</span>'
       elsif prog.state == ::Program::STATE_TEACHER_CLOSED

@@ -23,7 +23,7 @@ module VenueSchedulesHelper
       elsif vs.state == ::VenueSchedule::STATE_CONDUCTED
         '<span class="label label-info">Conducted</span>'
       elsif vs.state == ::VenueSchedule::STATE_CLOSED
-        '<span class="label label-danger">Closed</span>'
+        '<span class="label label-default">Closed</span>'
       elsif vs.state == ::VenueSchedule::STATE_CANCELLED
         '<span class="label label-danger">Cancelled</span>'
       elsif vs.state == ::VenueSchedule::STATE_SECURITY_REFUNDED
