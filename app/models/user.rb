@@ -77,6 +77,8 @@ class User < ActiveRecord::Base
   has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
+  has_many :zone_users, :through => :zone_centers, :source => :users
+
   #has_many :teacher_schedules
   #has_many :teacher_slots
 
@@ -98,6 +100,7 @@ class User < ActiveRecord::Base
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :help_desk            => { :text => "Help Desk", :access_level => 0, :group => [:help_desk] },
           :any                  => {:text => "Any", :access_level => -1, :group => []}
     }
 

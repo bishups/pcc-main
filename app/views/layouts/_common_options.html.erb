@@ -11,7 +11,7 @@
         <% end %>
       </li>
   <% else %>
-      <% if current_user.is?(:super_admin) %>
+      <% if current_user.is?(:super_admin) or  current_user.is?(:zonal_coordinator) %>
           <li>
             <a href="/login_as_other_user"> Login as other user</a>
           </li>

@@ -17,8 +17,8 @@ class HomeController < ApplicationController
   end
 
     def become
-      return unless current_user.is?(:super_admin)
-      if user =  User.find_by_email(params[:user][:email])
+      return unless current_user.is?(:super_admin) or current_user.is?(:zonal_coordinator)
+      if user =  User.find(params[:user][:id])
         sign_in(:user, user)
         redirect_to root_url # or user_root_url
       else
