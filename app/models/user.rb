@@ -399,6 +399,9 @@ class User < ActiveRecord::Base
     role_str
   end
 
+  def display_in_auto_complete
+    "#{email}"
+  end
 
   # this is a cron job, run through whenever gem
   # from the config/schedule.rb file

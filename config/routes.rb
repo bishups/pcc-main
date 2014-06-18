@@ -23,6 +23,10 @@ PccMain::Application.routes.draw do
   get 'program_teacher_schedules/update_blockable_teachers', :as => 'update_program_teacher_schedule_blockable_teachers'
   get 'program_teacher_schedules/update_blockable_programs', :as => 'update_program_teacher_schedule_blockable_programs'
 
+  get '/login_as_other_user' => "home#login_as"
+  post '/login_as' => "home#become"
+  get "/users/autocomplete" => "user#autocomplete_user_email"
+
   # Resources
   resources :enquiries
   resources :programs
