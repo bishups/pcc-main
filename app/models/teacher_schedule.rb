@@ -322,7 +322,7 @@ class TeacherSchedule < ActiveRecord::Base
       end
       # send notifications every x days - depending upon the program type that the teacher is enabled for
       every_x_days = Teacher.joins("JOIN program_types_teachers ON teachers.id = program_types_teachers.teacher_id").joins("JOIN program_types ON program_types.id = program_types_teachers.program_type_id").where("(teachers.id = ? OR teachers.id IS NULL)", ts.teacher_id).minimum("program_types.no_of_days")
-      if (ts.no_of_days % every_x_days == 0)
+      if (ts.no_of_days % every_x_days.to_i == 0)
         ts.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, EVENT_EXPIRED, ts.centers, ts.teacher) if ts.state == STATE_AVAILABLE_EXPIRED
       end
     }
