@@ -431,8 +431,8 @@ class KitSchedule < ActiveRecord::Base
 
 
   def can_update?
-    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
-    return true if self.current_user.is? :kit_coordinator, :center_id => self.program.center_id
+    return true if self.program and self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if self.program and self.current_user.is? :kit_coordinator, :center_id => self.program.center_id
     return false
   end
 
