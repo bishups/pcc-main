@@ -267,7 +267,7 @@ class Program < ActiveRecord::Base
       self.close_registration
       self.save if self.errors.empty?
       # We need to manually send the notifications here, to avoid sending unnecessary notifications
-      object.store_last_update!(self.current_user, STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT)
+      object.store_last_update!(User.current_user, STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT)
       object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class)
     end
   end
@@ -285,7 +285,7 @@ class Program < ActiveRecord::Base
 
   def can_announce?
     if ready_for_announcement?
-      return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
+      return true if User.current_user.is? :center_scheduler, :center_id => self.center_id
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     else
@@ -322,7 +322,7 @@ class Program < ActiveRecord::Base
   end
 
   def can_close_registration?
-    return true if (self.current_user.is? :center_scheduler, :center_id => self.center_id)
+    return true if (User.current_user.is? :center_scheduler, :center_id => self.center_id)
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
@@ -332,7 +332,7 @@ class Program < ActiveRecord::Base
   end
 
   def can_drop?
-    if (self.current_user.is? :sector_coordinator, :center_id => self.center_id)
+    if (User.current_user.is? :sector_coordinator, :center_id => self.center_id)
       if self.venue_approved?
         self.errors[:base] << "Cannot drop program. Venue linked to the program has already gone for payment request."
         return false
@@ -340,7 +340,7 @@ class Program < ActiveRecord::Base
       return true
     end
 
-    if (self.current_user.is? :center_scheduler, :center_id => self.center_id)
+    if (User.current_user.is? :center_scheduler, :center_id => self.center_id)
       if self.venue_approval_requested?
         self.errors[:base] << "Cannot drop program. Venue linked to the program has already gone for sector coordinator approval."
         return false
@@ -421,7 +421,7 @@ class Program < ActiveRecord::Base
 
 
   def is_zao?
-    return true if self.current_user.is? :zao, :center_id => self.center_id
+    return true if User.current_user.is? :zao, :center_id => self.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
@@ -429,7 +429,7 @@ class Program < ActiveRecord::Base
 
   def can_close?
     if ready_for_close?
-      return true if self.current_user.is? :center_coordinator, :center_id => self.center_id
+      return true if User.current_user.is? :center_coordinator, :center_id => self.center_id
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     else
@@ -439,7 +439,7 @@ class Program < ActiveRecord::Base
   end
 
   def can_cancel?
-    return true if (self.current_user.is? :zao, :center_id => self.center_id)
+    return true if (User.current_user.is? :zao, :center_id => self.center_id)
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
@@ -499,15 +499,15 @@ class Program < ActiveRecord::Base
     # send the event to each of the state machines
     # ideally we can register the state machine and the specific callback they want to be called
     self.teacher_schedules.each{|ts|
-      ts.current_user = self.current_user
+      ts.current_user = User.current_user
       ts.on_program_event(event)
     }
     self.venue_schedules.each{|vs|
-      vs.current_user = self.current_user
+      vs.current_user = User.current_user
       vs.on_program_event(event)
     }
     self.kit_schedules.each{|ks|
-      ks.current_user = self.current_user
+      ks.current_user = User.current_user
       ks.on_program_event(event)
     }
   end
@@ -635,9 +635,9 @@ class Program < ActiveRecord::Base
 
   def is_teacher?
     # super_admin can perform actions on behalf of the teacher
-    return true if self.current_user.is? :super_admin
+    return true if User.current_user.is? :super_admin
     self.teacher_schedules.each { |ts|
-      if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == self.current_user)
+      if ((::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).include?(ts.state) && ts.teacher.user == User.current_user)
         return true
       end
     }
@@ -726,8 +726,8 @@ class Program < ActiveRecord::Base
 
 
   def can_view?
-    return true if self.current_user.is? :any, :in_group => [:geography], :center_id => self.center_id
-    return true if self.current_user.is? :any, :in_group => [:pcc], :center_id => self.center_id
+    return true if User.current_user.is? :any, :in_group => [:geography], :center_id => self.center_id
+    return true if User.current_user.is? :any, :in_group => [:pcc], :center_id => self.center_id
     return false
   end
 
@@ -746,12 +746,12 @@ class Program < ActiveRecord::Base
       center_ids = self.center_id
     end
 
-    return true if self.current_user.is? :center_scheduler, :center_id => center_ids
+    return true if User.current_user.is? :center_scheduler, :center_id => center_ids
     return false
   end
 
   def can_update?
-    return true if self.current_user.is? :center_scheduler, :center_id => self.center_id
+    return true if User.current_user.is? :center_scheduler, :center_id => self.center_id
     return false
   end
 

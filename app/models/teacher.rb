@@ -189,7 +189,7 @@ class Teacher < ActiveRecord::Base
 
   def before_unattach!
     center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
-    if !self.current_user.is? :zao, :center_id => center_ids
+    if !User.current_user.is? :zao, :center_id => center_ids
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -213,7 +213,7 @@ class Teacher < ActiveRecord::Base
 
   def can_mark_unfit?
     center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
-    if !self.current_user.is? :zao, :center_id => center_ids
+    if !User.current_user.is? :zao, :center_id => center_ids
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -292,21 +292,21 @@ class Teacher < ActiveRecord::Base
 
   def can_view?
     if self.full_time?
-      return true if self.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids
-      return true if self.current_user.is? :zao, :for => :any, :center_id => self.center_ids
+      return true if User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids
+      return true if User.current_user.is? :zao, :for => :any, :center_id => self.center_ids
     end
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :teacher_training_department, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :teacher_training_department, :for => :any, :center_id => self.center_ids
     return true if self.is_current_user?
     return false
   end
 
   def can_view_schedule?
     if self.full_time?
-      return true if (self.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids)
-      return true if (self.current_user.is? :zao, :for => :any, :center_id => self.center_ids)
+      return true if (User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids)
+      return true if (User.current_user.is? :zao, :for => :any, :center_id => self.center_ids)
     else
-      return true if (self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids)
+      return true if (User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids)
     end
     return true if self.is_current_user?
     return false
@@ -316,14 +316,14 @@ class Teacher < ActiveRecord::Base
   def can_create_schedule?
     teacher_schedule = TeacherSchedule.new
     teacher_schedule.teacher = self
-    teacher_schedule.current_user = self.current_user
+    teacher_schedule.current_user = User.current_user
     return teacher_schedule.can_create?
   end
 
   # HACK - to route the call through teacher object from the UI.
   def can_create_program_schedule?
     program_teacher_schedule = ProgramTeacherSchedule.new
-    program_teacher_schedule.current_user = self.current_user
+    program_teacher_schedule.current_user = User.current_user
     program_teacher_schedule.teacher = self
     return program_teacher_schedule.can_create?(self.center_ids)
   end
@@ -335,12 +335,12 @@ class Teacher < ActiveRecord::Base
     else
       center_ids = self.center_ids
     end
-    return true if self.current_user.is? :zao, :center_id => center_ids
+    return true if User.current_user.is? :zao, :center_id => center_ids
     return false
   end
 
   def is_current_user?
-    self.current_user == self.user
+    User.current_user == self.user
   end
 
   def can_create(options={})
@@ -351,7 +351,7 @@ class Teacher < ActiveRecord::Base
     end
 
     return false
-    #return true if self.current_user.is? :venue_coordinator, :center_id => center_ids
+    #return true if User.current_user.is? :venue_coordinator, :center_id => center_ids
   end
 
   def can_be_blocked_by?(program, co_teacher)

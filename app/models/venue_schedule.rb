@@ -412,44 +412,44 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def is_center_coordinator?
-    return true if self.current_user.is? :center_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :center_coordinator, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_venue_coordinator?
-    return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :venue_coordinator, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_sector_coordinator?
-    return true if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :sector_coordinator, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_center_scheduler?
-    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_pcc_accounts?
-    return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+    return true if User.current_user.is? :pcc_accounts, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def can_create?(center_ids = self.program.center_id)
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
     return false
   end
 
   def can_update?
-    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
-    return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
-    return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+    return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if User.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :pcc_accounts, :center_id => self.program.center_id
     return false
   end
 

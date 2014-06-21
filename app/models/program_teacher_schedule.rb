@@ -167,15 +167,15 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   def can_unblock?
     if (self.program.no_of_main_teachers_connected > self.program.minimum_no_of_main_teacher) && (self.program.no_of_co_teachers_connected > self.program.minimum_no_of_co_teacher)
       if self.teacher.full_time?
-        return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
-        return true if self.current_user.is? :zao, :center_id => self.program.center_id
+        return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
+        return true if User.current_user.is? :zao, :center_id => self.program.center_id
       else
-        return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+        return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
       end
     end
 
     if self.teacher.full_time?
-      if (self.current_user.is? :zao, :center_id => self.program.center_id)
+      if (User.current_user.is? :zao, :center_id => self.program.center_id)
         if self.program.venue_approved?
           self.errors[:base] << "Cannot release teacher. Venue linked to the program has already gone for payment request. Please add a teacher and try again."
           return false
@@ -183,7 +183,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         return true
       end
 
-      if (self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id) || (self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id && self.teacher.full_time? )
+      if (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id) || (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id && self.teacher.full_time? )
         if self.program.venue_approval_requested?
           self.errors[:base] << "Cannot release teacher. Venue linked to the program has already gone for payment request. Please add a teacher and try again."
           return false
@@ -191,7 +191,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         return true
       end
     else
-      if (self.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
+      if (User.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
         if self.program.venue_approved?
           self.errors[:base] << "Cannot release teacher. Venue linked to the program has already gone for payment request. Please add a teacher and try again."
           return false
@@ -199,7 +199,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         return true
       end
 
-      if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id) || (self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id && self.teacher.full_time? )
+      if (User.current_user.is? :center_scheduler, :center_id => self.program.center_id) || (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id && self.teacher.full_time? )
         if self.program.venue_approval_requested?
           self.errors[:base] << "Cannot release teacher. Venue linked to the program has already gone for payment request. Please add a teacher and try again."
           return false
@@ -269,8 +269,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def is_teacher?
     # super_admin can perform actions on behalf of the teacher
-    return true if self.current_user.is? :super_admin
-    if self.current_user != self.teacher.user
+    return true if User.current_user.is? :super_admin
+    if User.current_user != self.teacher.user
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -278,7 +278,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def is_center_scheduler?
-    return true if !self.teacher.full_time? && (self.current_user.is? :center_scheduler, :center_id => self.program.center_id)
+    return true if !self.teacher.full_time? && (User.current_user.is? :center_scheduler, :center_id => self.program.center_id)
     # HACK - commenting out for now, because the function is being combined in OR clause
     # where error might be still thrown in un-needed cases
     # self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
@@ -286,7 +286,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def is_full_time_teacher_scheduler?
-    return true if (self.teacher.full_time?) && (self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id)
+    return true if (self.teacher.full_time?) && (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id)
     # HACK - commenting out for now, because the function is being combined in OR clause
     # where error might be still thrown in un-needed cases
     #self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
@@ -294,7 +294,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def is_sector_coordinator?
-    return true if !self.teacher.full_time? && (self.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
+    return true if !self.teacher.full_time? && (User.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
     # HACK - commenting out for now, because the function is being combined in OR clause
     # where error might be still thrown in un-needed cases
     #self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
@@ -302,7 +302,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def is_zao?
-    return true if self.current_user.is? :zao, :center_id => self.program.center_id
+    return true if User.current_user.is? :zao, :center_id => self.program.center_id
     # HACK - commenting out for now, because the function is being combined in OR clause
     # where error might be still thrown in un-needed cases
     #self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
@@ -392,8 +392,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def blockable_teachers(co_teacher = false)
     teachers = []
-    teachers += self.blockable_part_time_teachers(co_teacher) if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id)
-    teachers += self.blockable_full_time_teachers(co_teacher) if (self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id) or (self.current_user.is? :zao, :center_id => self.program.center_id)
+    teachers += self.blockable_part_time_teachers(co_teacher) if (User.current_user.is? :center_scheduler, :center_id => self.program.center_id)
+    teachers += self.blockable_full_time_teachers(co_teacher) if (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id) or (User.current_user.is? :zao, :center_id => self.program.center_id)
     teachers
   end
 
@@ -422,8 +422,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     teacher = self.teacher
     center_ids = []
-    center_ids += current_user.accessible_center_ids(:zao) if self.current_user.is? :full_time_teacher_scheduler, :center_id => teacher.center_ids
-    center_ids += current_user.accessible_center_ids(:full_time_teacher_scheduler) if self.current_user.is? :full_time_teacher_scheduler, :center_id => teacher.center_ids
+    center_ids += current_user.accessible_center_ids(:zao) if User.current_user.is? :full_time_teacher_scheduler, :center_id => teacher.center_ids
+    center_ids += current_user.accessible_center_ids(:full_time_teacher_scheduler) if User.current_user.is? :full_time_teacher_scheduler, :center_id => teacher.center_ids
 
     # NOTE: We cannot add a teacher once the program has started
     # All programs in all centers where the current user can schedule teachers
@@ -550,7 +550,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     teacher_schedules.each {|ts|
       # 1. update the state of all teacher_schedule(s) for a teacher, and program
       #old_state = ts.state
-      ts.store_last_update!(self.current_user, ts.state, self.state, trigger)
+      ts.store_last_update!(User.current_user, ts.state, self.state, trigger)
       ts.state = self.state
       ts.program_id = program_id
       ts.blocked_by_user_id = blocked_by_user_id
@@ -581,7 +581,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         end
       end
       # This is a HACK to store to activity log - NOT needed, since activity is logged in underlying teacher_schedules
-      # self.log_last_activity(self.current_user, old_state, self.state, trigger)
+      # self.log_last_activity(User.current_user, old_state, self.state, trigger)
       self.deleted_program_id = self.program_id if program_id.nil?
       self.program_id = program_id
     }
@@ -590,26 +590,26 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   def can_create?(center_ids = self.program.center_id)
     if !self.teacher.nil?
       if self.teacher.full_time?
-        return true if self.current_user.is? :zao, :center_id => center_ids
-        return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
+        return true if User.current_user.is? :zao, :center_id => center_ids
+        return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
       else
-        return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
+        return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
       end
     else
-      return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
-      return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
+      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
+      return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
     end
     return false
   end
 
   def can_update?
     if self.teacher.full_time?
-      return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
-      return true if self.current_user.is? :zao, :center_id => self.program.center_id
+      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
+      return true if User.current_user.is? :zao, :center_id => self.program.center_id
     else
-      return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+      return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
     end
-    return true if self.current_user == self.teacher.user
+    return true if User.current_user == self.teacher.user
     return false
   end
 

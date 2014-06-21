@@ -272,20 +272,20 @@ def can_reject?
   end
 
   def is_pcc_accounts?
-    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_sector_coordinator?
-    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def can_view?
-    return true if self.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
-    return true if self.current_user.is? :any, :for => :any, :in_group => [:finance], :center_id => self.center_ids
+    return true if User.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
+    return true if User.current_user.is? :any, :for => :any, :in_group => [:finance], :center_id => self.center_ids
     return false
   end
 
@@ -300,26 +300,26 @@ def can_reject?
       center_ids = self.center_ids
     end
 
-    return true if self.current_user.is? :venue_coordinator, :for => :any, :center_id => center_ids
+    return true if User.current_user.is? :venue_coordinator, :for => :any, :center_id => center_ids
     return false
   end
 
   def can_update?
-    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
     return false
   end
 
   def can_view_schedule?
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :venue_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :venue_coordinator, :for => :any, :center_id => self.center_ids
     return false
   end
 
   # HACK - to route the call through venue object from the UI.
   def can_create_schedule?
     venue_schedule = VenueSchedule.new
-    venue_schedule.current_user = self.current_user
+    venue_schedule.current_user = User.current_user
     return venue_schedule.can_create?(self.center_ids)
   end
 
