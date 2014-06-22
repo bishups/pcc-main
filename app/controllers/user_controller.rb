@@ -10,7 +10,7 @@ class UserController < ApplicationController
     else
       users = current_user.zone_users.where('email LIKE ?', "%#{term}%").order(:email)
     end
-    render :json => users.map { |user| {:id => user.id, :label => user.email, :value => user.id} }
+    render :json => users.map { |user| {:id => user.id, :label => user.email, :value => user.email} }
   end
 
 end
