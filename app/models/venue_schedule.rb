@@ -453,6 +453,10 @@ class VenueSchedule < ActiveRecord::Base
     return false
   end
 
+  def can_view?
+    self.venue.can_view_schedule?
+  end
+
   def url
     Rails.application.routes.url_helpers.venue_schedule_url(self)
   end

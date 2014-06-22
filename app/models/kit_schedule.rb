@@ -428,6 +428,9 @@ class KitSchedule < ActiveRecord::Base
     end
   end
 
+  def can_view?
+    self.kit.can_view_schedule?
+  end
 
 
   def can_update?
