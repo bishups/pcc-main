@@ -17,7 +17,7 @@ class Pincode < ActiveRecord::Base
       bindings[:controller].current_user.is?(:sector_coordinator)
     end
     object_label_method do
-      :location_name
+      :pincode
     end
     list do
       field :location_name
