@@ -78,6 +78,7 @@ class User < ActiveRecord::Base
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
   has_many :zone_users, :through => :zone_centers, :source => :users
+  has_many :teachers
 
   #has_many :teacher_schedules
   #has_many :teacher_slots
@@ -355,22 +356,6 @@ class User < ActiveRecord::Base
     self.fullname
   end
 
-  def programs
-    Program.all
-  end
-
-  def venues
-    Venue.all
-  end
-
-  def kits
-    Kit.all
-  end
-
-  def teachers
-    Teacher.all
-  end
-
   def resource_name(resource)
     type = resource.class.name.demodulize
     aps = self.access_privileges
@@ -416,7 +401,6 @@ class User < ActiveRecord::Base
       user.update_attribute(:approval_email_sent, true)
     }
   end
-
 
   rails_admin do
 
