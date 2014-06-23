@@ -3,7 +3,7 @@ class AdminAbility
 
   def initialize(user)
     can :access, :rails_admin if not user.accessible_centers.empty? # Only user's having at least one center will have this access.
-    can :dashboard #Check for the count and User specific history.
+    can :dashboard if user.is?(:kit_coordinator) or user.is?(:venue_coordinator)
     can :manage, PendingUser, {:approver_email => user.email}
     if user.is?(:super_admin)
       can :manage, :all
