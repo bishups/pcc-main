@@ -43,11 +43,7 @@ class Center < ActiveRecord::Base
       field :program_donations
     end
     edit do
-      field :name do
-        read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
-        end
-      end
+      field :name
       field :sector do
         inline_edit false
         inline_add false
@@ -72,6 +68,14 @@ class Center < ActiveRecord::Base
         inline_add false
       end
     end
+    update do
+      configure :name  do
+        read_only do
+          not bindings[:controller].current_user.is?(:super_admin)
+        end
+      end
+    end
+
   end
 
 end
