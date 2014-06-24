@@ -433,23 +433,35 @@ class Teacher < ActiveRecord::Base
         label "Status"
         enum do
           # This is a HACK to represent some sort of state machine through rails_admin
-          if bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :super_admin, :center_id => bindings[:object].center_ids)
-            [STATE_UNATTACHED, STATE_ATTACHED]
-          elsif bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
-            [STATE_UNATTACHED]
-          elsif bindings[:object].state == STATE_ATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
-            [STATE_UNATTACHED, STATE_ATTACHED, STATE_UNFIT]
-          elsif bindings[:object].state == STATE_UNFIT && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
-            [STATE_UNATTACHED, STATE_UNFIT]
-          elsif (bindings[:controller].current_user.is? :teacher_training_department, :center_id => bindings[:object].center_ids)
-            [STATE_UNATTACHED]
+          # if bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :super_admin, :center_id => bindings[:object].center_ids)
+          #   [STATE_UNATTACHED, STATE_ATTACHED]
+          # elsif bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
+          #   [STATE_UNATTACHED]
+          # elsif bindings[:object].state == STATE_ATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
+          #   [STATE_UNATTACHED, STATE_ATTACHED, STATE_UNFIT]
+          # elsif bindings[:object].state == STATE_UNFIT && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
+          #   [STATE_UNATTACHED, STATE_UNFIT]
+          # elsif (bindings[:controller].current_user.is? :teacher_training_department, :center_id => bindings[:object].center_ids)
+          #   [STATE_UNATTACHED]
+          # else
+          #   []
+          # end
+
+          # Changed by Senthil based on discussion wiht Radha Akka. Currently displaying all the states and this can changed only by teacher training department.
+          # This will be read only for all other users.
+          [STATE_UNATTACHED, STATE_ATTACHED, STATE_UNFIT]
+        end
+        read_only do
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          if bindings[:controller].current_user.is?(:super_admin)
+            true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
           else
-            []
+            true
           end
         end
-        #read_only do
-        #  not bindings[:controller].current_user.is?(:super_admin)
-        #end
       end
       field :zone  do
        # inverse_of :teachers
@@ -458,7 +470,13 @@ class Teacher < ActiveRecord::Base
         read_only do
           # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
           # but here we want to make this field read, only if use is super admin.
-          bindings[:controller].current_user.is?(:teacher_training_department) if not bindings[:controller].current_user.is?(:super_admin)
+          if bindings[:controller].current_user.is?(:super_admin)
+             true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
+          else
+            true
+          end
         end
       end
       field :program_types  do
@@ -466,7 +484,15 @@ class Teacher < ActiveRecord::Base
         #inline_edit false
         inline_add false
         read_only do
-          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:teacher_training_department) )
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          if bindings[:controller].current_user.is?(:super_admin)
+            true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
+          else
+            true
+          end
         end
       end
       field :centers do
@@ -476,11 +502,11 @@ class Teacher < ActiveRecord::Base
         visible do
           not ( bindings[:object].full_time? )
         end
-        read_only do
-          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
-          # but here we want to make this field read, only if use is super admin.
-          bindings[:controller].current_user.is?(:teacher_training_department) if not bindings[:controller].current_user.is?(:super_admin)
-        end
+        # read_only do
+        #   # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+        #   # but here we want to make this field read, only if use is super admin.
+        #   bindings[:controller].current_user.is?(:teacher_training_department) if not bindings[:controller].current_user.is?(:super_admin)
+        # end
         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           # bindings[:object] & bindings[:controller] are available, but not in scope's block!

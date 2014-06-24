@@ -59,4 +59,4 @@ gem "paranoia", "~> 1.0"
 gem "squeel"
 gem "exception_notification"
 gem "rails3-jquery-autocomplete"
-
+gem 'devise-encryptable'

@@ -14,7 +14,8 @@ class AdminAbility
       can :read, User, {:id => user.accessible_centers.map(&:user_ids).flatten.uniq }
       can :read, Center, {:id => user.accessible_centers}
       can :read, Pincode
-
+      can :read, Zone
+      can :read, ProgramType
 
       if user.is?(:kit_coordinator)
         can :manage, Kit, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text]).map(&:id).uniq}}
@@ -52,6 +53,7 @@ class AdminAbility
 
       if user.is?(:teacher_training_department)
         can :manage, Teacher
+        can :read, Center
         can [:read,:update], [User], {:id => user.accessible_centers.map(&:user_ids).flatten.uniq + User.where(:approver_email => user.email).uniq.map(&:id) }
       end
 
