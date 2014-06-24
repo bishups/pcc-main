@@ -30,8 +30,8 @@
     </ul>
   </li>  <!-- TODO: disabling the equiries interface for now, will be put in later if needed after cleanup -->
   <!-- TODO: Enforce role -->
-    <%  if  current_user.is?(:kit_coordinator) or current_user.is?(:venue_coordinator) %>
+    <% # if  current_user.is?(:kit_coordinator) or current_user.is?(:venue_coordinator)  or current_user.is?(:teacher_training_department) %>
           <li><a href="<%= rails_admin_path %>"> Admin Panel </a></li>
-    <%  end %>
+    <% # end %>
   <% end %>
 </ul>
