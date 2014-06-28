@@ -47,7 +47,7 @@ class ProgramTeacherSchedulesController < ApplicationController
           @program_teacher_schedule.block_teacher_schedule!(params[:program_teacher_schedule])
           #@program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
           if @program_teacher_schedule.errors.empty?
-            format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id), notice: 'Program-Teacher Schedule was successfully updated.'  }
+            format.html { redirect_to @program_teacher_schedule.program, notice: 'Program-Teacher Schedule was successfully updated.'  }
             format.json { render :json => @program_teacher_schedule }
 
             #format.html { redirect_to program_path(@program_teacher_schedule.program) }

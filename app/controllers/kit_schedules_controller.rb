@@ -156,7 +156,7 @@ class KitSchedulesController < ApplicationController
     respond_to do |format|
       if @kit_schedule.can_create?
         if @kit_schedule.send(::KitSchedule::EVENT_BLOCK) && @kit_schedule.save
-          format.html { redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.'}
+          format.html { redirect_to @kit_schedule.program, notice: 'Kit schedule was successfully created.'}
           format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
         else
           #render :action => 'new'

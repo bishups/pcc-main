@@ -46,7 +46,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   # attr_accessible :program, :teacher_id, :reserving_user_id
   # validates :program_id, :teacher_id, :reserving_user_id, :presence => true
 
-
+  belongs_to :program
   #STATE_UNKNOWN  = :unknown
   #STATE_UNKNOWN             = 'Unknown'
   STATE_BLOCKED             = 'Blocked'
