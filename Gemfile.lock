@@ -95,6 +95,8 @@ GEM
       railties (>= 3.2.6, < 5)
       thread_safe (~> 0.1)
       warden (~> 1.2.3)
+    devise-encryptable (0.2.0)
+      devise (>= 2.1.0)
     erubis (2.7.0)
     exception_notification (4.0.1)
       actionmailer (>= 3.0.4)
@@ -139,7 +141,6 @@ GEM
     multi_json (1.10.0)
     multi_xml (0.5.5)
     multipart-post (2.0.0)
-    mysql2 (0.3.16)
     nested_form (0.3.2)
     net-scp (1.2.1)
       net-ssh (>= 2.6.5)
@@ -191,6 +192,8 @@ GEM
       activesupport (= 3.2.13)
       bundler (~> 1.0)
       railties (= 3.2.13)
+    rails3-jquery-autocomplete (1.0.14)
+      rails (>= 3.0)
     railties (3.2.13)
       actionpack (= 3.2.13)
       activesupport (= 3.2.13)
@@ -261,16 +264,17 @@ DEPENDENCIES
   coffee-rails (~> 3.2.1)
   delayed_job_active_record
   devise
+  devise-encryptable
   exception_notification
   font-awesome-rails
   jquery-datatables-rails
   jquery-rails
   letter_opener
-  mysql2
   omniauth-google-oauth2
   paper_trail!
   paranoia (~> 1.0)
   rails (= 3.2.13)
+  rails3-jquery-autocomplete
   rails_admin!
   rubyXL
   sass-rails (~> 3.2.3)

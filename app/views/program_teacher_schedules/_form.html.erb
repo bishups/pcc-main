@@ -5,7 +5,8 @@
   <% if @program_teacher_schedule.program_id %>
       <div class='form-group'>
         <label for='program_id'>Program ID</label>
-        <%= f.text_field :program_id, :value=> params[:program_id], :readonly => true, :id => 'program_id_field', :class => 'form-control' %>
+        <% program = Program.find(params[:program_id]) %>
+        <%= f.text_field :program_id, :value=> "#{program.pid} - #{program.name}", :readonly => true, :id => 'program_id_field', :class => 'form-control' %>
       </div>
       <% if @program_teacher_schedule.program.has_co_teacher? %>
           <div class='form-group'>
