@@ -52,7 +52,7 @@
         <td><%= link_to vs.program.name,program_path(vs.program_id)  %></td>
         <td><%= vs.program.start_date.strftime('%d %B %Y') %></td>
         <td><%= vs.program.end_date.strftime('%d %B %Y') %></td>
-        <td><%= (vs.program.timings.map {|c| c[:name]}).join(", ") %></td>
+        <td><%= vs.program.display_timings %></td>
         <td><%= vs.blocked_by_user.fullname %></td>
         <td><%= venue_schedule_state_tag(vs) %>
         <td><%= link_to "Open", venue_schedule_path(vs), :class => 'btn btn-primary btn-sm' if vs.can_update? %></td>

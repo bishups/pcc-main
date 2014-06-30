@@ -12,14 +12,16 @@
 #
 
 class ProgramType < ActiveRecord::Base
-  attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :name, :no_of_days, :registration_close_timeout
+  attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :name, :no_of_days, :registration_close_timeout, :session_duration
   has_and_belongs_to_many :teachers
   validates :language, :name, :presence => true
   validates :no_of_days, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
   validates :minimum_no_of_teacher, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true, :greater_than => 0 }
   validates :minimum_no_of_co_teacher, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
   validates :registration_close_timeout, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
+  validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
   validates_uniqueness_of :name, :scope => :deleted_at
+  validate :full_day_program
 
   has_many :program_donations
   attr_accessible :program_donations, :program_donation_ids
@@ -31,6 +33,12 @@ class ProgramType < ActiveRecord::Base
   attr_accessible :centers, :center_ids
 
   acts_as_paranoid
+
+  def full_day_program
+    if self.session_duration < 0 and self.timings.count != Timing.all.count
+      self.errors[:timings] << " cannot be left unselected. Please select all timings for a Full Day program."
+    end
+  end
 
   rails_admin do
     navigation_label 'Program'
@@ -65,6 +73,10 @@ class ProgramType < ActiveRecord::Base
       field :registration_close_timeout do
         label "Registration Close Timeout (in hrs)"
         help "(If not already closed) the number of hours (after start of program), when registration is marked closed. Negative values are allowed."
+      end
+      field :session_duration do
+        label "Duration of one session (in hrs)"
+        help "Enter -1 for a Full Day program"
       end
       field :timings do
         inline_add false

@@ -95,7 +95,7 @@
       </tr>
       <tr>
         <td width='20%'><strong>Center</strong></td>
-        <td><%= @program.center.name %></td>
+        <td><%= @program.locality_name %></td>
       </tr>
       <tr>
         <td><strong>Proposed By</strong></td>
@@ -111,7 +111,7 @@
       </tr>
       <tr>
         <td><strong>Timing (s)</strong></td>
-        <td><%= (@program.timings.map {|c| c[:name]}).join(", ") %></td>
+        <td><%= @program.display_timings %></td>
       </tr>
       <tr>
         <td><strong>Capacity</strong></td>

@@ -55,7 +55,7 @@
           </tr>
           <tr>
             <td><strong>Center</strong></td>
-            <td><%= @venue_schedule.program.center.name %></td>
+            <td><%= @venue_schedule.program.locality_name %></td>
           </tr>
           <tr>
             <td><strong>Booking Start Date</strong></td>
@@ -67,15 +67,15 @@
           </tr>
           <tr>
             <td><strong>Timing (s)</strong></td>
-            <td><%= (@venue_schedule.program.timings.map {|c| c[:name]}).join(", ") %></td>
+            <td><%= @venue_schedule.program.display_timings %></td>
           </tr>
           <tr>
             <td><strong>Blocked By</strong></td>
             <td><%= @venue_schedule.blocked_by_user.fullname rescue ' '%></td>
           </tr>
           <tr>
-            <td><strong>Per Day Price (Rs) </strong></td>
-            <td><%= @venue_schedule.per_day_price rescue 0 %></td>
+            <td><strong>Payment Amount (Rs) </strong></td>
+            <td><%= @venue_schedule.payment_amount rescue 0 %></td>
           </tr>
         </table>
       </div>

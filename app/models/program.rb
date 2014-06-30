@@ -40,8 +40,11 @@ class Program < ActiveRecord::Base
 
   attr_accessor :current_user
   attr_accessible :name, :start_date, :center_id, :end_date, :feedback, :pid, :announced
+  attr_accessible :announced_locality, :announced_timing
+  # announced_timing e.g, (112 chars) -- "Morning (09:30 am-10:30 am), Afternoon(09:30 am-10:30 am), Evening(09:30 am-10:30 am), Night(09:30 am-10:30 am)"
+  validates :announced_locality, :announced_timing, :length => { :maximum => 120}
 
-  before_validation :assign_dates!
+  before_validation :assign_dates!, :on => :create
 
   belongs_to :center
 
@@ -62,6 +65,9 @@ class Program < ActiveRecord::Base
 
   attr_accessor :comment_category
   attr_accessible :comment_category
+
+  #attr_accessor :start_time_1, :end_time_1, :start_time_2, :end_time_2, :start_time_3, :end_time_3, :start_time_4, :end_time_4
+  attr_accessor :time
 
   STATE_UNKNOWN       = "Unknown"
   STATE_PROPOSED      = "Proposed"
@@ -141,6 +147,9 @@ class Program < ActiveRecord::Base
     super(*args)
   end
 
+  def dummy_init_time
+    @time = {:start=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM'],:end=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM']}
+  end
 
   after_create do |program|
     program.reload
@@ -302,12 +311,142 @@ class Program < ActiveRecord::Base
     self.venue_schedules.joins('JOIN venues ON venues.id = venue_schedules.venue_id').where('venue_schedules.state = ?', ::VenueSchedule::STATE_PAID).pluck('venues.capacity').map{|v| v.to_i}.max
   end
 
+
+  def new_timings_valid?
+    # make an array for the timing slots which were booked, each slot corresponds to 1 minute -
+    # make an array for the timing slots being announced, each slot corresponds to 1 minute -
+    blocked_slots = []
+    announced_slots = []
+    for i in 1..(24*60)
+      blocked_slots[i-1] = false
+      announced_slots[i-1] = false
+    end
+    # setting start_of_day to "2000-01-01 00:00" with appropriate time_zone
+    start_of_day = Time.zone.parse("2000-01-01 00:00")
+
+    # check if the gap between two timing is same as session duration, except when both are 12:00 AM
+    duration_in_hrs = self.program_donation.program_type.session_duration
+    for i in 1..self.timings.count
+      blocked_start_time = self.timings[i-1].start_time
+      blocked_end_time = self.timings[i-1].end_time
+      # fill the slots that we have blocked
+      start_in_mins = (blocked_start_time.hour - start_of_day.hour) * 60 + (blocked_start_time.min - start_of_day.min)
+      end_in_mins = (blocked_end_time.hour - start_of_day.hour) * 60 + (blocked_end_time.min - start_of_day.min)
+      for j in start_in_mins..end_in_mins
+        blocked_slots[j-1] = true
+      end
+
+      # check for basic overlap
+      start_time = self.time[:start][i-1]
+      end_time = self.time[:end][i-1]
+      if start_time > end_time
+        self.errors[:base] << "Invalid values for #{self.timing_name(i-1)} slot. End time cannot be less than the Start time."
+        return false
+      end
+
+      difference_in_minutes = ((end_time - start_time) / 1.minute).round
+      if  difference_in_minutes != duration_in_hrs * 60
+        # The user can blank out a time slot by making both start_time and end_time as 00:00 hrs
+        # "2000-01-01 00:00" is equivalent to user enter 12:00 AM in the input value
+        next if difference_in_minutes == 0 && start_time == start_of_day
+        self.errors[:base] << "Invalid values for #{self.timing_name(i-1)} slot. Difference between Start and End time should be #{duration_in_hrs.to_s} hours."
+        return false
+      end
+
+      # fill the slots that we are announcing, check if the slots overlap each other
+      start_in_mins = (start_time.hour - start_of_day.hour) * 60 + (start_time.min - start_of_day.min)
+      end_in_mins = (end_time.hour - start_of_day.hour) * 60 + (end_time.min - start_of_day.min)
+      for j in start_in_mins..end_in_mins
+        if announced_slots[j-1] == true
+          self.errors[:base] << "Invalid value for #{self.timing_name(i-1)} slot. Start (or End) time overlaps with other slot."
+          return false
+        end
+        announced_slots[j-1] = true
+      end
+    end
+
+    # check if the timings announced fall within the timing blocked earlier
+    for i in 1..(24*60)
+      if blocked_slots[i-1] == false && announced_slots[i-1] == true
+        self.errors[:base] << "Invalid value for Start (or End) time. Timings announced should fall within currently blocked timings."
+        return false
+      end
+    end
+
+    return true
+  end
+
   def before_announce
     if self.capacity.nil? || self.capacity <= 0
       self.errors[:capacity] << " should be non-zero."
       return false
     end
+    if self.announced_locality.nil? || self.announced_locality.blank?
+      self.announced_locality = self.center.name
+    end
+
+    new_start_time = new_end_time = ""
+    unless self.full_day?
+      return false unless self.new_timings_valid?
+      # create the announced_timing string
+      self.announced_timing = ""
+      for i in 1..self.timings.count
+        timing_name = self.timing_name(i-1)
+        start_time = self.time[:start][i-1]
+        end_time = self.time[:end][i-1]
+        # include only the valid slots
+        # Morning (09:30 am-10:30 am), Afternoon(09:30 am-10:30 am), Evening(09:30 am-10:30 am), Night(09:30 am-10:30 am)
+        if ((end_time - start_time) / 1.minute).round > 0
+          self.announced_timing << "#{timing_name} (#{start_time.strftime("%-I:%M %P")}-#{end_time.strftime("%-I:%M %P")}), "
+          new_start_time = start_time if new_start_time.blank?
+          new_end_time = end_time
+        end
+      end
+      self.announced_timing = self.announced_timing.chomp(", ")
+    else
+      # create the announced_timing string
+      new_start_time = start_time = self.time[:start][0]
+      new_end_time = end_time = self.time[:end][0]
+      self.announced_timing = "Starts on #{self.start_date.strftime("%-d %B %Y")} at #{start_time.strftime("%-I:%M %P")}. Ends on #{self.end_date.strftime("%-d %B %Y")} at #{end_time.strftime("%-I:%M %P")}."
+    end
+
+    # update the start_date_time and end_date_time for the program
+    self.start_date = self.start_date.change(:hour => new_start_time.hour, :min => new_start_time.min, :sec => new_start_time.sec)
+    self.end_date = self.end_date.change(:hour => new_end_time.hour, :min => new_end_time.min, :sec => new_end_time.sec)
+
+
+    if self.announced_timing.nil? || self.announced_timing.blank?
+      self.errors[:announced_timing] << " cannot be blank."
+      return false
+    end
+
     return can_announce?
+  end
+
+  def locality_name
+    if self.announced_locality.nil? ||  self.announced_locality.blank?
+      self.center.name
+    else
+      "#{self.announced_locality} (#{self.center.name})"
+    end
+  end
+
+  def full_day?
+    self.program_donation.program_type.session_duration < 0
+  end
+
+  def timing_name(index)
+    "#{self.timings[index].name.sub /\s*\(.+\)$/, ''}"
+  end
+
+  def display_timings
+    if self.full_day?
+      timings_str = 'Full Day'
+    else
+      timings_str = (self.timings.map {|c| c[:name]}).join(", ")
+    end
+    timings_str = self.announced_timing if self.is_announced?
+    timings_str
   end
 
   def on_announce
@@ -536,7 +675,7 @@ class Program < ActiveRecord::Base
 
 
   def blockable_venues
-    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND (venues.state = ? OR venues.state IS NULL) ', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
+    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND venues.state = ? ', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
     blockable_venues = []
     venues.each {|venue|
       blockable_venues << venue if venue.can_be_blocked_by?(self)
@@ -556,12 +695,14 @@ class Program < ActiveRecord::Base
 
   def assign_dates!
     if !self.start_date.nil? && !self.program_donation.program_type.nil?
-      self.end_date = self.start_date + (self.program_donation.program_type.no_of_days.to_i.days - 1.day)
+      self.end_date = self.start_date + (self.no_of_days.days - 1.day)
     end
     #@program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
   end
 
-
+  def no_of_days
+    self.program_donation.program_type.no_of_days.to_i
+  end
 
   def no_of_main_teachers_connected_or_conducted
     return 0 if !self.teacher_schedules
@@ -671,12 +812,12 @@ class Program < ActiveRecord::Base
 
   def start_date_time
     timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('start_time ASC').first
-    self.start_date.advance(:hours => timing.start_time.hour, :minutes => timing.start_time.min, :seconds => timing.start_time.sec)
+    self.start_date.advance(:hour => timing.start_time.hour, :min => timing.start_time.min, :sec => timing.start_time.sec)
   end
 
   def end_date_time
     timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('end_time DESC').first
-    self.end_date.advance(:hours => timing.end_time.hour, :minutes => timing.end_time.min, :seconds => timing.end_time.sec)
+    self.end_date.advance(:hour => timing.end_time.hour, :min => timing.end_time.min, :sec => timing.end_time.sec)
   end
 
   def venue_approval_requested?

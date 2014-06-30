@@ -89,10 +89,28 @@ class ProgramsController < ApplicationController
 
   def update
     @program = Program.find(params[:id])
+    @program.dummy_init_time
     @program.current_user = current_user
     @trigger = params[:trigger]
     @program.feedback = params[:feedback] if params.has_key?(:feedback)
     @program.capacity = params[:capacity] if params.has_key?(:capacity)
+    @program.announced_locality = params[:announced_locality] if params.has_key?(:announced_locality)
+
+    for i in 1..Timing.all.count
+      start_time = "start_time_#{i.to_s}".to_sym
+      end_time = "end_time_#{i.to_s}".to_sym
+      if params.has_key?(start_time)
+        time = Time.zone.parse(params[start_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+      if params.has_key?(end_time)
+        time = Time.zone.parse(params[end_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+    end
+
     @program.load_comments!(params)
 
     respond_to do |format|

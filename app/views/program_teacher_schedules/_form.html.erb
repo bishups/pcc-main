@@ -29,7 +29,7 @@
           <label for='teacher_id'>Teacher ID</label>
           <%= f.text_field :teacher_id, :value=> @program_teacher_schedule.teacher_id, :readonly => true, :id => 'teacher_id_field', :class => 'form-control' %>
         </div>
-          <% if @program_teacher_schedule.teacher.full_time? %>
+          <% if @program_teacher_schedule.teacher.full_time? or @program_teacher_schedule.teacher.part_time_co_teacher? %>
               <div class='form-group'>
                 <label for='teacher_role'>Role</label>
                 <%= f.select :teacher_role, options_for_select(@teacher_roles, [@selected_teacher_role]), {}, :id => 'teacher_role_select_2', :class => 'form-control' %>

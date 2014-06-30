@@ -77,15 +77,15 @@ class TeacherSchedule < ActiveRecord::Base
 
   # given a teacher schedule (linked to a program), returns a relation with all overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
   # --  ts.id = NULL, ts.timing, ts.teacher_id, ts.program
-  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.all_overlapping(ts.program)).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL) AND teacher_schedules.timing_id = ?', ts.id, ts.id, states, ts.teacher_id, ts.timing_id) }
+  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.all_overlapping(ts.program)).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND teacher_schedules.teacher_id = ? AND teacher_schedules.timing_id = ?', ts.id, ts.id, states, ts.teacher_id, ts.timing_id) }
 
   # given a teacher schedule (not linked to program), returns a relation with other overlapping teacher schedules(s) (linked to programs) for the specific teacher, not in specified states
   # -- ts.id = NULL, ts.teacher_id, ts.start_date, ts.end_date
-  scope :overlapping_date_blocks, lambda { |ts, states| joins(:program).merge(Program.overlapping_date_time(ts.start_date, (ts.end_date.nil? ? ts.end_date: ts.end_date + 1.day - 1.minute))).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL)', ts.id, ts.id, states, ts.teacher_id) }
+  scope :overlapping_date_blocks, lambda { |ts, states| joins(:program).merge(Program.overlapping_date_time(ts.start_date, (ts.end_date.nil? ? ts.end_date: ts.end_date + 1.day - 1.minute))).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND teacher_schedules.teacher_id = ?', ts.id, ts.id, states, ts.teacher_id) }
 
   # given a teacher schedule, returns a relation with other overlapping teacher schedule(s) (not linked to program), for the specific teacher, in specified states
   # -- ts.id = NULL, ts.teacher_id
-  scope :overlapping_reserves, lambda { |ts, start_date, end_date| where('teacher_schedules.program_id IS NULL AND (teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state IN (?) AND (teacher_schedules.teacher_id = ? OR teacher_schedules.teacher_id IS NULL) AND ((teacher_schedules.start_date BETWEEN ? AND ?) OR (teacher_schedules.end_date BETWEEN ? AND ?) OR  (teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ?))',
+  scope :overlapping_reserves, lambda { |ts, start_date, end_date| where('teacher_schedules.program_id IS NULL AND (teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state IN (?) AND teacher_schedules.teacher_id = ? AND ((teacher_schedules.start_date BETWEEN ? AND ?) OR (teacher_schedules.end_date BETWEEN ? AND ?) OR  (teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ?))',
                                                    ts.id, ts.id, RESERVED_STATES, ts.teacher_id, start_date, end_date, start_date, end_date, start_date, end_date)}
 
   def schedule_overlaps?
@@ -282,6 +282,7 @@ class TeacherSchedule < ActiveRecord::Base
       return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => center_id
     else
       return true if self.current_user.is? :center_scheduler, :center_id => center_id
+      return true if (self.current_user.is? :full_time_teacher_scheduler, :center_id => center_id) and (self.teacher.part_time_co_teacher?)
     end
     return true if self.current_user == self.teacher.user
     return false
@@ -321,7 +322,7 @@ class TeacherSchedule < ActiveRecord::Base
         self.errors[:base] << ts.errors.full_messages
       end
       # send notifications every x days - depending upon the program type that the teacher is enabled for
-      every_x_days = Teacher.joins("JOIN program_types_teachers ON teachers.id = program_types_teachers.teacher_id").joins("JOIN program_types ON program_types.id = program_types_teachers.program_type_id").where("(teachers.id = ? OR teachers.id IS NULL)", ts.teacher_id).minimum("program_types.no_of_days")
+      every_x_days = Teacher.joins("JOIN program_types_teachers ON teachers.id = program_types_teachers.teacher_id").joins("JOIN program_types ON program_types.id = program_types_teachers.program_type_id").where("teachers.id = ?", ts.teacher_id).minimum("program_types.no_of_days")
       if (ts.no_of_days % every_x_days == 0)
         ts.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, EVENT_EXPIRED, ts.centers, ts.teacher) if ts.state == STATE_AVAILABLE_EXPIRED
       end

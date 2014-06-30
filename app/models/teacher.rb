@@ -51,10 +51,12 @@ class Teacher < ActiveRecord::Base
   attr_accessible :comments
   validate :check_comments?
 
-  attr_accessible :state, :full_time
+  attr_accessible :state
   validates :state, :presence => true
   validate :invalid_state?
 
+  attr_accessible :full_time, :part_time_co_teacher
+  validate :full_time_co_teacher
 
   #before_save :load_last_state
   # NOTE - please add any additional post-save cleanup to the function below.
@@ -235,7 +237,7 @@ class Teacher < ActiveRecord::Base
   end
 
   def has_published_schedules?
-    TeacherSchedule.where('(teacher_id = ? OR teacher_id IS NULL) AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).count > 0
+    TeacherSchedule.where('teacher_id = ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).count > 0
   end
 
   def delete_published_schedules
@@ -254,12 +256,18 @@ class Teacher < ActiveRecord::Base
     self.errors.add(:comments, " needed if the teacher is marked unfit/ unattached.") if [STATE_UNFIT, STATE_UNATTACHED].include?(self.state) && !self.has_comments?
   end
 
+  def full_time_co_teacher
+    self.errors.add(:part_time_co_teacher, " cannot be selected for full time teacher.") if self.full_time? && self.part_time_co_teacher?
+  end
+
   def has_centers?
     self.errors.add(:centers, " needed if teacher attached to a zone.") if !self.zone.blank? && self.centers.blank? && (self.state != STATE_UNFIT) and (!self.full_time?)
     self.errors.add(:zone, " needed if teacher attached to center(s). To un-attach from a zone, first remove the center(s).") if self.zone.blank? && !self.centers.blank? and (!self.full_time?)
     #self.errors.add(:centers, " should belong to one sector.") if self.centers && !::Sector::all_centers_in_one_sector?(self.centers)
-    self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
-    self.errors.add(:centers, " should belong to specified zone.") if self.centers && self.zone && (self.centers[0] && self.centers[0].sector.zone != self.zone)
+    unless self.part_time_co_teacher?
+      self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
+      self.errors.add(:centers, " should belong to specified zone.") if self.centers && self.zone && (self.centers[0] && self.centers[0].sector.zone != self.zone)
+    end
   end
 
 
@@ -273,7 +281,7 @@ class Teacher < ActiveRecord::Base
   end
 
   def invalid_state?
-    self.errors.add(:state, " cannot be marked unfit when teacher is attached to center(s). To mark unfit, first remove the center(s).") if (self.state == STATE_UNFIT) and (!self.full_time?)
+    self.errors.add(:state, " cannot be marked unfit when teacher is attached to center(s). To mark unfit, first remove the center(s).") if (self.state == STATE_UNFIT) and !(self.full_time? or self.part_time_co_teacher?)
     self.errors.add(:state, " cannot be marked unfit when teacher is linked to a program.") if (self.state == STATE_UNFIT) && self.in_schedule?
     self.errors.add(:state, " cannot be marked unattached when teacher is linked to a program.") if (self.state == STATE_UNATTACHED) && self.in_schedule?
   end
@@ -294,8 +302,10 @@ class Teacher < ActiveRecord::Base
     if self.full_time?
       return true if self.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids
       return true if self.current_user.is? :zao, :for => :any, :center_id => self.center_ids
+    else
+      return true if (self.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids) and (self.part_time_co_teacher?)
+      return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
     end
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
     return true if self.current_user.is? :teacher_training_department, :for => :any, :center_id => self.center_ids
     return true if self.is_current_user?
     return false
@@ -306,6 +316,7 @@ class Teacher < ActiveRecord::Base
       return true if (self.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids)
       return true if (self.current_user.is? :zao, :for => :any, :center_id => self.center_ids)
     else
+      return true if (self.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids) and (self.part_time_co_teacher?)
       return true if (self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids)
     end
     return true if self.is_current_user?
@@ -367,10 +378,10 @@ class Teacher < ActiveRecord::Base
         return false if ts.schedule_overlaps?
       }
     else
-      # check if teacher has matching program_type
-      return false unless self.program_types.include?(program.program_donation.program_type)
+      # check if teacher has matching program_type, or is a co-teacher (and has also been enabled as one)
+      return false unless (self.program_types.include?(program.program_donation.program_type) or (co_teacher and self.part_time_co_teacher?))
       program.timings.each {|t|
-        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND (centers_teacher_schedules.center_id = ? OR centers_teacher_schedules.center_id IS NULL)',
+        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
                                                                                                                                                           program.start_date.to_date, program.end_date.to_date, t.id,
                                                                                                                                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
         return false if ts.nil?
@@ -381,6 +392,10 @@ class Teacher < ActiveRecord::Base
 
   def full_time?
     return self.full_time
+  end
+
+  def part_time_co_teacher?
+    return self.part_time_co_teacher
   end
 
   def url
@@ -425,6 +440,13 @@ class Teacher < ActiveRecord::Base
         end
       end
       field :full_time do
+        read_only do
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:teacher_training_department) )
+        end
+      end
+      field :part_time_co_teacher do
+        label "(Part Time) Co-Teacher"
+        help "If a part-time teacher can be scheduled as co-teacher for other programs."
         read_only do
           not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:teacher_training_department) )
         end

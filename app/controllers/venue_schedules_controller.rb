@@ -69,7 +69,7 @@ class VenueSchedulesController < ApplicationController
     @venue_schedule = VenueSchedule.new(params[:venue_schedule])
     @venue_schedule.current_user = current_user
     @venue_schedule.venue_id = @venue.id
-    @venue_schedule.per_day_price = @venue.per_day_price
+    #@venue_schedule.per_day_price = @venue.per_day_price
 
     @venue_schedule.blocked_by_user_id = current_user.id
     #@venue_schedule.setup_details!
@@ -133,6 +133,7 @@ class VenueSchedulesController < ApplicationController
     @trigger = params[:trigger]
     #authorize! :update, @venue
     @venue_schedule.block_expiry_date = params[:block_expiry_date] if params.has_key?(:block_expiry_date)
+    @venue_schedule.payment_amount = params[:payment_amount] if params.has_key?(:payment_amount)
     @venue_schedule.load_comments!(params)
 
     respond_to do |format|
