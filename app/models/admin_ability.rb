@@ -3,7 +3,7 @@ class AdminAbility
 
   def initialize(user)
     can :access, :rails_admin if not user.accessible_centers.empty? # Only user's having at least one center will have this access.
-    can :dashboard #Check for the count and User specific history.
+    can :dashboard #if user.is?(:kit_coordinator) or user.is?(:venue_coordinator) or user.is?(:teacher_training_department)
     can :manage, PendingUser, {:approver_email => user.email}
     if user.is?(:super_admin)
       can :manage, :all
@@ -14,7 +14,8 @@ class AdminAbility
       can :read, User, {:id => user.accessible_centers.map(&:user_ids).flatten.uniq }
       can :read, Center, {:id => user.accessible_centers}
       can :read, Pincode
-
+      can :read, Zone
+      can :read, ProgramType
 
       if user.is?(:kit_coordinator)
         can :manage, Kit, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text]).map(&:id).uniq}}
@@ -36,8 +37,9 @@ class AdminAbility
         can :read, Zone, {:id => Zone.by_centers(user.accessible_centers.uniq).uniq }
         can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
         can :manage, AccessPrivilege, {:resource_type => "Center", :resource_id => user.accessible_centers}
-        can [:read, :update], Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
-     #   can [:read, :update], Teacher.joins(:centers).where(["centers.id in (?)", user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id)]).uniq
+        #can [:read, :update], Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
+        can [:read, :update], Teacher, {:zone => {:id => user.accessible_zones(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
+        #   can [:read, :update], Teacher.joins(:centers).where(["centers.id in (?)", user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id)]).uniq
         can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer].include?(k)}.compact}
       end
 
@@ -52,6 +54,7 @@ class AdminAbility
 
       if user.is?(:teacher_training_department)
         can :manage, Teacher
+        can :read, Center
         can [:read,:update], [User], {:id => user.accessible_centers.map(&:user_ids).flatten.uniq + User.where(:approver_email => user.email).uniq.map(&:id) }
       end
 

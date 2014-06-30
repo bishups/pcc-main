@@ -5,7 +5,8 @@ gem 'rails', '3.2.13'
 # Bundle edge Rails instead:
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
-gem 'sqlite3'
+gem 'sqlite3', :group => :development
+#gem 'mysql2', :group => :production
 
 
 # Gems used only for assets and not required
@@ -15,10 +16,10 @@ group :assets do
   gem 'coffee-rails', '~> 3.2.1'
 
   # See https://github.com/sstephenson/execjs#readme for more supported runtimes
-  # gem 'therubyracer', :platforms => :ruby
+  gem 'therubyracer', :platforms => :ruby
 
   gem 'uglifier', '>= 1.0.3'
-  gem 'jquery-datatables-rails', :git =>  'https://github.com/ricardodovalle/jquery-datatables-rails'
+  gem 'jquery-datatables-rails' #, :git =>  'https://github.com/ricardodovalle/jquery-datatables-rails'
 end
 
 gem 'jquery-rails'
@@ -34,10 +35,11 @@ gem "letter_opener", :group => :development
 # gem 'jbuilder'
 
 # Use unicorn as the app server
-#gem 'unicorn'
+gem 'unicorn'
 
 # Deploy with Capistrano
-gem 'capistrano'
+gem 'capistrano', '~> 2.15'
+
 
 # To use debugger
 # gem 'debugger'
@@ -54,3 +56,7 @@ gem 'validates_overlap'
 gem 'rubyXL'
 gem 'omniauth-google-oauth2'
 gem "paranoia", "~> 1.0"
+gem "squeel"
+gem "exception_notification"
+gem "rails3-jquery-autocomplete"
+gem 'devise-encryptable'

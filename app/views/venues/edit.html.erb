@@ -9,11 +9,13 @@
 <%= resource_error_messages!(@venue) %>
 <%= hidden_field_tag 'trigger', @trigger %>
 
+<% unless @venue.errors.any? %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'venues/state_update_confirmation_msg' %>
   </div>
 </div>
+<% end %>
 <div class='row'>
   <div class='col-md-12'>
     <%= render :partial => 'venues/state_additional_data' %>
@@ -27,6 +29,7 @@
 <div class='row'>
   <div class='col-md-12'>
     <%= submit_tag "Update", :class => 'btn btn-primary btn-lg' %>
+    <%= link_to "Cancel", :back, :class => 'btn btn-primary btn-lg :hover' %>
   </div>
 </div>
 <% end %>

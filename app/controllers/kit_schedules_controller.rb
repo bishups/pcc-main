@@ -75,7 +75,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule = KitSchedule.new
     @kit_schedule.current_user = current_user
     @kit_schedule.kit_id = @kit.id
-    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
+    @kit_schedule.comment_category = Comment.where('model = ? AND action = ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_create_on_trigger?
@@ -94,7 +94,7 @@ class KitSchedulesController < ApplicationController
     @kit_schedule.current_user = current_user
 
     @trigger = params[:trigger]
-    @kit_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'KitSchedule', @trigger).pluck(:text)
+    @kit_schedule.comment_category = Comment.where('model = ? AND action = ?', 'KitSchedule', @trigger).pluck(:text)
 
     respond_to do |format|
       if @kit_schedule.can_update?
@@ -156,7 +156,7 @@ class KitSchedulesController < ApplicationController
     respond_to do |format|
       if @kit_schedule.can_create?
         if @kit_schedule.send(::KitSchedule::EVENT_BLOCK) && @kit_schedule.save
-          format.html { redirect_to @kit_schedule, notice: 'Kit schedule was successfully created.'}
+          format.html { redirect_to @kit_schedule.program, notice: 'Kit schedule was successfully created.'}
           format.json { render json: @kit_schedule, status: :created, location: @kit_schedule }
         else
           #render :action => 'new'
@@ -206,8 +206,6 @@ class KitSchedulesController < ApplicationController
   # DELETE /kit_schedules/1
   # DELETE /kit_schedules/1.json
   def destroy
-    # not allowing to delete for now
-
     @kit_schedule = KitSchedule.find(params[:id])
     @kit_schedule.current_user = current_user
 

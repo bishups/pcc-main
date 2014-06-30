@@ -25,7 +25,7 @@
                 <td><strong> Comments </strong></td>
                 <td><%= teacher_schedule.comments %></td>
               </tr>
-              <% if current_user.is? :zonal_coordinator, :center_id => teacher_schedule.program.center_id %>
+              <% if current_user.is? :zao, :center_id => teacher_schedule.program.center_id %>
                   <% unless teacher_schedule.feedback.nil? %>
                       <tr>
                         <td><strong> Feedback </strong></td>
@@ -56,6 +56,12 @@
                 <td><strong>Teacher</strong></td>
                 <td><%= link_to "#{teacher_schedule.teacher.user.fullname}", teacher_path(teacher_schedule.teacher) %></td>
               </tr>
+              <% if teacher_schedule.program.has_co_teacher? ||  teacher_schedule.teacher.full_time? %>
+                  <tr>
+                    <td><strong>Role</strong></td>
+                    <td><%= teacher_schedule.co_teacher ? ::TeacherSchedule::ROLE_CO_TEACHER : ::TeacherSchedule::ROLE_MAIN_TEACHER %></td>
+                  </tr>
+              <% end %>
               <tr>
                 <td><strong>Center</strong></td>
                 <td><%= teacher_schedule.program.center.name %></td>

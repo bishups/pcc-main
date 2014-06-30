@@ -7,12 +7,12 @@
   <p>
     <% if @trigger == ::Program::EVENT_ANNOUNCE %>
     This action will <strong>announce</strong> the program to various departments and entities involved. This action cannot be reverted. Are you sure you want to proceed?
-    <% elsif @trigger == ::Program::EVENT_REGISTRATION_OPEN %>
-    This action will <strong>Open Registration</strong> for the program and send appropriate notification. Are you sure you want to proceed?
     <% elsif @trigger == ::Program::EVENT_DROP %>
      <strong>WARNING: </strong> This will cancel the program and free all associated resources. This action cannot be reverted. Are you sure if you want to proceed?
     <% elsif @trigger == ::Program::EVENT_CANCEL %>
     <strong>WARNING: </strong> This will cancel the program and free all associated resources. This action cannot be reverted. Are you sure if you want to proceed?
+    <% elsif @trigger == ::Program::EVENT_CLOSE_REGISTRATION %>
+        <strong>WARNING: </strong> This will close the registration for the program. This action cannot be reverted. Are you sure if you want to proceed?
     <% elsif @trigger == ::Program::EVENT_START %>
     Are you sure you want to change the program to In-Progress state?
     <% elsif @trigger == ::Program::EVENT_PROPOSE %>

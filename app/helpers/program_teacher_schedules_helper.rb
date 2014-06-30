@@ -11,7 +11,7 @@ module ProgramTeacherSchedulesHelper
       elsif pts.state == ::ProgramTeacherSchedule::STATE_IN_CLASS
         '<span class="label label-info">In Class</span>'
       elsif pts.state == ::ProgramTeacherSchedule::STATE_COMPLETED_CLASS
-        '<span class="label label-success">Completed Class</span>'
+        '<span class="label label-default">Completed Class</span>'
       else
         '<span class="label label-default">Unknown</span>'
       end

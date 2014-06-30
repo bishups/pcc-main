@@ -51,7 +51,7 @@ class Zone < ActiveRecord::Base
     navigation_label 'Geo-graphical informations'
       weight 0
     visible do
-      bindings[:controller].current_user.is?(:zonal_coordinator)
+      bindings[:controller].current_user.is?(:zao)
     end
     list do
       field :name

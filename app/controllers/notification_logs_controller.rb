@@ -1,4 +1,5 @@
 class NotificationLogsController < ApplicationController
+  before_filter :authenticate_user!
   # GET /notification_logs
   # GET /notification_logs.json
   def index
@@ -8,7 +9,7 @@ class NotificationLogsController < ApplicationController
     if current_user.is? :super_admin
       @notification_logs = NotificationLog.order("date DESC")
     else
-      @notification_logs = current_user.notification_logs.where("date > ? AND disabled IS ?", (Time.zone.now - 1.month.from_now), false).order("date DESC").all
+      @notification_logs = current_user.notification_logs.where("date > ? AND disabled = ?", (Time.zone.now - 1.month.from_now), false).order("date DESC").all
     end
 
     respond_to do |format|

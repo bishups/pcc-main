@@ -12,7 +12,10 @@
                         "aButtons":    [ "csv", "xls", "pdf" ]
                     }
                 ]
-            }
+            },
+            "columnDefs": [
+                { "type": "date-de", targets: 0 }
+            ]
         } );
     });
 </script>
@@ -40,6 +43,9 @@
     <table id="notification_log_table" class='display dataTable table table-condensed table-hover table-bordered'>
       <thead>
       <tr>
+        <% if super_admin %>
+            <th>#</th>
+        <% end %>
         <th>Date</th>
         <% if super_admin %>
             <th>User</th>
@@ -52,7 +58,10 @@
       <tbody>
       <% @notification_logs.each do |nl| %>
           <tr>
-            <td><%= nl.date.strftime("%d %B %Y") %></td>
+            <% if super_admin %>
+                <td><%= nl.id %></td>
+            <% end %>
+            <td><%= nl.date.strftime("%d.%m.%Y %H:%M hrs")  %></td>
             <% if super_admin %>
                 <td><%= link_to nl.user.fullname, nl.user.url rescue '' %></td>
             <% end %>

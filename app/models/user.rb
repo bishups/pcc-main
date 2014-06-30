@@ -50,7 +50,7 @@ class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable,
+  devise :database_authenticatable, :timeoutable,
          :recoverable, :rememberable, :trackable, :registerable, :omniauthable, :omniauth_providers => [:google_oauth2]
 
   acts_as_paranoid
@@ -77,6 +77,9 @@ class User < ActiveRecord::Base
   has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
+  has_many :zone_users, :through => :zone_centers, :source => :users
+  has_many :teachers
+
   #has_many :teacher_schedules
   #has_many :teacher_slots
 
@@ -84,6 +87,7 @@ class User < ActiveRecord::Base
       {
           :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:geography, :finance, :training]},
           :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:geography]},
+          :full_time_teacher_scheduler   => {:text => "Full-Time Teacher Scheduler", :access_level => 0, :group => [:pcc]},
           :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
           :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:geography]},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
@@ -91,19 +95,20 @@ class User < ActiveRecord::Base
           :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
           :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
-          :center_treasurer     => {:text => "Center Treasurer", :access_level => 0, :group => [:geography]},
+          :center_treasurer     => {:text => "Treasurer", :access_level => 0, :group => [:geography]},
           :teacher              => {:text => "Teacher", :access_level => 0, :group => [:geography]},
           # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :help_desk            => { :text => "Help Desk", :access_level => 0, :group => [:help_desk] },
           :any                  => {:text => "Any", :access_level => -1, :group => []}
     }
 
 
   # Setup accessible (or protected) attributes for your model
-  attr_accessor :username, :provider, :uid, :avatar
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable
+  attr_accessor :username, :uid, :avatar
+  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
   attr_accessible :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
@@ -126,14 +131,14 @@ class User < ActiveRecord::Base
     else
       user.type = nil
     end
-
+    self.password_reset_at = Time.now if self.encrypted_password_changed?
   end
 
   after_create do |user|
-    if user.approver_email
-      UserMailer.approval_email(user).deliver
-      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
-    end
+    user.reload
+    UserMailer.approval_email(user).deliver
+    user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
+    user.update_attribute(:approval_email_sent, true)
   end
 
   after_save  do |user|
@@ -143,22 +148,28 @@ class User < ActiveRecord::Base
     end
   end
 
+  def force_password_reset?
+    self.password_reset_at.nil? or ((Time.now - self.password_reset_at) > 30.days)
+  end
+
   def validate_approver_email
     approver = User.where(:email => self.approver_email.strip).first
-    unless approver and (approver.is?(:super_admin) or approver.is?(:teacher_training_department) or approver.is?(:zonal_coordinator) or approver.is?(:sector_coordinator))
+    unless approver and (approver.is?(:super_admin) or approver.is?(:teacher_training_department) or approver.is?(:sector_coordinator))
       errors[:approver_email] << "is not valid. Either Email is in-correct or the provided email is not of a approver."
     end
   end
 
   def self.from_omniauth(auth)
-    logger.debug("auth --> #{auth.inspect}")
+    user = nil
     if user = User.find_by_email(auth.info.email)
       user.provider = auth.provider
       user.uid = auth.uid
       user
     else
-      User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name)
+     user= User.new(:email => auth.info.email, :firstname => auth.info.first_name, :lastname => auth.info.last_name, :provider => auth.provider)
+     user.provider = auth.provider
     end
+    user
   end
 
   def enabled?
@@ -170,7 +181,11 @@ class User < ActiveRecord::Base
   end
 
   def inactive_message
-    "Failed to Sign In. Your account is not currently active. Please contact your Approver."
+    if !enabled?
+      :not_approved
+    else
+      super # Use whatever other message
+    end
   end
 
   def access_privilege_names=(names)
@@ -341,22 +356,6 @@ class User < ActiveRecord::Base
     self.fullname
   end
 
-  def programs
-    Program.all
-  end
-
-  def venues
-    Venue.all
-  end
-
-  def kits
-    Kit.all
-  end
-
-  def teachers
-    Teacher.all
-  end
-
   def resource_name(resource)
     type = resource.class.name.demodulize
     aps = self.access_privileges
@@ -388,6 +387,20 @@ class User < ActiveRecord::Base
     role_str
   end
 
+  def display_in_auto_complete
+    "#{email}"
+  end
+
+  # this is a cron job, run through whenever gem
+  # from the config/schedule.rb file
+  def self.send_pending_approval_emails
+    users = User.where("approval_email_sent = ?", false).all
+    users.each {|user|
+      UserMailer.approval_email(user).deliver
+      user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
+      user.update_attribute(:approval_email_sent, true)
+    }
+  end
 
   rails_admin do
 
@@ -454,23 +467,24 @@ class User < ActiveRecord::Base
         help "Required"
       end
       field :enable
-      field :custom_access_privileges do
-        read_only true
-        pretty_value do
-          ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
-          if ap_str.empty?
-            #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
-            #%{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a></div >}
-            # HACK - putting a button over the link is not working - it re-directs to user update, instead of going to add access privilege
-            %{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New Access Privilege </a></div >}
-          else
-            %{<div class="access_privilege_ap"> #{ap_str} </div >}
-          end
-        end
-      #  read_only true # won't be editable in forms (alternatively, hide it in edit section)
-        label "Access Privileges"
-        help ""
-      end
+      field :access_privileges
+      #field :custom_access_privileges do
+      #  read_only true
+      #  pretty_value do
+      #    ap_str = bindings[:object].access_privileges_str(bindings[:view].rails_admin)
+      #    if ap_str.empty?
+      #      #ap_str = %{<a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New </a>}
+      #      #%{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}><button class="btn btn-sm btn-primary" :hover> + Add New Access Privilege </button></a></div >}
+      #      # HACK - putting a button over the link is not working - it re-directs to user update, instead of going to add access privilege
+      #      %{<div class="access_privilege_ap"> <a href=#{bindings[:view].rails_admin.new_path('access_privilege')}> + Add New Access Privilege </a></div >}
+      #    else
+      #      %{<div class="access_privilege_ap"> #{ap_str} </div >}
+      #    end
+      #  end
+      ##  read_only true # won't be editable in forms (alternatively, hide it in edit section)
+      #  label "Access Privileges"
+      #  help ""
+      #end
 
     end
   end

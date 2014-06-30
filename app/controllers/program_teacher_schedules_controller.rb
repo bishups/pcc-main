@@ -6,10 +6,12 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule = load_program_teacher_schedule!(params)
 
     if params.has_key?(:teacher_id)
+      load_blockable_programs!
       center_ids = @program_teacher_schedule.teacher.center_ids
     end
 
     if params.has_key?(:program_id)
+      load_blockable_teachers!
       center_ids = [@program_teacher_schedule.program.center_id]
     end
 
@@ -38,19 +40,22 @@ class ProgramTeacherSchedulesController < ApplicationController
         if !@program_teacher_schedule.can_create?
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
-        elsif !teacher.can_be_blocked_by?(program)
+        elsif !teacher.can_be_blocked_by?(program, (@program_teacher_schedule.teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER))
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Request timed out, cannot perform the requested action. Please try again." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         else
           @program_teacher_schedule.block_teacher_schedule!(params[:program_teacher_schedule])
           #@program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
           if @program_teacher_schedule.errors.empty?
-            format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id), notice: 'Program-Teacher Schedule was successfully updated.'  }
+            format.html { redirect_to @program_teacher_schedule.program, notice: 'Program-Teacher Schedule was successfully updated.'  }
             format.json { render :json => @program_teacher_schedule }
 
             #format.html { redirect_to program_path(@program_teacher_schedule.program) }
             #format.json { render json: @program_teacher_schedule, status: :created, location: @program_teacher_schedule }
           else
+            # TODO - check whether to call load_blockable_teachers! or load_blockable_programs! here
+            # For now leaving it, since we should not be reaching this state, because of double check above
+            #load_blockable_teachers!(params[:teacher_role])
             format.html { render action: "new" }
             format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
           end
@@ -84,7 +89,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       @program_teacher_schedule = load_program_teacher_schedule!(params)
     end
     @trigger = params[:trigger]
-    @program_teacher_schedule.comment_category = Comment.where('model IS ? AND action IS ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
+    @program_teacher_schedule.comment_category = Comment.where('model = ? AND action = ?', 'ProgramTeacherSchedule', @trigger).pluck(:text)
 
     unless @program_teacher_schedule.can_update?
       respond_to do |format|
@@ -102,7 +107,35 @@ class ProgramTeacherSchedulesController < ApplicationController
   end
 
 
+  def update_blockable_teachers
+    @selected_teacher_role = params[:teacher_role_val]
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
+    # updates blockable teachers based on selection
+    #@timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
+    @blockable_teachers = (@program_teacher_schedule.blockable_teachers(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|t| t.user.fullname}
+  end
 
+  def load_blockable_teachers!(teacher_role = nil)
+    @teacher_roles = ::TeacherSchedule::TEACHER_ROLES
+    @selected_teacher_role = teacher_role.nil? ? @teacher_roles[0] : teacher_role
+    #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
+    @blockable_teachers = (@program_teacher_schedule.blockable_teachers(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|t| t.user.fullname}
+  end
+
+  def update_blockable_programs
+    @selected_teacher_role = params[:teacher_role_val]
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
+    # updates blockable teachers based on selection
+    #@timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
+    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|p| p.friendly_name}
+  end
+
+  def load_blockable_programs!(teacher_role = nil)
+    @teacher_roles = ::TeacherSchedule::TEACHER_ROLES
+    @selected_teacher_role = teacher_role.nil? ? @teacher_roles[0] : teacher_role
+    #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
+    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|p| p.friendly_name}
+  end
 
 
   private
@@ -123,8 +156,9 @@ class ProgramTeacherSchedulesController < ApplicationController
             format.json { render :json => @program_teacher_schedule }
           end
         else
-          flash[:program_teacher_schedule] = @program_teacher_schedule
-          format.html { redirect_to :action => :edit, :trigger => params[:trigger], :id => params[:id]}
+          #flash[:program_teacher_schedule] = @program_teacher_schedule
+          #format.html { redirect_to :action => :edit, :trigger => params[:trigger], :id => params[:id]}
+          format.html { render :action => :edit, :trigger => params[:trigger], :id => params[:id]}
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         end
       else
@@ -140,6 +174,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     pts.current_user = current_user
     if params.has_key?(:id)
       pts.teacher_schedule_id = (params[:id]).to_i
+      pts.id = pts.teacher_schedule_id # HACK - for logging purposes
       pts.teacher_schedule = TeacherSchedule.find(pts.teacher_schedule_id)
       pts.state = pts.teacher_schedule.state
       pts.program_id = pts.teacher_schedule.program_id
@@ -158,10 +193,14 @@ class ProgramTeacherSchedulesController < ApplicationController
         pts.teacher = Teacher.find(pts.teacher_id)
         pts.teacher.current_user = current_user
       end
+      if params.has_key?(:teacher_role)
+        pts.teacher_role = (params[:teacher_role])
+      else
+        pts.teacher_role = ::TeacherSchedule::ROLE_MAIN_TEACHER
+      end
     end
     pts
   end
-
 
   def state_update(pts, trig)
     pts.current_user = current_user

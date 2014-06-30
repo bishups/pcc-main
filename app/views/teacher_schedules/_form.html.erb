@@ -18,8 +18,7 @@
     <div class="form-group">
       <%= label_tag :program_type %>
       <%= select_tag 'teacher_schedule[program_type_id]', options_for_select(@program_types.map {|e| [e.name, e.id]}, [@selected_program_type.name, @selected_program_type.id]), { :id => 'program_types_select', :class => 'form-control'} %>
-      <br/>
-
+    </div>
 
   <div class='form-group'>
     <%= label_tag 'Timing(s)' %>

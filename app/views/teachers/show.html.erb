@@ -45,8 +45,12 @@
         <td><%= @teacher.t_no %></td>
       </tr>
       <tr>
+        <td><strong>Part-Time</strong></td>
+        <td><%= @teacher.full_time? ? "No" : "Yes" %></td>
+      </tr>
+      <tr>
         <td><strong>Program Types</strong></td>
-        <td><%= (@teacher.program_types.map {|pt| pt[:name]}).join(", ") %></td>
+        <td><%= (@teacher.program_types.map {|pt| pt[:name]}).sort.join(", ") %></td>
       </tr>
       <tr>
         <td><strong>Zone</strong></td>
@@ -54,7 +58,11 @@
       </tr>
       <tr>
         <td><strong>Center(s)</strong></td>
-        <td><%= (@teacher.centers.map {|c| c[:name]}).join(", ") %></td>
+        <% if @teacher.full_time? %>
+            <td><%= '[All Centers in Zone]' %></td>
+        <% else %>
+            <td><%= (@teacher.centers.map {|c| c[:name]}).join(", ") %></td>
+        <% end %>
       </tr>
     </table>
   </div>

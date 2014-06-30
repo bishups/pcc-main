@@ -2,15 +2,16 @@
 <% in_geography = (current_user.is? :any, :in_group => [:geography]) %>
 <% in_training = (current_user.is? :any, :in_group => [:training]) %>
 <% in_finance = (current_user.is? :any, :in_group => [:finance]) %>
+<% in_pcc = (current_user.is? :any, :in_group => [:pcc]) %>
 <ul class="nav navbar-nav">
-  <% if centers.count > 0 %>
+  <% if (current_user.is? :super_admin) or center_ids.count > 0 %>
       <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Schedules <b class="caret"></b></a>
         <ul class="dropdown-menu">
-          <% if in_geography %>
+          <% if in_geography or in_pcc %>
             <li><a href="<%= programs_path %>">Program</a></li>
           <% end %>
-          <% if in_geography or in_training %>
+          <% if in_geography or in_training or in_pcc %>
             <li><a href="<%= teachers_path %>">Teacher</a></li>
           <% end %>
           <% if in_geography %>
@@ -29,23 +30,8 @@
     </ul>
   </li>  <!-- TODO: disabling the equiries interface for now, will be put in later if needed after cleanup -->
   <!-- TODO: Enforce role -->
-  <li class="dropdown">
-    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
-    <ul class="dropdown-menu">
-      <li><a href="<%= rails_admin_path %>"> Dashboard </a></li>
-      <% if false %>
-      <li><a href="<%= enquiries_path %>">Enquiries </a></li>
-      <% end %>
-    </ul>
-  </li>
-  <% end %>
-  <% if false %>
-  <li class="dropdown">
-    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Help <b class="caret"></b></a>
-    <ul class="dropdown-menu">
-      <li><a href="#"> FAQ </a></li>
-      <li><a href="<%= new_enquiry_path %>">Submit Enquiry</a></li>
-    </ul>
-  </li>
+    <% # if  current_user.is?(:kit_coordinator) or current_user.is?(:venue_coordinator)  or current_user.is?(:teacher_training_department) %>
+          <li><a href="<%= rails_admin_path %>"> Admin Panel </a></li>
+    <% # end %>
   <% end %>
 </ul>

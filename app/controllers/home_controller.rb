@@ -16,6 +16,19 @@ class HomeController < ApplicationController
     @new_notifications = current_user.notification_logs.find_all_by_displayed(false)
   end
 
+    def become
+      if not ( current_user.is?(:super_admin) or current_user.is?(:zonal_coordinator) or current_user.is?(:zao) )
+        redirect_to root_url
+      end
+      if user =  User.where(:email=>params[:user][:email]).first
+        sign_in(:user, user)
+        redirect_to root_url # or user_root_url
+      else
+        flash[:alert] = "You are trying to login as #{params[:user][:email]}, but it is not a valid username / email. Please select proper username /  email."
+        redirect_to root_url
+      end
+    end
+
   def about
   end
 

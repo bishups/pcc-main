@@ -12,7 +12,10 @@
                         "aButtons":    [ "csv", "xls", "pdf" ]
                     }
                 ]
-            }
+            },
+            "columnDefs": [
+                { "type": "date-de", targets: 0 }
+            ]
         } );
     });
 </script>
@@ -27,15 +30,18 @@
 </div>
 
 
-
+<% super_admin = current_user.is? :super_admin %>
 <% if @activity_logs.empty? %>
     <div class="alert alert-danger"> No Activity Log Found.</div>
 <% else %>
     <table id="activity_log_table" class='display dataTable table table-condensed table-hover table-bordered'>
       <thead>
       <tr>
+        <% if super_admin %>
+            <th>#</th>
+        <% end %>
         <th>Date</th>
-        <% if current_user.is? :super_admin %>
+        <% if super_admin %>
             <th>User</th>
         <% end %>
         <th>Activity</th>
@@ -45,8 +51,11 @@
       <tbody>
       <% @activity_logs.each do |al| %>
           <tr>
-            <td><%= al.date.strftime("%d %B %Y") %></td>
-            <% if current_user.is? :super_admin %>
+            <% if super_admin %>
+                <td><%= al.id %></td>
+            <% end %>
+            <td><%= al.date.strftime("%d.%m.%Y %H:%M hrs") %></td>
+            <% if super_admin %>
                 <td><%= link_to al.user.fullname, al.user.url rescue '' %></td>
             <% end %>
             <% object = al.object %>

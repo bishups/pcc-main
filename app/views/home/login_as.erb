@@ -1,0 +1,20 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <div class='page-header'>
+      <h3> Please enter email of the User you want to login as </h3>
+    </div>
+    <div class='page-body'>
+        <%= form_for User.new, {:url => "/login_as", :method => "post", :html => {:id => "form_login_as",:class => "navbar-collapse"}}  do |f|
+          f.autocomplete_field :email, "/users/autocomplete", :value => ""
+        end %>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" charset="utf-8">
+
+    $('#user_email').bind('railsAutocomplete.select' , function(event, data){
+        $('#form_login_as').submit();
+    });
+
+</script>

@@ -21,7 +21,7 @@ module KitSchedulesHelper
       elsif ks.state == ::KitSchedule::STATE_UNDER_REPAIR
         '<span class="label label-danger">Under Repair</span>'
       elsif ks.state == ::KitSchedule::STATE_CLOSED
-        '<span class="label label-info">Closed</span>'
+        '<span class="label label-default">Closed</span>'
       elsif prog.state == ::KitSchedule::STATE_AVAILABLE_EXPIRED
         '<span class="label label-danger">Available (Expired)</span>'
       else

@@ -1,7 +1,7 @@
 3.times do |index|
   zone=Zone.create(:name=>"Zone--#{index}")
   count = 0
-  ["zonal_coordinator","zao","pcc_accounts","finance_department", "teacher_training_department"].each do |role_name|
+  ["zonal_coordinator","zao","full_time_teacher_scheduler", "pcc_accounts","finance_department", "teacher_training_department"].each do |role_name|
     count = count + 1
     user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=> (9999999900 + index * 10 + count).to_s,
                     :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}", :address => "Zone--#{index}",
@@ -25,7 +25,7 @@ end
 end
 
 27.times do |index|
-  center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1))
+  center = Center.create(:name=>"Center--#{index}", :sector=>Sector.find((index/3)+1), :program_donations=> [ProgramDonation.find((index/9)+1)])
   Pincode.create(:pincode=>600000+index,:location_name=>"Pincode--#{index}",:center_id=>center.id)
   count = 0
   ["center_coordinator","volunteer_committee","center_scheduler","kit_coordinator","venue_coordinator","center_treasurer"].each do |role_name|
@@ -47,8 +47,10 @@ kit_items = seed_data["KitItemType"].collect do |kit_item_type|
 end
 
 seed_data = YAML::load_file(File.join(Rails.root, 'db/seed-data', 'seed-data.yml'))
+count = 0
 4.times do |index|
-  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.first.centers.first.name} - Kit", :guardian => Sector.first.centers.first.users.first ,:capacity=>50,:centers=>Sector.first.centers)
+  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.first.centers.first.name} - Kit-#{count}", :guardian => Sector.first.centers.first.users.first ,:capacity=>50,:centers=>Sector.first.centers)
+  count = count + 1
   if not kit.save
     puts " Kit #{kit.name} not saved due to  #{kit.errors.messages}"
   end
@@ -60,20 +62,14 @@ seed_data = YAML::load_file(File.join(Rails.root, 'db/seed-data', 'seed-data.yml
     end
   end
 end
+
+count = 0
 4.times do |index|
-  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.find(2).centers.limit(2).first.name} - Kit", :guardian => Sector.find(2).centers.limit(2).first.users.first, :capacity=>50,:centers=>Sector.find(2).centers.limit(2))
-  kit.save
-  seed_data["KitItemType"].collect do |kit_item_type|
-    kit_item_type=KitItemType.where(:name=>kit_item_type).first
-    kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
-    if not kit_item.save
-      puts " Kit Item not saved due to  #{kit_item.errors.messages}"
-    end
+  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.find(2).centers.limit(2).first.name} - Kit-#{count}", :guardian => Sector.find(2).centers.limit(2).first.users.first, :capacity=>50,:centers=>Sector.find(2).centers.limit(2))
+  count = count + 1
+  if not kit.save
+    puts " Kit #{kit.name} not saved due to  #{kit.errors.messages}"
   end
-end
-4.times do |index|
-  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.first.centers.limit(1).first.name} - Kit", :guardian => Sector.first.centers.limit(1).first.users.first ,:capacity=>50,:centers=>Sector.first.centers.limit(1))
-  kit.save
   seed_data["KitItemType"].collect do |kit_item_type|
     kit_item_type=KitItemType.where(:name=>kit_item_type).first
     kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
@@ -83,9 +79,29 @@ end
   end
 end
 
+count = 0
+4.times do |index|
+  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.first.centers.limit(1).first.name} - Kit-#{count}", :guardian => Sector.first.centers.limit(1).first.users.first ,:capacity=>50,:centers=>Sector.first.centers.limit(1))
+  count = count + 1
+  if not kit.save
+    puts " Kit #{kit.name} not saved due to  #{kit.errors.messages}"
+  end
+  seed_data["KitItemType"].collect do |kit_item_type|
+    kit_item_type=KitItemType.where(:name=>kit_item_type).first
+    kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
+    if not kit_item.save
+      puts " Kit Item not saved due to  #{kit_item.errors.messages}"
+    end
+  end
+end
+
+count = 0
 3.times do |index|
-  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.find(index+1).centers.first.name} - Kit", :guardian => Sector.find(index+1).centers.first.users.first , :capacity=>50,:centers=>Sector.find(index+1).centers)
-  kit.save
+  kit=Kit.new(:condition=>"Good",:name=>"#{Sector.find(index+1).centers.first.name} - Kit-#{count}", :guardian => Sector.find(index+1).centers.first.users.first , :capacity=>50,:centers=>Sector.find(index+1).centers)
+  count = count + 1
+  if not kit.save
+    puts " Kit #{kit.name} not saved due to  #{kit.errors.messages}"
+  end
   seed_data["KitItemType"].collect do |kit_item_type|
     kit_item_type=KitItemType.where(:name=>kit_item_type).first
     kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type}",  :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
@@ -95,9 +111,13 @@ end
   end
 end
 
+count = 0
 7.times do |index|
-  kit=Kit.new(:condition=>"Good",:name=>"#{Center.find(index+1).name} - Kit", :guardian => Center.find(index+1).users.first ,:capacity=>50,:centers=>[Center.find(index+1)])
-  kit.save
+  kit=Kit.new(:condition=>"Good",:name=>"#{Center.find(index+1).name} - Kit-#{count}", :guardian => Center.find(index+1).users.first ,:capacity=>50,:centers=>[Center.find(index+1)])
+  count = count + 1
+  if not kit.save
+    puts " Kit #{kit.name} not saved due to  #{kit.errors.messages}"
+  end
   seed_data["KitItemType"].collect do |kit_item_type|
     kit_item_type=KitItemType.where(:name=>kit_item_type).first
     kit_item = KitItem.new(:kit=>kit,:description=>" Newly Purchased #{kit_item_type}", :condition=>"Good",:count=>3,:kit_item_type=>kit_item_type)
@@ -107,44 +127,52 @@ end
   end
 end
 
+count = 0
 4.times do |index|
-  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.last.centers.last.pincodes.last, :per_day_price => 100, :address => " Venue Address", :centers => Sector.last.centers)
+  v = Venue.new(:name=>"#{Sector.last.centers.last.name} Venue-#{count}", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.last.centers.last.pincodes.last, :per_day_price => 100, :address => " Venue Address", :centers => Sector.last.centers)
+  count = count + 1
   if not v.save
-    puts " Venue not saved due to  #{v.errors.messages}"
+    puts " Venue #{v.name} not saved due to  #{v.errors.messages}"
   end
 end
 
+count = 0
 4.times do |index|
-  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.first.centers.last.pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers+Sector.last.centers )
+  v=Venue.new(:name=>"#{Sector.first.centers.last.name} Venue-#{count}", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.first.centers.last.pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => Sector.first.centers+Sector.last.centers )
+  count = count + 1
   if not v.save
-    puts " Venue not saved due to  #{v.errors.messages}"
+    puts " Venue #{v.name} not saved due to  #{v.errors.messages}"
   end
 end
 
+count = 0
 3.times do |index|
-  v=Venue.new(:name=>"#{Sector.find(index+1).centers.first.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.find(index+1).centers.first.pincodes.first, :per_day_price => 100, :address => "Venue Address", :centers => Sector.find(index+1).centers)
+  v=Venue.new(:name=>"#{Sector.find(index+1).centers.first.name} Venue-#{count}", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => Sector.find(index+1).centers.first.pincodes.first, :per_day_price => 100, :address => "Venue Address", :centers => Sector.find(index+1).centers)
+  count = count + 1
   if not v.save
-    puts "Venue not saved due to  #{v.errors.messages}"
+    puts "Venue #{v.name} not saved due to  #{v.errors.messages}"
   end
 end
 
 Center.all.each do |center|
   v=Venue.new(:name=>"#{center.name} Venue", :commercial => true ,:capacity=>100,:contact_mobile=>9998908900,:pincode => center.pincodes.last, :per_day_price => 100, :address => "Venue Address", :centers => [center])
   if not v.save
-    puts " Venue not saved due to  #{v.errors.messages}"
+    puts " Venue #{v.name} not saved due to  #{v.errors.messages}"
   end
 end
 
+count = 0
 4.times do |index|
   user = User.new(:firstname => "Teacher-#{index}",:email=> "teacher-#{index}@pcc-ishayoga.org",:mobile=>(9999000000 + index).to_s,
                   :password => "teacher-#{index}", :password_confirmation => "teacher-#{index}", :address => "IYC",
                   :approver_email => "super-admin@pcc-ishayoga.org", :message_to_approver => "Approve me",  :enable => true )
   user.save
+  count = count + 1
   if not user.save
     puts "User #{user.firstname}  has not been saved because of #{user.errors.messages}"
   else
     zone=Zone.first
-    teacher=Teacher.new(:t_no=>"1",:zone=>zone,:user=>user,:comments=>"Added for testing",:centers=>zone.centers.limit(3),:state=>Teacher::STATE_ATTACHED.to_s,:program_types=>ProgramType.all)
+    teacher=Teacher.new(:t_no=>count.to_s,:zone=>zone,:user=>user,:comments=>"Added for testing",:centers=>zone.centers.limit(3),:state=>Teacher::STATE_ATTACHED.to_s,:program_types=>ProgramType.all)
     if not teacher.save
       puts "Teacher #{user.firstname} has not been saved because of #{teacher.errors.messages}"
     end

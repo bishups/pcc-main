@@ -1,0 +1,7 @@
+$('#program_donations_select').html("<%= escape_javascript(options_for_select(@program_donations)) %>");
+$('#timings_select').html("<%= escape_javascript(options_for_select(@timings)) %>");
+<% if @disable_create_button %>
+    $("#create_button").prop('disabled', true);
+<% else %>
+    $("#create_button").prop('disabled', false);
+<% end %>

@@ -11,7 +11,7 @@ module VenuesHelper
         when ::Venue::STATE_INSUFFICIENT_INFO
           '<span class="label label-warning">Insufficient Info</span>'
         when ::Venue::STATE_REJECTED
-          '<span class="label label-danger">Rejected</span>'
+          '<span class="label label-default">Rejected</span>'
         when ::Venue::STATE_POSSIBLE
           '<span class="label label-success">Possible</span>'
         else

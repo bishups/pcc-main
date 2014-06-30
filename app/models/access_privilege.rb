@@ -35,23 +35,27 @@ class AccessPrivilege < ActiveRecord::Base
     Center.where(:name => center_name).first
   end
 
-  def is_role_valid?
-    role = self.role.name.parameterize.underscore.to_sym
-    resource_type = self.resource.class.name.demodulize
+  def is_role_valid? 
+    if self.role 
+      role = self.role.name.parameterize.underscore.to_sym
+      resource_type = self.resource.class.name.demodulize
 
-    valid_roles =
+      valid_roles =
         case resource_type
           when "Zone"
-            [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
+            # HACK - full_time_teacher_scheduler is a person who is allowed to only schedule full time teachers in a given zone
+            [:zonal_coordinator, :full_time_teacher_scheduler, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
           when "Sector"
             [:sector_coordinator]
           when "Center"
-            [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :teacher]
+            # HACK - TODO - need to clean this up - using :treasurer, rather than :center_treasurer
+            [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer, :teacher]
           else
             [:super_admin]
         end
-    if !valid_roles.include?(role)
-      self.errors[:resource] << " does not match the specified role."
+      if !valid_roles.include?(role)
+        self.errors[:resource] << " does not match the specified role."
+      end
     end
   end
 
@@ -69,20 +73,16 @@ class AccessPrivilege < ActiveRecord::Base
   rails_admin do
     navigation_label 'Access Privilege'
     weight 1
-    #visible false
-    #object_label_method do
-    #  :role_name
-    #end
+    visible false
+    object_label_method do
+      :display_name
+    end
     list do
       field :user
       field :role
       field :resource
     end
     edit do
-      field :user do
-        inline_edit false
-        inline_add false
-      end
       field :role do
         inline_edit false
         inline_add false
@@ -98,16 +98,14 @@ class AccessPrivilege < ActiveRecord::Base
       end
       field :resource
     end
-    update do
-      configure :user do
-        read_only true
-      end
-    end
-
   end
 
   def role_name
     self.role.name if self.role
+  end
+
+  def display_name
+    "#{self.role_name} - #{self.resource_type} #{self.resource.name if self.resource}"
   end
 
 end

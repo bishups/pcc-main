@@ -27,7 +27,8 @@ class Kit < ActiveRecord::Base
                   :state,:capacity
 
   has_many :kit_items
-  attr_accessible :kit_items
+  attr_accessible :kit_items, :kit_items_attributes
+  accepts_nested_attributes_for :kit_items, :allow_destroy => true
   attr_accessor :current_user
 
   has_many :kit_item_types, :through => :kit_items
@@ -45,7 +46,9 @@ class Kit < ActiveRecord::Base
   attr_accessible :guardian_id, :guardian
 
   validates :name, :condition, :guardian, :presence => true
-  validates :capacity, :numericality => {:only_integer => true }
+  validates_uniqueness_of :name, :scope => :deleted_at
+
+  validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
 
   #has_paper_trail
 
@@ -110,7 +113,7 @@ class Kit < ActiveRecord::Base
     programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
     blockable_programs = []
     programs.each {|program|
-      blockable_programs << program if kit.can_be_blocked_by?(program)
+      blockable_programs << program if self.can_be_blocked_by?(program)
     }
     blockable_programs
   end
@@ -145,7 +148,7 @@ class Kit < ActiveRecord::Base
 
 
   def can_view?
-    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
     return false
   end
 
@@ -160,19 +163,20 @@ class Kit < ActiveRecord::Base
       center_ids = self.center_ids
     end
 
-    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => center_ids
+    return true if User.current_user.is? :kit_coordinator, :for => :any, :center_id => center_ids
     return false
   end
 
   def can_update?
-    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    # This condition is not needed
+    #return true if User.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
     return false
   end
 
   def can_view_schedule?
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
     return false
   end
 
@@ -180,21 +184,21 @@ class Kit < ActiveRecord::Base
   # HACK - to route the call through kit object from the UI.
   def can_create_schedule?
     kit_schedule = KitSchedule.new
-    kit_schedule.current_user = self.current_user
+    kit_schedule.current_user = User.current_user
     return kit_schedule.can_create?(self.center_ids)
   end
 
   # HACK - to route the call through kit object from the UI.
   def can_create_reserve_schedule?
     kit_schedule = KitSchedule.new
-    kit_schedule.current_user = self.current_user
+    kit_schedule.current_user = User.current_user
     return kit_schedule.can_create_reserve?(self.center_ids)
   end
 
   # HACK - to route the call through kit object from the UI.
   def can_create_overdue_or_under_repair_schedule?
     kit_schedule = KitSchedule.new
-    kit_schedule.current_user = self.current_user
+    kit_schedule.current_user = User.current_user
     return kit_schedule.can_create_overdue_or_under_repair?(self.center_ids)
   end
 
@@ -270,7 +274,8 @@ class Kit < ActiveRecord::Base
             scope = scope.where(:id => accessible_centers )
           }
         end
-       end
+      end
+      field :kit_items
     end
   end
 end

@@ -7,8 +7,9 @@ class TeachersController < ApplicationController
   # GET /teachers.json
   def index
     in_geography = (current_user.is? :any, :in_group => [:geography])
+    in_pcc = (current_user.is? :any, :in_group => [:pcc])
     in_training = (current_user.is? :any, :in_group => [:training])
-    center_ids = (in_geography or in_training) ? current_user.accessible_center_ids : []
+    center_ids = (in_geography or in_training or in_pcc) ? current_user.accessible_center_ids : []
     # any teachers who are attached to zones, but not to the centers
     zone_ids = current_user.accessible_zone_ids
     respond_to do |format|
@@ -71,7 +72,7 @@ class TeachersController < ApplicationController
       @teacher.current_user = current_user
     end
     @trigger = params[:trigger]
-    @teacher.comment_category = Comment.where('model IS ? AND action IS ?', 'Teacher', @trigger).pluck(:text)
+    @teacher.comment_category = Comment.where('model = ? AND action = ?', 'Teacher', @trigger).pluck(:text)
 
     respond_to do |format|
       if @teacher.can_update?
@@ -121,8 +122,9 @@ class TeachersController < ApplicationController
           format.json { render json: @venue }
           # redirect_to [@teacher]
         else
-          flash[:teacher] = @teacher
-          format.html { redirect_to :action => :edit, :trigger => params[:trigger] }
+          #flash[:teacher] = @teacher
+          #format.html { redirect_to :action => :edit, :trigger => params[:trigger] }
+          format.html { render :action => :edit, :trigger => params[:trigger] }
           format.json { render json: @teacher.errors, status: :unprocessable_entity }
           # flash[:teacher] = @teacher
           # redirect_to :action => :edit, :trigger => params[:trigger]

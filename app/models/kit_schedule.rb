@@ -73,7 +73,7 @@ class KitSchedule < ActiveRecord::Base
 
   validates :start_date, :end_date, :kit_id, :state, :presence => true
   validates :program_id, :presence => true, :unless => :kit_available_or_reserved?
-  validates_uniqueness_of :program_id, :scope => "kit_id", :unless => :kit_available_reserved_or_cancelled?, :message => " is already associated with the Kit."
+  validates_uniqueness_of :program_id, :on => :create, :scope => "kit_id", :unless => :kit_available_reserved_or_cancelled?, :message => " is already associated with the Kit."
 
   #checking for overlap validation
   validates_with KitScheduleValidator, :on => :create
@@ -95,8 +95,8 @@ class KitSchedule < ActiveRecord::Base
 =end
 
   # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit
-  scope :overlapping_schedules, lambda { |ks| where('kit_schedules.id IS NOT ? AND kit_schedules.state NOT IN (?) AND kit_schedules.kit_id IS ? AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
-                                                   ks.id, FINAL_STATES, ks.kit_id, ks.start_date, ks.end_date, ks.start_date, ks.end_date, ks.start_date, ks.end_date)}
+  scope :overlapping_schedules, lambda { |ks| where('(kit_schedules.id != ? OR ? IS NULL) AND kit_schedules.state NOT IN (?) AND (kit_schedules.kit_id = ? OR kit_schedules.kit_id IS NULL) AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
+                                                   ks.id, ks.id, FINAL_STATES, ks.kit_id, ks.start_date, ks.end_date, ks.start_date, ks.end_date, ks.start_date, ks.end_date)}
 
 
   def initialize(*args)
@@ -216,11 +216,11 @@ class KitSchedule < ActiveRecord::Base
 
   def kit_available_reserved_or_cancelled?
     return true if kit_available_or_reserved?
-    KitSchedule.where('program_id IS ? AND kit_id IS ? AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
+    KitSchedule.where('(program_id = ? OR program_id IS NULL) AND (kit_id = ? OR kit_id IS NULL) AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
   end
 
   def is_kit_coordinator?
-    unless self.current_user.is? :kit_coordinator, :center_id => self.program.center_id
+    unless User.current_user.is? :kit_coordinator, :center_id => self.program.center_id
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -228,7 +228,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def is_center_coordinator?
-    unless self.current_user.is? :center_coordinator, :center_id => self.program.center_id
+    unless User.current_user.is? :center_coordinator, :center_id => self.program.center_id
       self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
       return false
     end
@@ -318,7 +318,7 @@ class KitSchedule < ActiveRecord::Base
 
       # 3. check overlap for assigned kit schedules with center(s) for which not KC - FAIL, with whom to approach
       additional_kit_schedules.each {|ks|
-        unless self.current_user.is? :kit_coordinator, :center_id => ks.program.center_id
+        unless User.current_user.is? :kit_coordinator, :center_id => ks.program.center_id
           record.errors[:base] << "Insufficient privileges to complete operation. Due Date overlaps with schedule for the kit assigned to other center. Either change due date and try again, or contact Sector/ Zonal coordinator."
           return false
         end
@@ -364,14 +364,14 @@ class KitSchedule < ActiveRecord::Base
 
   def can_unblock?
     no_kits_blocked = self.program.no_of_kits_connected
-    if (self.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
+    if (User.current_user.is? :sector_coordinator, :center_id => self.program.center_id)
       return true unless self.program.venue_approved?
       return true if no_kits_blocked > 1
       self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for payment request. Add another kit and try again."
       return false
     end
 
-    if (self.current_user.is? :center_scheduler, :center_id => self.program.center_id)
+    if (User.current_user.is? :center_scheduler, :center_id => self.program.center_id)
       return true unless self.program.venue_approval_requested?
       return true if no_kits_blocked > 1
       self.errors[:base] << "Cannot cancel kit block. Venue linked to the program has already gone for sector coordinator approval. Add another kit and try again."
@@ -401,7 +401,7 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def after_reserve!
-    self.blocked_by_user = self.current_user
+    self.blocked_by_user = User.current_user
   end
 
   def is_connected?
@@ -428,16 +428,19 @@ class KitSchedule < ActiveRecord::Base
     end
   end
 
+  def can_view?
+    self.kit.can_view_schedule?
+  end
 
 
   def can_update?
-    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
-    return true if self.current_user.is? :kit_coordinator, :center_id => self.program.center_id
+    return true if self.program and User.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if self.program and User.current_user.is? :kit_coordinator, :center_id => self.program.center_id
     return false
   end
 
   def can_create?(center_ids = self.program.center_id)
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
     return false
   end
 
@@ -447,12 +450,12 @@ class KitSchedule < ActiveRecord::Base
   end
 
   def can_create_reserve?(center_ids = self.kit.center_ids, scope = :any)
-    return true if self.current_user.is? :sector_coordinator, :for => scope, :center_id => center_ids
+    return true if User.current_user.is? :sector_coordinator, :for => scope, :center_id => center_ids
     return false
   end
 
   def can_create_overdue_or_under_repair?(center_ids = self.kit.center_ids, scope = :any)
-    return true if self.current_user.is? :kit_coordinator, :for => scope, :center_id => center_ids
+    return true if User.current_user.is? :kit_coordinator, :for => scope, :center_id => center_ids
     return false
   end
 
@@ -460,12 +463,12 @@ class KitSchedule < ActiveRecord::Base
     return false if self.end_date.to_date < Time.zone.now.to_date
 
     if (self.state == STATE_RESERVED)
-      return true if (self.blocked_by_user == self.current_user) && self.can_create_reserve?
+      return true if (self.blocked_by_user == User.current_user) && self.can_create_reserve?
       return true if self.can_create_reserve?(self.kit.center_ids, :all)
     end
 
     if [STATE_UNAVAILABLE_OVERDUE, STATE_UNDER_REPAIR].include?(self.state)
-      return true if (self.blocked_by_user == self.current_user) && self.can_create_overdue_or_under_repair?
+      return true if (self.blocked_by_user == User.current_user) && self.can_create_overdue_or_under_repair?
       return true if can_create_overdue_or_under_repair?(self.kit.center_ids, :all)
     end
 
@@ -479,7 +482,7 @@ class KitSchedule < ActiveRecord::Base
     # if there is no past part - delete the object itself, else update the dates and save
     if end_date.to_date < self.start_date.to_date
       # notify the availability of future part
-      self.store_last_update!(self.current_user, self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
+      self.store_last_update!(User.current_user, self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE)
       self.notify(self.state, ::Kit::STATE_AVAILABLE, EVENT_DELETE, self.kit.centers)
       self.destroy
     else

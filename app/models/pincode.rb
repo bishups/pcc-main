@@ -1,12 +1,13 @@
 class Pincode < ActiveRecord::Base
   belongs_to :center
   attr_accessible :location_name, :pincode, :center, :center_id
-  validates :center, :presence => true
+#  validates :center, :presence => true
   validates :location_name, :presence => true, :uniqueness => true
   validates :pincode,  :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
 
   validates_uniqueness_of :pincode, :scope => :deleted_at
 
+  scope :unused, where({:center_id => nil})
 
   acts_as_paranoid
 
@@ -17,7 +18,7 @@ class Pincode < ActiveRecord::Base
       bindings[:controller].current_user.is?(:sector_coordinator)
     end
     object_label_method do
-      :location_name
+      :pincode
     end
     list do
       field :location_name

@@ -34,6 +34,8 @@ class Venue < ActiveRecord::Base
   :payment_contact_address,:payment_contact_mobile,:per_day_price
 
   after_create :mark_as_proposed!
+  after_save :notify_price_change
+
   has_and_belongs_to_many :centers
   attr_accessible :center_ids, :centers
   validate :has_centers?
@@ -56,11 +58,11 @@ class Venue < ActiveRecord::Base
   validates :name, :presence => true
   validates_uniqueness_of :name, :scope => :deleted_at
 
-  validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
+  validates :capacity, :presence => true,  :length => {:within => 1..5}, :numericality => {:only_integer => true }
   validates :contact_mobile, :presence => true, :length => { is: 10}, :numericality => {:only_integer => true }
   validates :pincode, :presence => true
   #validates :pin_code, :presence => true, :length => { is: 6}, :numericality => {:only_integer => true }
-  validates :per_day_price, :numericality => true, :allow_nil => true
+  validates :per_day_price, :length => {:within => 1..6},:numericality => {:only_integer => true }, :allow_nil => true
 
   validates :payment_contact_mobile, :length => { is: 10}, :numericality => {:only_integer => true }, :allow_blank => true
   validates :contact_email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}, :allow_blank => true
@@ -83,6 +85,7 @@ class Venue < ActiveRecord::Base
   EVENT_INSUFFICIENT_INFO = "Insufficient Info"
   EVENT_REQUEST_FINANCE_APPROVAL = "Request Finance Approval"
   EVENT_FINANCE_APPROVAL  = "Finance Approval"
+  EVENT_PER_DAY_PRICE_CHANGE = "Per Day Price Change"
 
   PROCESSABLE_EVENTS = [
     EVENT_APPROVE, EVENT_REJECT, EVENT_INSUFFICIENT_INFO, EVENT_FINANCE_APPROVAL, EVENT_REQUEST_FINANCE_APPROVAL
@@ -187,12 +190,26 @@ class Venue < ActiveRecord::Base
     end
   end
 
+  def notify_price_change
+    if self.per_day_price_changed?
+      last_price = changes[:per_day_price][0]
+      last_price = last_price.nil? ? 0 : last_price
+      new_price = changes[:per_day_price][1]
+      new_price = new_price.nil? ? 0 : new_price
+      # HACK - to make use of existing log update mechanism
+      last_state = "Per Day Price of Rs #{last_price}"
+      current_state = "Rs #{new_price}"
+      self.store_last_update!(nil, last_state, current_state, EVENT_PER_DAY_PRICE_CHANGE)
+      self.notify(last_state, current_state, EVENT_PER_DAY_PRICE_CHANGE, self.centers)
+    end
+  end
+
   def blockable_programs
     # NOTE: We **can** add a venue even after the program has started
     programs = Program.where('center_id IN (?) AND end_date > ? AND state NOT IN (?)', self.center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
     blockable_programs = []
     programs.each {|program|
-      blockable_programs << program if venue.can_be_blocked_by?(program)
+      blockable_programs << program if self.can_be_blocked_by?(program)
     }
     blockable_programs
   end
@@ -255,19 +272,20 @@ def can_reject?
   end
 
   def is_pcc_accounts?
-    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_sector_coordinator?
-    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def can_view?
-    return true if self.current_user.is? :any, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
+    return true if User.current_user.is? :any, :for => :any, :in_group => [:finance], :center_id => self.center_ids
     return false
   end
 
@@ -282,38 +300,32 @@ def can_reject?
       center_ids = self.center_ids
     end
 
-    return true if self.current_user.is? :venue_coordinator, :for => :any, :center_id => center_ids
+    return true if User.current_user.is? :venue_coordinator, :for => :any, :center_id => center_ids
     return false
   end
 
   def can_update?
-    return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
     return false
   end
 
   def can_view_schedule?
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :venue_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :venue_coordinator, :for => :any, :center_id => self.center_ids
     return false
   end
 
   # HACK - to route the call through venue object from the UI.
   def can_create_schedule?
     venue_schedule = VenueSchedule.new
-    venue_schedule.current_user = self.current_user
+    venue_schedule.current_user = User.current_user
     return venue_schedule.can_create?(self.center_ids)
   end
 
   def friendly_name
     ("#%d %s" % [self.id, self.name])
   end
-
-
-  def friendly_name_for_sms
-    "Venue ##{self.id} #{self.name} (#{(self.centers.map {|c| c[:name]}).join(", ")})"
-  end
-
 
   def url
     Rails.application.routes.url_helpers.venue_url(self)
@@ -381,9 +393,11 @@ def can_reject?
       field :commercial
       field :payment_contact_name
       field :payment_contact_address
-      field :payment_contact_mobile
+      field :payment_contact_mobile do
+        help "Required (for commercial venues)."
+      end
       field :per_day_price do
-        help "Required (for commerical venues)."
+        help "Required (for commercial venues)."
       end
     end
 

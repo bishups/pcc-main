@@ -24,3 +24,7 @@ every 1.day, :at => '00:01 am' do
   runner "ActivityLog.delete_old_logs"
   runner "NofiticationLog.delete_old_logs"
 end
+
+every 1.hour do
+  runner "User.send_pending_approval_emails"
+end

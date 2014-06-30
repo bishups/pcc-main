@@ -6,20 +6,22 @@
 
   <div class='page-body'>
     <div class='row'>
-      <div >
-        <div class="panel-heading">
-          <p>Namaskaram! Please use your Google account or Isha email account ( @ishafoundation.org ) to sing in</p>
-          <%= link_to "Sign in with Google", omniauth_authorize_path(resource_name, :google_oauth2), :class => 'btn btn-lg btn-primary' %> <br/>
-        </div>
-
-
+      <div class='col-md-6 col-md-offset-1'>
+          <p>Namaskaram! Please sign in using your @gmail.com (or @ishafoundation.org) mail id. </p>
+          <p> <%= link_to "Sign in with Google", omniauth_authorize_path(resource_name, :google_oauth2), :class => 'btn btn-lg btn-primary' %> </p><br/>
       </div>
     </div>
   </div>
 
+  <div class='page-body'>
+    <div class='row'>
+      <div class='col-md-6 col-md-offset-1'>
+        <p> If you have don't have a gmail account please sign in with your password. </p>
+       </div>
+     </div>
+  </div>
 
-
-<!--  <div class='page-body'>
+ <div class='page-body'>
     <div class='row'>
       <div class='col-md-6 col-md-offset-1'>
         <%= form_for(resource, :as => resource_name, :url => session_path(resource_name), :html => { :class => 'form' }) do |f| %>
@@ -32,11 +34,11 @@
               <%= f.password_field :password, :class => 'form-control' %>
             </div>
             <%= f.submit "Sign-in", :class => 'btn btn-lg btn-primary' %>
-            <%= link_to "Sign in with Google", omniauth_authorize_path(resource_name, :google_oauth2), :class => 'btn btn-lg btn-primary' %> <br/>
+            <%= link_to "Forgot your password?", new_password_path(resource_name) %><br />
         <% end %>
       </div>
     </div>
   </div>
- -->
+
 </div>
 </div>

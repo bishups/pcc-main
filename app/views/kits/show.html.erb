@@ -2,6 +2,7 @@
   <div class='col-md-12'>
     <%= render :partial => 'state_bar' %>
   </div>
+</div>
   <% if @kit.can_update? %>
       <div class='row'>
         <div class='col-md-12'>
@@ -78,7 +79,7 @@
         <tr>
           <td width='20%'><strong> Name </strong></td>
           <td>
-              <%= kit_item.kit_item_name.name %>
+              <%= kit_item.kit_item_type.name %>
           </td>
         </tr>
         <tr>

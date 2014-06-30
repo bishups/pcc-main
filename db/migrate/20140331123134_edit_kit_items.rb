@@ -1,6 +1,6 @@
 class EditKitItems < ActiveRecord::Migration
   def change
-    remove_column :kit_items, :name, :description, :type, :capacity
+    remove_column :kit_items, :name, :description, :capacity
     add_column :kit_items, :type, :string
     add_column :kit_items, :description, :string
     add_column :kit_items, :count, :integer

@@ -33,7 +33,8 @@ class VenueSchedule < ActiveRecord::Base
   belongs_to :venue
   validates :venue_id, :presence => true
   attr_accessible :venue_id, :venue
-  validates_uniqueness_of :program_id, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
+  validates_uniqueness_of :program_id, :on => :create, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
+  validates :per_day_price, :length => {:within => 1..6},:numericality => {:only_integer => true }, :allow_nil => true
 
 
   belongs_to :blocked_by_user, :class_name => User
@@ -50,13 +51,13 @@ class VenueSchedule < ActiveRecord::Base
   #after_create :connect_program!
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
-  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
+  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('(venue_schedules.id != ? OR ? IS NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   # given a venue and program, returns a relation containing all overlapping venue_schedule(s) for that venue (including the program itself - if present)
-  scope :all_overlapping, lambda { |venue, program| joins(:program).merge(Program.all_overlapping(program)).where('venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', ::VenueSchedule::FINAL_STATES, venue.id) }
+  scope :all_overlapping, lambda { |venue, program| joins(:program).merge(Program.all_overlapping(program)).where('venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', ::VenueSchedule::FINAL_STATES, venue.id) }
 
   # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
-  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('venue_schedules.id IS NOT ? AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id IS ?', vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
+  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('(venue_schedules.id != ? OR ? IS NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   STATE_UNKNOWN                   = "Unknown"
   STATE_BLOCK_REQUESTED           = "Block Requested"
@@ -127,7 +128,7 @@ class VenueSchedule < ActiveRecord::Base
     before_transition STATE_BLOCK_REQUESTED => STATE_UNAVAILABLE, :do => :is_venue_coordinator?
 
     event EVENT_BLOCK do
-      transition STATE_BLOCK_REQUESTED => STATE_BLOCKED
+      transition STATE_BLOCK_REQUESTED => STATE_BLOCKED, :if => lambda {|t| t.is_venue_coordinator? }
     end
     before_transition any => STATE_BLOCKED, :do => :before_block
     after_transition any => STATE_BLOCKED, :do => :after_block
@@ -165,7 +166,7 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING, :if => lambda {|vs| !vs.venue_free?}
     end
     before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAYMENT_PENDING do |vs, transition|
-        return !vs.venue_free?
+        !vs.venue_free?
     end
 
     event EVENT_BLOCK_EXPIRED do
@@ -178,7 +179,7 @@ class VenueSchedule < ActiveRecord::Base
     end
     before_transition STATE_AUTHORIZED_FOR_PAYMENT => STATE_PAID, :do => :venue_free?
     before_transition STATE_PAYMENT_PENDING => STATE_PAID do |vs, transition|
-        return !vs.venue_free? && vs.is_pcc_accounts?
+        !vs.venue_free? && vs.is_pcc_accounts?
     end
     after_transition any => STATE_PAID, :do => :on_paid
 
@@ -193,13 +194,7 @@ class VenueSchedule < ActiveRecord::Base
 
     event ::Program::FINISHED do
       transition STATE_IN_PROGRESS => STATE_CONDUCTED
-    end
-
-    event ::Program::FINISHED do
       transition (BLOCKED_STATES - PAID_STATES) => STATE_AVAILABLE_EXPIRED
-    end
-
-    event ::Program::FINISHED do
       transition STATE_BLOCK_REQUESTED => STATE_EXPIRED
     end
 
@@ -207,7 +202,7 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED, :if => lambda {|vs| !vs.venue_free? && vs.is_venue_coordinator? }
     end
     before_transition STATE_CONDUCTED => STATE_SECURITY_REFUNDED do |vs, transition|
-      return !vs.venue_free? && vs.is_venue_coordinator?
+      !vs.venue_free? && vs.is_venue_coordinator?
     end
 
     event EVENT_CLOSE do
@@ -215,10 +210,10 @@ class VenueSchedule < ActiveRecord::Base
       transition STATE_SECURITY_REFUNDED => STATE_CLOSED, :if => lambda {|vs| !vs.venue_free? && vs.is_center_coordinator? }
     end
     before_transition STATE_CONDUCTED => STATE_CLOSED do |vs, transition|
-      return vs.venue_free? && vs.is_center_coordinator?
+      vs.venue_free? && vs.is_center_coordinator?
     end
     before_transition STATE_SECURITY_REFUNDED => STATE_CLOSED do |vs, transition|
-      return !vs.venue_free? && vs.is_center_coordinator?
+      !vs.venue_free? && vs.is_center_coordinator?
     end
 
     # check for comments, before any transition
@@ -274,7 +269,7 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def venue_schedule_cancelled?
-    VenueSchedule.where('program_id IS ? AND venue_id IS ? AND state NOT IN (?)', self.program_id, self.venue_id, FINAL_STATES).count == 0
+    VenueSchedule.where('(program_id = ? OR program_id IS NULL) AND (venue_id = ? OR venue_id IS NULL) AND state NOT IN (?)', self.program_id, self.venue_id, FINAL_STATES).count == 0
   end
 
   def trigger_block_expire
@@ -339,7 +334,8 @@ class VenueSchedule < ActiveRecord::Base
 
   def is_active?
     return false if FINAL_STATES.include?(self.state)
-    return false unless self.program.is_active?
+    # EVEN if program is not active, we not mark venue as inactive, unless it is specifically marked so.
+    #return false unless self.program.is_active?
     return true
   end
 
@@ -399,7 +395,7 @@ class VenueSchedule < ActiveRecord::Base
         ::Program::DROPPED => [STATE_BLOCK_REQUESTED, STATE_BLOCKED, STATE_APPROVAL_REQUESTED],
         ::Program::ANNOUNCED => [STATE_PAID],
         ::Program::STARTED => [STATE_ASSIGNED],
-        ::Program::FINISHED => [STATE_IN_PROGRESS] + (CONNECTED_STATES - PAID_STATES),
+        ::Program::FINISHED => [STATE_IN_PROGRESS] + (BLOCKED_STATES - PAID_STATES) + [STATE_BLOCK_REQUESTED]
 
     }
 
@@ -416,45 +412,49 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def is_center_coordinator?
-    return true if self.current_user.is? :center_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :center_coordinator, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_venue_coordinator?
-    return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :venue_coordinator, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_sector_coordinator?
-    return true if self.current_user.is? :sector_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :sector_coordinator, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_center_scheduler?
-    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def is_pcc_accounts?
-    return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+    return true if User.current_user.is? :pcc_accounts, :center_id => self.program.center_id
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
   def can_create?(center_ids = self.program.center_id)
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
     return false
   end
 
   def can_update?
-    return true if self.current_user.is? :center_scheduler, :center_id => self.program.center_id
-    return true if self.current_user.is? :venue_coordinator, :center_id => self.program.center_id
-    return true if self.current_user.is? :pcc_accounts, :center_id => self.program.center_id
+    return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
+    return true if User.current_user.is? :venue_coordinator, :center_id => self.program.center_id
+    return true if User.current_user.is? :pcc_accounts, :center_id => self.program.center_id
     return false
+  end
+
+  def can_view?
+    self.venue.can_view_schedule?
   end
 
   def url
