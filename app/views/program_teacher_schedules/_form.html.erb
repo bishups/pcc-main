@@ -5,8 +5,9 @@
   <% if @program_teacher_schedule.program_id %>
       <div class='form-group'>
         <label for='program_id'>Program ID</label>
-        <% program = Program.find(params[:program_id]) %>
-        <%= f.text_field :program_id, :value=> "#{program.pid} - #{program.name}", :readonly => true, :id => 'program_id_field', :class => 'form-control' %>
+        <% program = Program.find(params[:program_id]) if params[:program_id]  %>
+        <%= f.text_field :program_display_name, :value=> "#{program.pid if program} - #{program.name if program}", :readonly => true, :id => 'program_id_field', :class => 'form-control' %>
+        <%= f.hidden_field :program_id, :value=> params[:program_id], :class => 'form-control' %>
       </div>
       <% if @program_teacher_schedule.program.has_co_teacher? %>
           <div class='form-group'>
@@ -17,7 +18,7 @@
       <div class='form-group'>
         <label for='teacher_id'>Teacher</label>
         <% blockable =  @blockable_teachers %>
-        <% if blockable.count > 0 %>
+        <% if blockable and blockable.count > 0 %>
             <%= f.select :teacher_id, options_for_select(blockable.map {|t| [t.user.fullname, t.id] }), {}, :id => 'teachers_select', :class => 'form-control' %>
         <% else %>
             <% submit_disabled = true %>
