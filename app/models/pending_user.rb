@@ -5,7 +5,7 @@ rails_admin do
 
   navigation_label 'Access Privilege'
   visible do
-   true # PendingUser.exists?(:approver_email=> bindings[:controller].current_user.email)  or bindings[:controller].current_user.is?(:super_admin)
+    bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zonal_coordinator) or bindings[:controller].current_user.is?(:sector_coordinator) or bindings[:controller].current_user.is?(:teacher_training_department) or bindings[:controller].current_user.is?(:zao)
   end
   weight 0
   list do
@@ -14,7 +14,6 @@ rails_admin do
     field :mobile
     field :email
     field :type
-
   end
   edit do
     group :default do

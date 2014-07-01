@@ -77,6 +77,9 @@ class User < ActiveRecord::Base
   has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
+  has_many :zone_users, :through => :zone_centers, :source => :users
+  has_many :teachers
+
   #has_many :teacher_schedules
   #has_many :teacher_slots
 
@@ -98,6 +101,7 @@ class User < ActiveRecord::Base
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :help_desk            => { :text => "Help Desk", :access_level => 0, :group => [:help_desk] },
           :any                  => {:text => "Any", :access_level => -1, :group => []}
     }
 
@@ -352,22 +356,6 @@ class User < ActiveRecord::Base
     self.fullname
   end
 
-  def programs
-    Program.all
-  end
-
-  def venues
-    Venue.all
-  end
-
-  def kits
-    Kit.all
-  end
-
-  def teachers
-    Teacher.all
-  end
-
   def resource_name(resource)
     type = resource.class.name.demodulize
     aps = self.access_privileges
@@ -399,6 +387,9 @@ class User < ActiveRecord::Base
     role_str
   end
 
+  def display_in_auto_complete
+    "#{email}"
+  end
 
   # this is a cron job, run through whenever gem
   # from the config/schedule.rb file
@@ -410,7 +401,6 @@ class User < ActiveRecord::Base
       user.update_attribute(:approval_email_sent, true)
     }
   end
-
 
   rails_admin do
 

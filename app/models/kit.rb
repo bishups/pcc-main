@@ -148,7 +148,7 @@ class Kit < ActiveRecord::Base
 
 
   def can_view?
-    return true if self.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
+    return true if User.current_user.is? :any, :for => :any, :in_group => [:geography], :center_id => self.center_ids
     return false
   end
 
@@ -163,20 +163,20 @@ class Kit < ActiveRecord::Base
       center_ids = self.center_ids
     end
 
-    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => center_ids
+    return true if User.current_user.is? :kit_coordinator, :for => :any, :center_id => center_ids
     return false
   end
 
   def can_update?
     # This condition is not needed
-    #return true if self.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    #return true if User.current_user.is? :sector_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
     return false
   end
 
   def can_view_schedule?
-    return true if self.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
-    return true if self.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :kit_coordinator, :for => :any, :center_id => self.center_ids
     return false
   end
 
@@ -184,21 +184,21 @@ class Kit < ActiveRecord::Base
   # HACK - to route the call through kit object from the UI.
   def can_create_schedule?
     kit_schedule = KitSchedule.new
-    kit_schedule.current_user = self.current_user
+    kit_schedule.current_user = User.current_user
     return kit_schedule.can_create?(self.center_ids)
   end
 
   # HACK - to route the call through kit object from the UI.
   def can_create_reserve_schedule?
     kit_schedule = KitSchedule.new
-    kit_schedule.current_user = self.current_user
+    kit_schedule.current_user = User.current_user
     return kit_schedule.can_create_reserve?(self.center_ids)
   end
 
   # HACK - to route the call through kit object from the UI.
   def can_create_overdue_or_under_repair_schedule?
     kit_schedule = KitSchedule.new
-    kit_schedule.current_user = self.current_user
+    kit_schedule.current_user = User.current_user
     return kit_schedule.can_create_overdue_or_under_repair?(self.center_ids)
   end
 

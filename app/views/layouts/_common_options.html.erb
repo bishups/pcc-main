@@ -1,33 +1,39 @@
 <ul class="nav navbar-nav navbar-right">
   <% unless user_signed_in? %>
-    <li>
-      <%= link_to "/users/sign_up" do %>
-        <i class='icon-desktop'></i> Register
-      <% end %>
-    </li>
-    <li>
-      <%= link_to "/users/sign_in" do %>
-        <i class='icon-signin'></i> Sign-in
-      <% end %>
-    </li>
+      <li>
+        <%= link_to "/users/sign_up" do %>
+            <i class='icon-desktop'></i> Register
+        <% end %>
+      </li>
+      <li>
+        <%= link_to "/users/sign_in" do %>
+            <i class='icon-signin'></i> Sign-in
+        <% end %>
+      </li>
   <% else %>
-    <li>
-     <%= link_to edit_user_registration_path(current_user) do %>
-        <i class='icon-user'></i> Edit Profile
+      <% if current_user.is?(:super_admin) or  current_user.is?(:zonal_coordinator) or current_user.is?(:zao) %>
+          <li>
+            <a href="/login_as_other_user"> Login as other user</a>
+          </li>
       <% end %>
-    </li>
-    <li>
-      <%= link_to "/users/sign_out", :method => :delete do %>
-        <i class='icon-signout'></i> Sign-out
-      <% end %>
-    </li>
+      <li>
+        <%= link_to edit_user_registration_path(current_user) do %>
+            <i class='icon-user'></i> Edit Profile
+        <% end %>
+      </li>
+      <li>
+        <%= link_to "/users/sign_out", :method => :delete do %>
+            <i class='icon-signout'></i> Sign-out
+        <% end %>
+      </li>
   <% end %>
   <!-- TODO - removing about for now -->
   <% if false %>
-  <li>
-    <a href="/about">
-      <i class='icon-question'></i> About
-    </a>
-  </li>
+      <li>
+        <a href="/about">
+          <i class='icon-question'></i> About
+        </a>
+      </li>
   <% end %>
 </ul>
+

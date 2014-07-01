@@ -227,7 +227,7 @@ class TeacherSchedule < ActiveRecord::Base
     pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
     pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
     pts.teacher_role = pts.teacher_schedule.co_teacher ? ::TeacherSchedule::ROLE_CO_TEACHER : ::TeacherSchedule::ROLE_MAIN_TEACHER
-    pts.current_user = self.current_user
+    pts.current_user = User.current_user
 
     # verify when all the events can come
     if valid_states[event].include?(pts.state)
@@ -245,26 +245,26 @@ class TeacherSchedule < ActiveRecord::Base
   def can_create?
     center_ids = self.teacher.center_ids
     if self.teacher.full_time?
-      return true if self.current_user.is? :zao, :center_id => center_ids
-      return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
+      return true if User.current_user.is? :zao, :center_id => center_ids
+      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
     else
-      return true if self.current_user == self.teacher.user
+      return true if User.current_user == self.teacher.user
     end
     # super_admin can create schedule on behalf of the teacher
-    return true if self.current_user.is? :super_admin
+    return true if User.current_user.is? :super_admin
     return false
   end
 
   def can_update?
     center_ids = self.teacher.center_ids
     if self.teacher.full_time?
-      return true if self.current_user.is? :zao, :center_id => center_ids
-      return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
+      return true if User.current_user.is? :zao, :center_id => center_ids
+      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
     else
-      return true if self.current_user == self.teacher.user
+      return true if User.current_user == self.teacher.user
     end
     # super_admin can update schedule on behalf of the teacher
-    return true if self.current_user.is? :super_admin
+    return true if User.current_user.is? :super_admin
     return false
   end
 
@@ -278,13 +278,13 @@ class TeacherSchedule < ActiveRecord::Base
   def can_view_schedule?
     center_id = self.program.nil? ? self.teacher.center_ids : self.program.center_id
     if self.teacher.full_time?
-      return true if self.current_user.is? :zao, :center_id => center_id
-      return true if self.current_user.is? :full_time_teacher_scheduler, :center_id => center_id
+      return true if User.current_user.is? :zao, :center_id => center_id
+      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_id
     else
-      return true if self.current_user.is? :center_scheduler, :center_id => center_id
-      return true if (self.current_user.is? :full_time_teacher_scheduler, :center_id => center_id) and (self.teacher.part_time_co_teacher?)
+      return true if User.current_user.is? :center_scheduler, :center_id => center_id
+      return true if (User.current_user.is? :full_time_teacher_scheduler, :center_id => center_id) and (self.teacher.part_time_co_teacher?)
     end
-    return true if self.current_user == self.teacher.user
+    return true if User.current_user == self.teacher.user
     return false
   end
 
@@ -323,7 +323,7 @@ class TeacherSchedule < ActiveRecord::Base
       end
       # send notifications every x days - depending upon the program type that the teacher is enabled for
       every_x_days = Teacher.joins("JOIN program_types_teachers ON teachers.id = program_types_teachers.teacher_id").joins("JOIN program_types ON program_types.id = program_types_teachers.program_type_id").where("teachers.id = ?", ts.teacher_id).minimum("program_types.no_of_days")
-      if (ts.no_of_days % every_x_days == 0)
+      if (ts.no_of_days % every_x_days.to_i == 0)
         ts.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, EVENT_EXPIRED, ts.centers, ts.teacher) if ts.state == STATE_AVAILABLE_EXPIRED
       end
     }
@@ -347,7 +347,7 @@ class TeacherSchedule < ActiveRecord::Base
     # if there is no past part - delete the object itself, else update the dates and save
     if end_date.to_date < self.start_date.to_date
       # notify the availability of future part
-      self.store_last_update!(self.current_user, self.state, ::TeacherSchedule::STATE_AVAILABLE, EVENT_DELETE)
+      self.store_last_update!(User.current_user, self.state, ::TeacherSchedule::STATE_AVAILABLE, EVENT_DELETE)
       self.notify(self.state, ::TeacherSchedule::STATE_AVAILABLE, EVENT_DELETE, self.teacher.centers, self.teacher)
       self.destroy
     else
