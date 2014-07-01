@@ -62,10 +62,10 @@ class User < ActiveRecord::Base
   EVENT_CREATE              = "Create"
   EVENT_APPROVE             = "Approve"
 
-  has_many :notification_logs
-  has_many :activity_logs
+  has_many :notification_logs, :dependent => :destroy
+  has_many :activity_logs, :dependent => :destroy
   attr_accessible :notification_logs, :notification_log_ids, :activity_logs, :activity_log_ids
-  has_many :access_privileges
+  has_many :access_privileges, :dependent => :destroy
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
 
@@ -78,7 +78,7 @@ class User < ActiveRecord::Base
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
   has_many :zone_users, :through => :zone_centers, :source => :users
-  has_many :teachers
+  has_many :teachers, :dependent => :destroy
 
   #has_many :teacher_schedules
   #has_many :teacher_slots

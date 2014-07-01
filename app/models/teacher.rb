@@ -1,8 +1,8 @@
 class Teacher < ActiveRecord::Base
   include CommonFunctions
 
-  has_many :activity_logs, :as => :model, :inverse_of => :model
-  has_many :notification_logs, :as => :model, :inverse_of => :model
+  has_many :activity_logs, :as => :model, :inverse_of => :model, :dependent => :destroy
+  has_many :notification_logs, :as => :model, :inverse_of => :model, :dependent => :destroy
 
   acts_as_paranoid
 
@@ -44,7 +44,7 @@ class Teacher < ActiveRecord::Base
   validates :t_no, :presence => true, :length => { :in => 1..9}
 #  validates :email, :uniqueness => true, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
 
-  has_many :teacher_schedules
+  has_many :teacher_schedules, :dependent => :destroy
   has_many :timings, through: :teacher_schedules
   attr_accessible :teacher_schedules, :teacher_schedule_ids
 
