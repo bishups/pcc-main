@@ -4,7 +4,9 @@ class ActivityLogsController < ApplicationController
   # GET /activity_logs.json
   def index
     # HACK - deleting older logs
-    ActivityLog.delete_old_logs
+
+    # Adding this in cronjob.
+    # ActivityLog.delete_old_logs
 
     if current_user.is? :super_admin
       @activity_logs = ActivityLog.order("date DESC")
