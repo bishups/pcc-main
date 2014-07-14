@@ -18,6 +18,7 @@ class AccessPrivilege < ActiveRecord::Base
   has_many :permissions, :through => :role
 
   validates :role, :presence => true
+  validates_uniqueness_of :role_id, :scope => [:user_id, :resource_id, :resource_type]
 
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role, :user, :user_id
   validate :is_role_valid?
