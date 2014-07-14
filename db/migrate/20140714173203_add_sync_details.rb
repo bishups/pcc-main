@@ -17,7 +17,7 @@ class AddSyncDetails < ActiveRecord::Migration
       add_column :users, :sync_id, :string
 
       add_column :roles_users, :sync_ts, :string
-      remove_column :roles_users, :sync_id
+      #remove_column :roles_users, :sync_id
       add_column :roles_users, :sync_id, :string
 
       add_column :access_privileges, :sync_ts, :string
