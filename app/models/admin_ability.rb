@@ -2,7 +2,7 @@ class AdminAbility
   include CanCan::Ability
 
   def initialize(user)
-    can :access, :rails_admin if not user.accessible_centers.empty? # Only user's having at least one center will have this access.
+    can :access, :rails_admin if not user.access_privileges .empty? # Only user's having at least one center will have this access.
     can :dashboard #if user.is?(:kit_coordinator) or user.is?(:venue_coordinator) or user.is?(:teacher_training_department)
     can :manage, PendingUser, {:approver_email => user.email}
     if user.is?(:super_admin)
@@ -50,6 +50,7 @@ class AdminAbility
         can [:read,:update], Zone, {:id => user.accessible_zones.map(&:id) }
         can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
         can :manage, Pincode
+        can :read, ProgramDonation
         can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :zao, :sector_coordinator].include?(k)}.compact}
       end
 
