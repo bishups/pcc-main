@@ -118,6 +118,7 @@ class AccessPrivilege < ActiveRecord::Base
         end
       end
     end
+    # No need to show Teacher while creating Access.
     nested do
       field :role  do
         inline_edit false
