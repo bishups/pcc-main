@@ -83,6 +83,7 @@ class AccessPrivilege < ActiveRecord::Base
       field :role
       field :resource
     end
+
     edit do
       field :role do
         read_only do
@@ -100,8 +101,39 @@ class AccessPrivilege < ActiveRecord::Base
         #   }
         # end
       end
-      field :resource
+      field :resource do
+        read_only do
+          bindings[:object].role.name == ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text] if bindings[:object].role
+        end
+        inline_edit false
+        inline_add false
+        # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
+        associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          role = bindings[:object]
+          Proc.new { |scope|
+            # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
+            scope = scope.where("name NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]]) #if role.present?
+          }
+        end
+      end
     end
+    nested do
+      field :role  do
+        inline_edit false
+        inline_add false
+        # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
+        associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          role = bindings[:object]
+          Proc.new { |scope|
+            # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
+            scope = scope.where("name NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]]) #if role.present?
+          }
+        end
+      end
+    end
+
   end
 
   def role_name
