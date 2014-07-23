@@ -28,7 +28,7 @@ class AdminAbility
       end
 
       if user.is?(:center_coordinator)
-        can :update, Pincode
+        can :read, Pincode
       end
 
       if user.is?(:sector_coordinator)
@@ -49,7 +49,7 @@ class AdminAbility
         can :manage, AccessPrivilege, {:resource_type => "Zone", :resource_id => user.accessible_zones}
         can [:read], Zone, {:id => user.accessible_zones.map(&:id) }
       #  can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
-        can :manage, Pincode
+        can :read, Pincode
         can :read, ProgramDonation
         can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :zao, :sector_coordinator].include?(k)}.compact}
       end
