@@ -48,7 +48,7 @@ end
 class User < ActiveRecord::Base
   include CommonFunctions
 
-  require Rails.root.join('lib', 'devise', 'encryptors', 'md5')
+#  require Rails.root.join('lib', 'devise', 'encryptors', 'md5')
 
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
@@ -405,12 +405,12 @@ class User < ActiveRecord::Base
     }
   end
 
-  def password_salt
-    'no salt'
-  end
-
-  def password_salt=(new_salt)
-  end
+  # def password_salt
+  #   'no salt'
+  # end
+  #
+  # def password_salt=(new_salt)
+  # end
 
   rails_admin do
 
