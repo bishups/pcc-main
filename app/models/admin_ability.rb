@@ -50,7 +50,7 @@ class AdminAbility
         can [:read], Zone, {:id => user.accessible_zones.map(&:id) }
         can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
       #  can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
-        can :read, Pincode
+        can :manage, Pincode
         can :read, ProgramDonation
         can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :zao, :sector_coordinator].include?(k)}.compact}
       end
