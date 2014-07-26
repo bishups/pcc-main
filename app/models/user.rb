@@ -47,10 +47,13 @@ end
 
 class User < ActiveRecord::Base
   include CommonFunctions
+
+  require Rails.root.join('lib', 'devise', 'encryptors', 'md5')
+
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable, :timeoutable,
+  devise :database_authenticatable, :timeoutable,:encryptable,
          :recoverable, :rememberable, :trackable, :registerable, :omniauthable, :omniauth_providers => [:google_oauth2]
 
   acts_as_paranoid
@@ -400,6 +403,13 @@ class User < ActiveRecord::Base
       user.log_notify(user, STATE_UNKNOWN, STATE_REQUESTED_APPROVAL, EVENT_CREATE, "Approver email: #{user.approver_email}")
       user.update_attribute(:approval_email_sent, true)
     }
+  end
+
+  def password_salt
+    'no salt'
+  end
+
+  def password_salt=(new_salt)
   end
 
   rails_admin do

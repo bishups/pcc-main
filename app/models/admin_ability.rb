@@ -48,6 +48,7 @@ class AdminAbility
         can :manage, AccessPrivilege, {:resource_type => "Sector", :resource_id => user.accessible_sectors}
         can :manage, AccessPrivilege, {:resource_type => "Zone", :resource_id => user.accessible_zones}
         can [:read], Zone, {:id => user.accessible_zones.map(&:id) }
+        can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
       #  can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
         can :read, Pincode
         can :read, ProgramDonation
