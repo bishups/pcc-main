@@ -7,10 +7,15 @@ class UserController < ApplicationController
     users = []
     if current_user.is?(:super_admin)
       users = User.where('email LIKE ?', "%#{term}%").order(:email)
+      render :json => users.map { |user| {:id => user.id, :label => user.email, :value => user.email} }
     else
       users = current_user.zone_users.where('email LIKE ?', "%#{term}%").order(:email)
+      users_collection = users.map do |user|
+       # if not ( user.is?(:teacher_training_department) or user.is?(:pcc_accounts) )
+          {:id => user.id, :label => user.email, :value => user.email}
+       # end
+      end
+      render :json => users_collection.compact
     end
-    render :json => users.map { |user| {:id => user.id, :label => user.email, :value => user.email} }
   end
-
 end
