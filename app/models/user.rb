@@ -80,7 +80,10 @@ class User < ActiveRecord::Base
   has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
-  has_many :zone_users, :through => :zone_centers, :source => :users
+  has_many :zone_center_users, :through => :zone_centers, :source => :users
+  has_many :zone_sector_users, :through => :zone_sectors, :source => :users
+  has_many :zone_users, :through => :zones, :source => :users
+
   has_many :teachers, :dependent => :destroy
 
   #has_many :teacher_schedules
@@ -150,6 +153,11 @@ class User < ActiveRecord::Base
       user.log_notify(user, STATE_REQUESTED_APPROVAL, STATE_APPROVED, EVENT_APPROVE, "")
     end
   end
+
+  def all_users_under_zone
+    self.zone_users + self.zone_sector_users + self.zone_center_users
+  end
+
 
   def force_password_reset?
     self.password_reset_at.nil? or ((Time.now - self.password_reset_at) > 30.days)
