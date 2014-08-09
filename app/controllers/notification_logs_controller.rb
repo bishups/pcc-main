@@ -4,7 +4,9 @@ class NotificationLogsController < ApplicationController
   # GET /notification_logs.json
   def index
     # HACK - deleting older logs
-    NotificationLog.delete_old_logs
+
+    #Added in cronjob
+    # NotificationLog.delete_old_logs
 
     if current_user.is? :super_admin
       @notification_logs = NotificationLog.order("date DESC")

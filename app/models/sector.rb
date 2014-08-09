@@ -12,6 +12,8 @@
 class Sector < ActiveRecord::Base
   belongs_to :zone, :inverse_of => :sectors
   has_many :centers, :inverse_of => :sector
+  has_many :users, :through => :access_privileges
+
   validates :name,:zone, :presence => true
   validates_uniqueness_of :name, :scope => :deleted_at
 

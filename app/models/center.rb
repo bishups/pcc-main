@@ -53,7 +53,7 @@ class Center < ActiveRecord::Base
         inline_add do
           false
         end
-        associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
+        #associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           # bindings[:object] & bindings[:controller] are available, but not in scope's block!
           Proc.new { |scope|

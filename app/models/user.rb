@@ -47,6 +47,9 @@ end
 
 class User < ActiveRecord::Base
   include CommonFunctions
+
+#  require Rails.root.join('lib', 'devise', 'encryptors', 'md5')
+
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
@@ -62,10 +65,10 @@ class User < ActiveRecord::Base
   EVENT_CREATE              = "Create"
   EVENT_APPROVE             = "Approve"
 
-  has_many :notification_logs
-  has_many :activity_logs
+  has_many :notification_logs, :dependent => :destroy
+  has_many :activity_logs, :dependent => :destroy
   attr_accessible :notification_logs, :notification_log_ids, :activity_logs, :activity_log_ids
-  has_many :access_privileges
+  has_many :access_privileges, :dependent => :destroy
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
 
@@ -77,8 +80,11 @@ class User < ActiveRecord::Base
   has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
-  has_many :zone_users, :through => :zone_centers, :source => :users
-  has_many :teachers
+  has_many :zone_center_users, :through => :zone_centers, :source => :users
+  has_many :zone_sector_users, :through => :zone_sectors, :source => :users
+  has_many :zone_users, :through => :zones, :source => :users
+
+  has_many :teachers, :dependent => :destroy
 
   #has_many :teacher_schedules
   #has_many :teacher_slots
@@ -147,6 +153,11 @@ class User < ActiveRecord::Base
       user.log_notify(user, STATE_REQUESTED_APPROVAL, STATE_APPROVED, EVENT_APPROVE, "")
     end
   end
+
+  def all_users_under_zone
+    self.zone_users + self.zone_sector_users + self.zone_center_users
+  end
+
 
   def force_password_reset?
     self.password_reset_at.nil? or ((Time.now - self.password_reset_at) > 30.days)
@@ -401,6 +412,13 @@ class User < ActiveRecord::Base
       user.update_attribute(:approval_email_sent, true)
     }
   end
+
+  # def password_salt
+  #   'no salt'
+  # end
+  #
+  # def password_salt=(new_salt)
+  # end
 
   rails_admin do
 

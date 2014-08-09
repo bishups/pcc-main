@@ -2,7 +2,7 @@ class AdminAbility
   include CanCan::Ability
 
   def initialize(user)
-    can :access, :rails_admin if not user.accessible_centers.empty? # Only user's having at least one center will have this access.
+    can :access, :rails_admin if not user.access_privileges .empty? # Only user's having at least one center will have this access.
     can :dashboard #if user.is?(:kit_coordinator) or user.is?(:venue_coordinator) or user.is?(:teacher_training_department)
     can :manage, PendingUser, {:approver_email => user.email}
     if user.is?(:super_admin)
@@ -28,14 +28,14 @@ class AdminAbility
       end
 
       if user.is?(:center_coordinator)
-        can :update, Pincode
+        can :read, Pincode
       end
 
       if user.is?(:sector_coordinator)
         can [:read,:update], [User], {:id => user.accessible_centers.map(&:user_ids).flatten.uniq + User.where(:approver_email => user.email).uniq.map(&:id) }
-        can [:read,:update], Sector, {:id => user.accessible_sectors.map(&:id)}
+        can [:read], Sector, {:id => user.accessible_sectors.map(&:id)}
         can :read, Zone, {:id => Zone.by_centers(user.accessible_centers.uniq).uniq }
-        can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
+        can :read, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
         can :manage, AccessPrivilege, {:resource_type => "Center", :resource_id => user.accessible_centers}
         #can [:read, :update], Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
         can [:read, :update], Teacher, {:zone => {:id => user.accessible_zones(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
@@ -47,8 +47,11 @@ class AdminAbility
         can :manage, AccessPrivilege, {:resource_type => "Center", :resource_id => user.accessible_centers}
         can :manage, AccessPrivilege, {:resource_type => "Sector", :resource_id => user.accessible_sectors}
         can :manage, AccessPrivilege, {:resource_type => "Zone", :resource_id => user.accessible_zones}
-        can [:read,:update], Zone, {:id => user.accessible_zones.map(&:id) }
-        can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
+        can [:read], Zone, {:id => user.accessible_zones.map(&:id) }
+        can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
+      #  can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
+        can :manage, Pincode
+        can :read, ProgramDonation
         can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :zao, :sector_coordinator].include?(k)}.compact}
       end
 

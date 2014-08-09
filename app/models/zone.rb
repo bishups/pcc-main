@@ -12,6 +12,8 @@ class Zone < ActiveRecord::Base
   has_many :sectors
   has_many :centers, :through => :sectors
   has_many :access_privileges, :as => :resource, :inverse_of => :resource
+  has_many :users, :through => :access_privileges
+
   acts_as_paranoid
 
   validates :name, :presence => true
@@ -27,6 +29,7 @@ class Zone < ActiveRecord::Base
   def self.by_sectors(sectors)
     joins(:sectors).where(:sectors=>{:id=>sectors}).uniq
   end
+
 
 
   # usage -> ::Zone::all_sectors_in_one_zone? [sector1, sector2, sector3]

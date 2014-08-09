@@ -19,6 +19,8 @@
     <% elsif @kit %>
         <%= hidden_field_tag 'kit_id', @kit.id %>
         <div class='form-group'>
+          <label for='kit_name'>Kit Name</label>
+          <%= f.text_field :kit_name, :value=> @kit.name, :readonly => true, :class => 'form-control' %>
           <label for='kit_id'>Kit ID</label>
           <%= f.text_field :kit_id, :value=> @kit.id, :readonly => true, :class => 'form-control' %>
           <label for='program_id'>Program</label>

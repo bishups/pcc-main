@@ -29,9 +29,9 @@
       <li><a href="<%= notification_logs_path %>">Notification </a></li>
     </ul>
   </li>  <!-- TODO: disabling the equiries interface for now, will be put in later if needed after cleanup -->
+  <% end %>
   <!-- TODO: Enforce role -->
-    <% # if  current_user.is?(:kit_coordinator) or current_user.is?(:venue_coordinator)  or current_user.is?(:teacher_training_department) %>
-          <li><a href="<%= rails_admin_path %>"> Admin Panel </a></li>
-    <% # end %>
+  <% if current_user.is? :super_admin or not current_user.access_privileges.empty?   %>
+      <li><a href="<%= rails_admin_path %>"> Admin Panel </a></li>
   <% end %>
 </ul>
