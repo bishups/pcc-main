@@ -455,7 +455,7 @@ class Teacher < ActiveRecord::Base
           # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
           # but here we want to make this field read, only if use is super admin.
           if bindings[:controller].current_user.is?(:super_admin)
-            true
+            false #true - Temporarily allowing user super admin to create Teachers.
           elsif bindings[:controller].current_user.is?(:teacher_training_department)
             false
           else
@@ -471,7 +471,7 @@ class Teacher < ActiveRecord::Base
           # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
           # but here we want to make this field read, only if use is super admin.
           if bindings[:controller].current_user.is?(:super_admin)
-             true
+            false #true - Temporarily allowing user super admin to create Teachers.
           elsif bindings[:controller].current_user.is?(:teacher_training_department)
             false
           else
@@ -487,7 +487,8 @@ class Teacher < ActiveRecord::Base
           # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
           # but here we want to make this field read, only if use is super admin.
           if bindings[:controller].current_user.is?(:super_admin)
-            true
+            false #true - Temporarily allowing user super admin to create Teachers.
+            false #true - Temporarily allowing user super admin to create Teachers.
           elsif bindings[:controller].current_user.is?(:teacher_training_department)
             false
           else
