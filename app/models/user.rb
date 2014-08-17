@@ -442,45 +442,45 @@ class User < ActiveRecord::Base
       end
       field :firstname do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :lastname do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :address do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :mobile do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :phone do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Optional. Format of stdcode-number (e.g, 0422-2515345)."
       end
       field :email do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end
       field :password do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end
       field :password_confirmation do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end
