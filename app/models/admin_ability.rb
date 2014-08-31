@@ -40,7 +40,7 @@ class AdminAbility
         #can [:read, :update], Teacher, {:centers => {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
         can [:read, :update], Teacher, {:zone => {:id => user.accessible_zones(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}}
         #   can [:read, :update], Teacher.joins(:centers).where(["centers.id in (?)", user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id)]).uniq
-        can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer].include?(k)}.compact}
+        can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer].include?(k)}.compact}
       end
 
       if user.is?(:zonal_coordinator) or user.is?(:zao)
@@ -52,7 +52,7 @@ class AdminAbility
       #  can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
         can :manage, Pincode
         can :read, ProgramDonation
-        can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :center_treasurer, :zao, :sector_coordinator].include?(k)}.compact}
+        can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer, :zao, :sector_coordinator].include?(k)}.compact}
       end
 
       if user.is?(:teacher_training_department)
