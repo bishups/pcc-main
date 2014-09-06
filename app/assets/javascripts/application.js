@@ -13,6 +13,7 @@
 //= require jquery
 //= require jquery_ujs
 //= require bootstrap.min
+//= require bootstrap-hover-dropdown.min
 //= require jquery-ui
 //= require_tree .
 //= require bootstrap-datetimepicker/bootstrap-datetimepicker

@@ -6,7 +6,7 @@
 <ul class="nav navbar-nav">
   <% if (current_user.is? :super_admin) or center_ids.count > 0 %>
       <li class="dropdown">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Schedules <b class="caret"></b></a>
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">Schedules <b class="caret"></b></a>
         <ul class="dropdown-menu">
           <% if in_geography or in_pcc %>
             <li><a href="<%= programs_path %>">Program</a></li>
@@ -23,7 +23,7 @@
         </ul>
       </li>
   <li class="dropdown">
-    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Logs <b class="caret"></b></a>
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">Logs <b class="caret"></b></a>
     <ul class="dropdown-menu">
       <li><a href="<%= activity_logs_path %>"> Activity </a></li>
       <li><a href="<%= notification_logs_path %>">Notification </a></li>
