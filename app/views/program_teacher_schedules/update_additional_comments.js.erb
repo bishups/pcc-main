@@ -1,1 +1,1 @@
-$('#additional_comments').attr("value", '<%= @additional_comments %>' );
+$('#additional_comments').attr("value", '<%= escape_javascript(@additional_comments) %>' );
