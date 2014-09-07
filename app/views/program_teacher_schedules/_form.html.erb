@@ -25,7 +25,11 @@
             <%= f.select :teacher_id, options_for_select(['None Available']), {:disabled => true}, :id => 'teachers_select', :class => 'form-control' %>
         <% end %>
       </div>
-   <% elsif @program_teacher_schedule.teacher %>
+      <div class='form-group'>
+        <label for='additional_comments'>Additional Comments</label>
+        <%= f.text_field :additional_comments, :value=> @additional_comments, :readonly => true, :id => 'additional_comments', :class => 'form-control' %>
+      </div>
+    <% elsif @program_teacher_schedule.teacher %>
         <%#= hidden_field_tag 'teacher_id', @program_teacher_schedule.teacher_id %>
         <div class='form-group'>
           <label for='teacher_id'>Teacher ID</label>
@@ -75,6 +79,15 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
                 data: {
                     teacher_role_val : $('#teacher_role_select_2').val(),
                     teacher_id : $('#teacher_id_field').val()
+                },
+                dataType: "script"
+            });
+        });
+        $('#teachers_select').change(function() {
+            $.ajax({
+                url: "<%= update_program_teacher_schedule_additional_comments_path %>",
+                data: {
+                    teacher_id : $('#teachers_select').val(),
                 },
                 dataType: "script"
             });

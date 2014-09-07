@@ -12,6 +12,7 @@ class ProgramTeacherSchedulesController < ApplicationController
 
     if params.has_key?(:program_id)
       load_blockable_teachers!
+      load_additional_comments!
       center_ids = [@program_teacher_schedule.program.center_id]
     end
 
@@ -53,7 +54,7 @@ class ProgramTeacherSchedulesController < ApplicationController
             #format.html { redirect_to program_path(@program_teacher_schedule.program) }
             #format.json { render json: @program_teacher_schedule, status: :created, location: @program_teacher_schedule }
           else
-            # TODO - check whether to call load_blockable_teachers! or load_blockable_programs! here
+            # TODO - check whether to call load_blockable_teachers! or load_blockable_programs! or load_additional_comments! here
             # For now leaving it, since we should not be reaching this state, because of double check above
             #load_blockable_teachers!(params[:teacher_role])
             format.html { render action: "new" }
@@ -106,6 +107,18 @@ class ProgramTeacherSchedulesController < ApplicationController
     _update
   end
 
+  def update_additional_comments
+    @selected_teacher = Teacher.find(params[:teacher_id].to_i)
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
+    # updates blockable teachers based on selection
+    @additional_comments = @selected_teacher.additional_comments
+  end
+
+  def load_additional_comments!(teacher_id = 0)
+    teachers = @blockable_teachers
+    @additional_comments = teachers.nil? ? '' : teachers[0].additional_comments
+  end
+
 
   def update_blockable_teachers
     @selected_teacher_role = params[:teacher_role_val]
@@ -121,6 +134,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
     @blockable_teachers = (@program_teacher_schedule.blockable_teachers(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|t| t.user.fullname}
   end
+
 
   def update_blockable_programs
     @selected_teacher_role = params[:teacher_role_val]
