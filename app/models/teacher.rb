@@ -48,7 +48,7 @@ class Teacher < ActiveRecord::Base
   has_many :timings, through: :teacher_schedules
   attr_accessible :teacher_schedules, :teacher_schedule_ids
 
-  attr_accessible :comments
+  attr_accessible :comments, :additional_comments
   validate :check_comments?
 
   attr_accessible :state

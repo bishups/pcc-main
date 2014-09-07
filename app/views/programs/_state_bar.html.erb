@@ -5,7 +5,7 @@
 <% if @program.can_update? && !(::Program::FINAL_STATES.include?(@program.state)) %>
     <div class='btn-group'>
   <button type="button" class="btn btn-danger">Update State</button>
-  <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+  <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">
     <span class="caret"></span>
     <span class="sr-only">Toggle Dropdown</span>
   </button>
@@ -24,7 +24,7 @@
     <!-- Single button -->
     <div class="btn-group">
       <button type="button" class="btn btn-primary"> Add New </button>
-      <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+      <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">
         <span class="caret"></span>
         <span class="sr-only">Toggle Dropdown</span>
       </button>

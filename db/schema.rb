@@ -20,7 +20,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "resource_type"
     t.datetime "created_at",    :null => false
     t.datetime "updated_at",    :null => false
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "access_privileges", ["role_id"], :name => "index_access_privileges_on_role_id"
@@ -46,7 +47,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "centers", ["deleted_at"], :name => "index_centers_on_deleted_at"
@@ -248,7 +250,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "deleted_at"
     t.datetime "created_at",      :null => false
     t.datetime "updated_at",      :null => false
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "program_donations", ["deleted_at"], :name => "index_program_donations_on_deleted_at"
@@ -274,10 +277,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",                 :null => false
     t.datetime "updated_at",                 :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
     t.integer  "registration_close_timeout"
     t.integer  "minimum_no_of_co_teacher"
     t.integer  "session_duration"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
@@ -303,13 +307,14 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",                                 :null => false
     t.datetime "updated_at",                                 :null => false
     t.integer  "program_donation_id"
-    t.integer  "sync_id"
     t.string   "pid"
     t.boolean  "announced",               :default => false
     t.boolean  "registration_closed",     :default => false
     t.integer  "capacity"
     t.string   "announced_locality"
     t.string   "announced_timing"
+    t.string   "sync_ts"
+    t.string   "sync_id"
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
@@ -366,7 +371,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "sectors", ["deleted_at"], :name => "index_sectors_on_deleted_at"
@@ -426,6 +432,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
     t.datetime "last_updated_at"
+    t.text     "additional_comments"
   end
 
   add_index "teachers", ["deleted_at"], :name => "index_teachers_on_deleted_at"
@@ -470,10 +477,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.boolean  "enable",                                 :default => false
     t.string   "approver_email"
     t.text     "message_to_approver"
-    t.integer  "sync_id"
     t.boolean  "approval_email_sent",                    :default => false
     t.datetime "password_reset_at"
     t.string   "provider"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"
@@ -540,7 +548,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "zones", ["deleted_at"], :name => "index_zones_on_deleted_at"

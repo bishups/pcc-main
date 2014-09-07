@@ -68,6 +68,7 @@ class TeacherSchedule < ActiveRecord::Base
   EVENT_EDIT = "Edit"
   EVENT_DELETE = "Delete"
   EVENT_RESERVE = "Reserve"
+  EVENT_ADD_COMMENT = "Add Comment"
 
   ROLE_MAIN_TEACHER = "Main Teacher"
   ROLE_CO_TEACHER = "Co-Teacher"

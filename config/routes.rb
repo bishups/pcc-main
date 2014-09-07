@@ -51,6 +51,9 @@ PccMain::Application.routes.draw do
         get 'reserve'
       end
     end
+    member do
+      get 'comments'
+    end
   end
 
 
