@@ -625,7 +625,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
       return true if User.current_user.is? :zao, :center_id => self.program.center_id
     else
-      return true if (User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids) and (self.teacher.part_time_co_teacher?)
+      return true if (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id) and (self.teacher.part_time_co_teacher?)
       return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
     end
     return true if User.current_user == self.teacher.user
