@@ -7,7 +7,7 @@
     </div>
     <div class='form-group'>
       <%= label_tag 'Center(s)' %>
-      <% centers = @teacher.centers.sort_by{|e| e[:name]} %>
+      <% centers = @centers.sort_by{|e| e[:name]} %>
       <%= select_tag 'teacher_schedule[center_ids]',  options_for_select(centers.map {|e| [e.name, e.id]}), {:multiple => true, :disabled => @disable_centers_select, :id => 'centers_select', :class => 'form-control'} %>
     </div>
     <div class="form-group">

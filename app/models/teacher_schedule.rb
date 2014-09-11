@@ -30,7 +30,7 @@ class TeacherSchedule < ActiveRecord::Base
   attr_accessible :comment_category
 
   attr_accessible :start_date, :end_date, :state, :program_type_id, :program_type, :comments, :feedback
-  attr_accessible :timing, :timing_id, :teacher, :teacher_id, :program, :program_id, :centers, :center_ids
+  attr_accessible :timing, :timing_id, :teacher, :teacher_id, :role, :program, :program_id, :centers, :center_ids
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at
@@ -72,6 +72,10 @@ class TeacherSchedule < ActiveRecord::Base
 
   ROLE_MAIN_TEACHER = "Main Teacher"
   ROLE_CO_TEACHER = "Co-Teacher"
+  ROLE_ORGANIZING_TEACHER = "Organizing Teacher"
+  ROLE_HALL_TEACHER = "Hall Teacher"
+  ROLE_INITIATION_TEACHER = "Initiation Teacher"
+  #TEACHER_ROLES = [ROLE_MAIN_TEACHER, ROLE_CO_TEACHER, ROLE_ORGANIZING_TEACHER, ROLE_HALL_TEACHER, ROLE_INITIATION_TEACHER]
   TEACHER_ROLES = [ROLE_MAIN_TEACHER, ROLE_CO_TEACHER]
 
   #validates_with TeacherScheduleValidator
@@ -135,7 +139,6 @@ class TeacherSchedule < ActiveRecord::Base
 #  end
   def teacher_enabled?
     self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED
-    self.errors.add("Not enabled to publish schedule. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNFIT
   end
 
   def split_schedule!(start_date, end_date)
@@ -227,7 +230,7 @@ class TeacherSchedule < ActiveRecord::Base
     pts.teacher_id = pts.teacher_schedule.teacher_id
     pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
     pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
-    pts.teacher_role = pts.teacher_schedule.co_teacher ? ::TeacherSchedule::ROLE_CO_TEACHER : ::TeacherSchedule::ROLE_MAIN_TEACHER
+    pts.teacher_role = pts.teacher_schedule.role
     pts.current_user = User.current_user
 
     # verify when all the events can come
@@ -246,8 +249,8 @@ class TeacherSchedule < ActiveRecord::Base
   def can_create?
     center_ids = self.teacher.center_ids
     if self.teacher.full_time?
-      return true if User.current_user.is? :zao, :center_id => center_ids
-      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
+      # adding :any condition, in case teacher shared across zones
+      return true if User.current_user.is? :zao, :for => :any, :center_id => center_ids
     else
       return true if User.current_user == self.teacher.user
     end
@@ -257,10 +260,10 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
   def can_update?
-    center_ids = self.teacher.center_ids
+    center_ids = self.center_ids
     if self.teacher.full_time?
+      # can update (or delete) only if zao for all centers for which the schedule is published
       return true if User.current_user.is? :zao, :center_id => center_ids
-      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
     else
       return true if User.current_user == self.teacher.user
     end
@@ -275,15 +278,20 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
   # This is a hack - this needs to be in sync with can_view? of program_teacher_schedule
-  # GOTCHA - make usre current user is initialized for self
+  # GOTCHA - make current user is initialized for self
   def can_view_schedule?
-    center_id = self.program.nil? ? self.teacher.center_ids : self.program.center_id
-    if self.teacher.full_time?
-      return true if User.current_user.is? :zao, :center_id => center_id
-      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_id
+    if self.program.nil?
+      if self.teacher.full_time?
+        return true if User.current_user.is? :zao, :for => :any, :center_id => self.teacher.center_ids
+      else
+        return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.teacher.center_ids
+      end
     else
-      return true if User.current_user.is? :center_scheduler, :center_id => center_id
-      return true if (User.current_user.is? :full_time_teacher_scheduler, :center_id => center_id) and (self.teacher.part_time_co_teacher?)
+      if self.teacher.full_time?
+        return true if User.current_user.is? :zao, :center_id => self.program.center_id
+      else
+        return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
+      end
     end
     return true if User.current_user == self.teacher.user
     return false
@@ -322,10 +330,17 @@ class TeacherSchedule < ActiveRecord::Base
       if !ts.save(:validate => false)
         self.errors[:base] << ts.errors.full_messages
       end
-      # send notifications every x days - depending upon the program type that the teacher is enabled for
-      every_x_days = Teacher.joins("JOIN program_types_teachers ON teachers.id = program_types_teachers.teacher_id").joins("JOIN program_types ON program_types.id = program_types_teachers.program_type_id").where("teachers.id = ?", ts.teacher_id).minimum("program_types.no_of_days")
-      if (ts.no_of_days % every_x_days.to_i == 0)
-        ts.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, EVENT_EXPIRED, ts.centers, ts.teacher) if ts.state == STATE_AVAILABLE_EXPIRED
+      # send notifications every x days for a part-time teacher - depending upon the program type that the teacher is enabled for as main teacher
+      unless ts.teacher.full_time?
+        every_x_days = 365
+        ts.teacher.roles.each { |role|
+          program_types_teachers_str = ::Teacher::PROGRAM_TYPES_TABLES[role]
+          days = Teacher.joins("JOIN #{program_types_teachers_str} ON teachers.id = #{program_types_teachers_str}.teacher_id").joins("JOIN program_types ON program_types.id = #{program_types_teachers_str}.program_type_id").where("teachers.id = ?", ts.teacher_id).minimum("program_types.no_of_days")
+          every_x_days = [every_x_days, days].min
+        }
+        if (ts.no_of_days % every_x_days.to_i == 0)
+          ts.notify(STATE_AVAILABLE, STATE_AVAILABLE_EXPIRED, EVENT_EXPIRED, ts.centers, ts.teacher) if ts.state == STATE_AVAILABLE_EXPIRED
+        end
       end
     }
   end

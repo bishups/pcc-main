@@ -20,7 +20,7 @@ class TeachersController < ApplicationController
       else
         @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).order('teachers.t_no ASC').uniq.all
         if !zone_ids.empty?
-          @teachers_in_zones = Teacher.where("zone_id IN (?)", zone_ids).uniq.all
+          @teachers_in_zones = Teacher.joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("zones_teachers.zone_id IN (?)", zone_ids).uniq.all
           @teachers = @teachers + (@teachers_in_zones - @teachers)
         end
         format.html # index.html.erb
@@ -53,7 +53,7 @@ class TeachersController < ApplicationController
     @teacher.current_user = current_user
 
     respond_to do |format|
-      if @teacher.can_create? :any => true
+      if @teacher.can_create?
         format.html # new.html.erb
         format.json { render json: @teacher }
       else

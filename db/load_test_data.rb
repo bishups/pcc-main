@@ -1,7 +1,7 @@
 3.times do |index|
   zone=Zone.create(:name=>"Zone--#{index}")
   count = 0
-  ["zonal_coordinator","zao","full_time_teacher_scheduler", "pcc_accounts","finance_department", "teacher_training_department"].each do |role_name|
+  ["zonal_coordinator","zao", "pcc_accounts","finance_department", "teacher_training_department"].each do |role_name|
     count = count + 1
     user = User.new(:firstname => "#{role_name}-#{index}",:email=> "#{role_name}-#{index}@pcc-ishayoga.org",:mobile=> (9999999900 + index * 10 + count).to_s,
                     :password => "#{role_name}-#{index}", :password_confirmation => "#{role_name}-#{index}", :address => "Zone--#{index}",

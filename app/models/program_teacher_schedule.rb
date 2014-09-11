@@ -88,15 +88,15 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     event EVENT_CANCEL do
-      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :if => lambda {|pts| pts.is_center_scheduler? || pts.is_full_time_teacher_scheduler? || pts.is_zao? }
+      transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE, :if => lambda {|pts| pts.is_center_scheduler? || pts.is_zao? }
     end
     before_transition STATE_BLOCKED => ::TeacherSchedule::STATE_AVAILABLE do |pts, transition|
       pts.can_unblock? unless transition.event == ::Program::DROPPED
     end
 
     event EVENT_RELEASE do
-      transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.is_sector_coordinator? || pts.is_full_time_teacher_scheduler? || pts.is_zao?}
-      transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.is_sector_coordinator? || pts.is_full_time_teacher_scheduler? || pts.is_zao? }
+      transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.is_sector_coordinator? || pts.is_zao?}
+      transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :if => lambda {|pts| pts.is_sector_coordinator? || pts.is_zao? }
     end
     before_transition STATE_ASSIGNED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_mark_assign_to_unavailable?
     before_transition STATE_RELEASE_REQUESTED => ::TeacherSchedule::STATE_UNAVAILABLE, :do => :can_approve_release?
@@ -168,12 +168,11 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
 
   def can_unblock?
-    if (self.program.no_of_main_teachers_connected > self.program.minimum_no_of_main_teacher) && (self.program.no_of_co_teachers_connected > self.program.minimum_no_of_co_teacher)
+    # if minimum number of teachers + 1 - teachers are attached
+    if (self.program.minimum_teachers_connected?(1))
       if self.teacher.full_time?
-        return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
         return true if User.current_user.is? :zao, :center_id => self.program.center_id
       else
-        return true if (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id) and (self.teacher.part_time_co_teacher?)
         return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
       end
     end
@@ -204,16 +203,6 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
     end
 
-    if self.teacher.full_time? or self.teacher.part_time_co_teacher?
-      if User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
-        if self.program.venue_approval_requested?
-          self.errors[:base] << "Cannot release teacher. Venue linked to the program has already gone for payment request. Please add a teacher and try again."
-          return false
-        end
-        return true
-      end
-    end
-
     self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
@@ -221,26 +210,23 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def can_approve_release?
     if self.teacher.full_time?
-      unless self.is_full_time_teacher_scheduler? or self.is_zao?
+      unless self.is_zao?
         self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
         return false
       end
     else
-      unless self.is_sector_coordinator? or (self.is_full_time_teacher_scheduler? and self.teacher.part_time_co_teacher?)
+      unless self.is_sector_coordinator?
         self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
         return false
       end
     end
 
-    if ((self.program.no_of_main_teachers_connected <= self.program.minimum_no_of_main_teacher) && self.program.venue_approved?)
-      self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
-      return false
-    end
-
-    if ((self.program.no_of_co_teachers_connected <= self.program.minimum_no_of_co_teacher) && self.program.venue_approved?)
-      self.errors[:base] << "Cannot remove co-teacher. Number of co-teachers needed will become less than the number needed. Please add another co-teacher and try again."
-      return false
-    end
+    self.program.role.each { |role|
+      if ((self.program.no_of_teachers_connected(role) <= self.program.minimum_no_of_teacher(role)) && self.program.venue_approved?)
+        self.errors[:base] << "Cannot remove teacher. Number of #{role} needed will become less than the number needed. Please add another #{role} and try again."
+        return false
+      end
+    }
 
     return true
   end
@@ -248,26 +234,23 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def can_mark_assign_to_unavailable?
     if self.teacher.full_time?
-      unless self.is_full_time_teacher_scheduler? or self.is_zao?
+      unless self.is_zao?
         self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
         return false
       end
     else
-      unless self.is_sector_coordinator? or (self.is_full_time_teacher_scheduler? and self.teacher.part_time_co_teacher?)
+      unless self.is_sector_coordinator?
         self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
         return false
       end
     end
 
-    if self.program.no_of_main_teachers_connected <= self.program.minimum_no_of_main_teacher
-      self.errors[:base] << "Cannot remove teacher. Number of teachers needed will become less than the number needed. Please add another teacher and try again."
-      return false
-    end
-
-    if self.program.no_of_co_teachers_connected <= self.program.minimum_no_of_co_teacher
-      self.errors[:base] << "Cannot remove co-teacher. Number of co-teachers needed will become less than the number needed. Please add another co-teacher and try again."
-      return false
-    end
+    self.program.role.each { |role|
+      if self.program.no_of_teachers_connected(role) <= self.program.minimum_no_of_teacher(role)
+        self.errors[:base] << "Cannot remove teacher. Number of #{role} needed will become less than the number needed. Please add another #{role} and try again."
+        return false
+      end
+    }
 
     return true
   end
@@ -288,14 +271,6 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     # HACK - commenting out for now, because the function is being combined in OR clause
     # where error might be still thrown in un-needed cases
     # self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-    return false
-  end
-
-  def is_full_time_teacher_scheduler?
-    return true if (self.teacher.full_time? or self.teacher.part_time_co_teacher?) && (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id)
-    # HACK - commenting out for now, because the function is being combined in OR clause
-    # where error might be still thrown in un-needed cases
-    #self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
     return false
   end
 
@@ -325,57 +300,45 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       # if full_time teacher, send release notification *only* to the coordinator who blocked
       if self.teacher.full_time?
         updated_users = [User.find(self.blocked_by_user_id)]
-      elsif self.teacher.part_time_co_teacher?
-        # if the blocked_by_user_id is a full_time_teacher_scheduler, send the notification *only* to that person
-        if self.blocked_by_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
-          updated_users = [User.find(self.blocked_by_user_id)]
-        end
       end
     end
     updated_users
   end
 
-  def blockable_part_time_teachers(co_teacher)
+  def blockable_part_time_teachers(role)
     return [] if self.program.nil?
     program = self.program
 
-    # don't check specific program type if teacher is marked as co-teacher (and if teacher is enabled as part_time_co_teacher)
-    if co_teacher
-      return [] unless self.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
-      teacher_ids = Teacher.where("teachers.full_time = ? AND teachers.part_time_co_teacher = ? AND teachers.state IN (?)",
-                                  false, true, [::Teacher::STATE_ATTACHED]).pluck(:id)
-    else
-      # get all part-time teachers for specific program type
-      #teacher_ids = ProgramTypesTeachers.find_all_by_program_type_id(program.program_donation.program_type_id).map { |pts| pts[:teacher_id] }
-      teacher_ids = Teacher.joins("JOIN program_types_teachers ON program_types_teachers.teacher_id = teachers.id").where('program_types_teachers.program_type_id = ? AND teachers.full_time = ? AND teachers.state IN (?)',
-                                                                                                                          program.program_donation.program_type_id, false, [::Teacher::STATE_ATTACHED]).readonly(false).pluck(:id)
-    end
+    # NOTE: For part-time teachers we are checking the center(s) to which they are presently attached,
+    # as well as the center for which the schedule is published. This is to avoid cases where they published
+    # availability schedule for some center, but were later un-attached from the center. In such cases, we
+    # are not modifying their availability schedule, but prevent scheduler from accidently scheduling them
+    # for the un-attached center
+
+    # get all part-time teachers for specific program type, for the specified role, attached to the specified center
+    program_types_teachers_str = ::Teacher::PROGRAM_TYPES_TABLES[role]
+    teacher_ids = Teacher.joins("JOIN #{program_types_teachers_str} ON #{program_types_teachers_str}.teacher_id = teachers.id").joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where("#{program_types_teachers_str}.program_type_id = ? AND teachers.full_time = ? AND teachers.state IN (?) AND centers_teachers.center_id = ?",
+                                                                                                                              program.program_donation.program_type_id, false, [::Teacher::STATE_ATTACHED], program.center_id).readonly(false).pluck(:id)
 
     program.timings.each {|t|
-      # if teacher is available for each of timing specified in the program for the specified center
+      # if teacher is available for each of timing specified in the program for the specified center (as per published schedule)
       teacher_ids &= TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where(['teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ?',
                                             program.start_date.to_date, program.end_date.to_date, t.id,
-                                            ::TeacherSchedule::STATE_AVAILABLE, program.center_id ]).pluck(:teacher_id)
+                                            ::TeacherSchedule::STATE_AVAILABLE, program.center_id ]).readonly(false).pluck(:teacher_id)
     }
     teachers = Teacher.find(teacher_ids)
   end
 
 
-  def blockable_full_time_teachers(co_teacher)
+  def blockable_full_time_teachers(role)
     return [] if self.program.nil?
 
     program = self.program
 
-    # don't check specific program type if teacher is marked as co-teacher
-    if co_teacher
-      teacher_ids = Teacher.where("teachers.full_time = ? AND teachers.zone_id = ? AND teachers.state IN (?)",
-                                    true, self.program.center.zone.id, [::Teacher::STATE_ATTACHED]).pluck(:id)
-    else
-      # retrieve full time teachers for specific program_type that can be blocked, and can be scheduled by current_user
-      teacher_ids = Teacher.joins("JOIN program_types_teachers ON program_types_teachers.teacher_id = teachers.id").where('program_types_teachers.program_type_id = ? AND teachers.full_time = ? AND teachers.zone_id = ? AND teachers.state IN (?)',
-                                                                                                                          program.program_donation.program_type_id, true, self.program.center.zone.id, [::Teacher::STATE_ATTACHED]).readonly(false).pluck(:id)
-    end
-
+    # get all full time teachers for specific program_type, for the specified role, attached to the specified zone
+    program_types_teachers_str = ::Teacher::PROGRAM_TYPES_TABLES[role]
+    teacher_ids = Teacher.joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").joins("JOIN #{program_types_teachers_str} ON #{program_types_teachers_str}.teacher_id = teachers.id").where("#{program_types_teachers_str}.program_type_id = ? AND teachers.full_time = ? AND zones_teachers.zone_id = ? AND teachers.state IN (?)",
+                                                                                                                                                                                                      program.program_donation.program_type_id, true, self.program.center.zone.id, [::Teacher::STATE_ATTACHED]).readonly(false).pluck(:id)
     teacher_ids = teacher_ids.uniq
     blockable_teacher_ids = []
 
@@ -398,61 +361,63 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     Teacher.find(blockable_teacher_ids)
   end
 
-  def blockable_teachers(co_teacher = false)
+  def blockable_teachers(role)
     teachers = []
-    teachers += self.blockable_part_time_teachers(co_teacher) if (User.current_user.is? :center_scheduler, :center_id => self.program.center_id) or (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id)
-    teachers += self.blockable_full_time_teachers(co_teacher) if (User.current_user.is? :zao, :center_id => self.program.center_id) or (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id)
+    teachers += self.blockable_part_time_teachers(role) if (User.current_user.is? :center_scheduler, :center_id => self.program.center_id)
+    teachers += self.blockable_full_time_teachers(role) if (User.current_user.is? :zao, :center_id => self.program.center_id)
     # Anyway they are going to be unique, since we splitting into part-time and full-time, still ...
     teachers.uniq
   end
 
 
-  def blockable_programs_for_part_time_teachers(co_teacher)
-    return [] if self.teacher.nil?
-    return [] if self.teacher.full_time?
-
-    teacher = self.teacher
+  def blockable_programs_for_part_time_teachers(role)
+    return [] if self.teacher.nil? or self.teacher.full_time?
 
     # teacher can be scheduled for multiple centers, but the blockable programs
     # should only come from the centers that I am enabled to schedule
+    teacher = self.teacher
     center_ids = []
-    center_ids += current_user.accessible_center_ids(:center_scheduler) if self.current_user.is? :center_scheduler, :for => :any, :center_id => teacher.center_ids
-    center_ids += current_user.accessible_center_ids(:full_time_teacher_scheduler) if self.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => teacher.center_ids
+    center_ids += current_user.accessible_center_ids(:center_scheduler) if User.current_user.is? :center_scheduler, :for => :any, :center_id => teacher.center_ids
     center_ids &= teacher.center_ids
 
     # NOTE: We cannot add a teacher once the program has started
     programs = Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
     blockable_programs = []
     programs.each {|program|
-      blockable_programs << program if teacher.can_be_blocked_by?(program, co_teacher)
+      blockable_programs << program if teacher.can_be_blocked_by?(program, role)
     }
     blockable_programs
   end
 
-  def blockable_programs_for_full_time_teachers(co_teacher)
-    return [] if self.teacher.nil?
-    return [] if !self.teacher.full_time?
+  def blockable_programs_for_full_time_teachers(role)
+    return [] if self.teacher.nil? or !self.teacher.full_time?
 
+    # teacher can be scheduled for multiple centers, but the blockable programs
+    # should only come from the centers that I am enabled to schedule
     teacher = self.teacher
     center_ids = []
-    center_ids += current_user.accessible_center_ids(:zao) if User.current_user.is? :zao, :center_id => teacher.center_ids
-    center_ids += current_user.accessible_center_ids(:full_time_teacher_scheduler) if User.current_user.is? :full_time_teacher_scheduler, :center_id => teacher.center_ids
+    center_ids += current_user.accessible_center_ids(:zao) if User.current_user.is? :zao, :for => :any, :center_id => teacher.center_ids
+    # Ideally this condition is not needed for full-time, since we mark them for zones, and not centers
+    center_ids &= teacher.center_ids
 
     # NOTE: We cannot add a teacher once the program has started
     # All programs in all centers where the current user can schedule teachers
     programs = Program.where('center_id IN (?) AND start_date > ? AND state NOT IN (?)', center_ids, Time.zone.now, ::Program::CLOSED_STATES).order('start_date ASC').all
     blockable_programs = []
     programs.each {|program|
-      blockable_programs << program if teacher.can_be_blocked_by?(program, co_teacher)
+      blockable_programs << program if teacher.can_be_blocked_by?(program, role)
     }
     blockable_programs
   end
 
-  def blockable_programs(co_teacher = false)
+  def blockable_programs(role)
+    # NOTE: blockable_programs_for_full_time_teachers and blockable_programs_for_part_time_teachers
+    # can be merged, but not merging, in case there is any change in scheduling later for part-time
+    # and full-time later
     if self.teacher.full_time?
-      self.blockable_programs_for_full_time_teachers(co_teacher)
+      self.blockable_programs_for_full_time_teachers(role)
     else
-      self.blockable_programs_for_part_time_teachers(co_teacher)
+      self.blockable_programs_for_part_time_teachers(role)
     end
   end
 
@@ -473,7 +438,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
       ts.program_id = program.id
       ts.blocked_by_user_id = current_user.id
-      ts.co_teacher = (teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)
+      ts.role = teacher_role
       ts.current_user = current_user
       ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
       ts.clear_comments!
@@ -503,7 +468,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       ts.program_id = program.id
       ts.timing_id = timing.id
       ts.blocked_by_user_id = current_user.id
-      ts.co_teacher = (teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)
+      ts.role = teacher_role
       ts.current_user = current_user
       ts.state = ::ProgramTeacherSchedule::STATE_BLOCKED
       ts.clear_comments!
@@ -604,17 +569,16 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   def can_create?(center_ids = self.program.center_id)
     unless self.teacher.nil?
       if self.teacher.full_time?
-        return true if User.current_user.is? :zao, :center_id => center_ids
-        return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => center_ids
+        # adding :any condition, in case teacher shared across zones
+        return true if User.current_user.is? :zao, :for => :any, :center_id => center_ids
       else
         return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
-        return true if (User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => center_ids) and (self.teacher.part_time_co_teacher?)
       end
     else
+      # This case happens when getting called from program_teacher_schedules_controller on new request -->
       # :for => :any does not make sense here, since, the only case we do not have the teacher is when
       # we have a program to start with, and we are trying to associate a teacher to it. In that case
       # the center_ids is the center to which the program is attached. For now letting it be :any
-      return true if User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => center_ids
       return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
     end
     return false
@@ -622,10 +586,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def can_update?
     if self.teacher.full_time?
-      return true if User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id
       return true if User.current_user.is? :zao, :center_id => self.program.center_id
     else
-      return true if (User.current_user.is? :full_time_teacher_scheduler, :center_id => self.program.center_id) and (self.teacher.part_time_co_teacher?)
       return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
     end
     return true if User.current_user == self.teacher.user

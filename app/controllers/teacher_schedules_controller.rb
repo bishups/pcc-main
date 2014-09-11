@@ -14,8 +14,6 @@ class TeacherSchedulesController < ApplicationController
 
     center_scheduler_center_ids = current_user.accessible_center_ids(:center_scheduler)
     zao_zone_ids = current_user.accessible_zone_ids(:zao)
-    full_time_teacher_scheduler_zone_ids = current_user.accessible_zone_ids(:full_time_teacher_scheduler)
-    full_time_teacher_scheduler_center_ids = current_user.accessible_center_ids(:full_time_teacher_scheduler)
 
     teacher_schedules = []
     # get the schedules for part-time teachers, from centers for which current_user is center_scheduler (or above)
@@ -23,21 +21,10 @@ class TeacherSchedulesController < ApplicationController
       teacher_schedules += @teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").where("teacher_schedules.end_date >= ? AND centers_teacher_schedules.center_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), center_scheduler_center_ids, false).group("coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
     end
 
-    # get the schedules for full-time teachers, from zones for which current_user is zao (or above)
+    # get the schedules for full-time teachers attached to zones, for which current_user is zao (or above)
     unless zao_zone_ids.empty?
-      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").where("teacher_schedules.end_date >= ? AND teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), zao_zone_ids, true).group("coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
+      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("teacher_schedules.end_date >= ? AND zones_teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), zao_zone_ids, true).group("coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
     end
-
-    # get the schedules for full-time teachers, from zones for which current_user is full_time_teacher_scheduler (or above)
-    unless full_time_teacher_scheduler_zone_ids.empty?
-      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").where("teacher_schedules.end_date >= ? AND teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), full_time_teacher_scheduler_zone_ids, true).group("coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
-    end
-
-    # get the schedules for part-time teachers enabled as co-teachers, from centers for which current_user is full_time_teacher_scheduler (or above)
-    unless full_time_teacher_scheduler_center_ids.empty?
-      teacher_schedules += @teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").where("teacher_schedules.end_date >= ? AND centers_teacher_schedules.center_id IN (?) AND teachers.full_time = ? AND teachers.part_time_co_teacher = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), center_scheduler_center_ids, false, true).group("coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
-    end
-
     @teacher_schedules = teacher_schedules.uniq
 
     respond_to do |format|
@@ -321,6 +308,9 @@ class TeacherSchedulesController < ApplicationController
     @reserve_states = (::TeacherSchedule::RESERVED_STATES).sort
     @selected_reserve_state = selected_state.nil? ? @reserve_states[0] : selected_state
     @disable_centers_select = (@selected_reserve_state == ::TeacherSchedule::STATE_ACTIVITY) ? false : true
+    # Allow to schedule only for centers which fall under the current user's role
+    # only the zao and above can reserve full time teachers
+    @centers = @teacher.centers & current_user.accessible_center_ids(:zao)
   end
 
   def load_program_type_timings!(teacher)

@@ -69,7 +69,6 @@
   roles={
     ::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
-    ::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text] => ["Program Management","Teacher Scheduling","Kit View","Venue View"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zao][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
@@ -91,7 +90,6 @@
 # create notifications
 
 zonal_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text])
-full_time_teacher_scheduler = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text])
 zao = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zao][:text])
 sector_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text])
 center_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text])

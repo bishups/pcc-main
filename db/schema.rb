@@ -286,6 +286,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
 
   add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
 
+  create_table "program_types_co_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
+
   create_table "program_types_teachers", :force => true do |t|
     t.integer "program_type_id"
     t.integer "teacher_id"
@@ -389,10 +394,9 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
 
   create_table "teacher_schedules", :force => true do |t|
-    t.datetime "created_at",                                 :null => false
-    t.datetime "updated_at",                                 :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.string   "state"
-    t.boolean  "co_teacher",              :default => false
     t.date     "start_date"
     t.date     "end_date"
     t.integer  "timing_id"
@@ -406,6 +410,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "last_update"
     t.datetime "last_updated_at"
     t.integer  "program_type_id"
+    t.string   "role"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -420,14 +425,12 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   create_table "teachers", :force => true do |t|
     t.string   "t_no"
     t.string   "state"
-    t.integer  "zone_id"
     t.integer  "user_id"
     t.datetime "created_at",                                 :null => false
     t.datetime "updated_at",                                 :null => false
     t.datetime "deleted_at"
     t.integer  "sync_id"
     t.boolean  "full_time",               :default => false
-    t.boolean  "part_time_co_teacher",    :default => false
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
@@ -553,5 +556,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   end
 
   add_index "zones", ["deleted_at"], :name => "index_zones_on_deleted_at"
+
+  create_table "zones_teachers", :force => true do |t|
+    t.integer "zone_id"
+    t.integer "teacher_id"
+  end
 
 end

@@ -18,24 +18,44 @@ class Teacher < ActiveRecord::Base
 
   has_and_belongs_to_many :centers, :after_add => :add_access_privilege, :after_remove  => :remove_access_privilege
   attr_accessible :center_ids, :centers
-  validate :has_centers?, :unless => :full_time?
+  validate :has_centers? , :unless => :full_time?
 
- # Commented for now as there is no definition for this
+  has_and_belongs_to_many :zones, :join_table => "zones_teachers", :before_add => :before_add_zone, :after_add => :after_add_zone, :before_remove  => :before_remove_zone, :after_remove  => :after_remove_zone
+  attr_accessible :zone_ids, :zones
+  #validate :has_zone?
+
+
+  # Commented for now as there is no definition for this
  # validate :is_unfit?
 
   has_and_belongs_to_many :program_types
   attr_accessible :program_type_ids, :program_types
   validate :has_program_types?
 
+  has_and_belongs_to_many :co_teacher_program_types, class_name: "ProgramType", join_table: "program_types_co_teachers"
+  attr_accessible :co_teacher_program_type_ids, :co_teacher_program_types
+
+  PROGRAM_TYPES = {
+      ::TeacherSchedule::ROLE_MAIN_TEACHER => "program_types",
+      ::TeacherSchedule::ROLE_CO_TEACHER => "co_teacher_program_types"
+     # , ::TeacherSchedule::ROLE_ORGANIZING_TEACHER => "organizing_teachers_program_types"
+     # , ::TeacherSchedule::ROLE_HALL_TEACHER => "hall_teachers_program_types"
+     # , ::TeacherSchedule::ROLE_INITIATION_TEACHER => "initiation_teachers_program_types"
+  }
+
+  PROGRAM_TYPES_TABLES = {
+      ::TeacherSchedule::ROLE_MAIN_TEACHER => "program_types_teachers",
+      ::TeacherSchedule::ROLE_CO_TEACHER => "program_types_co_teachers"
+      # , ::TeacherSchedule::ROLE_ORGANIZING_TEACHER => "organizing_teachers_program_types"
+      # , ::TeacherSchedule::ROLE_HALL_TEACHER => "hall_teachers_program_types"
+      # , ::TeacherSchedule::ROLE_INITIATION_TEACHER => "initiation_teachers_program_types"
+  }
+
   belongs_to :user
   attr_accessible :user_id, :user
   validates :user_id, :presence => true
   validates_uniqueness_of :user_id, :scope => :deleted_at
 
-
-  belongs_to :zone
-  attr_accessible :zone_id, :zone
-  validate :has_zone?
 
   attr_accessor :comment_category
   attr_accessible :comment_category
@@ -49,74 +69,43 @@ class Teacher < ActiveRecord::Base
   attr_accessible :teacher_schedules, :teacher_schedule_ids
 
   attr_accessible :comments, :additional_comments
-  validate :check_comments?
+
+  after_initialize :init
 
   attr_accessible :state
   validates :state, :presence => true
-  validate :invalid_state?
 
-  attr_accessible :full_time, :part_time_co_teacher
-  validate :full_time_co_teacher
+  attr_accessible :full_time
 
   #before_save :load_last_state
+  #before_save :before_save_set_state
   # NOTE - please add any additional post-save cleanup to the function below.
   # Do not add any new function. This is because we are manipulating dirty flag
   # in the function below, due to some HABTM HACK, and *_change when called in another
   # chained after_save function will fail
   after_save :after_save_cleanup
 
-  STATE_UNFIT       = 'Not Fit'
   STATE_UNATTACHED  = 'Not Attached'
   STATE_ATTACHED    = 'Attached'
 
-  FINAL_STATES = [STATE_UNATTACHED]
+  FINAL_STATES = []
 
   # The attach functionality need to be exercised through the admin interface only,
   # since zone(s) and center(s) need to be linked again
   # It is still defined here only for logging and notification purposes
   EVENT_ATTACH      = 'Attach '
-
   EVENT_UNATTACH    = 'Unattach'
-  EVENT_UNFIT       = 'Unfit'
 
-  PROCESSABLE_EVENTS = [
-      EVENT_UNATTACH, EVENT_UNFIT
-  ]
+  PROCESSABLE_EVENTS = []
 
-  EVENTS_WITH_COMMENTS = [EVENT_UNFIT, EVENT_UNATTACH]
-  EVENTS_WITH_FEEDBACK = []
 
-  state_machine :state, :initial => STATE_UNATTACHED do
 
-    event EVENT_UNATTACH do
-      transition [STATE_ATTACHED, STATE_UNFIT] => STATE_UNATTACHED, :if => lambda {|t| t.current_user.is? :zao, :center_id => t.center_ids }
-    end
-    before_transition any => STATE_UNATTACHED, :do => :before_unattach!
-    after_transition any => STATE_UNATTACHED, :do => :after_unattach
-
-    event EVENT_UNFIT do
-      transition [STATE_ATTACHED] => STATE_UNFIT, :if => lambda {|t| t.current_user.is? :zao, :center_id => t.center_ids }
-    end
-    before_transition any => STATE_UNFIT, :do => :can_mark_unfit?
-    after_transition any => STATE_UNFIT, :do => :on_unfit
-
-    # check for comments, before any transition
-    before_transition any => any do |object, transition|
-      # Don't return here, else LocalJumpError will occur
-      if EVENTS_WITH_COMMENTS.include?(transition.event) && !object.has_comments?
-        false
-      elsif EVENTS_WITH_FEEDBACK.include?(transition.event) && !object.has_feedback?
-        false
-      else
-        true
-      end
-    end
-
-    after_transition any => any do |object, transition|
-      object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-    end
-
+  def init
+    self.state  ||= STATE_UNATTACHED
   end
+
+  #state_machine :state, :initial => STATE_UNATTACHED do
+  #end
 
   #def load_last_state
   #  self.last_state = Teacher.find(self.id).state
@@ -124,18 +113,45 @@ class Teacher < ActiveRecord::Base
   #  self.last_state = STATE_UNATTACHED
   #end
 
+  def before_add_zone(zone)
+    self.state = STATE_ATTACHED if self.zones.blank?
+    return true
+  end
+
+  def after_add_zone(zone)
+    # for full-time, add centers corresponding to zone
+    if self.full_time?
+      # remove once to avoid duplicates
+      self.centers -= zone.centers
+      # add the centers
+      self.centers += zone.centers
+    end
+  end
+
+  def before_remove_zone(zone)
+    if self.in_schedule?(zone)
+      self.errors.add(:zones, " #{zone.name} cannot be un-attached. Teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
+      return false
+    end
+
+    # set the new value of states
+    self.state = STATE_UNATTACHED if self.zones == [zone]
+    return true
+  end
+
+  def after_remove_zone(zone)
+    # for full-time, remove centers corresponding to zone
+    self.centers -= zone.centers if self.full_time?
+  end
+
   def after_save_cleanup
     changes = self.changes
-    return if changes.nil? || changes.empty?
+    return if changes.blank?
 
     # STEP-1 : First identify all the changed values that we are interested in
     current_state = self.state
     state_changed = changes.has_key?(:state)
     last_state = self.changes[:state][0] if state_changed
-
-    current_zone = self.zone
-    zone_changed = changes.has_key?(:zone)
-    last_zone = self.changes[:zone][0] if zone_changed
 
     full_time_changed = changes.has_key?(:full_time)
 
@@ -143,38 +159,42 @@ class Teacher < ActiveRecord::Base
     # HACK - all this making the program_types and centers dirty and reloading the object
     # due to open rails bug attr_writer :hen trying to save a model with habtm in after_create
     # https://rails.lighthouseapp.com/projects/8994/tickets/4553-habtm-association-failure-to-save-in-join-table-with-after_create-callback
-    if state_changed or ((zone_changed or full_time_changed) and self.full_time?)
-      program_types = self.program_types
+    if state_changed or (full_time_changed and self.full_time?)
+      temp_program_types = {}
+      ::Teacher::PROGRAM_TYPES.each{ |role, value|
+        temp_program_types[role] = eval("self." + value)
+      }
+      #program_types = self.program_types
       centers = self.centers
+      zones = self.zones
       self.reload
-      self.program_types = program_types
+      ::Teacher::PROGRAM_TYPES.each{ |role, value|
+        eval("self.#{value} = temp_program_types[\"#{role}\"]")
+      }
+      #self.program_types = program_types
       self.centers = centers
+      self.zones = zones
     end
 
-    # STEP-3 : Now make the changes ...
-    # Change # 1 - delete published schedules for teacher changed from part-time to full-time OR when teacher is Un-attached
-    if self.has_published_schedules?
-      self.delete_published_schedules if (full_time_changed and self.full_time?) or (state_changed and last_state == STATE_ATTACHED)
-    end
+    # STEP-3 : Now make the changes ... for teacher changed from part-time to full-time
+    if (full_time_changed and self.full_time?)
+      # Change # 1 - delete published schedules
+      self.delete_published_schedules if self.has_published_schedules?
 
-    # Change # 2 - update centers for full time teacher whose zone was changed, or who was earlier part-time teacher
-    if (zone_changed or full_time_changed) and self.full_time?
-      if !(current_zone.nil? or current_zone.blank?) and current_state == STATE_ATTACHED
-        self.centers = current_zone.centers
-      else
-        self.centers = []
-      end
+    # Change # 2 - update centers for attached zones
+      self.centers = []
+      self.zones.each { |zone|
+        self.centers += zone.centers
+      }
       self.save
     end
 
-    # Change # 3 - send out notifications if either un-attached, or attached
+    # STEP - 4 - send out notifications if either un-attached, or attached
     if state_changed
       if current_state == STATE_ATTACHED
         event = EVENT_ATTACH
       elsif current_state == STATE_UNATTACHED and last_state == STATE_ATTACHED
         event = EVENT_UNATTACH
-      elsif current_state == STATE_UNFIT and last_state == STATE_ATTACHED
-        event = EVENT_UNFIT
       else
         event = nil
       end
@@ -189,101 +209,85 @@ class Teacher < ActiveRecord::Base
   end
 
 
-  def before_unattach!
-    center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
-    if !User.current_user.is? :zao, :center_id => center_ids
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      return false
+
+  def has_published_schedules?(zones = [])
+    if zones.blank?
+      self.teacher_schedules.where('state IN (?) AND start_date >= ?', ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date).count > 0
+    else
+=begin
+      zones_centers_ids = []
+      zones.each { |zone|
+        zones_centers_ids += zone.center_ids
+      }
+      # if *any* of the center(s) specified in the teacher schedule, falls in the specified zone
+      teacher_schedules = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON teacher_schedules.id = centers_teacher_schedules.teacher_schedule_id").where('teacher_schedules.state IN (?) AND teacher_schedules.start_date >= ? AND centers_teacher_schedules.center_id IN (?)', ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date, zones_centers_ids)
+      # only if all the centers for the schedule fall in the zone
+      count = 0
+      teacher_schedules.each { |ts|
+        count += 1 if (ts.center_ids - zones_centers_ids).blank?
+      }
+      return count
+=end
     end
+  end
 
-    if self.in_schedule?
-      self.errors.add(:state, " cannot unattach from zone when teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
-      return false
+  def delete_published_schedules(zones = [])
+    if zones.blank?
+      self.teacher_schedules.where('state IN (?) AND start_date >= ?', ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date).delete_all
+    else
+=begin
+      zones_centers_ids = []
+      zones.each { |zone|
+        zones_centers_ids += zone.center_ids
+      }
+      # if *any* of the center(s) specified in the teacher schedule, falls in the specified zone
+      teacher_schedules = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON teacher_schedules.id = centers_teacher_schedules.teacher_schedule_id").where('teacher_schedules.state IN (?) AND teacher_schedules.start_date >= ? AND centers_teacher_schedules.center_id IN (?)', ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date, zones_centers_ids)
+      # only if all the centers for the schedule fall in the zone
+      teacher_schedules.each { |ts|
+        unattached_center_ids = ts.center_ids - (ts.center_ids - zone_center_ids)
+        if (unattached_centers == ts.center_ids)
+          # delete teacher schedule if all centers belong to zone(s) which are getting unattached
+          ts.destroy
+        elsif not unattached_center_ids.blank?
+          # else - delete the center_teacher_schedule mapping for center(s) getting unattached from the specific teacher schedule
+          CenterTeacherSchedules.joins("JOIN teacher_schedules ON teacher_schedules.id = centers_teacher_schedules.teacher_schedule_id").where("centers_teacher_schedules.center_id IN (?) AND centers_teacher_schedules.teacher_schedule_id = ?", unattached_center_ids, ts.id).delete_all
+        end
+      }
+=end
     end
-
-    self.zone_id = nil
-    # Also remove all attached centers
-    CentersTeachers.where(:teacher_id => self.id).delete_all
-    # FIXME - deleting the centers here can be an issue if the transaction fails ...
-    return true
   end
 
-  def after_unattach
-    # if marked unfit remove all published teacher_schedules
-    self.delete_published_schedules
-  end
-
-  def can_mark_unfit?
-    center_ids = self.center_ids.empty? ? self.zone.center_ids : self.center_ids
-    if !User.current_user.is? :zao, :center_id => center_ids
-      self.errors[:base] << "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access."
-      return false
-    end
-
-    if self.in_schedule?
-      self.errors.add(:state, " cannot mark unfit when teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
-      return false
-    end
-
-    return true
-  end
-
-  def on_unfit
-    # if marked unfit remove all future published teacher_schedules
-    self.delete_published_schedules
-
-    # Also remove all attached centers
-    CentersTeachers.where(:teacher_id => self.id).delete_all
-  end
-
-  def has_published_schedules?
-    TeacherSchedule.where('teacher_id = ? AND state IN (?)', self.id, ::TeacherSchedule::STATE_PUBLISHED).count > 0
-  end
-
-  def delete_published_schedules
-    TeacherSchedule.where('teacher_id = ? AND state IN (?) AND start_date >= ?', self.id, ::TeacherSchedule::STATE_PUBLISHED, Time.zone.now.to_date).delete_all
-  end
-
-  def in_schedule?
+  def in_schedule?(zone)
     self.teacher_schedules.each { |ts|
-      return true if ts.is_connected?
+      return true if ts.is_connected? and ts.program.center.zone == zone
     }
     return false
   end
 
-  # This is a hack to take care of rails_admin
-  def check_comments?
-    self.errors.add(:comments, " needed if the teacher is marked unfit/ unattached.") if [STATE_UNFIT, STATE_UNATTACHED].include?(self.state) && !self.has_comments?
-  end
-
-  def full_time_co_teacher
-    self.errors.add(:part_time_co_teacher, " cannot be selected for full time teacher.") if self.full_time? && self.part_time_co_teacher?
-  end
-
   def has_centers?
-    self.errors.add(:centers, " needed if teacher attached to a zone.") if !self.zone.blank? && self.centers.blank? && (self.state != STATE_UNFIT) and (!self.full_time?)
-    self.errors.add(:zone, " needed if teacher attached to center(s). To un-attach from a zone, first remove the center(s).") if self.zone.blank? && !self.centers.blank? and (!self.full_time?)
+    self.errors.add(:centers, " needed if teacher attached to zone(s).") if !self.zones.blank? && self.centers.blank? and (!self.full_time?)
+    self.errors.add(:zones, " needed if teacher attached to center(s). To un-attach from a zone, first remove the center(s).") if self.zones.blank? && !self.centers.blank? and (!self.full_time?)
     #self.errors.add(:centers, " should belong to one sector.") if self.centers && !::Sector::all_centers_in_one_sector?(self.centers)
-    unless self.part_time_co_teacher?
-      self.errors.add(:centers, " should belong to one zone.") if !::Zone::all_centers_in_one_zone?(self.centers)
-      self.errors.add(:centers, " should belong to specified zone.") if self.centers && self.zone && (self.centers[0] && self.centers[0].sector.zone != self.zone)
+    self.centers.each { |center|
+      unless self.zones.include?(center.zone)
+        self.errors.add(:centers, " #{center.name} does not belong to specified zone(s).")
+        break
+      end
+    }
+    unless self.full_time?
+      self.zones.each {|zone|
+        if (self.center_ids - zone.center_ids) == self.center_ids
+          self.errors.add(:zone, " #{zone.name} does not have any center specified.")
+          break
+        end
+      }
     end
   end
 
 
   def has_program_types?
-    self.errors.add(:program_types, "Teacher needs to be associated to program type(s).") if self.program_types.blank?
-  end
-
-  def has_zone?
-    self.errors.add(:zone, " cannot be blank when teacher is attached/ unfit.") if self.zone.blank? && [STATE_UNFIT, STATE_ATTACHED].include?(self.state)
-    self.errors.add(:zone, " need to be blank when teacher is unattached.") if !self.zone.blank? && (self.state == STATE_UNATTACHED)
-  end
-
-  def invalid_state?
-    self.errors.add(:state, " cannot be marked unfit when teacher is attached to center(s). To mark unfit, first remove the center(s).") if (self.state == STATE_UNFIT) and !(self.full_time? or self.part_time_co_teacher?)
-    self.errors.add(:state, " cannot be marked unfit when teacher is linked to a program.") if (self.state == STATE_UNFIT) && self.in_schedule?
-    self.errors.add(:state, " cannot be marked unattached when teacher is linked to a program.") if (self.state == STATE_UNATTACHED) && self.in_schedule?
+    no_of_program_types = self.role_program_types.inject(0){|a,(_,b)|a+b.size}
+    self.errors.add(:program_types, "Teacher needs to be associated with program type(s) in at least one role.") unless no_of_program_types > 0
   end
 
   def add_access_privilege(center)
@@ -300,10 +304,8 @@ class Teacher < ActiveRecord::Base
 
   def can_view?
     if self.full_time?
-      return true if User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids
       return true if User.current_user.is? :zao, :for => :any, :center_id => self.center_ids
     else
-      return true if (User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids) and (self.part_time_co_teacher?)
       return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
     end
     return true if User.current_user.is? :teacher_training_department, :for => :any, :center_id => self.center_ids
@@ -313,10 +315,8 @@ class Teacher < ActiveRecord::Base
 
   def can_view_schedule?
     if self.full_time?
-      return true if (User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids)
       return true if (User.current_user.is? :zao, :for => :any, :center_id => self.center_ids)
     else
-      return true if (User.current_user.is? :full_time_teacher_scheduler, :for => :any, :center_id => self.center_ids) and (self.part_time_co_teacher?)
       return true if (User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids)
     end
     return true if self.is_current_user?
@@ -341,12 +341,16 @@ class Teacher < ActiveRecord::Base
 
   def can_update?
     center_ids = []
-    if self.center_ids.nil? || self.center_ids.empty?
-      center_ids = self.zone.center_ids unless self.zone.nil?
+    if self.center_ids.blank?
+      center_ids = []
+      self.zones.each { |zone|
+        center_ids += zone.center_ids
+      }
     else
       center_ids = self.center_ids
     end
-    return true if User.current_user.is? :zao, :center_id => center_ids
+    # only teacher training department can now update the teacher status
+    return true if User.current_user.is? :teacher_training_department, :center_id => center_ids
     return false
   end
 
@@ -365,10 +369,11 @@ class Teacher < ActiveRecord::Base
     #return true if User.current_user.is? :venue_coordinator, :center_id => center_ids
   end
 
-  def can_be_blocked_by?(program, co_teacher)
+  def can_be_blocked_by?(program, role)
+    # check if teacher has matching program_type for the specified role
+    return false unless self.role_program_types(role).include?(program.program_donation.program_type)
+
     if self.full_time?
-      # check if teacher has matching program_type, or is a co_teacher
-      return false unless (self.program_types.include?(program.program_donation.program_type) or co_teacher)
       ts = TeacherSchedule.new
       ts.program = program
       ts.teacher_id = self.id
@@ -378,8 +383,6 @@ class Teacher < ActiveRecord::Base
         return false if ts.schedule_overlaps?
       }
     else
-      # check if teacher has matching program_type, or is a co-teacher (and has also been enabled as one)
-      return false unless (self.program_types.include?(program.program_donation.program_type) or (co_teacher and self.part_time_co_teacher?))
       program.timings.each {|t|
         ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
                                                                                                                                                           program.start_date.to_date, program.end_date.to_date, t.id,
@@ -394,8 +397,24 @@ class Teacher < ActiveRecord::Base
     return self.full_time
   end
 
-  def part_time_co_teacher?
-    return self.part_time_co_teacher
+  def role_program_types(role = nil)
+    if role.blank?
+      program_types = {}
+      ::Teacher::PROGRAM_TYPES.each { |k,v|
+        program_types[k] = eval ("self." + v)
+      }
+      return program_types
+    else
+      return eval ("self." + ::Teacher::PROGRAM_TYPES[role])
+    end
+  end
+
+  def roles
+    roles = []
+    self.role_program_types.each.each { |k, v|
+      roles += [k] unless v.blank?
+    }
+    return roles
   end
 
   def url
@@ -420,9 +439,9 @@ class Teacher < ActiveRecord::Base
       field :t_no
       field :user
       field :full_time
-      field :state
-      field :zone
+      #field :state
       field :program_types
+      field :zones
       field :centers
     end
     edit do
@@ -444,13 +463,14 @@ class Teacher < ActiveRecord::Base
           not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:teacher_training_department) )
         end
       end
-      field :part_time_co_teacher do
-        label "(Part Time) Co-Teacher"
-        help "If a part-time teacher can be scheduled as co-teacher for other programs."
-        read_only do
-          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:teacher_training_department) )
-        end
-      end
+      #field :part_time_co_teacher do
+      #  label "(Part Time) Co-Teacher"
+      #  help "If a part-time teacher can be scheduled as co-teacher for other programs."
+      #  read_only do
+      #    not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:teacher_training_department) )
+      #  end
+      #end
+=begin
       field :state, :enum do
         label "Status"
         enum do
@@ -460,9 +480,7 @@ class Teacher < ActiveRecord::Base
           # elsif bindings[:object].state == STATE_UNATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
           #   [STATE_UNATTACHED]
           # elsif bindings[:object].state == STATE_ATTACHED && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
-          #   [STATE_UNATTACHED, STATE_ATTACHED, STATE_UNFIT]
-          # elsif bindings[:object].state == STATE_UNFIT && (bindings[:controller].current_user.is? :zao, :center_id => bindings[:object].center_ids)
-          #   [STATE_UNATTACHED, STATE_UNFIT]
+          #   [STATE_UNATTACHED, STATE_ATTACHED]
           # elsif (bindings[:controller].current_user.is? :teacher_training_department, :center_id => bindings[:object].center_ids)
           #   [STATE_UNATTACHED]
           # else
@@ -471,7 +489,7 @@ class Teacher < ActiveRecord::Base
 
           # Changed by Senthil based on discussion wiht Radha Akka. Currently displaying all the states and this can changed only by teacher training department.
           # This will be read only for all other users.
-          [STATE_UNATTACHED, STATE_ATTACHED, STATE_UNFIT]
+          [STATE_UNATTACHED, STATE_ATTACHED]
         end
         read_only do
           # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
@@ -486,9 +504,11 @@ class Teacher < ActiveRecord::Base
           end
         end
       end
-      field :zone  do
-       # inverse_of :teachers
-        inline_edit false
+=end
+      field :program_types  do
+        label "Main Teacher"
+        inverse_of :teachers
+        #inline_edit false
         inline_add false
         read_only do
           # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
@@ -503,8 +523,26 @@ class Teacher < ActiveRecord::Base
           end
         end
       end
-      field :program_types  do
+      field :co_teacher_program_types  do
+        label "Co-Teacher"
         inverse_of :teachers
+        #inline_edit false
+        inline_add false
+        read_only do
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          if bindings[:controller].current_user.is?(:super_admin)
+            # 7 Sep 2014 - Anuj - allowing super_admin same access as teacher_training_department
+            false #true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
+          else
+            true
+          end
+        end
+      end
+      field :zones  do
+        # inverse_of :teachers
         #inline_edit false
         inline_add false
         read_only do
@@ -544,7 +582,13 @@ class Teacher < ActiveRecord::Base
           }
         end
       end
-      field :comments
+      field :comments do
+        help "Optional. E.g, Feedback about the teacher (NOTE - field not visible to teacher)"
+      end
+      field :additional_comments do
+        label "Note for Scheduler"
+        help "Optional. Additional comments from/about teacher needed when scheduling (NOTE - field visible to part-time, but not full-time teacher)"
+      end
     end
     create do
       configure :user  do

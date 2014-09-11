@@ -41,7 +41,7 @@ class ProgramTeacherSchedulesController < ApplicationController
         if !@program_teacher_schedule.can_create?
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
-        elsif !teacher.can_be_blocked_by?(program, (@program_teacher_schedule.teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER))
+        elsif !teacher.can_be_blocked_by?(program, (@program_teacher_schedule.teacher_role))
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Request timed out, cannot perform the requested action. Please try again." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         else
@@ -116,7 +116,7 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   def load_additional_comments!(teacher_id = 0)
     teachers = @blockable_teachers
-    @additional_comments = teachers.nil? ? '' : teachers[0].additional_comments
+    @additional_comments = teachers.blank? ? '' : teachers[0].additional_comments
   end
 
 
@@ -125,14 +125,14 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     # updates blockable teachers based on selection
     #@timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
-    @blockable_teachers = (@program_teacher_schedule.blockable_teachers(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|t| t.user.fullname}
+    @blockable_teachers = (@program_teacher_schedule.blockable_teachers(@selected_teacher_role)).sort_by{|t| t.user.fullname}
   end
 
   def load_blockable_teachers!(teacher_role = nil)
-    @teacher_roles = ::TeacherSchedule::TEACHER_ROLES
+    @teacher_roles = @program_teacher_schedule.program.roles
     @selected_teacher_role = teacher_role.nil? ? @teacher_roles[0] : teacher_role
     #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
-    @blockable_teachers = (@program_teacher_schedule.blockable_teachers(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|t| t.user.fullname}
+    @blockable_teachers = (@program_teacher_schedule.blockable_teachers(@selected_teacher_role)).sort_by{|t| t.user.fullname}
   end
 
 
@@ -141,14 +141,14 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     # updates blockable teachers based on selection
     #@timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
-    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|p| p.friendly_name}
+    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role)).sort_by{|p| p.friendly_name}
   end
 
   def load_blockable_programs!(teacher_role = nil)
-    @teacher_roles = ::TeacherSchedule::TEACHER_ROLES
+    @teacher_roles = @program_teacher_schedule.teacher.roles
     @selected_teacher_role = teacher_role.nil? ? @teacher_roles[0] : teacher_role
     #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
-    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role == ::TeacherSchedule::ROLE_CO_TEACHER)).sort_by{|p| p.friendly_name}
+    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role)).sort_by{|p| p.friendly_name}
   end
 
 
@@ -210,6 +210,8 @@ class ProgramTeacherSchedulesController < ApplicationController
       if params.has_key?(:teacher_role)
         pts.teacher_role = (params[:teacher_role])
       else
+        # by default assume Main Teacher. This should not happen, still ...
+        # choosing as Main Teacher makes the most sense
         pts.teacher_role = ::TeacherSchedule::ROLE_MAIN_TEACHER
       end
     end

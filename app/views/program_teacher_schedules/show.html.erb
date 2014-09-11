@@ -56,12 +56,10 @@
                 <td><strong>Teacher</strong></td>
                 <td><%= link_to "#{teacher_schedule.teacher.user.fullname}", teacher_path(teacher_schedule.teacher) %></td>
               </tr>
-              <% if teacher_schedule.teacher.full_time? or teacher_schedule.teacher.part_time_co_teacher? %>
-                  <tr>
-                    <td><strong>Role</strong></td>
-                    <td><%= teacher_schedule.co_teacher ? ::TeacherSchedule::ROLE_CO_TEACHER : ::TeacherSchedule::ROLE_MAIN_TEACHER %></td>
-                  </tr>
-              <% end %>
+              <tr>
+                <td><strong>Role</strong></td>
+                <td><%= teacher_schedule.role %></td>
+              </tr>
               <tr>
                 <td><strong>Center</strong></td>
                 <td><%= teacher_schedule.program.locality_name %></td>

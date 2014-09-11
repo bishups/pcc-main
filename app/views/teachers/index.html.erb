@@ -34,9 +34,9 @@
     <th>Name</th>
     <th>Part-Time</th>
     <th>Program Types</th>
-    <th>Zone</th>
+    <th>Zone(s)</th>
     <th>Center(s)</th>
-    <th>Current State</th>
+    <%-# <th>Current State</th> %>
     <th width='15%'></th>
   </tr>
   </thead>
@@ -47,14 +47,20 @@
         <td><%= teacher.id %></td>
         <td><%= teacher.user.fullname %></td>
         <td><%= teacher.full_time? ? "No" : "Yes" %></td>
-        <td><%= (teacher.program_types.map{|pt| pt[:name]}).sort.join(", ") %></td>
-        <td><%= teacher.zone.name rescue '' %></td>
+        <td>
+          <% teacher.role_program_types.each { |role, pts | %>
+            <%= ["[#{role}] #{(pts.map{|pt| pt[:name]}).sort.join(", ")}"].join("; ") unless pts.blank? %>
+          <% } %>
+        </td>
+        <td><%= (teacher.zones.map{|z| z[:name]}).sort.join(", ") rescue '' %></td>
         <% if teacher.full_time? %>
             <td><%= '[All Centers in Zone]' %></td>
         <% else %>
             <td><%= (teacher.centers.map {|c| c[:name]}).join(", ") %></td>
         <% end %>
-        <td><%= teacher_state_tag(teacher) %></td>
+        <% if false %>
+            <td><%= teacher_state_tag(teacher) %></td>
+        <% end %>
         <td>
           <%= link_to "Show", teacher_path(teacher), :class => 'btn btn-primary btn-sm' if teacher.can_view? || teacher.is_current_user? %>
           <% if teacher.state == Teacher::STATE_ATTACHED %>

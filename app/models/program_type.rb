@@ -14,6 +14,7 @@
 class ProgramType < ActiveRecord::Base
   attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :name, :no_of_days, :registration_close_timeout, :session_duration
   has_and_belongs_to_many :teachers
+  has_and_belongs_to_many :co_teacher_program_types, class_name: "Teacher", join_table: "program_types_co_teachers"
   validates :language, :name, :presence => true
   validates :no_of_days, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
   validates :minimum_no_of_teacher, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true, :greater_than => 0 }
@@ -22,6 +23,14 @@ class ProgramType < ActiveRecord::Base
   validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
   validates_uniqueness_of :name, :scope => :deleted_at
   validate :full_day_program
+
+  MIN_NO_TEACHER = {
+      ::TeacherSchedule::ROLE_MAIN_TEACHER => "minimum_no_of_teacher" ,
+      ::TeacherSchedule::ROLE_CO_TEACHER => "minimum_no_of_co_teacher"
+      #, ::TeacherSchedule::ROLE_ORGANIZING_TEACHER => "organizing_teachers_program_types"
+      #, ::TeacherSchedule::ROLE_HALL_TEACHER => "hall_teachers_program_types"
+      #, ::TeacherSchedule::ROLE_INITIATION_TEACHER => "initiation_teachers_program_types"
+  }
 
   has_many :program_donations
   attr_accessible :program_donations, :program_donation_ids
@@ -38,6 +47,26 @@ class ProgramType < ActiveRecord::Base
     if self.session_duration < 0 and self.timings.count != Timing.all.count
       self.errors[:timings] << " cannot be left unselected. Please select all timings for a Full Day program."
     end
+  end
+
+  def role_minimum_no_of_teacher(role = nil)
+    if role.blank?
+      minimum_no_of_teacher = {}
+      ::ProgramType::MIN_NO_TEACHER.each { |k,v|
+        minimum_no_of_teacher[k] = eval ("self." + v)
+      }
+      return minimum_no_of_teacher
+    else
+      return eval ("self." + ::ProgramType::MIN_NO_TEACHER[role])
+    end
+  end
+
+  def roles
+    roles = []
+    self.role_minimum_no_of_teacher.each { |k,v|
+      roles += [k] unless v == -1
+    }
+    return roles
   end
 
   rails_admin do

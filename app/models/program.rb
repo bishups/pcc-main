@@ -704,74 +704,62 @@ class Program < ActiveRecord::Base
     self.program_donation.program_type.no_of_days.to_i
   end
 
-  def no_of_main_teachers_connected_or_conducted
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), false).group('teacher_id').length
+  def no_of_teachers_connected_or_conducted_class(role=nil)
+    return 0 if self.teacher_schedules.blank?
+    if role.blank?
+      no_of_teachers = {}
+      self.role.each { |r|
+        no_of_teachers[r] =  self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), r).group('teacher_id').length
+      }
+      return no_of_teachers
+    else
+     return self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), role).group('teacher_id').length
+    end
   end
 
-  def no_of_co_teachers_connected_or_conducted
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), true).group('teacher_id').length
+  def no_of_teachers_connected(role)
+    return 0 if self.teacher_schedules.blank?
+    self.teacher_schedules.where('state IN (?) AND role = ? ', ::ProgramTeacherSchedule::CONNECTED_STATES, role).group('teacher_id').length
   end
 
-  def no_of_main_teachers_connected
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, false).group('teacher_id').length
+  def teachers_connected(role)
+    return [] if self.teacher_schedules.blank?
+    self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role).group('teacher_id')
   end
 
-  def no_of_co_teachers_connected
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ? ', ::ProgramTeacherSchedule::CONNECTED_STATES, true).group('teacher_id').length
+  def teachers_conducted_class(role)
+    return [] if self.teacher_schedules.blank?
+    self.teacher_schedules.where('state IN (?) AND role = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
   end
 
-  def main_teachers_connected
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, false).group('teacher_id')
-#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  def teachers_connected_or_conducted_class(role = nil)
+    return [] if self.teacher_schedules.blank?
+    if role.blank?
+      teachers = {}
+      self.role.each { |r|
+        teachers[r] =  self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), r).group('teacher_id')
+      }
+      return teachers
+    else
+      self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
+    end
   end
 
-  def co_teachers_connected
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, true).group('teacher_id')
-#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  def minimum_no_of_teacher(role)
+    self.program_donation.program_type.role_minimum_no_of_teacher(role)
   end
 
-  def main_teachers_conducted_class
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], false).group('teacher_id')
-#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
+  def roles
+    self.program_donation.program_type.roles
   end
 
-  def co_teachers_conducted_class
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) AND co_teacher = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], true).group('teacher_id')
-#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
-  end
-
-  def has_co_teacher?
-    self.program_donation.program_type.minimum_no_of_co_teacher >= 0
-  end
-
-  def teachers_connected_or_conducted_class
-    return 0 if !self.teacher_schedules
-    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]).group('teacher_id')
-  end
-
-  def minimum_no_of_main_teacher
-    self.program_donation.program_type.minimum_no_of_teacher
-  end
-
-  def minimum_no_of_co_teacher
-    self.program_donation.program_type.minimum_no_of_co_teacher
-  end
-
-  def minimum_teachers_connected?
-    self.no_of_main_teachers_connected >= self.minimum_no_of_main_teacher &&
-        self.no_of_co_teachers_connected >= self.minimum_no_of_co_teacher
-  end
-
-  def program_needs_co_teacher?
-    self.program_donation.program_type.minimum_no_of_co_teacher > -1
+  def minimum_teachers_connected?(plus=0)
+    self.roles.each { |role|
+      if self.no_of_teachers_connected(role) < (self.minimum_no_of_teacher(role) + plus)
+        return false
+      end
+    }
+    return true
   end
 
   def is_teacher?
@@ -845,15 +833,12 @@ class Program < ActiveRecord::Base
       return false
     end
 
-    if (self.no_of_main_teachers_connected > 0)
-      self.errors[:base] << "Cannot close program, teacher(s) are still linked to the program."
-      return false
-    end
-
-    if (self.no_of_co_teachers_connected > 0)
-      self.errors[:base] << "Cannot close program, co-teacher(s) are still linked to the program."
-      return false
-    end
+    self.roles.each { |role|
+      if self.no_of_teachers_connected(role) > 0
+        self.errors[:base] << "Cannot close program, #{role}(s) are still linked to the program."
+        return false
+      end
+    }
 
     return true
   end
@@ -898,11 +883,14 @@ class Program < ActiveRecord::Base
 
   def teacher_status
     errors = []
-    main_teacher_str = self.minimum_no_of_co_teacher >=0 ? "Main teacher" : "teacher"
-    errors << "(Number of #{main_teacher_str} added = #{self.no_of_main_teachers_connected}) Please add #{self.minimum_no_of_main_teacher-self.no_of_main_teachers_connected} more teacher." if self.no_of_main_teachers_connected < self.minimum_no_of_main_teacher
-    errors << "(Number of Co-teacher added = #{self.no_of_co_teachers_connected}) Please add #{self.minimum_no_of_co_teacher-self.no_of_co_teachers_connected} more teacher." if self.no_of_co_teachers_connected < self.minimum_no_of_co_teacher
-    return errors unless errors.empty?
-    return ['<span class="label label-success">Ready</span>'] if self.no_of_main_teachers_connected >= self.minimum_no_of_main_teacher && self.no_of_co_teachers_connected >= self.minimum_no_of_co_teacher
+    self.roles.each { |role|
+      errors << "(Number of #{role} added = #{self.no_of_teachers_connected(role)}) Please add #{self.minimum_no_of_teacher(role)-self.no_of_teachers_connected(role)} more #{role}." if self.no_of_teachers_connected(role) < self.minimum_no_of_teacher(role)
+    }
+    if errors.empty?
+      return ['<span class="label label-success">Ready</span>']
+    else
+      return errors
+    end
   end
 
   def venue_status
