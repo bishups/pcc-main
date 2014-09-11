@@ -274,19 +274,37 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "language"
     t.integer  "no_of_days"
     t.integer  "minimum_no_of_teacher"
-    t.datetime "created_at",                 :null => false
-    t.datetime "updated_at",                 :null => false
+    t.datetime "created_at",                                       :null => false
+    t.datetime "updated_at",                                       :null => false
     t.datetime "deleted_at"
     t.integer  "registration_close_timeout"
     t.integer  "minimum_no_of_co_teacher"
     t.integer  "session_duration"
     t.string   "sync_ts"
     t.string   "sync_id"
+    t.integer  "minimum_no_of_organizing_teacher", :default => -1
+    t.integer  "minimum_no_of_hall_teacher",       :default => -1
+    t.integer  "minimum_no_of_initiation_teacher", :default => -1
   end
 
   add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
 
   create_table "program_types_co_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
+
+  create_table "program_types_hall_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
+
+  create_table "program_types_initiation_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
+
+  create_table "program_types_organizing_teachers", :force => true do |t|
     t.integer "program_type_id"
     t.integer "teacher_id"
   end

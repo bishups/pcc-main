@@ -35,20 +35,29 @@ class Teacher < ActiveRecord::Base
   has_and_belongs_to_many :co_teacher_program_types, class_name: "ProgramType", join_table: "program_types_co_teachers"
   attr_accessible :co_teacher_program_type_ids, :co_teacher_program_types
 
+  has_and_belongs_to_many :organizing_teacher_program_types, class_name: "ProgramType", join_table: "program_types_organizing_teachers"
+  attr_accessible :organizing_teacher_program_type_ids, :organizing_teacher_program_types
+
+  has_and_belongs_to_many :hall_teacher_program_types, class_name: "ProgramType", join_table: "program_types_hall_teachers"
+  attr_accessible :hall_teacher_program_type_ids, :hall_teacher_program_types
+
+  has_and_belongs_to_many :initiation_teacher_program_types, class_name: "ProgramType", join_table: "program_types_initiation_teachers"
+  attr_accessible :initiation_teacher_program_type_ids, :initiation_teacher_program_types
+
   PROGRAM_TYPES = {
       ::TeacherSchedule::ROLE_MAIN_TEACHER => "program_types",
-      ::TeacherSchedule::ROLE_CO_TEACHER => "co_teacher_program_types"
-     # , ::TeacherSchedule::ROLE_ORGANIZING_TEACHER => "organizing_teachers_program_types"
-     # , ::TeacherSchedule::ROLE_HALL_TEACHER => "hall_teachers_program_types"
-     # , ::TeacherSchedule::ROLE_INITIATION_TEACHER => "initiation_teachers_program_types"
+      ::TeacherSchedule::ROLE_CO_TEACHER => "co_teacher_program_types",
+      ::TeacherSchedule::ROLE_ORGANIZING_TEACHER => "organizing_teacher_program_types",
+      ::TeacherSchedule::ROLE_HALL_TEACHER => "hall_teacher_program_types",
+      ::TeacherSchedule::ROLE_INITIATION_TEACHER => "initiation_teacher_program_types"
   }
 
   PROGRAM_TYPES_TABLES = {
       ::TeacherSchedule::ROLE_MAIN_TEACHER => "program_types_teachers",
-      ::TeacherSchedule::ROLE_CO_TEACHER => "program_types_co_teachers"
-      # , ::TeacherSchedule::ROLE_ORGANIZING_TEACHER => "organizing_teachers_program_types"
-      # , ::TeacherSchedule::ROLE_HALL_TEACHER => "hall_teachers_program_types"
-      # , ::TeacherSchedule::ROLE_INITIATION_TEACHER => "initiation_teachers_program_types"
+      ::TeacherSchedule::ROLE_CO_TEACHER => "program_types_co_teachers",
+      ::TeacherSchedule::ROLE_ORGANIZING_TEACHER => "program_types_organizing_teachers",
+      ::TeacherSchedule::ROLE_HALL_TEACHER => "program_types_hall_teachers",
+      ::TeacherSchedule::ROLE_INITIATION_TEACHER => "program_types_initiation_teachers",
   }
 
   belongs_to :user
@@ -525,6 +534,60 @@ class Teacher < ActiveRecord::Base
       end
       field :co_teacher_program_types  do
         label "Co-Teacher"
+        inverse_of :teachers
+        #inline_edit false
+        inline_add false
+        read_only do
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          if bindings[:controller].current_user.is?(:super_admin)
+            # 7 Sep 2014 - Anuj - allowing super_admin same access as teacher_training_department
+            false #true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
+          else
+            true
+          end
+        end
+      end
+      field :organizing_teacher_program_types  do
+        label "Organizing Teacher"
+        inverse_of :teachers
+        #inline_edit false
+        inline_add false
+        read_only do
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          if bindings[:controller].current_user.is?(:super_admin)
+            # 7 Sep 2014 - Anuj - allowing super_admin same access as teacher_training_department
+            false #true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
+          else
+            true
+          end
+        end
+      end
+      field :hall_teacher_program_types  do
+        label "Hall Teacher"
+        inverse_of :teachers
+        #inline_edit false
+        inline_add false
+        read_only do
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          if bindings[:controller].current_user.is?(:super_admin)
+            # 7 Sep 2014 - Anuj - allowing super_admin same access as teacher_training_department
+            false #true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
+          else
+            true
+          end
+        end
+      end
+      field :initiation_teacher_program_types  do
+        label "Initiation Teacher"
         inverse_of :teachers
         #inline_edit false
         inline_add false
