@@ -103,19 +103,19 @@ class ProgramType < ActiveRecord::Base
       end
       field :minimum_no_of_co_teacher do
         label "Minimum number of Co-Teachers"
-        help "Enter -1 if not applicable"
+        help "Enter -1 if not applicable, 0 if optional."
       end
       field :minimum_no_of_organizing_teacher do
         label "Minimum number of Organizing Teachers"
-        help "Enter -1 if not applicable"
+        help "Enter -1 if not applicable, 0 if optional."
       end
       field :minimum_no_of_hall_teacher do
         label "Minimum number of Hall Teachers"
-        help "Enter -1 if not applicable"
+        help "Enter -1 if not applicable, 0 if optional."
       end
       field :minimum_no_of_initiation_teacher do
         label "Minimum number of Initiation Teachers"
-        help "Enter -1 if not applicable"
+        help "Enter -1 if not applicable, 0 if optional."
       end
       field :registration_close_timeout do
         label "Registration Close Timeout (in hrs)"
