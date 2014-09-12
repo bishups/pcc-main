@@ -1,5 +1,5 @@
 class UserController < ApplicationController
-
+  before_filter :authenticate_user!
   autocomplete :user, :email, :extra_data => [:mobile] ,:scopes => [:current_user_zone_users] , :display_value => :display_in_auto_complete
 
   def autocomplete_user_email
