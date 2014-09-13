@@ -1,1 +1,4 @@
 $('#additional_comments').attr("value", '<%= escape_javascript(@additional_comments) %>' );
+<% timings =  @selected_timings %>
+$('#timing_ids_select').html("<%= escape_javascript(options_for_select(timings.map {|e| [e.name, e.id]})) %>");
+

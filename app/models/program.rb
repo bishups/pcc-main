@@ -238,7 +238,7 @@ class Program < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center, object.teachers_connected_or_conducted_class)
+      object.notify(transition.from, transition.to, transition.event, object.center, object.teachers_connected_or_conducted_class.values)
     end
 
   end
@@ -277,7 +277,7 @@ class Program < ActiveRecord::Base
       self.save if self.errors.empty?
       # We need to manually send the notifications here, to avoid sending unnecessary notifications
       object.store_last_update!(User.current_user, STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT)
-      object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class)
+      object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class.values)
     end
   end
 
@@ -704,22 +704,22 @@ class Program < ActiveRecord::Base
     self.program_donation.program_type.no_of_days.to_i
   end
 
-  def no_of_teachers_connected_or_conducted_class(role=nil)
-    return 0 if self.teacher_schedules.blank?
-    if role.blank?
-      no_of_teachers = {}
-      self.role.each { |r|
-        no_of_teachers[r] =  self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), r).group('teacher_id').length
-      }
-      return no_of_teachers
-    else
-     return self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), role).group('teacher_id').length
-    end
-  end
+  #def no_of_teachers_connected_or_conducted_class(role=nil)
+  #  return 0 if self.teacher_schedules.blank?
+  #  if role.blank?
+  #    no_of_teachers = {}
+  #    self.role.each { |r|
+  #      no_of_teachers[r] =  self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), r).group('teacher_id').length
+  #    }
+  #    return no_of_teachers
+  #  else
+  #   return self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), role).group('teacher_id').length
+  #  end
+  #end
 
-  def no_of_teachers_connected(role)
+  def no_of_teachers_connected(role, timing)
     return 0 if self.teacher_schedules.blank?
-    self.teacher_schedules.where('state IN (?) AND role = ? ', ::ProgramTeacherSchedule::CONNECTED_STATES, role).group('teacher_id').length
+    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing.id).group('teacher_id').length
   end
 
   def teachers_connected(role)
@@ -755,9 +755,11 @@ class Program < ActiveRecord::Base
 
   def minimum_teachers_connected?(plus=0)
     self.roles.each { |role|
-      if self.no_of_teachers_connected(role) < (self.minimum_no_of_teacher(role) + plus)
-        return false
-      end
+      self.timings.each { |timing|
+        if self.no_of_teachers_connected(role, timing) < (self.minimum_no_of_teacher(role) + plus)
+          return false
+        end
+      }
     }
     return true
   end
@@ -834,10 +836,12 @@ class Program < ActiveRecord::Base
     end
 
     self.roles.each { |role|
-      if self.no_of_teachers_connected(role) > 0
-        self.errors[:base] << "Cannot close program, #{role}(s) are still linked to the program."
-        return false
-      end
+      self.timings.each { |timing|
+        if self.no_of_teachers_connected(role, timing) > 0
+          self.errors[:base] << "Cannot close program, Teacher(s) are still linked to the program."
+          return false
+        end
+      }
     }
 
     return true
@@ -884,7 +888,12 @@ class Program < ActiveRecord::Base
   def teacher_status
     errors = []
     self.roles.each { |role|
-      errors << "(Number of #{role} added = #{self.no_of_teachers_connected(role)}) Please add #{self.minimum_no_of_teacher(role)-self.no_of_teachers_connected(role)} more #{role}." if self.no_of_teachers_connected(role) < self.minimum_no_of_teacher(role)
+      self.timings.each { |timing|
+        connected = self.no_of_teachers_connected(role, timing)
+        minimum = self.minimum_no_of_teacher(role)
+        session = timing.name
+        errors << "<i>#{role}(s)</i> added = <b>#{connected}</b> for <i>#{session}</i>. Please add <b>#{minimum-connected}</b> more." if connected < minimum
+      }
     }
     if errors.empty?
       return ['<span class="label label-success">Ready</span>']

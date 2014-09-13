@@ -98,7 +98,7 @@
           <td><%= ts.end_date.strftime('%d %B %Y') %></td>
           <td>
             <% if ts.program_id %>
-              <%= ts.program.display_timings %>
+              <%= ts.display_timings %>
             <% else %>
                 <%= ts.timing.name rescue '' %>
             <% end %>

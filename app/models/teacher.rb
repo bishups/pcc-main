@@ -378,7 +378,7 @@ class Teacher < ActiveRecord::Base
     #return true if User.current_user.is? :venue_coordinator, :center_id => center_ids
   end
 
-  def can_be_blocked_by?(program, role)
+  def can_be_blocked_by?(program, role, timing_ids)
     # check if teacher has matching program_type for the specified role
     return false unless self.role_program_types(role).include?(program.program_donation.program_type)
 
@@ -386,18 +386,17 @@ class Teacher < ActiveRecord::Base
       ts = TeacherSchedule.new
       ts.program = program
       ts.teacher_id = self.id
-      program.timing_ids.each { |timing_id|
+      # for each of the specified timing_ids
+      timing_ids.each { |timing_id|
         ts.timing_id = timing_id
         # if program schedule does not overlap any other schedule for the teacher
         return false if ts.schedule_overlaps?
       }
     else
-      program.timings.each {|t|
-        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
-                                                                                                                                                          program.start_date.to_date, program.end_date.to_date, t.id,
-                                                                                                                                                          ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
-        return false if ts.nil?
-      }
+      ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                                                                                                                                        program.start_date.to_date, program.end_date.to_date, timing_ids,
+                                                                                                                                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
+      return false if ts.nil?
     end
     return true
   end

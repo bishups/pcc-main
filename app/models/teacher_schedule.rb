@@ -30,7 +30,7 @@ class TeacherSchedule < ActiveRecord::Base
   attr_accessible :comment_category
 
   attr_accessible :start_date, :end_date, :state, :program_type_id, :program_type, :comments, :feedback
-  attr_accessible :timing, :timing_id, :teacher, :teacher_id, :role, :program, :program_id, :centers, :center_ids
+  attr_accessible :timing, :timing_id, :timings_str, :teacher, :teacher_id, :role, :program, :program_id, :centers, :center_ids
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at
@@ -140,6 +140,14 @@ class TeacherSchedule < ActiveRecord::Base
     self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED
   end
 
+  def display_timings
+    if self.timings_str.blank?
+      return self.timing[:name]
+    else
+      self.timings_str
+    end
+  end
+
   def split_schedule!(start_date, end_date)
     if self.start_date < start_date
       ts = self.deep_dup
@@ -229,6 +237,7 @@ class TeacherSchedule < ActiveRecord::Base
     pts.teacher_id = pts.teacher_schedule.teacher_id
     pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
     pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
+    pts.timings_str = pts.teacher_schedule.timings_str
     pts.teacher_role = pts.teacher_schedule.role
     pts.current_user = User.current_user
 
