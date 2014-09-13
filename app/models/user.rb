@@ -100,7 +100,7 @@ class User < ActiveRecord::Base
           :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
           :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
-          :center_treasurer     => {:text => "Treasurer", :access_level => 0, :group => [:geography]},
+          :treasurer            => {:text => "Treasurer", :access_level => 0, :group => [:geography]},
           :teacher              => {:text => "Teacher", :access_level => 0, :group => [:geography]},
           # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
@@ -441,45 +441,45 @@ class User < ActiveRecord::Base
       end
       field :firstname do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :lastname do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :address do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :mobile do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :phone do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Optional. Format of stdcode-number (e.g, 0422-2515345)."
       end
       field :email do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end
       field :password do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end
       field :password_confirmation do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end

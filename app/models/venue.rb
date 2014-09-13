@@ -313,6 +313,7 @@ def can_reject?
   def can_view_schedule?
     return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.center_ids
     return true if User.current_user.is? :venue_coordinator, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :pcc_accounts, :for => :any, :center_id => self.center_ids
     return false
   end
 
