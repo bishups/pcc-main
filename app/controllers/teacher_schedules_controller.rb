@@ -160,6 +160,7 @@ class TeacherSchedulesController < ApplicationController
             @teacher_schedule.teacher_id = params[:teacher_id]
             #@teacher_schedule.program_type_id = params[:teacher_schedule][:program_type_id]
             @teacher_schedule.timing_id = timing_id
+            @teacher_schedule.timing_str = @teacher_schedule.timing.name
             if @teacher_schedule.valid?
               additional_days = @teacher_schedule.can_combine_consecutive_schedules?
               if (additional_days + @teacher_schedule.no_of_days < 3)

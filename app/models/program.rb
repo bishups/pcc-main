@@ -238,7 +238,7 @@ class Program < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center, object.teachers_connected_or_conducted_class.values)
+      object.notify(transition.from, transition.to, transition.event, object.center, object.teachers_connected_or_conducted_class)
     end
 
   end
@@ -277,7 +277,7 @@ class Program < ActiveRecord::Base
       self.save if self.errors.empty?
       # We need to manually send the notifications here, to avoid sending unnecessary notifications
       object.store_last_update!(User.current_user, STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT)
-      object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class.values)
+      object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class)
     end
   end
 
@@ -732,17 +732,13 @@ class Program < ActiveRecord::Base
     self.teacher_schedules.where('state IN (?) AND role = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
   end
 
-  def teachers_connected_or_conducted_class(role = nil)
+  def teachers_connected_or_conducted_class
     return [] if self.teacher_schedules.blank?
-    if role.blank?
-      teachers = {}
-      self.role.each { |r|
-        teachers[r] =  self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), r).group('teacher_id')
-      }
-      return teachers
-    else
-      self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
-    end
+    teachers = []
+    self.role.each { |r|
+      teachers << self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
+    }
+    teachers.uniq
   end
 
   def minimum_no_of_teacher(role)
