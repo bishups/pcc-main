@@ -13,10 +13,10 @@ end
 
 ## Initiaising role as main teacher, if there is no role
 
-TeacherSchedule.update_all("role = '#{TeacherSchedule::ROLE_MAIN_TEACHER}'","role is null")
+#TeacherSchedule.update_all("role = '#{TeacherSchedule::ROLE_MAIN_TEACHER}'","role is null")
 
 
-#Chaning timing to match new values.
+#Changing timing to match new values.
 
 timing_mapping = {
 
@@ -33,6 +33,20 @@ timing_mapping.each do |old_name,new_timing|
   if not t.save
     puts "Timing #{t.name} has not been saved because of #{t.errors.messages}"
   end
+end
+
+
+#Initializing Program Type session_duration
+
+pt_types = {
+  "Uyir Nokkam" => 2,
+  "IE 7 Day E" => 3
+}
+
+pt_types.each do |name,session_duration| 
+ pt=ProgramType.find_by_name(name)
+ pt.session_duration=session_duration
+ pt.save
 end
 
 
