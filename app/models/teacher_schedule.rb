@@ -140,11 +140,10 @@ class TeacherSchedule < ActiveRecord::Base
     self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED
   end
 
-  def display_timings(role = nil)
+  def display_timings(role)
     program = self.program
     return self.timing_str if program.blank?
 
-    role = self.teacher.roles if role.blank?
     if program.full_day?
       # check if teacher is linked to all program timings in the same role
       timing_ids = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_ids)

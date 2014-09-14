@@ -159,7 +159,20 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   end
 
   def if_program_announced!
-    self.send(::Program::ANNOUNCED) if self.program.is_announced? && self.program.is_active?
+    if self.program.is_announced? && self.program.is_active?
+      self.send(::Program::ANNOUNCED)
+      # update the timing_str for all teacher schedule(s) for the teacher, linked to the program
+      announced_timings = self.program.announced_timing.split(", ")
+      teacher_schedules = self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id)
+      teacher_schedules.each { |ts|
+        session_name = ts.timing.name.split(' ')[0]
+        ts.timing_str = ""
+        announced_timings.each { |timing_str|
+          ts.timing_str = timing_str unless timing_str.index(session_name).nil?
+        }
+        ts.save
+      }
+    end
   end
 
   def if_program_started!
@@ -558,7 +571,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     #     {:state => self.state, :program_id => program_id, :blocked_by_user_id => self.blocked_by_user_id})
 
     #old_state = ::TeacherSchedule::STATE_UNKNOWN
-    role = ::TeacherSchedule::TEACHER_ROLES if role.blank?
+    role = self.teacher_role if role.blank?
     teacher_schedules = TeacherSchedule.where('program_id = ? AND teacher_id = ? AND role = ?', self.program_id, self.teacher_id, role)
     teacher_schedules.each {|ts|
       # 1. update the state of all teacher_schedule(s) for a teacher, and program
