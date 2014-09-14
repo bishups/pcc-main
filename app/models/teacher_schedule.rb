@@ -140,15 +140,20 @@ class TeacherSchedule < ActiveRecord::Base
     self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED
   end
 
-  def display_timings
+  def display_timings(role = nil)
     program = self.program
     return self.timing_str if program.blank?
 
-    # TODO - prevent part-session scheduling for a full-day program
-    return "Full Day" if program.full_day?
+    role = self.teacher.roles if role.blank?
+    if program.full_day?
+      # check if teacher is linked to all program timings in the same role
+      timing_ids = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_ids)
+      return "Full Day" if timing_ids.sort == program.timing_ids.sort
+      # else fall through -- return specific timing str
+    end
 
-    # concatenate all the timing_str from all the schedule linked to the program
-    timing_strs = TeacherSchedule.where("program_id = ? AND teacher_id = ? ", program.id, self.teacher.id).pluck(:timing_str)
+    # concatenate all the timing_str from all the schedule linked to the program for specified role
+    timing_strs = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_str)
     return timing_strs.reject(&:blank?).join(", ")
   end
 
@@ -250,7 +255,7 @@ class TeacherSchedule < ActiveRecord::Base
       self.comments = event
       pts.send(event)
       # also call update on the model
-      pts.update(event) if pts.errors.empty?
+      pts.update(pts.teacher_role, event) if pts.errors.empty?
     else
       # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
     end

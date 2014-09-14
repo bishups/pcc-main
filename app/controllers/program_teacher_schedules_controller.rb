@@ -198,7 +198,7 @@ class ProgramTeacherSchedulesController < ApplicationController
 
     respond_to do |format|
       if @program_teacher_schedule.can_update?
-        if state_update(@program_teacher_schedule, @trigger) &&  @program_teacher_schedule.update(@trigger)
+        if state_update(@program_teacher_schedule, @trigger) &&  @program_teacher_schedule.update(@program_teacher_schedule.teacher_role, @trigger)
           if @program_teacher_schedule.program_id
             format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id), notice: 'Program-Teacher Schedule was successfully updated.'  }
             format.json { render :json => @program_teacher_schedule }
@@ -234,6 +234,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
       pts.teacher.current_user = current_user
       pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
+      pts.teacher_role = pts.teacher_schedule.role
       pts.timing_str = pts.teacher_schedule.timing_str
     else
       if params.has_key?(:program_id)
