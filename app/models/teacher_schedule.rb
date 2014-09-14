@@ -30,7 +30,7 @@ class TeacherSchedule < ActiveRecord::Base
   attr_accessible :comment_category
 
   attr_accessible :start_date, :end_date, :state, :program_type_id, :program_type, :comments, :feedback
-  attr_accessible :timing, :timing_id, :timings_str, :teacher, :teacher_id, :role, :program, :program_id, :centers, :center_ids
+  attr_accessible :timing, :timing_id, :timing_str, :teacher, :teacher_id, :role, :program, :program_id, :centers, :center_ids
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at
@@ -140,12 +140,21 @@ class TeacherSchedule < ActiveRecord::Base
     self.errors.add("Not attached to zone. Please contact your co-ordinator.") if self.teacher.state == Teacher::STATE_UNATTACHED
   end
 
-  def display_timings
-    if self.timings_str.blank?
-      return self.timing[:name]
-    else
-      self.timings_str
+  def display_timings(role = nil)
+    program = self.program
+    return self.timing_str if program.blank?
+
+    role = self.teacher.roles if role.blank?
+    if program.full_day?
+      # check if teacher is linked to all program timings in the same role
+      timing_ids = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_ids)
+      return "Full Day" if timing_ids.sort == program.timing_ids.sort
+      # else fall through -- return specific timing str
     end
+
+    # concatenate all the timing_str from all the schedule linked to the program for specified role
+    timing_strs = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_str)
+    return timing_strs.reject(&:blank?).join(", ")
   end
 
   def split_schedule!(start_date, end_date)
@@ -237,7 +246,7 @@ class TeacherSchedule < ActiveRecord::Base
     pts.teacher_id = pts.teacher_schedule.teacher_id
     pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
     pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
-    pts.timings_str = pts.teacher_schedule.timings_str
+    pts.timing_str = pts.teacher_schedule.timing_str
     pts.teacher_role = pts.teacher_schedule.role
     pts.current_user = User.current_user
 
@@ -246,7 +255,7 @@ class TeacherSchedule < ActiveRecord::Base
       self.comments = event
       pts.send(event)
       # also call update on the model
-      pts.update(event) if pts.errors.empty?
+      pts.update(pts.teacher_role, event) if pts.errors.empty?
     else
       # TODO - IMPORTANT - log that we are ignore the event and what state are we in presently
     end

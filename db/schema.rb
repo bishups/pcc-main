@@ -430,7 +430,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "last_update"
     t.datetime "last_updated_at"
     t.string   "role"
-    t.string   "timings_str"
+    t.string   "timing_str"
   end
 
   create_table "teacher_slots", :force => true do |t|

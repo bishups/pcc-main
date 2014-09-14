@@ -18,12 +18,12 @@ class TeacherSchedulesController < ApplicationController
     teacher_schedules = []
     # get the schedules for part-time teachers, from centers for which current_user is center_scheduler (or above)
     unless center_scheduler_center_ids.empty?
-      teacher_schedules += @teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").where("teacher_schedules.end_date >= ? AND centers_teacher_schedules.center_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), center_scheduler_center_ids, false).group("coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
+      teacher_schedules += @teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").where("teacher_schedules.end_date >= ? AND centers_teacher_schedules.center_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), center_scheduler_center_ids, false).group("role", "coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
     end
 
     # get the schedules for full-time teachers attached to zones, for which current_user is zao (or above)
     unless zao_zone_ids.empty?
-      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("teacher_schedules.end_date >= ? AND zones_teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), zao_zone_ids, true).group("coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
+      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("teacher_schedules.end_date >= ? AND zones_teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), zao_zone_ids, true).group("role","coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
     end
     @teacher_schedules = teacher_schedules.uniq
 
@@ -160,6 +160,7 @@ class TeacherSchedulesController < ApplicationController
             @teacher_schedule.teacher_id = params[:teacher_id]
             #@teacher_schedule.program_type_id = params[:teacher_schedule][:program_type_id]
             @teacher_schedule.timing_id = timing_id
+            @teacher_schedule.timing_str = @teacher_schedule.timing.name
             if @teacher_schedule.valid?
               additional_days = @teacher_schedule.can_combine_consecutive_schedules?
               if (additional_days + @teacher_schedule.no_of_days < 3)

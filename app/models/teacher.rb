@@ -378,10 +378,39 @@ class Teacher < ActiveRecord::Base
     #return true if User.current_user.is? :venue_coordinator, :center_id => center_ids
   end
 
-  def can_be_blocked_by?(program, role, timing_ids)
+  def can_be_blocked_by?(program, role)
+    # check if teacher has matching program_type for the specified role
+    return [] unless self.role_program_types(role).include?(program.program_donation.program_type)
+
+    timing_ids = []
+    # if given a program, we are trying to block a teacher
+    if self.full_time?
+      ts = TeacherSchedule.new
+      ts.program = program
+      ts.teacher_id = self.id
+      # for each of the program timing_ids
+      program.timing_ids.each { |timing_id|
+        ts.timing_id = timing_id
+        # if program schedule does not overlap any other schedule for the teacher
+        timing_ids << timing_id unless ts.schedule_overlaps?
+      }
+    else
+      # for each of the program timing_ids
+      program.timing_ids.each { |timing_id|
+        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                                                                                                                                        program.start_date.to_date, program.end_date.to_date, timing_id,
+                                                                                                                                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
+        timing_ids << timing_id unless ts.nil?
+      }
+    end
+    return timing_ids
+  end
+
+  def can_be_blocked_by_given_timings?(program, role, timing_ids)
     # check if teacher has matching program_type for the specified role
     return false unless self.role_program_types(role).include?(program.program_donation.program_type)
 
+    # if given a program, we are trying to block a teacher
     if self.full_time?
       ts = TeacherSchedule.new
       ts.program = program

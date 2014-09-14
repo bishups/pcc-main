@@ -23,7 +23,7 @@ PccMain::Application.routes.draw do
   get 'program_teacher_schedules/update_blockable_teachers', :as => 'update_program_teacher_schedule_blockable_teachers'
   get 'program_teacher_schedules/update_blockable_programs', :as => 'update_program_teacher_schedule_blockable_programs'
   get 'program_teacher_schedules/update_additional_comments', :as => 'update_program_teacher_schedule_additional_comments'
-
+  get 'program_teacher_schedules/update_program_timings', :as => 'update_program_teacher_schedule_program_timings'
 
 
   get '/login_as_other_user' => "home#login_as"

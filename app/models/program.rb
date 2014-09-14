@@ -238,7 +238,7 @@ class Program < ActiveRecord::Base
     # send notifications, after any transition
     after_transition any => any do |object, transition|
       object.store_last_update!(object.current_user, transition.from, transition.to, transition.event)
-      object.notify(transition.from, transition.to, transition.event, object.center, object.teachers_connected_or_conducted_class.values)
+      object.notify(transition.from, transition.to, transition.event, object.center, object.teachers_connected_or_conducted_class)
     end
 
   end
@@ -277,7 +277,7 @@ class Program < ActiveRecord::Base
       self.save if self.errors.empty?
       # We need to manually send the notifications here, to avoid sending unnecessary notifications
       object.store_last_update!(User.current_user, STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT)
-      object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class.values)
+      object.notify(STATE_IN_PROGRESS, STATE_REGISTRATION_CLOSED, EVENT_REGISTRATION_CLOSE_TIMEOUT, self.center, self.teachers_connected_or_conducted_class)
     end
   end
 
@@ -332,8 +332,10 @@ class Program < ActiveRecord::Base
       # fill the slots that we have blocked
       start_in_mins = (blocked_start_time.hour - start_of_day.hour) * 60 + (blocked_start_time.min - start_of_day.min)
       end_in_mins = (blocked_end_time.hour - start_of_day.hour) * 60 + (blocked_end_time.min - start_of_day.min)
+      # get teacher_ids blocked for given program, for given timing
+      teacher_ids = self.teachers_connected_for_timing(timings[i-1].id)
       for j in start_in_mins..end_in_mins
-        blocked_slots[j-1] = true
+        blocked_slots[j-1] = teacher_ids
       end
 
       # check for basic overlap
@@ -357,18 +359,22 @@ class Program < ActiveRecord::Base
       start_in_mins = (start_time.hour - start_of_day.hour) * 60 + (start_time.min - start_of_day.min)
       end_in_mins = (end_time.hour - start_of_day.hour) * 60 + (end_time.min - start_of_day.min)
       for j in start_in_mins..end_in_mins
-        if announced_slots[j-1] == true
+        if announced_slots[j-1] != false
           self.errors[:base] << "Invalid value for #{self.timing_name(i-1)} slot. Start (or End) time overlaps with other slot."
           return false
         end
-        announced_slots[j-1] = true
+        announced_slots[j-1] = teacher_ids
       end
     end
 
     # check if the timings announced fall within the timing blocked earlier
     for i in 1..(24*60)
-      if blocked_slots[i-1] == false && announced_slots[i-1] == true
-        self.errors[:base] << "Invalid value for Start (or End) time. Timings announced should fall within currently blocked timings."
+      if (announced_slots[i-1] != false) and (announced_slots[i-1] != blocked_slots[i-1])
+        if (blocked_slots[i-1] == false)
+          self.errors[:base] << "Invalid value for Start (or End) time. Timings announced should fall within currently blocked timings."
+        else
+          self.errors[:base] << "Invalid value for Start (or End) time. Timings announced cannot overlap the currently blocked timings, when scheduled teacher(s) are not same."
+        end
         return false
       end
     end
@@ -396,11 +402,15 @@ class Program < ActiveRecord::Base
         end_time = self.time[:end][i-1]
         # include only the valid slots
         # Morning (09:30 am-10:30 am), Afternoon(09:30 am-10:30 am), Evening(09:30 am-10:30 am), Night(09:30 am-10:30 am)
+        new_timing_str = ""
         if ((end_time - start_time) / 1.minute).round > 0
-          self.announced_timing << "#{timing_name} (#{start_time.strftime("%-I:%M %P")}-#{end_time.strftime("%-I:%M %P")}), "
+          new_timing_str = "#{timing_name} (#{start_time.strftime("%-I:%M %P")}-#{end_time.strftime("%-I:%M %P")}), "
+          self.announced_timing << new_timing_str
           new_start_time = start_time if new_start_time.blank?
           new_end_time = end_time
         end
+        # update linked teacher schedule timing str
+        self.update_teacher_schedule_timing_str(self.timings[i-1].id, new_timing_str.chomp(", "))
       end
       self.announced_timing = self.announced_timing.chomp(", ")
     else
@@ -727,26 +737,32 @@ class Program < ActiveRecord::Base
     self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role).group('teacher_id')
   end
 
+  def teachers_connected_for_timing(timing_id)
+    return [] if self.teacher_schedules.blank?
+    teacher_ids = self.teacher_schedules.where('state IN (?) AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, timing_id).pluck('teacher_id')
+    teacher_ids.uniq.sort
+  end
+
   def teachers_conducted_class(role)
     return [] if self.teacher_schedules.blank?
     self.teacher_schedules.where('state IN (?) AND role = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
   end
 
-  def teachers_connected_or_conducted_class(role = nil)
+  def teachers_connected_or_conducted_class
     return [] if self.teacher_schedules.blank?
-    if role.blank?
-      teachers = {}
-      self.role.each { |r|
-        teachers[r] =  self.teacher_schedules.where('state IN (?) AND role = ? ', (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS]), r).group('teacher_id')
-      }
-      return teachers
-    else
-      self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
-    end
+    teachers = []
+    self.roles.each { |role|
+      teachers << self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
+    }
+    teachers.uniq
   end
 
   def minimum_no_of_teacher(role)
     self.program_donation.program_type.role_minimum_no_of_teacher(role)
+  end
+
+  def update_teacher_schedule_timing_str(timing_id, timing_str)
+    self.teacher_schedules.where('state IN (?) AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, timing_id).update_all(:timing_str => timing_str)
   end
 
   def roles

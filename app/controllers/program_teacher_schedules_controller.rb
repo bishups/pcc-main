@@ -41,7 +41,7 @@ class ProgramTeacherSchedulesController < ApplicationController
         if !@program_teacher_schedule.can_create?
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
-        elsif !teacher.can_be_blocked_by?(program, @program_teacher_schedule.teacher_role, @program_teacher_schedule.timing_ids)
+        elsif !teacher.can_be_blocked_by_given_timings?(program, @program_teacher_schedule.teacher_role, @program_teacher_schedule.timing_ids)
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Request timed out, cannot perform the requested action. Please try again." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         else
@@ -115,6 +115,14 @@ class ProgramTeacherSchedulesController < ApplicationController
     @additional_comments = Teacher.find(selected_teacher_id).additional_comments
   end
 
+  def update_program_timings
+    selected_program_id = params[:program_id].to_i
+    blockable_timing_ids = eval(params[:blockable_timing_ids])
+    @program_teacher_schedule = load_program_teacher_schedule!(params)
+    @selected_timings = blockable_timing_ids[selected_program_id].map { |id| Timing.find(id)}
+    @selected_program = Program.find(selected_program_id)
+  end
+
   #def load_additional_comments!
   #  teachers = @blockable_teachers
   #  @additional_comments = teachers.blank? ? '' : teachers[0].additional_comments
@@ -128,9 +136,9 @@ class ProgramTeacherSchedulesController < ApplicationController
     #@timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
     blockable_teachers = @program_teacher_schedule.blockable_teachers(@selected_teacher_role)
     @blockable_teachers = blockable_teachers.sort_by{|entry| entry[:teacher].user.fullname}
-    @blockable_timing_ids = Hash[@blockable_teachers.map {|e| [e[:teacher].id, e[:timings].map{|t| t.id}] }]
+    @blockable_timing_ids = Hash[@blockable_teachers.map {|e| [e[:teacher].id, e[:timing_ids]] }]
     unless @blockable_teachers.blank?
-      @selected_timings = @blockable_teachers.first[:timings]
+      @selected_timings = Timing.find(@blockable_teachers.first[:timing_ids])
       @additional_comments = @blockable_teachers.first[:teacher].additional_comments
     else
       @selected_timings = []
@@ -144,9 +152,9 @@ class ProgramTeacherSchedulesController < ApplicationController
     #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
     blockable_teachers = @program_teacher_schedule.blockable_teachers(@selected_teacher_role)
     @blockable_teachers = blockable_teachers.sort_by{|entry| entry[:teacher].user.fullname}
-    @blockable_timing_ids = Hash[@blockable_teachers.map {|e| [e[:teacher].id, e[:timings].map{|t| t.id}] }]
+    @blockable_timing_ids = Hash[@blockable_teachers.map {|e| [e[:teacher].id, e[:timing_ids]] }]
     unless @blockable_teachers.blank?
-      @selected_timings = @blockable_teachers.first[:timings]
+      @selected_timings = Timing.find(@blockable_teachers.first[:timing_ids])
       @additional_comments = @blockable_teachers.first[:teacher].additional_comments
     else
       @selected_timings = []
@@ -160,14 +168,24 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     # updates blockable teachers based on selection
     #@timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
-    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role)).sort_by{|p| p.friendly_name}
+    #@blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role)).sort_by{|p| p.friendly_name}
+    blockable_programs = @program_teacher_schedule.blockable_programs(@selected_teacher_role)
+    @blockable_programs = blockable_programs.sort_by{|entry| entry[:program].friendly_name}
+    @blockable_timing_ids = Hash[@blockable_programs.map {|e| [e[:program].id, e[:timing_ids]] }]
+    @selected_program = @blockable_programs.blank? ? nil : @blockable_programs.first[:program]
+    @selected_timings = @blockable_programs.blank? ? [] : Timing.find(@blockable_programs.first[:timing_ids])
   end
 
   def load_blockable_programs!(teacher_role = nil)
     @teacher_roles = @program_teacher_schedule.teacher.roles
     @selected_teacher_role = teacher_role.nil? ? @teacher_roles[0] : teacher_role
     #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
-    @blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role)).sort_by{|p| p.friendly_name}
+    #@blockable_programs = (@program_teacher_schedule.blockable_programs(@selected_teacher_role)).sort_by{|p| p.friendly_name}
+    blockable_programs = @program_teacher_schedule.blockable_programs(@selected_teacher_role)
+    @blockable_programs = blockable_programs.sort_by{|entry| entry[:program].friendly_name}
+    @blockable_timing_ids = Hash[@blockable_programs.map {|e| [e[:program].id, e[:timing_ids]] }]
+    @selected_program = @blockable_programs.blank? ? nil : @blockable_programs.first[:program]
+    @selected_timings = @blockable_programs.blank? ? [] : Timing.find(@blockable_programs.first[:timing_ids])
   end
 
 
@@ -180,7 +198,7 @@ class ProgramTeacherSchedulesController < ApplicationController
 
     respond_to do |format|
       if @program_teacher_schedule.can_update?
-        if state_update(@program_teacher_schedule, @trigger) &&  @program_teacher_schedule.update(@trigger)
+        if state_update(@program_teacher_schedule, @trigger) &&  @program_teacher_schedule.update(@program_teacher_schedule.teacher_role, @trigger)
           if @program_teacher_schedule.program_id
             format.html { redirect_to program_teacher_schedule_path(:id => @program_teacher_schedule.teacher_schedule_id), notice: 'Program-Teacher Schedule was successfully updated.'  }
             format.json { render :json => @program_teacher_schedule }
@@ -216,7 +234,8 @@ class ProgramTeacherSchedulesController < ApplicationController
       pts.teacher = Teacher.find(pts.teacher_schedule.teacher_id)
       pts.teacher.current_user = current_user
       pts.blocked_by_user_id = pts.teacher_schedule.blocked_by_user_id
-      pts.timings_str = pts.teacher_schedule.timings_str
+      pts.teacher_role = pts.teacher_schedule.role
+      pts.timing_str = pts.teacher_schedule.timing_str
     else
       if params.has_key?(:program_id)
         pts.program_id = (params[:program_id]).to_i

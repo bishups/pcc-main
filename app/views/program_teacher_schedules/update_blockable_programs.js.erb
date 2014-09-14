@@ -2,9 +2,13 @@
     <% blockable_programs = @blockable_programs.map{|p| [p.friendly_name, p.id]} %>
     $('#programs_select').html("<%= escape_javascript(options_for_select(blockable_programs)) %>");
     $('#programs_select').prop('disabled', false)
+    <% timings =  @selected_timings %>
+    $('#timing_ids_select').html("<%= escape_javascript(options_for_select(timings.map {|e| [e.name, e.id]})) %>");
+    $('#timings_select').prop('disabled', false)
     $('#submit_button').prop('disabled', false)
 <% else %>
     $('#programs_select').html("<%= escape_javascript(options_for_select(['None Available'])) %>");
     $('#programs_select').prop('disabled', true)
+    $('#timings_select').prop('disabled', true)
     $('#submit_button').prop('disabled', true)
 <% end %>

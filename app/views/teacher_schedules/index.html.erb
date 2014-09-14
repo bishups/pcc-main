@@ -82,6 +82,7 @@
       <th>Program</th>
       <th>Start Date</th>
       <th>End Date</th>
+      <th>Role</th>
       <th>Timing(s)</th>
       <th>Center(s)</th>
       <th>State</th>
@@ -96,13 +97,8 @@
           <td><%= link_to ts.program.name,program_path(ts.program_id) rescue 'Not Applicable' %></td>
           <td><%= ts.start_date.strftime('%d %B %Y') %></td>
           <td><%= ts.end_date.strftime('%d %B %Y') %></td>
-          <td>
-            <% if ts.program_id %>
-              <%= ts.display_timings %>
-            <% else %>
-                <%= ts.timing.name rescue '' %>
-            <% end %>
-          </td>
+          <td><%= ts.role rescue '' %></td>
+          <td><%= ts.display_timings(ts.role) rescue '' %></td>
           <td>
           <% if ts.program_id %>
               <%=  ts.program.locality_name %>
