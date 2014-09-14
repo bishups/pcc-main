@@ -10,7 +10,7 @@
 
 # Use at least one worker per core if you're on a dedicated server,
 # more will usually help for _short_ waits on databases/caches.
-worker_processes 4
+worker_processes 2
 
 # Since Unicorn is never exposed to outside clients, it does not need to
 # run on the standard HTTP port (80), there is no reason to start Unicorn
@@ -21,7 +21,7 @@ worker_processes 4
 
 # Help ensure your application will always spawn in the symlinked
 # "current" directory that Capistrano sets up.
-working_directory "/home/genie/pcc-main/"
+working_directory "/home/ubuntu/pcc-main"
 
 # listen on both a Unix domain socket and a TCP port,
 # we use a shorter backlog for quicker failover when busy
@@ -32,7 +32,7 @@ listen 4000, :tcp_nopush => true
 timeout 180
 
 # feel free to point this anywhere accessible on the filesystem
-pid "/tmp/unicorn.pid"
+pid "/home/ubuntu/pcc-main/tmp/unicorn.pid"
 
 # By default, the Unicorn logger will write to stderr.
 # Additionally, ome applications/frameworks log to stderr or stdout,
@@ -55,7 +55,7 @@ before_fork do |server, worker|
   # The following is only recommended for memory/DB-constrained
   # installations.  It is not needed if your system can house
   # twice as many worker_processes as you have configured.
-  #
+  #G
   # # This allows a new master process to incrementally
   # # phase out the old master process with SIGTTOU to avoid a
   # # thundering herd (especially in the "preload_app false" case)
@@ -94,7 +94,7 @@ after_fork do |server, worker|
 end
 
 
-stderr_path "/home/genie/pcc-main/log/unicorn_err.log"
-stdout_path "/home/genie/pcc-main/log/unicorn_out.log"
+stderr_path "log/unicorn_err.log"
+stdout_path "log/unicorn_out.log"
 
 
