@@ -430,6 +430,12 @@ class Teacher < ActiveRecord::Base
     return true
   end
 
+
+  def can_be_blocked_for_full_day?(program, timing_ids)
+    program.timing_ids.sort == timing_ids.sort
+  end
+
+
   def full_time?
     return self.full_time
   end

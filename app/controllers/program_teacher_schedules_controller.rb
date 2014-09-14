@@ -44,6 +44,9 @@ class ProgramTeacherSchedulesController < ApplicationController
         elsif !teacher.can_be_blocked_by_given_timings?(program, @program_teacher_schedule.teacher_role, @program_teacher_schedule.timing_ids)
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Request timed out, cannot perform the requested action. Please try again." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
+        elsif program.full_day? and !teacher.can_be_blocked_for_full_day?(program, @program_teacher_schedule.timing_ids)
+          format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Teacher cannot be blocked for Full-Day Program. Please select all available Timing(s) and try again." }
+          format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         else
           @program_teacher_schedule.block_teacher_schedule!(params[:program_teacher_schedule])
           #@program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
