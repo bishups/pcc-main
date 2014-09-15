@@ -343,6 +343,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.text     "comments"
     t.string   "last_update"
     t.datetime "last_updated_at"
+    t.string   "contact_phone"
+    t.string   "contact_email"
   end
 
   create_table "programs_timings", :force => true do |t|

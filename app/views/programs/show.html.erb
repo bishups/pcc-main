@@ -113,10 +113,20 @@
         <td><strong>Timing (s)</strong></td>
         <td><%= @program.display_timings %></td>
       </tr>
-      <tr>
-        <td><strong>Capacity</strong></td>
-        <td><%= @program.capacity rescue ''%></td>
-      </tr>
+      <% if @program.is_announced? %>
+          <tr>
+            <td><strong>Capacity</strong></td>
+            <td><%= @program.capacity rescue ''%></td>
+          </tr>
+          <tr>
+            <td><strong>Contact Phone (s)</strong></td>
+            <td><%= @program.contact_phone rescue ''%></td>
+          </tr>
+          <tr>
+            <td><strong>Contact Email-id (s)</strong></td>
+            <td><%= @program.contact_email rescue ''%></td>
+          </tr>
+      <% end %>
     </table>
   </div>
 </div>

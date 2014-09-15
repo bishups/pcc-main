@@ -66,6 +66,9 @@ class Program < ActiveRecord::Base
   attr_accessor :comment_category
   attr_accessible :comment_category
 
+  attr_accessible :contact_phone, :contact_email
+
+
   #attr_accessor :start_time_1, :end_time_1, :start_time_2, :end_time_2, :start_time_3, :end_time_3, :start_time_4, :end_time_4
   attr_accessor :time
 
@@ -382,6 +385,31 @@ class Program < ActiveRecord::Base
     return true
   end
 
+  def valid_contact_phone?
+    return true if self.contact_phone.blank?
+    phones = self.contact_phone.delete(' ').split(',')
+    phones.each { |phone|
+      # check if valid mobile number -- (ten digit numeric)
+      valid_mobile = (phone.length == 10 and phone.to_i.to_s == phone)
+      # else check if valid stdcode-number -- (0[0-9]{2,4}-[0-9]{6,8})
+      next if valid_mobile
+      p = phone.split('-')
+      valid_landline = (p.count == 2 and p[0][0] == '0' and p[0].length.between?(2,4) and p[1].length.between?(6,8))
+      return false if not valid_landline
+    }
+    return true
+  end
+
+
+  def valid_contact_email?
+    return true if self.contact_email.blank?
+    email_ids = self.contact_email.delete(' ').split(',')
+    email_ids.each {|email_id|
+      return false if not ValidateEmail.valid?(email_id)
+    }
+    return true
+  end
+
   def before_announce
     if self.capacity.nil? || self.capacity <= 0
       self.errors[:capacity] << " should be non-zero."
@@ -389,6 +417,16 @@ class Program < ActiveRecord::Base
     end
     if self.announced_locality.nil? || self.announced_locality.blank?
       self.announced_locality = self.center.name
+    end
+
+    if not self.valid_contact_phone?
+      self.errors[:contact_phone] << " invalid. Please enter valid phone number(s)."
+      return false
+    end
+
+    if not self.valid_contact_email?
+      self.errors[:contact_email] << " invalid. Please enter valid email id(s)."
+      return false
     end
 
     new_start_time = new_end_time = ""

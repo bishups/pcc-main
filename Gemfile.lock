@@ -247,6 +247,9 @@ GEM
       kgio (~> 2.6)
       rack
       raindrops (~> 0.7)
+    valid_email (0.0.7)
+      activemodel
+      mail
     validates_overlap (0.3.0)
       validates_overlap
     warden (1.2.3)
@@ -288,5 +291,6 @@ DEPENDENCIES
   therubyracer
   uglifier (>= 1.0.3)
   unicorn
+  valid_email
   validates_overlap
   whenever

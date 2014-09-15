@@ -95,6 +95,8 @@ class ProgramsController < ApplicationController
     @program.feedback = params[:feedback] if params.has_key?(:feedback)
     @program.capacity = params[:capacity] if params.has_key?(:capacity)
     @program.announced_locality = params[:announced_locality] if params.has_key?(:announced_locality)
+    @program.contact_phone = params[:contact_phone] if params.has_key?(:contact_phone)
+    @program.contact_email = params[:contact_email] if params.has_key?(:contact_email)
 
     for i in 1..Timing.all.count
       start_time = "start_time_#{i.to_s}".to_sym

@@ -62,3 +62,4 @@ gem "squeel"
 gem "exception_notification"
 gem "rails3-jquery-autocomplete"
 gem 'devise-encryptable'
+gem 'valid_email', require: 'valid_email/validate_email'

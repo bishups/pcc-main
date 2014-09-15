@@ -88,6 +88,14 @@
       </div>
       <% end %>
     </div>
+    <div class='form-group'>
+      <label> Contact Phone Number(s)</label><small> (Optional. Enter a valid mobile number (e.g, 8300042000), or stdcode-number (e.g, 0422-2515345). Multiple numbers should be comma separated (e.g, 8300042000, 0422-2515345))</small>
+      <%= text_field_tag 'contact_phone', nil, :value=> @program.contact_phone, :class => 'form-control' %>
+    </div>
+    <div class='form-group'>
+      <label> Contact Email(s)</label><small> (Optional. Enter a valid email-id. Multiple email-ids should be comma separated, e.g, iyc@ishafoundation.org, info@ishayoga.org)</small>
+      <%= text_field_tag 'contact_email', nil, :value=> @program.contact_email, :class => 'form-control' %>
+    </div>
 <% end %>
 
 <script type="text/javascript">
