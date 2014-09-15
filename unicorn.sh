@@ -12,10 +12,10 @@ set -e
 
 # Feel free to change any of the following variables for your app:
 TIMEOUT=${TIMEOUT-60}
-APP_ROOT=/home/genie/pcc-main
-PID=/home/genie/pcc-main/unicorn.pid
+APP_ROOT=/home/ubuntu/pcc-main
+PID=/home/ubuntu/pcc-main/tmp/pids/unicorn.pid
 CMD="cd $APP_ROOT; bundle exec unicorn -D -c $APP_ROOT/config/unicorn.rb -E production"
-AS_USER=genie
+AS_USER=ubuntu
 set -u
 
 OLD_PIN="$PID.oldbin"

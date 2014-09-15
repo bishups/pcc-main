@@ -66,4 +66,36 @@ PccMain::Application.configure do
   # config.active_record.auto_explain_threshold_in_seconds = 0.5
   config.action_mailer.raise_delivery_errors = false
 
+config.action_mailer.delivery_method = :smtp
+config.action_mailer.smtp_settings = {
+  :address              => "email-smtp.us-east-1.amazonaws.com",
+  :user_name            => "AKIAITTOBMB77BQAUSFA",
+  :password             => "AvOGrVfpn0gVO98p0Naq7cXkTA5Dg1XErRh8Zx5luEwz",
+  :authentication       => "login",
+  :domain => "test.genie.isha.in",
+  :enable_starttls_auto => true,
+  :port => 25
+}
+
+
+
+
+  config.action_mailer.default_url_options = { :host => "test.genie.isha.in" }
+
+   config.sms_country_username = "_TODO_intialize_config.sms_country_username_"
+
+  config.after_initialize do
+    Rails.application.routes.default_url_options[:host] = 'test.genie.isha.in'
+    RailsAdmin::Engine.routes.default_url_options[:host] = 'test.genie.isha.in'
+  end
+
+  config.middleware.use ExceptionNotification::Rack,:email => {
+    :email_prefix => "[Genie - Test Server Error] ",
+    :sender_address => %{"Genie Test Server error" <genie.pcc@gmail.com>},
+    :exception_recipients => %w{isha-pcc-development@googlegroups.com,saurabh.jain@ishafoundation.org,anuj.gupta@ishafoundation.org,abhisek.datta@gmail.com,senthilkumar.rec83@gmail.com}
+  }
+
+
+
+
 end
