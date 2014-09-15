@@ -311,7 +311,7 @@ class TeacherSchedulesController < ApplicationController
     @disable_centers_select = (@selected_reserve_state == ::TeacherSchedule::STATE_ACTIVITY) ? false : true
     # Allow to schedule only for centers which fall under the current user's role
     # only the zao and above can reserve full time teachers
-    @centers = @teacher.centers & current_user.accessible_center_ids(:zao)
+    @centers = @teacher.centers & current_user.accessible_centers(:zao)
   end
 
   def load_program_type_timings!(teacher)
