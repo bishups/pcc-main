@@ -1,0 +1,46 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>
+     Edit PCC Break Request <small><%= @pcc_break_request.requester.name %></small>
+    </h2>
+  </div>
+</div>
+<%= form_for(@pcc_break_request,:html => {:class => 'form'}) do |f| %>
+    <%= resource_error_messages!(@pcc_break_request) %>
+
+    <% if @pcc_break_request.errors.any? %>
+        <div id="error_explanation">
+          <h2><%= pluralize(@pcc_break_request.errors.count, "error") %> prohibited this pcc_break_request from being saved:</h2>
+
+          <ul>
+            <% @pcc_break_request.errors.full_messages.each do |msg| %>
+                <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+    <% end %>
+
+    <div class='form-group'>
+      <%= f.label 'Purpose' %><br />
+      <%= f.text_field :purpose,  :class => 'form-control'%>
+    </div>
+
+    <div class='form-group'>
+      <%= f.label 'From' %><br />
+      <%= f.text_field :from,:class => 'form-control dateSelect' %>
+    </div>
+    <div class='form-group'>
+      <%= f.label 'To' %><br />
+      <%= f.text_field :to ,:class => 'form-control dateSelect'%>
+    </div>
+
+
+
+    <%= f.submit 'Save',  :class => 'btn btn-lg btn-primary' %>
+
+    </div>
+<% end %>
+
+<script type='text/javascript'>
+    $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
+</script>

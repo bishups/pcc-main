@@ -1,0 +1,81 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#pcc_break_request_table').dataTable({
+            "aaSorting": [[0, 'desc']],
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>Break Requests
+      <span class='pull-right'>
+            <%= link_to "New Request", new_pcc_break_request_path, :class => 'btn btn-primary btn-sm' %>
+          </span>
+      <hr>
+    </h2>
+  </div>
+</div>
+<% if @pcc_break_requests.empty? %>
+    <div class="alert alert-danger"> No Break Requests Found.</div>
+<% else %>
+
+<table id="pcc_break_request_table" class='display dataTable table table-condensed table-hover table-bordered'>
+  <thead>
+  <tr>
+    <th>Created On</th>
+    <th>Requester Name</th>
+    <th>Purpose</th>
+    <th>Days</th>
+    <th>From</th>
+    <th>To</th>
+    <th>State</th>
+    <th></th>
+
+  </tr>
+  </thead>
+  <tbody>
+<% @pcc_break_requests.each do |pcc_break_request| %>
+  <tr>
+    <% if pcc_break_request.can_view?%>
+    <td>
+      <% if pcc_break_request.from!=nil%>
+      <% if pcc_break_request.from.to_time.to_i < Date.today.to_time.to_i%>
+          <span class="label label-warning">Expired</span>
+      <%else%>
+          <span class="label label-success">Valid</span>
+      <%end %>
+    <%end%>
+      <%= pcc_break_request.created_at.strftime ('%d %B %Y (%I:%M%P)') rescue '' %></td>
+    <td><%= pcc_break_request.requester.name %></td>
+    <td><%= pcc_break_request.purpose %></td>
+    <td><%= pcc_break_request.days %></td>
+    <td><%= pcc_break_request.from %></td>
+    <td><%= pcc_break_request.to %></td>
+    <td><%=  pcc_break_request_state_tag(pcc_break_request) %></td>
+    <td>
+    <%= link_to "Show", pcc_break_request_path(pcc_break_request), :class => 'btn btn-primary btn-sm'  %>
+    <% #link_to "Destroy", pcc_break_request, method: :delete, data: { confirm: 'Are you sure?' } , :class => 'btn btn-primary btn-sm'  %>
+    <% if (pcc_break_request.requester==current_user) and (pcc_break_request.state!='approved') and  (pcc_break_request.state!='cancelled')  and (pcc_break_request.state!='rejected')%>
+        <%= link_to "Edit", edit_break_request_pcc_break_request_path(pcc_break_request), :class => 'btn btn-primary btn-sm'  %>
+          </td>
+          <%end%>
+  </tr>
+<% end %>
+<%end%>
+    </tbody>
+    </table>
+<%end %>
+

@@ -1,0 +1,27 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  purpose: MyString
+  days: 1
+  from: 2014-08-22
+  to: 2014-08-22
+  requester_id: 1
+  state: MyString
+  comment_category: MyString
+  comments: MyString
+  last_updated_by_user_id: 1
+  last_updated_at: 2014-08-22 15:21:58
+  last_update: MyString
+
+two:
+  purpose: MyString
+  days: 1
+  from: 2014-08-22
+  to: 2014-08-22
+  requester_id: 1
+  state: MyString
+  comment_category: MyString
+  comments: MyString
+  last_updated_by_user_id: 1
+  last_updated_at: 2014-08-22 15:21:58
+  last_update: MyString

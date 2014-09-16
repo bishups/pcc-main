@@ -51,7 +51,7 @@ class AccessPrivilege < ActiveRecord::Base
             # HACK - TODO - need to clean this up - using :treasurer, rather than :center_treasurer
             [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer, :teacher]
           else
-            [:super_admin]
+            [:super_admin, :pcc_travel, :pcc_break_approver,:pcc_department, :pcc_travel_approver, :pcc_travel_vendor]
         end
       if !valid_roles.include?(role)
         self.errors[:resource] << " does not match the specified role."

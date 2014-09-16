@@ -1,0 +1,21 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  requester_id: 1
+  purpose: MyString
+  target_audience: MyString
+  attachment: MyString
+  state: MyString
+  last_update: MyString
+  last_updated_by_user_id: 1
+  last_updated_at: 2014-08-28 13:58:11
+
+two:
+  requester_id: 1
+  purpose: MyString
+  target_audience: MyString
+  attachment: MyString
+  state: MyString
+  last_update: MyString
+  last_updated_by_user_id: 1
+  last_updated_at: 2014-08-28 13:58:11

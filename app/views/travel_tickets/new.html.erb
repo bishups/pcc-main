@@ -1,0 +1,21 @@
+<% if !@travel_ticket.errors.empty? %>
+    <div class="alert alert-error">
+      <ul>
+        <% @travel_ticket.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+<% end %>
+
+<div class="well">
+  <%= form_for @travel_ticket, html: { multipart: true } do |f| %>
+
+
+      <%= f.hidden_field :name,:value=>@travel_ticket.pcc_travel_request_id %>
+      <%= f.label "Upload Ticket" %>
+      <%= f.file_field :attachment %>
+
+      <%= f.submit "Save",class: "btn btn-primary" %>
+  <% end %>
+</div>

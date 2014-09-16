@@ -4,8 +4,7 @@ class ProgramsController < ApplicationController
   def index
 
     in_geography = (current_user.is? :any, :in_group => [:geography])
-    in_pcc = (current_user.is? :any, :in_group => [:pcc])
-    center_ids = (in_geography or in_pcc) ? current_user.accessible_center_ids : []
+    center_ids = (in_geography) ? current_user.accessible_center_ids : []
     respond_to do |format|
       if center_ids.empty?
         @programs = []

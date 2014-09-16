@@ -2,7 +2,11 @@ PccMain::Application.routes.draw do
 
   resources :notification_logs
   resources :activity_logs
-
+  resources :change_suggestions
+  resources :pcc_communication_requests
+  resources :pcc_break_requests
+  resources :pcc_travel_requests
+  resources :travel_tickets
 
   resources :notifications
 
@@ -59,6 +63,19 @@ PccMain::Application.routes.draw do
     end
   end
 
+  resources :pcc_travel_requests do
+      member do
+        get 'edit_travel_request'
+      end
+
+  end
+
+  resources :pcc_break_requests do
+    member do
+      get 'edit_break_request'
+    end
+  end
+
 
   # Admin exclusive resources
   #namespace :admin do
@@ -70,6 +87,9 @@ PccMain::Application.routes.draw do
       delete :delete_all
     end
   end
+
+
+
 
   root :to => 'home#index'
 

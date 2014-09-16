@@ -1,0 +1,5 @@
+<%# uploads/edit.html.erb%>
+<%= form_for @upload do |f| %>
+    <%= f.text_area :asset_contents, :rows => 20, :cols => 100, :id => 'file_asset_contents' %>
+    <p><%= f.submit 'Save changes', :disable_with => 'saving ...' %></p>
+<% end -%>

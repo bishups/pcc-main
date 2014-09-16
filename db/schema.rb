@@ -79,6 +79,15 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer "venue_id"
   end
 
+  create_table "change_suggestions", :force => true do |t|
+    t.string   "description"
+    t.string   "priority"
+    t.boolean  "done"
+    t.integer  "pcc_communication_request_id"
+    t.datetime "created_at",                   :null => false
+    t.datetime "updated_at",                   :null => false
+  end
+
   create_table "comments", :force => true do |t|
     t.string   "model"
     t.string   "action"
@@ -216,6 +225,67 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",      :null => false
   end
 
+  create_table "pcc_break_requests", :force => true do |t|
+    t.string   "purpose"
+    t.integer  "days"
+    t.date     "from"
+    t.date     "to"
+    t.integer  "requester_id"
+    t.string   "state"
+    t.string   "comment_category"
+    t.string   "comments"
+    t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
+    t.string   "last_update"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+  end
+
+  create_table "pcc_communication_requests", :force => true do |t|
+    t.integer  "requester_id"
+    t.string   "purpose"
+    t.string   "target_audience"
+    t.string   "attachment"
+    t.string   "state"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+    t.string   "geography"
+    t.string   "urgency"
+    t.date     "deadline"
+    t.string   "other_target_audience"
+    t.string   "other_geography"
+  end
+
+  create_table "pcc_travel_requests", :force => true do |t|
+    t.string   "purpose"
+    t.date     "doj"
+    t.time     "timefrom"
+    t.time     "timeto"
+    t.string   "from"
+    t.string   "to"
+    t.string   "mode"
+    t.string   "preferred_clss"
+    t.boolean  "tatkal"
+    t.string   "idproof"
+    t.string   "state"
+    t.string   "comment_category"
+    t.string   "comments"
+    t.integer  "requester_id"
+    t.string   "updated_by"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+    t.datetime "timestamp"
+    t.integer  "travel_ticket_id"
+    t.datetime "reachbefore"
+    t.string   "idproofnumber"
+  end
+
   create_table "permissions", :force => true do |t|
     t.string   "name"
     t.datetime "created_at",    :null => false
@@ -338,13 +408,13 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "announced_timing"
     t.string   "sync_ts"
     t.string   "sync_id"
+    t.string   "contact_phone"
+    t.string   "contact_email"
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
     t.string   "last_update"
     t.datetime "last_updated_at"
-    t.string   "contact_phone"
-    t.string   "contact_email"
   end
 
   create_table "programs_timings", :force => true do |t|
@@ -419,6 +489,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
     t.string   "state"
+    t.string   "role"
+    t.string   "timing_str"
     t.date     "start_date"
     t.date     "end_date"
     t.integer  "timing_id"
@@ -431,8 +503,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
-    t.string   "role"
-    t.string   "timing_str"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -453,11 +523,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "deleted_at"
     t.integer  "sync_id"
     t.boolean  "full_time",               :default => false
+    t.text     "additional_comments"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
     t.datetime "last_updated_at"
-    t.text     "additional_comments"
   end
 
   add_index "teachers", ["deleted_at"], :name => "index_teachers_on_deleted_at"
@@ -473,6 +543,14 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   end
 
   add_index "timings", ["deleted_at"], :name => "index_timings_on_deleted_at"
+
+  create_table "travel_tickets", :force => true do |t|
+    t.string   "name"
+    t.string   "attachment"
+    t.datetime "created_at",            :null => false
+    t.datetime "updated_at",            :null => false
+    t.integer  "pcc_travel_request_id"
+  end
 
   create_table "users", :force => true do |t|
     t.string   "email",                                  :default => "",    :null => false
@@ -519,13 +597,13 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",              :null => false
     t.integer  "program_id"
     t.string   "state"
+    t.integer  "payment_amount"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.text     "comments"
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
-    t.integer  "payment_amount"
   end
 
   create_table "venues", :force => true do |t|

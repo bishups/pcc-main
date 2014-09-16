@@ -106,23 +106,26 @@ class User < ActiveRecord::Base
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :pcc_department         => {:text => "PCC Department", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_break_approver         => {:text => "PCC Break Approver", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_travel         => {:text => "PCC Travel", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_travel_approver      => {:text => "PCC Travel Approver", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_travel_vendor         => {:text => "PCC Travel Vendor", :access_level => 0, :group => [:pcc_vendor]},
           :help_desk            => { :text => "Help Desk", :access_level => 0, :group => [:help_desk] },
           :any                  => {:text => "Any", :access_level => -1, :group => []}
     }
 
 
   # Setup accessible (or protected) attributes for your model
-  attr_accessor :username, :uid, :avatar
+  attr_accessor :username, :uid
   attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
-  attr_accessible :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
+  attr_accessible :username, :provider, :uid, :approver_email, :message_to_approver
 
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
-  validates :firstname, :email, :mobile, :address, :presence => true
   validates :approver_email, :message_to_approver, :presence => true, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
-
   validates :email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
   validates_uniqueness_of :email, :scope => :deleted_at
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
