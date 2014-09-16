@@ -42,14 +42,14 @@ class PccTravelRequest < ActiveRecord::Base
   STATE_UNKNOWN="unknown"
 
   FINAL_STATES = [STATE_WITHDRAWN,STATE_REJECTED,STATE_CANCELLED]
-  EVENT_BOOK         = "Book"
-  EVENT_REQUEST ="Request"
-  EVENT_REQUEST_CLARIFICATION="Request Clarification"
+  EVENT_BOOK         = "book"
+  EVENT_REQUEST ="request"
+  EVENT_REQUEST_CLARIFICATION="request clarification"
   EVENT_CLARIFY="clarify"
   EVENT_REQUEST_APPROVAL="request approval"
   EVENT_APPROVE="approve"
   EVENT_REJECT="reject"
-  EVENT_WITHDRAW="Withdraw Request"
+  EVENT_WITHDRAW="withdraw ticket request"
   EVENT_REQUEST_CANCELLATION="request cancellation"
   EVENT_CANCEL="cancel"
 
