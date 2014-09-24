@@ -1,0 +1,24 @@
+<h2>
+
+  <div class='btn-group'>
+    <button type="button" class="btn btn-danger">Update State</button>
+    <button type="button" class="btn btn-danger dropdown-toggle" data-hover="dropdown">
+      <span class="caret"></span>
+      <span class="sr-only">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu" role="menu">
+      <% events = @pcc_break_request.state_events %>
+      <% if events.count > 0 %>
+          <% events.each do |ev| %>
+              <li> <%= link_to ev, edit_pcc_break_request_path(@pcc_break_request, :trigger => ev) %> </li>
+          <% end %>
+      <% else %>
+          <li class="disabled"><a href="#">No Action Available</a></li>
+      <% end %>
+    </ul>
+  </div>
+
+  <span class='pull-right'>
+    <%= link_to "Back to Break Requests", pcc_break_requests_path, :class => 'btn btn-primary' %>
+</span>
+</h2>

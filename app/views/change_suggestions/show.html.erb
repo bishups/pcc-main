@@ -1,0 +1,25 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Description:</b>
+  <%= @change_suggestion.description %>
+</p>
+
+<p>
+  <b>Priority:</b>
+  <%= @change_suggestion.priority %>
+</p>
+
+<p>
+  <b>Done:</b>
+  <%= @change_suggestion.done %>
+</p>
+
+<p>
+  <b>Pcc communication request:</b>
+  <%= @change_suggestion.pcc_communication_request_id %>
+</p>
+
+
+<%= link_to 'Edit', edit_change_suggestion_path(@change_suggestion) %> |
+<%= link_to 'Back', change_suggestions_path %>

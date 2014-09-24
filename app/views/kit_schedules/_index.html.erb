@@ -45,7 +45,7 @@
             <% if ks.program.nil? %>
                 <td><%= ks.start_date.strftime('%d %B (%I:%M%P)') %> to <%= ks.end_date.strftime('%d %B (%I:%M%P)') %> </td>
             <% else %>
-                <td><%= (ks.program.timings.map {|c| c[:name]}).join(", ") rescue ' ' %></td>
+                <td><%= ks.program.display_timings %></td>
             <% end %>
         <% end %>
         <td><%= ks.blocked_by_user.fullname rescue ' ' %></td>

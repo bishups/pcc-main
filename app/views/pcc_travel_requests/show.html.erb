@@ -1,0 +1,202 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'state_bar' %>
+
+  </div>
+</div>
+
+<% if !(User.current_user.is? :pcc_travel_vendor)%>
+    <div class='row'>
+      <div class='col-md-12'>
+        <h3>Last Update <strong><%= @pcc_travel_request.last_update %></strong></h3>
+        <div class = 'row'>
+          <div class='col-md-12'>
+            <table class='table table-bordered'>
+
+              <tr>
+                <td width='20%'><strong> Updated By </strong></td>
+                <td>
+                  <%= @pcc_travel_request.last_updated_by_user.fullname rescue ' ' %>
+                </td>
+              </tr>
+              <tr>
+                <td><strong> Updated At </strong></td>
+                <td><%= @pcc_travel_request.last_updated_at.strftime('%d %B %Y (%I:%M%P)') rescue ' ' %></td>
+              </tr>
+              <tr>
+                <td><strong> Comments </strong></td>
+                <td><%= @pcc_travel_request.comments %></td>
+              </tr>
+              <tr>
+              <tr>
+
+                <td><strong>Current State</strong></td>
+                <td><%= pcc_travel_request_state_tag(@pcc_travel_request) %></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+<%else%>
+
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+
+            <td width='20%' ><strong>Current State</strong></td>
+            <td ><%= pcc_travel_request_state_tag(@pcc_travel_request) %></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+<%end%>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Requester Details</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+
+
+          <tr>
+            <td width='20%'><strong>Name </strong></td>
+            <td><%= @pcc_travel_request.requester.name rescue ' ' %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Phone </strong></td>
+            <td><%= @pcc_travel_request.requester.mobile rescue ' ' %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Email Id </strong></td>
+            <td><%= @pcc_travel_request.requester.email rescue ' ' %></td>
+          </tr>
+          <tr>
+
+            <td><strong>ID Proof </strong></td>
+            <td><%= @pcc_travel_request.idproof %></td>
+          </tr>
+          <tr>
+            <td><strong>ID Proof Number</strong></td>
+            <td><%= @pcc_travel_request.idproofnumber%></td>
+          </tr>
+          <tr>
+          <tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+          <div class='row'>
+            <div class='col-md-12'>
+              <h3>Travel Details</h3>
+              <div class = 'row'>
+                <div class='col-md-12'>
+                  <table class='table table-bordered'>
+            <td width='20%'><strong>From </strong></td>
+            <td><%= @pcc_travel_request.from %></td>
+          </tr>
+          <tr>
+            <td><strong>To </strong></td>
+            <td><%= @pcc_travel_request.to %></td>
+          </tr>
+                    <tr>
+                      <td><strong>Date Of Journey </strong></td>
+                      <td><%= @pcc_travel_request.doj %></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Preferred Time</strong>(From)</td>
+
+                      <td><%= @pcc_travel_request.timefrom.strftime("%I:%M %p") rescue ''%></td>
+                      </tr>
+                    <tr>
+
+                      <td>To</td>
+                      <td><%= @pcc_travel_request.timeto.strftime("%I:%M %p") rescue '' %></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Mode Of Travel </strong></td>
+                      <td><%= @pcc_travel_request.mode %></td>
+                    </tr>
+                    <tr>
+                    <tr>
+                      <td><strong>Preferred Class </strong></td>
+                      <td><%= @pcc_travel_request.preferred_clss %></td>
+                    </tr>
+                    <tr>
+                    <tr>
+                      <td><strong>Reach Before </strong></td>
+                      <td><%= @pcc_travel_request.reachbefore.strftime('%d %B %Y (%I:%M%P)')  rescue ''%></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Tatkal? </strong></td>
+                      <td><% if @pcc_travel_request.tatkal  %>
+                      Yes
+                      <%else%>
+                      No
+                      <%end%></td>
+                    </tr>
+                    <tr>
+                    <tr>
+                    <tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+
+<% if !(User.current_user.is? :pcc_travel_vendor)%>
+
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Update Log </h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong>Time </strong></td>
+            <td width='20%'><strong>Update</strong></td>
+            <td  width='20%'><strong>Updated By</strong>
+            <td><strong>Comments </strong></td>
+          </tr>
+          <tr>
+            <td><strong>Created At: </strong><%=@pcc_travel_request.timestamp.strftime('%d %B %Y (%I:%M%P)') rescue ''%></td>
+            <td></td>
+            <td><strong>Created By:</strong> <%=@pcc_travel_request.requester.fullname rescue ''%></td>
+            <td></td>
+            </tr>
+          <% (1..(@pcc_travel_request.versions.length-1)).each do |i|  %>
+              <%if (i%2!=0)  &&(@pcc_travel_request.versions[i].reify.last_update!=nil) %>
+                  <tr>
+                <td><%=@pcc_travel_request.versions[i].reify.last_updated_at.strftime('%d %B %Y (%I:%M%P)') rescue ''%></td>
+                <td> <%=@pcc_travel_request.versions[i].reify.last_update rescue ''%></td>
+                <td><i><%=@pcc_travel_request.versions[i].reify.event_name%> By:</i> <%= @pcc_travel_request.versions[i].reify.last_updated_by_user.fullname rescue ''%></td>
+                <td><%= @pcc_travel_request.versions[i].reify.comments rescue ''%></td>
+                <% end %>
+                <%end%>
+              </tr>
+          <% if @pcc_travel_request.last_update!=nil%>
+              <tr>
+                <td><%=@pcc_travel_request.last_updated_at.strftime('%d %B %Y (%I:%M%P)') rescue ''%></td>
+                <td><strong>Current Update</strong>: <%=@pcc_travel_request.last_update rescue ''%></td>
+                <td><i><%=@pcc_travel_request.event_name%> By:</i><%= @pcc_travel_request.last_updated_by_user.fullname rescue ''%></td>
+                <td><%= @pcc_travel_request.comments rescue ''%></td>
+              </tr>
+              <%end%>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%end%>
+
+

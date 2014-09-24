@@ -48,13 +48,15 @@
         <td><strong>Part-Time</strong></td>
         <td><%= @teacher.full_time? ? "No" : "Yes" %></td>
       </tr>
+      <% @teacher.role_program_types.each {|role, program_types| %>
       <tr>
-        <td><strong>Program Types</strong></td>
-        <td><%= (@teacher.program_types.map {|pt| pt[:name]}).sort.join(", ") %></td>
+        <td><strong><%= role %></strong></td>
+        <td><%= (program_types.map {|pt| pt[:name]}).sort.join(", ") %></td>
       </tr>
+      <% } %>
       <tr>
-        <td><strong>Zone</strong></td>
-        <td><%= @teacher.zone.name rescue '' %></td>
+        <td><strong>Zone(s)</strong></td>
+        <td><%= (@teacher.zones.map {|z| z[:name]}).join(", ") rescue '' %></td>
       </tr>
       <tr>
         <td><strong>Center(s)</strong></td>

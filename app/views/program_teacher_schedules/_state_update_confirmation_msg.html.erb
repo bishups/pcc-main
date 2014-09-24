@@ -7,6 +7,8 @@
 <p>
      <% if @trigger == ::ProgramTeacherSchedule::EVENT_RELEASE %>
           <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
+     <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_CANCEL %>
+      <strong>WARNING: </strong> This will remove the teacher from the program. Are you sure you want to proceed?
       <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE %>
           Are you sure you want to change state of teacher to<strong> Request Release </strong> for this Program?
       <% elsif @trigger == ::ProgramTeacherSchedule::EVENT_BLOCK %>

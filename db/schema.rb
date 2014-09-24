@@ -20,7 +20,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "resource_type"
     t.datetime "created_at",    :null => false
     t.datetime "updated_at",    :null => false
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "access_privileges", ["role_id"], :name => "index_access_privileges_on_role_id"
@@ -46,7 +47,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "centers", ["deleted_at"], :name => "index_centers_on_deleted_at"
@@ -75,6 +77,15 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   create_table "centers_venues", :force => true do |t|
     t.integer "center_id"
     t.integer "venue_id"
+  end
+
+  create_table "change_suggestions", :force => true do |t|
+    t.string   "description"
+    t.string   "priority"
+    t.boolean  "done"
+    t.integer  "pcc_communication_request_id"
+    t.datetime "created_at",                   :null => false
+    t.datetime "updated_at",                   :null => false
   end
 
   create_table "comments", :force => true do |t|
@@ -214,6 +225,67 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",      :null => false
   end
 
+  create_table "pcc_break_requests", :force => true do |t|
+    t.string   "purpose"
+    t.integer  "days"
+    t.date     "from"
+    t.date     "to"
+    t.integer  "requester_id"
+    t.string   "state"
+    t.string   "comment_category"
+    t.string   "comments"
+    t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
+    t.string   "last_update"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+  end
+
+  create_table "pcc_communication_requests", :force => true do |t|
+    t.integer  "requester_id"
+    t.string   "purpose"
+    t.string   "target_audience"
+    t.string   "attachment"
+    t.string   "state"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+    t.string   "geography"
+    t.string   "urgency"
+    t.date     "deadline"
+    t.string   "other_target_audience"
+    t.string   "other_geography"
+  end
+
+  create_table "pcc_travel_requests", :force => true do |t|
+    t.string   "purpose"
+    t.date     "doj"
+    t.time     "timefrom"
+    t.time     "timeto"
+    t.string   "from"
+    t.string   "to"
+    t.string   "mode"
+    t.string   "preferred_clss"
+    t.boolean  "tatkal"
+    t.string   "idproof"
+    t.string   "state"
+    t.string   "comment_category"
+    t.string   "comments"
+    t.integer  "requester_id"
+    t.string   "updated_by"
+    t.string   "last_update"
+    t.integer  "last_updated_by_user_id"
+    t.datetime "last_updated_at"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+    t.datetime "timestamp"
+    t.integer  "travel_ticket_id"
+    t.datetime "reachbefore"
+    t.string   "idproofnumber"
+  end
+
   create_table "permissions", :force => true do |t|
     t.string   "name"
     t.datetime "created_at",    :null => false
@@ -248,7 +320,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "deleted_at"
     t.datetime "created_at",      :null => false
     t.datetime "updated_at",      :null => false
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "program_donations", ["deleted_at"], :name => "index_program_donations_on_deleted_at"
@@ -271,15 +344,40 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "language"
     t.integer  "no_of_days"
     t.integer  "minimum_no_of_teacher"
-    t.datetime "created_at",                 :null => false
-    t.datetime "updated_at",                 :null => false
+    t.datetime "created_at",                                       :null => false
+    t.datetime "updated_at",                                       :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
     t.integer  "registration_close_timeout"
     t.integer  "minimum_no_of_co_teacher"
+    t.integer  "session_duration"
+    t.string   "sync_ts"
+    t.string   "sync_id"
+    t.integer  "minimum_no_of_organizing_teacher", :default => -1
+    t.integer  "minimum_no_of_hall_teacher",       :default => -1
+    t.integer  "minimum_no_of_initiation_teacher", :default => -1
   end
 
   add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
+
+  create_table "program_types_co_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
+
+  create_table "program_types_hall_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
+
+  create_table "program_types_initiation_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
+
+  create_table "program_types_organizing_teachers", :force => true do |t|
+    t.integer "program_type_id"
+    t.integer "teacher_id"
+  end
 
   create_table "program_types_teachers", :force => true do |t|
     t.integer "program_type_id"
@@ -302,11 +400,16 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",                                 :null => false
     t.datetime "updated_at",                                 :null => false
     t.integer  "program_donation_id"
-    t.integer  "sync_id"
     t.string   "pid"
     t.boolean  "announced",               :default => false
     t.boolean  "registration_closed",     :default => false
     t.integer  "capacity"
+    t.string   "announced_locality"
+    t.string   "announced_timing"
+    t.string   "sync_ts"
+    t.string   "sync_id"
+    t.string   "contact_phone"
+    t.string   "contact_email"
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
@@ -352,6 +455,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "user_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "roles_users", ["role_id"], :name => "index_roles_users_on_role_id", :unique => true
@@ -363,7 +468,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "sectors", ["deleted_at"], :name => "index_sectors_on_deleted_at"
@@ -380,10 +486,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
 
   create_table "teacher_schedules", :force => true do |t|
-    t.datetime "created_at",                                 :null => false
-    t.datetime "updated_at",                                 :null => false
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
     t.string   "state"
-    t.boolean  "co_teacher",              :default => false
+    t.string   "role"
+    t.string   "timing_str"
     t.date     "start_date"
     t.date     "end_date"
     t.integer  "timing_id"
@@ -396,7 +503,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
-    t.integer  "program_type_id"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -411,13 +517,13 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   create_table "teachers", :force => true do |t|
     t.string   "t_no"
     t.string   "state"
-    t.integer  "zone_id"
     t.integer  "user_id"
     t.datetime "created_at",                                 :null => false
     t.datetime "updated_at",                                 :null => false
     t.datetime "deleted_at"
     t.integer  "sync_id"
     t.boolean  "full_time",               :default => false
+    t.text     "additional_comments"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
@@ -437,6 +543,14 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   end
 
   add_index "timings", ["deleted_at"], :name => "index_timings_on_deleted_at"
+
+  create_table "travel_tickets", :force => true do |t|
+    t.string   "name"
+    t.string   "attachment"
+    t.datetime "created_at",            :null => false
+    t.datetime "updated_at",            :null => false
+    t.integer  "pcc_travel_request_id"
+  end
 
   create_table "users", :force => true do |t|
     t.string   "email",                                  :default => "",    :null => false
@@ -466,10 +580,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.boolean  "enable",                                 :default => false
     t.string   "approver_email"
     t.text     "message_to_approver"
-    t.integer  "sync_id"
     t.boolean  "approval_email_sent",                    :default => false
     t.datetime "password_reset_at"
     t.string   "provider"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"
@@ -482,7 +597,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",              :null => false
     t.integer  "program_id"
     t.string   "state"
-    t.integer  "per_day_price"
+    t.integer  "payment_amount"
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.text     "comments"
@@ -536,9 +651,15 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
     t.datetime "deleted_at"
-    t.integer  "sync_id"
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "zones", ["deleted_at"], :name => "index_zones_on_deleted_at"
+
+  create_table "zones_teachers", :force => true do |t|
+    t.integer "zone_id"
+    t.integer "teacher_id"
+  end
 
 end

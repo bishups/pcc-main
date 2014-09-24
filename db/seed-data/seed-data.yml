@@ -37,12 +37,21 @@ ProgramType:
      minimum_no_of_co_teacher:  -1
      registration_close_timeout: 3
      no_of_days: 3
+     session_duration: 2
   -  name: "IE 7 Day E"
      language: "English"
      minimum_no_of_teacher:  1
      minimum_no_of_co_teacher: 0
      registration_close_timeout: 3
      no_of_days: 7
+     session_duration: 3
+  -  name: "BSP E"
+     language: "English"
+     minimum_no_of_teacher:  1
+     minimum_no_of_co_teacher: 2
+     registration_close_timeout: -48
+     no_of_days: 4
+     session_duration: 0
 
 ProgramDonation:
   - name: "Uyir_Nokkam_250"
@@ -57,18 +66,20 @@ ProgramDonation:
     donation: 1000
   - name: "IE_7_Day_E_1500"
     donation: 1500
+  - name: "BSP_E_2500"
+    donation: 2500
 
 Timing:
-  -  name: "Morning (6am-9am)"
+  -  name: "Morning (6am-10am)"
      start_time: "6am"
-     end_time: "9am"
-  -  name: "Afternoon (10am-1pm)"
+     end_time: "10am"
+  -  name: "Afternoon (10am-2pm)"
      start_time: "10am"
-     end_time: "1pm"
-  -  name: "Evening (2pm-5pm)"
+     end_time: "2pm"
+  -  name: "Evening (2pm-6pm)"
      start_time: "2pm"
-     end_time: "5pm"
-  -  name: "Night (6pm-9pm)"
+     end_time: "6pm"
+  -  name: "Night (6pm-10pm)"
      start_time: "6pm"
-     end_time: "9pm"
+     end_time: "10pm"
 

@@ -6,7 +6,7 @@ gem 'rails', '3.2.13'
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
 gem 'sqlite3', :group => :development
-#gem 'mysql2', :group => :production
+gem 'mysql2', :group => :production
 
 
 # Gems used only for assets and not required
@@ -26,6 +26,8 @@ gem 'jquery-rails'
 gem 'whenever', :require => false
 gem 'delayed_job_active_record'
 gem 'bootstrap-datetime-picker-for-rails'
+gem 'bootstrap-sass', '~> 2.3.2.0'
+gem 'bootstrap-timepicker-rails-addon'
 gem "letter_opener", :group => :development
 
 # To use ActiveModel has_secure_password
@@ -60,3 +62,5 @@ gem "squeel"
 gem "exception_notification"
 gem "rails3-jquery-autocomplete"
 gem 'devise-encryptable'
+gem 'valid_email', require: 'valid_email/validate_email'
+gem 'carrierwave', '~> 0.9'

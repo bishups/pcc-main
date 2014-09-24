@@ -89,7 +89,6 @@ module CommonFunctions
       r = Role.find(n.role_id)
       case r.name
         when ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text],
-            ::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:zao][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text],

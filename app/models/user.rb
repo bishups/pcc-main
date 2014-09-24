@@ -47,6 +47,9 @@ end
 
 class User < ActiveRecord::Base
   include CommonFunctions
+
+#  require Rails.root.join('lib', 'devise', 'encryptors', 'md5')
+
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
@@ -62,10 +65,10 @@ class User < ActiveRecord::Base
   EVENT_CREATE              = "Create"
   EVENT_APPROVE             = "Approve"
 
-  has_many :notification_logs
-  has_many :activity_logs
+  has_many :notification_logs, :dependent => :destroy
+  has_many :activity_logs, :dependent => :destroy
   attr_accessible :notification_logs, :notification_log_ids, :activity_logs, :activity_log_ids
-  has_many :access_privileges
+  has_many :access_privileges, :dependent => :destroy
   has_many :roles, :through => :access_privileges
   has_many :permissions, :through => :roles
 
@@ -77,8 +80,11 @@ class User < ActiveRecord::Base
   has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
 
-  has_many :zone_users, :through => :zone_centers, :source => :users
-  has_many :teachers
+  has_many :zone_center_users, :through => :zone_centers, :source => :users
+  has_many :zone_sector_users, :through => :zone_sectors, :source => :users
+  has_many :zone_users, :through => :zones, :source => :users
+
+  has_many :teachers, :dependent => :destroy
 
   #has_many :teacher_schedules
   #has_many :teacher_slots
@@ -87,7 +93,6 @@ class User < ActiveRecord::Base
       {
           :super_admin => {:text => "Super Admin", :access_level => 6, :group => [:geography, :finance, :training]},
           :zonal_coordinator     => {:text => "Zonal Coordinator", :access_level => 5, :group => [:geography]},
-          :full_time_teacher_scheduler   => {:text => "Full-Time Teacher Scheduler", :access_level => 0, :group => [:pcc]},
           :zao                  => {:text => "ZAO", :access_level => 4, :group => [:geography]},
           :sector_coordinator   => {:text => "Sector Coordinator", :access_level => 3, :group => [:geography]},
           :center_coordinator   => {:text => "Center Coordinator", :access_level => 2, :group => [:geography]},
@@ -95,29 +100,32 @@ class User < ActiveRecord::Base
           :center_scheduler     => {:text => "Center Scheduler", :access_level => 0, :group => [:geography]},
           :kit_coordinator      => {:text => "Kit Coordinator", :access_level => 0, :group => [:geography]},
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
-          :center_treasurer     => {:text => "Treasurer", :access_level => 0, :group => [:geography]},
+          :treasurer            => {:text => "Treasurer", :access_level => 0, :group => [:geography]},
           :teacher              => {:text => "Teacher", :access_level => 0, :group => [:geography]},
           # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          :pcc_department         => {:text => "PCC Department", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_break_approver         => {:text => "PCC Break Approver", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_travel         => {:text => "PCC Travel", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_travel_approver      => {:text => "PCC Travel Approver", :access_level => 0, :group => [:pcc_requests]},
+          :pcc_travel_vendor         => {:text => "PCC Travel Vendor", :access_level => 0, :group => [:pcc_vendor]},
           :help_desk            => { :text => "Help Desk", :access_level => 0, :group => [:help_desk] },
           :any                  => {:text => "Any", :access_level => -1, :group => []}
     }
 
 
   # Setup accessible (or protected) attributes for your model
-  attr_accessor :username, :uid, :avatar
+  attr_accessor :username, :uid
   attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
-  attr_accessible :username, :provider, :uid, :avatar, :approver_email, :message_to_approver
+  attr_accessible :username, :provider, :uid, :approver_email, :message_to_approver
 
   accepts_nested_attributes_for :access_privileges, allow_destroy: true
 
-  validates :firstname, :email, :mobile, :address, :presence => true
   validates :approver_email, :message_to_approver, :presence => true, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
-
   validates :email, :format => {:with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i}
   validates_uniqueness_of :email, :scope => :deleted_at
   validates :phone, :length => {is: 12}, :format => {:with => /0[0-9]{2,4}-[0-9]{6,8}/i}, :allow_blank => true
@@ -147,6 +155,11 @@ class User < ActiveRecord::Base
       user.log_notify(user, STATE_REQUESTED_APPROVAL, STATE_APPROVED, EVENT_APPROVE, "")
     end
   end
+
+  def all_users_under_zone
+    self.zone_users + self.zone_sector_users + self.zone_center_users
+  end
+
 
   def force_password_reset?
     self.password_reset_at.nil? or ((Time.now - self.password_reset_at) > 30.days)
@@ -402,6 +415,13 @@ class User < ActiveRecord::Base
     }
   end
 
+  # def password_salt
+  #   'no salt'
+  # end
+  #
+  # def password_salt=(new_salt)
+  # end
+
   rails_admin do
 
     navigation_label 'Access Privilege'
@@ -424,45 +444,45 @@ class User < ActiveRecord::Base
       end
       field :firstname do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :lastname do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :address do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :mobile do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
       end
       field :phone do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Optional. Format of stdcode-number (e.g, 0422-2515345)."
       end
       field :email do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end
       field :password do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end
       field :password_confirmation do
         read_only do
-          not bindings[:controller].current_user.is?(:super_admin)
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
         end
         help "Required"
       end

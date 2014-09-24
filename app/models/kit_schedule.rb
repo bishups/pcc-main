@@ -95,7 +95,7 @@ class KitSchedule < ActiveRecord::Base
 =end
 
   # given a kit_schedule, returns a relation with other overlapping kit_schedule(s), for the specific kit
-  scope :overlapping_schedules, lambda { |ks| where('(kit_schedules.id != ? OR ? IS NULL) AND kit_schedules.state NOT IN (?) AND (kit_schedules.kit_id = ? OR kit_schedules.kit_id IS NULL) AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
+  scope :overlapping_schedules, lambda { |ks| where('(kit_schedules.id != ? OR ? IS NULL) AND kit_schedules.state NOT IN (?) AND kit_schedules.kit_id = ? AND ((kit_schedules.start_date BETWEEN ? AND ?) OR (kit_schedules.end_date BETWEEN ? AND ?) OR  (kit_schedules.start_date <= ? AND kit_schedules.end_date >= ?))',
                                                    ks.id, ks.id, FINAL_STATES, ks.kit_id, ks.start_date, ks.end_date, ks.start_date, ks.end_date, ks.start_date, ks.end_date)}
 
 
@@ -216,7 +216,8 @@ class KitSchedule < ActiveRecord::Base
 
   def kit_available_reserved_or_cancelled?
     return true if kit_available_or_reserved?
-    KitSchedule.where('(program_id = ? OR program_id IS NULL) AND (kit_id = ? OR kit_id IS NULL) AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
+    # Note - program id can be null in certain cases, for kit schedule
+    KitSchedule.where('(program_id = ? OR program_id IS NULL) AND kit_id = ? AND state NOT IN (?)', self.program_id, self.kit_id, FINAL_STATES).count == 0
   end
 
   def is_kit_coordinator?

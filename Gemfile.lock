@@ -68,6 +68,8 @@ GEM
       rails (>= 3.2.0)
     bootstrap-sass (2.3.2.2)
       sass (~> 3.2)
+    bootstrap-timepicker-rails-addon (0.2.6.1)
+      railties (>= 3.1, < 5.0)
     builder (3.0.4)
     cancan (1.6.10)
     capistrano (2.15.5)
@@ -76,6 +78,11 @@ GEM
       net-sftp (>= 2.0.0)
       net-ssh (>= 2.0.14)
       net-ssh-gateway (>= 1.1.0)
+    carrierwave (0.10.0)
+      activemodel (>= 3.2.0)
+      activesupport (>= 3.2.0)
+      json (>= 1.7)
+      mime-types (>= 1.16)
     chronic (0.10.2)
     coffee-rails (3.2.2)
       coffee-script (>= 2.2.0)
@@ -141,6 +148,7 @@ GEM
     multi_json (1.10.0)
     multi_xml (0.5.5)
     multipart-post (2.0.0)
+    mysql2 (0.3.16)
     nested_form (0.3.2)
     net-scp (1.2.1)
       net-ssh (>= 2.6.5)
@@ -245,6 +253,9 @@ GEM
       kgio (~> 2.6)
       rack
       raindrops (~> 0.7)
+    valid_email (0.0.7)
+      activemodel
+      mail
     validates_overlap (0.3.0)
       validates_overlap
     warden (1.2.3)
@@ -259,8 +270,11 @@ PLATFORMS
 DEPENDENCIES
   annotate (>= 2.6.0)
   bootstrap-datetime-picker-for-rails
+  bootstrap-sass (~> 2.3.2.0)
+  bootstrap-timepicker-rails-addon
   cancan
   capistrano (~> 2.15)
+  carrierwave (~> 0.9)
   coffee-rails (~> 3.2.1)
   delayed_job_active_record
   devise
@@ -270,6 +284,7 @@ DEPENDENCIES
   jquery-datatables-rails
   jquery-rails
   letter_opener
+  mysql2
   omniauth-google-oauth2
   paper_trail!
   paranoia (~> 1.0)
@@ -284,5 +299,6 @@ DEPENDENCIES
   therubyracer
   uglifier (>= 1.0.3)
   unicorn
+  valid_email
   validates_overlap
   whenever

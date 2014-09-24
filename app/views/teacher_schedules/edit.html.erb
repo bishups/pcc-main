@@ -28,10 +28,12 @@
      <%= select_tag 'teacher_schedule[center_ids]',  options_for_select(centers.map {|e| [e.name, e.id]}, @teacher_schedule.center_ids), {:multiple => true, :class => 'form-control'} %>
   </div>
 
+  <% if false %>
   <div class="form-group">
     <%= label_tag :program_type %>
     <%= select_tag 'teacher_schedule[program_type_id]', options_for_select(@program_types.map {|e| [e.name, e.id]}, [@selected_program_type.name, @selected_program_type.id]), { :id => 'program_types_select', :class => 'form-control'} %>
   </div>
+  <% end %>
 
     <div class='form-group'>
       <%= label_tag 'Timing' %>
@@ -51,7 +53,7 @@
 $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
 </script>
 
-
+<% if false %>
   <script>
       $(document).ready(function() {
           $('#program_types_select').change(function() {
@@ -66,6 +68,7 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
 
       });
   </script>
+<% end %>
 
 
         </div>

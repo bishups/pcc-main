@@ -1,9 +1,10 @@
 <h2>
   <small><%= teacher_state_tag(@teacher) %></small> Teacher <small><%= @teacher.user.fullname %></small>
+  <% if false %>
     <% if !::Teacher::FINAL_STATES.include?(@teacher.state) && @teacher.can_update? %>
         <div class='btn-group'>
           <button type="button" class="btn btn-danger">Update State</button>
-          <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+          <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">
             <span class="caret"></span>
             <span class="sr-only">Toggle Dropdown</span>
           </button>
@@ -18,6 +19,7 @@
             <% end %>
           </ul>
         </div>
+    <% end %>
     <% end %>
     <span class='pull-right'>
         <%= link_to "Back to Teachers", teachers_path, :class => 'btn btn-primary' %>

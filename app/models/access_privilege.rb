@@ -18,6 +18,7 @@ class AccessPrivilege < ActiveRecord::Base
   has_many :permissions, :through => :role
 
   validates :role, :presence => true
+  validates_uniqueness_of :role_id, :scope => [:user_id, :resource_id, :resource_type]
 
   attr_accessible :user, :role_id, :resource_id, :resource_type, :role_name, :center_name, :resource, :role, :user, :user_id
   validate :is_role_valid?
@@ -43,15 +44,14 @@ class AccessPrivilege < ActiveRecord::Base
       valid_roles =
         case resource_type
           when "Zone"
-            # HACK - full_time_teacher_scheduler is a person who is allowed to only schedule full time teachers in a given zone
-            [:zonal_coordinator, :full_time_teacher_scheduler, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
+            [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
           when "Sector"
             [:sector_coordinator]
           when "Center"
             # HACK - TODO - need to clean this up - using :treasurer, rather than :center_treasurer
             [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer, :teacher]
           else
-            [:super_admin]
+            [:super_admin, :pcc_travel, :pcc_break_approver,:pcc_department, :pcc_travel_approver, :pcc_travel_vendor]
         end
       if !valid_roles.include?(role)
         self.errors[:resource] << " does not match the specified role."
@@ -82,8 +82,28 @@ class AccessPrivilege < ActiveRecord::Base
       field :role
       field :resource
     end
+
     edit do
       field :role do
+        read_only do
+          bindings[:object].role.name == ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text] if bindings[:object].role
+        end
+        inline_edit false
+        inline_add false
+        # # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
+        # associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
+        # associated_collection_scope do
+        #   role = bindings[:object]
+        #   Proc.new { |scope|
+        #     # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
+        #     scope = scope.where("name NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]]) #if role.present?
+        #   }
+        # end
+      end
+      field :resource do
+        read_only do
+          bindings[:object].role.name == ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text] if bindings[:object].role
+        end
         inline_edit false
         inline_add false
         # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
@@ -96,8 +116,24 @@ class AccessPrivilege < ActiveRecord::Base
           }
         end
       end
-      field :resource
     end
+    # No need to show Teacher while creating Access.
+    nested do
+      field :role  do
+        inline_edit false
+        inline_add false
+        # from https://github.com/sferik/rails_admin/wiki/Associations-scoping
+        associated_collection_cache_all true # REQUIRED if you want to SORT the list as below
+        associated_collection_scope do
+          role = bindings[:object]
+          Proc.new { |scope|
+            # scoping all roles currently, let's just remove the teacher record for now, later can add security based scoping also
+            scope = scope.where("name NOT IN (?)", [::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]]) #if role.present?
+          }
+        end
+      end
+    end
+
   end
 
   def role_name

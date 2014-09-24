@@ -17,6 +17,11 @@ class Timing < ActiveRecord::Base
   validates_uniqueness_of :name, :scope => :deleted_at
 
   before_validation :remove_date
+  validate :overlap
+
+  # given a program, returns a relation with other overlapping program(s)
+  scope :overlapping, lambda { |timing| Timing.where('((start_time > ? AND start_time < ?) OR (end_time > ? AND end_time < ?) OR  (start_time < ? AND end_time > ?)) AND (id != ? OR ? IS NULL) ',
+                                                     timing.start_time, timing.end_time, timing.start_time, timing.end_time, timing.start_time, timing.end_time, timing.id, timing.id) }
 
   def remove_date
     # this is hack to get iron out the dates being store to standard date
@@ -27,6 +32,12 @@ class Timing < ActiveRecord::Base
   def start_end_time?
     if self.end_time <= self.start_time
       self.errors[:end_time] << " cannot be before the start time."
+    end
+  end
+
+  def overlap
+    if Timing.overlapping(self).count > 0
+      self.errors[:base] << "Timing overlaps with other timings. Please adjust the specified start (or end) time."
     end
   end
 

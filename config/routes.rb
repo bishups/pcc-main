@@ -2,7 +2,11 @@ PccMain::Application.routes.draw do
 
   resources :notification_logs
   resources :activity_logs
-
+  resources :change_suggestions
+  resources :pcc_communication_requests
+  resources :pcc_break_requests
+  resources :pcc_travel_requests
+  resources :travel_tickets
 
   resources :notifications
 
@@ -22,6 +26,9 @@ PccMain::Application.routes.draw do
   get 'teacher_schedules/update_centers', :as => 'update_teacher_schedule_centers'
   get 'program_teacher_schedules/update_blockable_teachers', :as => 'update_program_teacher_schedule_blockable_teachers'
   get 'program_teacher_schedules/update_blockable_programs', :as => 'update_program_teacher_schedule_blockable_programs'
+  get 'program_teacher_schedules/update_additional_comments', :as => 'update_program_teacher_schedule_additional_comments'
+  get 'program_teacher_schedules/update_program_timings', :as => 'update_program_teacher_schedule_program_timings'
+
 
   get '/login_as_other_user' => "home#login_as"
   post '/login_as' => "home#become"
@@ -51,6 +58,22 @@ PccMain::Application.routes.draw do
         get 'reserve'
       end
     end
+    member do
+      get 'comments'
+    end
+  end
+
+  resources :pcc_travel_requests do
+      member do
+        get 'edit_travel_request'
+      end
+
+  end
+
+  resources :pcc_break_requests do
+    member do
+      get 'edit_break_request'
+    end
   end
 
 
@@ -64,6 +87,9 @@ PccMain::Application.routes.draw do
       delete :delete_all
     end
   end
+
+
+
 
   root :to => 'home#index'
 

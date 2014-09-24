@@ -1,0 +1,152 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <%= render :partial => 'state_bar' %>
+
+  </div>
+</div>
+
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Last Update <strong><%= @pcc_break_request.last_update %></strong></h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong> Updated By </strong></td>
+            <td>
+              <%= @pcc_break_request.last_updated_by_user.fullname rescue ' ' %>
+            </td>
+          </tr>
+          <tr>
+            <td><strong> Updated At </strong></td>
+            <td><%= @pcc_break_request.last_updated_at.strftime('%d %B %Y (%I:%M%P)') rescue ' ' %></td>
+          </tr>
+          <tr>
+            <td><strong> Comments </strong></td>
+            <td><%= @pcc_break_request.comments %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Current State</strong></td>
+            <td><%= pcc_break_request_state_tag(@pcc_break_request) %></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Requester Details</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+
+
+          <tr>
+            <td width='20%'><strong>Name </strong></td>
+            <td><%= @pcc_break_request.requester.name rescue ' ' %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Phone </strong></td>
+            <td><%= @pcc_break_request.requester.mobile rescue ' ' %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Email Id </strong></td>
+            <td><%= @pcc_break_request.requester.email rescue ' ' %></td>
+          </tr>
+
+          <tr>
+          <tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Request Details</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <td width='20%'><strong>Purpose </strong></td>
+          <td><%= @pcc_break_request.purpose %></td>
+          </tr>
+          <tr>
+            <td><strong>Number Of Days</strong></td>
+            <td><%= @pcc_break_request.days %></td>
+          </tr>
+          <tr>
+            <td><strong>From </strong></td>
+            <td><%= @pcc_break_request.from %></td>
+          </tr>
+          <tr>
+            <td><strong>To</strong></td>
+
+            <td><%= @pcc_break_request.to %></td>
+          </tr>
+          <tr>
+
+
+          <tr>
+          <tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Update Log</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <tr>
+            <td width='20%'><strong>Time </strong></td>
+            <td  width='20%'><strong>Updated By</strong>
+            <td width='20%'><strong>Update</strong></td>
+            <td><strong>Comments </strong></td>
+          </tr>
+          <tr>
+            <td><%=@pcc_break_request.created_at.strftime('%d %B %Y (%I:%M%P)')%></td>
+            <td><%=@pcc_break_request.requester.fullname%></td>
+            <td>New Request</td>
+            <td></td>
+          </tr>
+          <% (1..(@pcc_break_request.versions.length-1)).each do |i|  %>
+              <%if (i%2!=0)  &&(@pcc_break_request.versions[i].reify.last_update!=nil) %>
+                  <tr>
+                    <td><%=@pcc_break_request.versions[i].reify.last_updated_at.strftime('%d %B %Y (%I:%M%P)') rescue ''%></td>
+                    <td><i><%=@pcc_break_request.versions[i].reify.event_name%> By:</i> <%= @pcc_break_request.versions[i].reify.last_updated_by_user.fullname rescue ''%></td>
+                    <td> <%=@pcc_break_request.versions[i].reify.last_update rescue ''%></td>
+                    <td><%= @pcc_break_request.versions[i].reify.comments rescue ''%></td>
+              <% end %>
+          <%end%>
+          </tr>
+          <% if @pcc_break_request.last_update!=nil%>
+              <tr>
+                <td><%=@pcc_break_request.last_updated_at.strftime('%d %B %Y (%I:%M%P)') rescue ''%></td>
+                <td><i><%=@pcc_break_request.event_name%> By:</i><%= @pcc_break_request.last_updated_by_user.fullname rescue ''%></td>
+                <td><%=@pcc_break_request.last_update rescue ''%></td>
+                <td><%= @pcc_break_request.comments rescue ''%></td>
+              </tr>
+          <%end%>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+

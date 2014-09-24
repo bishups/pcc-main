@@ -1,0 +1,36 @@
+<% if !flash[:notice].blank? %>
+    <div class="alert alert-info">
+      <%= flash[:notice] %>
+    </div>
+<% end %>
+<br />
+<span class='pull-left'>
+    <%= link_to "Back to Travel Requests", pcc_travel_requests_path, :class => 'btn btn-primary' %>
+</span>
+<br />
+<br />
+<table class="table table-bordered table-striped">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Date Of Journey</th>
+    <th>From</th>
+    <th>To</th>
+    <th>Download Link</th>
+    <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+
+      <tr>
+        <%@pcc_travel_request=PccTravelRequest.find_by_id(@travel_ticket.pcc_travel_request_id)%>
+        <td><%= @pcc_travel_request.requester.fullname %></td>
+        <td><%= @pcc_travel_request.doj %></td>
+        <td><%= @pcc_travel_request.from %></td>
+        <td><%= @pcc_travel_request.to %></td>
+        <td><%= link_to "Download Ticket", @travel_ticket.attachment_url %></td>
+        <td><%= button_to "Delete",  @travel_ticket, method: :delete, class: "btn btn-danger", confirm: "Are you sure that you wish to delete #{@travel_ticket.name}?" %></td>
+      </tr>
+
+  </tbody>
+</table>

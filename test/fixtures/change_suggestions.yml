@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  description: MyString
+  priority: MyString
+  done: false
+  pcc_communication_request_id: 1
+
+two:
+  description: MyString
+  priority: MyString
+  done: false
+  pcc_communication_request_id: 1

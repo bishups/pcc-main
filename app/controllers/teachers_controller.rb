@@ -7,9 +7,8 @@ class TeachersController < ApplicationController
   # GET /teachers.json
   def index
     in_geography = (current_user.is? :any, :in_group => [:geography])
-    in_pcc = (current_user.is? :any, :in_group => [:pcc])
     in_training = (current_user.is? :any, :in_group => [:training])
-    center_ids = (in_geography or in_training or in_pcc) ? current_user.accessible_center_ids : []
+    center_ids = (in_geography or in_training) ? current_user.accessible_center_ids : []
     # any teachers who are attached to zones, but not to the centers
     zone_ids = current_user.accessible_zone_ids
     respond_to do |format|
@@ -20,7 +19,7 @@ class TeachersController < ApplicationController
       else
         @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).order('teachers.t_no ASC').uniq.all
         if !zone_ids.empty?
-          @teachers_in_zones = Teacher.where("zone_id IN (?)", zone_ids).uniq.all
+          @teachers_in_zones = Teacher.joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("zones_teachers.zone_id IN (?)", zone_ids).uniq.all
           @teachers = @teachers + (@teachers_in_zones - @teachers)
         end
         format.html # index.html.erb
@@ -53,7 +52,7 @@ class TeachersController < ApplicationController
     @teacher.current_user = current_user
 
     respond_to do |format|
-      if @teacher.can_create? :any => true
+      if @teacher.can_create?
         format.html # new.html.erb
         format.json { render json: @teacher }
       else
@@ -62,6 +61,25 @@ class TeachersController < ApplicationController
       end
     end
   end
+
+  # GET /teacher/comments
+  # GET /teacher/comments.json
+  def comments
+    @teacher = Teacher.find(params[:id].to_i)
+    @teacher.current_user = current_user
+
+    respond_to do |format|
+      if @teacher.can_create_schedule?
+        format.html { render action: "additional_comment" }
+        format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
+      else
+        format.html { redirect_to teacher_teacher_schedules_path(@teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @teacher_schedule.errors, status: :unprocessable_entity }
+      end
+    end
+
+  end
+
 
   # GET /teachers/1/edit
   def edit
@@ -110,8 +128,11 @@ class TeachersController < ApplicationController
   # PUT /teachers/1
   # PUT /teachers/1.json
   def update
+    return update_additional_comments if params.has_key?(:additional_comments)
+
     @teacher = Teacher.find(params[:id])
     @teacher.current_user = current_user
+
     @trigger = params[:trigger]
     @teacher.load_comments!(params)
 
@@ -119,7 +140,7 @@ class TeachersController < ApplicationController
       if @teacher.can_update?
         if state_update(@teacher, @trigger) &&  @teacher.save!
           format.html { redirect_to @teacher, notice: 'Teacher was successfully updated.' }
-          format.json { render json: @venue }
+          format.json { render json: @teacher }
           # redirect_to [@teacher]
         else
           #flash[:teacher] = @teacher
@@ -135,6 +156,31 @@ class TeachersController < ApplicationController
       end
     end
   end
+
+
+  # PUT /teachers/1
+  # PUT /teachers/1.json
+  def update_additional_comments
+    @teacher = Teacher.find(params[:id])
+    @teacher.current_user = current_user
+    @teacher.additional_comments = params[:additional_comments]
+
+    respond_to do |format|
+      if @teacher.can_create_schedule?
+        if @teacher.save!
+          format.html { redirect_to teacher_teacher_schedules_path(@teacher), notice: 'Teacher was successfully updated.' }
+          format.json { render json: @teacher }
+        else
+          format.html { render :action => :comments, :trigger => params[:trigger] }
+          format.json { render json: @teacher.errors, status: :unprocessable_entity }
+        end
+      else
+        format.html { redirect_to teachers_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @teacher.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
 
 
   # DELETE /teachers/1

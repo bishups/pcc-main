@@ -12,6 +12,30 @@ class UserMailer < ActionMailer::Base
   end
 
 
+
+  def new_travel_request_email(object,user)
+    @object = object
+    @user = user
+    @url  = Rails.application.routes.default_url_options[:host]
+    mail(:to => @user.email, :subject => "New #{object.friendly_first_name_for_email}")
+  end
+
+  def edit_pcc_request_email(object,user)
+    @object = object
+    @user = user
+    @url  = Rails.application.routes.default_url_options[:host]
+    mail(:to => @user.email, :subject => "PCC Request Edited: #{object.friendly_first_name_for_email} ")
+  end
+
+  def new_break_request_email(object,user)
+    @object = object
+    @user = user
+    @url  = Rails.application.routes.default_url_options[:host]
+    mail(:to => @user.email, :subject => "New #{object.friendly_first_name_for_email}")
+  end
+
+
+
   def sms(object, user, from, to, on, additional_text)
     @object = object
     @user = user
@@ -21,6 +45,31 @@ class UserMailer < ActionMailer::Base
     sms_email_id = "#{@user.mobile}.#{Rails.application.config.sms_country_username}@smscountry.net"
     mail(:to => sms_email_id, :subject => Rails.application.config.sms_country_username)
   end
+
+  def new_travel_request_sms(object, user)
+    @object = object
+    @user = user
+
+    sms_email_id = "#{@user.mobile}.#{Rails.application.config.sms_country_username}@smscountry.net"
+    mail(:to => sms_email_id, :subject => Rails.application.config.sms_country_username)
+  end
+
+  def edit_pcc_request_sms(object, user)
+    @object = object
+    @user = user
+
+    sms_email_id = "#{@user.mobile}.#{Rails.application.config.sms_country_username}@smscountry.net"
+    mail(:to => sms_email_id, :subject => Rails.application.config.sms_country_username)
+  end
+
+  def new_break_request_sms(object, user)
+    @object = object
+    @user = user
+
+    sms_email_id = "#{@user.mobile}.#{Rails.application.config.sms_country_username}@smscountry.net"
+    mail(:to => sms_email_id, :subject => Rails.application.config.sms_country_username)
+  end
+
 
   def approval_email(user)
     @user = user

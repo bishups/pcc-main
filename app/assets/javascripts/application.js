@@ -13,9 +13,11 @@
 //= require jquery
 //= require jquery_ujs
 //= require bootstrap.min
+//= require bootstrap-hover-dropdown.min
 //= require jquery-ui
 //= require_tree .
 //= require bootstrap-datetimepicker/bootstrap-datetimepicker
+//= require bootstrap-timepicker
 //= require dataTables/jquery.dataTables
 //= require dataTables/jquery.dataTables.bootstrap3
 //= require dataTables/extras/TableTools
@@ -24,3 +26,4 @@
 //= require jquery_ujs
 //= require jquery-ui
 //= require autocomplete-rails
+//= require jquery.timepicker
