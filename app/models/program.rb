@@ -141,6 +141,10 @@ class Program < ActiveRecord::Base
     super(*args)
   end
 
+  before_create do |program|
+    # Setting the registation as closed before announcing.
+    self.registration_closed = true
+  end
 
   after_create do |program|
     program.reload
@@ -312,6 +316,8 @@ class Program < ActiveRecord::Base
 
   def on_announce
     self.announced = true
+    # Changed by Senthil, open the registration once it is announced. By default registration is closed. Registration is opened only in announced state.
+    self.registration_closed = false
     # generate_program_id!
     self.notify_all(ANNOUNCED)
     # start the timer for start of class notification
