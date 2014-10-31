@@ -132,13 +132,13 @@ class User < ActiveRecord::Base
   validate :validate_approver_email, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
   before_save do |user|
-    logger.error("Inside User model before save. Values of user.enabled? == #{user.enabled?} ")
+    logger.error("Inside User model before save. Values of user.email = #{user.email} and user.enabled? == #{user.enabled?} ")
     if not user.enabled?
       user.type = "PendingUser"
     else
       user.type = nil
     end
-    logger.error("Inside User model before save after setting values. Values of user.enable == #{user.enable}  and user.type == #{user.type}")
+    logger.error("Inside User model before save after setting values. Values of user.email = #{user.email} and user.enable == #{user.enable}  and user.type == #{user.type}")
     self.password_reset_at = Time.now if self.encrypted_password_changed?
   end
 
