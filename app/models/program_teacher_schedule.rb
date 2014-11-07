@@ -162,7 +162,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     if self.program.is_announced? && self.program.is_active?
       self.send(::Program::ANNOUNCED)
       # update the timing_str for all teacher schedule(s) for the teacher, linked to the program
-      announced_timings = self.program.announced_timing.split(", ")
+      announced_timings = self.program.announced_timing ? self.program.announced_timing.split(", ") : []
       teacher_schedules = self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id)
       teacher_schedules.each { |ts|
         session_name = ts.timing.name.split(' ')[0]
@@ -536,7 +536,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   def block_teacher_schedule!(params)
     program = Program.find(params[:program_id])
     teacher = Teacher.find(params[:teacher_id])
-    timing_ids = (params[:timing_ids]).reject(&:blank?).map{|x| x.to_i}
+    timing_ids = ([params[:timing_ids]].flatten).reject(&:blank?).map{|x| x.to_i}
 
     if teacher.full_time?
       self.block_full_time_teacher_schedule!(program, teacher, timing_ids)

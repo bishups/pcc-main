@@ -250,7 +250,7 @@ class ProgramTeacherSchedulesController < ApplicationController
         pts.teacher.current_user = current_user
       end
       if params.has_key?(:timing_ids)
-        pts.timing_ids = (params[:timing_ids]).reject(&:blank?).map{|x| x.to_i}
+        pts.timing_ids = ([params[:timing_ids]].flatten).reject(&:blank?).map{|x| x.to_i}
       end
       if params.has_key?(:teacher_role)
         pts.teacher_role = (params[:teacher_role])
