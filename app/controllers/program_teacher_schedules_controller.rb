@@ -138,6 +138,9 @@ class ProgramTeacherSchedulesController < ApplicationController
     # updates blockable teachers based on selection
     #@timings = program_type.timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
     blockable_teachers = @program_teacher_schedule.blockable_teachers(@selected_teacher_role)
+
+    # Include Main teacher as Co-Teacher automatically in the drop down while adding the teacher to a program.
+    blockable_teachers = blockable_teachers + @program_teacher_schedule.blockable_teachers("Main Teacher") if  @selected_teacher_role == "Co-Teacher"
     @blockable_teachers = blockable_teachers.sort_by{|entry| entry[:teacher].user.fullname}
     @blockable_timing_ids = Hash[@blockable_teachers.map {|e| [e[:teacher].id, e[:timing_ids]] }]
     unless @blockable_teachers.blank?
