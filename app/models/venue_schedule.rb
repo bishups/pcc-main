@@ -34,7 +34,7 @@ class VenueSchedule < ActiveRecord::Base
   validates :venue_id, :presence => true
   attr_accessible :venue_id, :venue
   validates_uniqueness_of :program_id, :on => :create, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
-  validates :payment_amount, :length => {:maximum => 7},:numericality => {:only_integer => true }
+  validates :payment_amount, :length => {:maximum => 7},:numericality => {:only_integer => true }, :if =>  Proc.new { |vs| vs.venue.commercial? }
 
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
