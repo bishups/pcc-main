@@ -403,7 +403,10 @@ class Teacher < ActiveRecord::Base
   rails_admin do
     list do
       field :t_no
-      field :user
+      field :user do
+        searchable [:email, :firstname, :lastname, :phone, :mobile]
+        queryable true
+      end
       field :full_time
       field :state
       field :zone
