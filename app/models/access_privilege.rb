@@ -9,6 +9,8 @@
 #  resource_type :string(255)
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
+#  sync_ts       :string(255)
+#  sync_id       :string(255)
 #
 
 class AccessPrivilege < ActiveRecord::Base

@@ -8,6 +8,7 @@
 #  updated_at    :datetime         not null
 #  cancan_action :string(255)
 #  subject       :string(255)
+#  sync_id       :integer
 #
 
 class Permission < ActiveRecord::Base

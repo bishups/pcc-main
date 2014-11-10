@@ -6,6 +6,9 @@
 #  name       :string(255)
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  deleted_at :datetime
+#  sync_ts    :string(255)
+#  sync_id    :string(255)
 #
 
 class Zone < ActiveRecord::Base

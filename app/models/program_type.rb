@@ -2,13 +2,22 @@
 #
 # Table name: program_types
 #
-#  id                    :integer          not null, primary key
-#  name                  :string(255)
-#  language              :string(255)
-#  no_of_days            :integer
-#  minimum_no_of_teacher :integer
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
+#  id                               :integer          not null, primary key
+#  name                             :string(255)
+#  language                         :string(255)
+#  no_of_days                       :integer
+#  minimum_no_of_teacher            :integer
+#  created_at                       :datetime         not null
+#  updated_at                       :datetime         not null
+#  deleted_at                       :datetime
+#  registration_close_timeout       :integer
+#  minimum_no_of_co_teacher         :integer
+#  sync_ts                          :string(255)
+#  sync_id                          :string(255)
+#  session_duration                 :integer
+#  minimum_no_of_organizing_teacher :integer          default(-1)
+#  minimum_no_of_hall_teacher       :integer          default(-1)
+#  minimum_no_of_initiation_teacher :integer          default(-1)
 #
 
 class ProgramType < ActiveRecord::Base

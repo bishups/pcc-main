@@ -6,6 +6,7 @@
 #  name       :string(255)
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  sync_id    :integer
 #
 
 class Role < ActiveRecord::Base

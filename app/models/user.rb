@@ -25,6 +25,16 @@
 #  mobile                 :string(255)
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
+#  type                   :string(255)
+#  deleted_at             :datetime
+#  enable                 :boolean          default(FALSE)
+#  approver_email         :string(255)
+#  message_to_approver    :text
+#  approval_email_sent    :boolean          default(FALSE)
+#  password_reset_at      :datetime
+#  provider               :string(255)
+#  sync_ts                :string(255)
+#  sync_id                :string(255)
 #
 
 module UserExtension

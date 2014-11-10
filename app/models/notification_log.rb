@@ -1,3 +1,20 @@
+# == Schema Information
+#
+# Table name: notification_logs
+#
+#  id         :integer          not null, primary key
+#  user_id    :integer
+#  date       :datetime
+#  model_id   :integer
+#  model_type :string(255)
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  text1      :string(255)
+#  text2      :string(255)
+#  displayed  :boolean          default(FALSE)
+#  disabled   :boolean          default(FALSE)
+#
+
 class NotificationLog < ActiveRecord::Base
   belongs_to :user
   belongs_to :model, :polymorphic => true

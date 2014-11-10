@@ -2,23 +2,30 @@
 #
 # Table name: venues
 #
-#  id              :integer          not null, primary key
-#  center_id       :integer
-#  zone_id         :integer
-#  name            :string(255)
-#  description     :text
-#  address         :text
-#  pin_code        :string(255)
-#  capacity        :string(255)
-#  state           :string(255)
-#  contact_name    :string(255)
-#  contact_email   :string(255)
-#  contact_phone   :string(255)
-#  contact_mobile  :string(255)
-#  contact_address :text
-#  commercial      :boolean
-#  created_at      :datetime         not null
-#  updated_at      :datetime         not null
+#  id                      :integer          not null, primary key
+#  name                    :string(255)
+#  description             :text
+#  address                 :text
+#  capacity                :string(255)
+#  state                   :string(255)
+#  contact_name            :string(255)
+#  contact_email           :string(255)
+#  contact_phone           :string(255)
+#  contact_mobile          :string(255)
+#  contact_address         :text
+#  commercial              :boolean
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  payment_contact_name    :string(255)
+#  payment_contact_address :string(255)
+#  payment_contact_mobile  :string(255)
+#  per_day_price           :integer          default(0)
+#  deleted_at              :datetime
+#  pincode_id              :integer
+#  comments                :text
+#  last_update             :string(255)
+#  last_updated_by_user_id :integer
+#  last_updated_at         :datetime
 #
 
 class Venue < ActiveRecord::Base

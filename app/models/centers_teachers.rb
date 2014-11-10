@@ -1,3 +1,12 @@
+# == Schema Information
+#
+# Table name: centers_teachers
+#
+#  id         :integer          not null, primary key
+#  center_id  :integer
+#  teacher_id :integer
+#
+
 class CentersTeachers < ActiveRecord::Base
   # attr_accessible :title, :body
 

@@ -1,3 +1,20 @@
+# == Schema Information
+#
+# Table name: notifications
+#
+#  id              :integer          not null, primary key
+#  model           :string(255)
+#  from_state      :string(255)
+#  to_state        :string(255)
+#  on_event        :string(255)
+#  role_id         :integer
+#  send_sms        :boolean
+#  send_email      :boolean
+#  additional_text :text
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#
+
 class Notification < ActiveRecord::Base
   belongs_to :role
   attr_accessible :role

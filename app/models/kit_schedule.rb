@@ -2,23 +2,30 @@
 #
 # Table name: kit_schedules
 #
-#  id                   :integer          not null, primary key
-#  start_date           :date
-#  end_date             :date
-#  state                :string(255)
-#  issued_to_person_id  :integer
-#  blocked_by_person_id :integer
-#  program_id           :integer
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#  comments             :string(255)
-#  kit_id               :integer
+#  id                      :integer          not null, primary key
+#  state                   :string(255)
+#  program_id              :integer
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  kit_id                  :integer
+#  blocked_by_user_id      :integer
+#  last_updated_by_user_id :integer
+#  issued_to               :string(255)
+#  due_date_time           :datetime
+#  start_date              :datetime
+#  end_date                :datetime
+#  comments                :text
+#  feedback                :text
+#  last_update             :string(255)
+#  last_updated_at         :datetime
 #
 
 class KitSchedule < ActiveRecord::Base
   include CommonFunctions
   has_many :activity_logs, :as => :model, :inverse_of => :model
   has_many :notification_logs, :as => :model, :inverse_of => :model
+
+  has_paper_trail
 
   before_destroy :can_delete?
 

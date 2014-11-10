@@ -1,3 +1,17 @@
+# == Schema Information
+#
+# Table name: comments
+#
+#  id         :integer          not null, primary key
+#  model      :string(255)
+#  action     :string(255)
+#  text       :string(255)
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  deleted_at :datetime
+#  active     :boolean          default(TRUE)
+#
+
 class Comment < ActiveRecord::Base
 
   acts_as_paranoid

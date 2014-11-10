@@ -1,3 +1,17 @@
+# == Schema Information
+#
+# Table name: timings
+#
+#  id         :integer          not null, primary key
+#  name       :string(255)
+#  start_time :time
+#  end_time   :time
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  deleted_at :datetime
+#  sync_id    :integer
+#
+
 class Timing < ActiveRecord::Base
 
   acts_as_paranoid

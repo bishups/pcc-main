@@ -1,3 +1,17 @@
+# == Schema Information
+#
+# Table name: pincodes
+#
+#  id            :integer          not null, primary key
+#  pincode       :integer
+#  location_name :string(255)
+#  center_id     :integer
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  deleted_at    :datetime
+#  sync_id       :integer
+#
+
 class Pincode < ActiveRecord::Base
   belongs_to :center
   attr_accessible :location_name, :pincode, :center, :center_id

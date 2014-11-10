@@ -1,3 +1,18 @@
+# == Schema Information
+#
+# Table name: kit_items
+#
+#  id               :integer          not null, primary key
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  description      :string(255)
+#  count            :integer
+#  comments         :string(255)
+#  kit_id           :integer
+#  kit_item_type_id :integer
+#  condition        :string(255)
+#
+
 class KitItem < ActiveRecord::Base
   attr_accessible :comments, :count, :description, :name, :condition
   belongs_to :kit

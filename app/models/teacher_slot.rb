@@ -1,3 +1,16 @@
+# == Schema Information
+#
+# Table name: teacher_slots
+#
+#  id         :integer          not null, primary key
+#  user_id    :integer
+#  status     :string(255)
+#  slot       :string(255)
+#  date       :date
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+
 class TeacherSlot < ActiveRecord::Base
   attr_accessible :date, :slot, :status
 

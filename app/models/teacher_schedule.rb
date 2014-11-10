@@ -2,13 +2,24 @@
 #
 # Table name: teacher_schedules
 #
-#  id         :integer          not null, primary key
-#  user_id    :integer
-#  slot       :string(255)
-#  start_date :datetime
-#  end_date   :datetime
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+#  id                      :integer          not null, primary key
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  state                   :string(255)
+#  start_date              :date
+#  end_date                :date
+#  timing_id               :integer
+#  program_id              :integer
+#  teacher_id              :integer
+#  center_id               :integer
+#  blocked_by_user_id      :integer
+#  last_updated_by_user_id :integer
+#  comments                :text
+#  feedback                :text
+#  last_update             :string(255)
+#  last_updated_at         :datetime
+#  role                    :string(255)
+#  timing_str              :string(255)
 #
 
 class TeacherSchedule < ActiveRecord::Base
@@ -16,6 +27,8 @@ class TeacherSchedule < ActiveRecord::Base
 
   has_many :activity_logs, :as => :model, :inverse_of => :model
   has_many :notification_logs, :as => :model, :inverse_of => :model
+
+  has_paper_trail
 
   # attr_accessible :title, :body
   attr_accessor :current_user

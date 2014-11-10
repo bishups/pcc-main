@@ -1,3 +1,19 @@
+# == Schema Information
+#
+# Table name: program_teacher_schedules
+#
+#  id                  :integer          not null, primary key
+#  program_id          :integer
+#  user_id             :integer
+#  teacher_schedule_id :integer
+#  created_by_user_id  :integer
+#  start_date          :integer
+#  end_date            :integer
+#  slot                :integer
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#
+
 =begin
 class ProgramTeacherSchedule < ActiveRecord::Base
   # attr_accessible :title, :body

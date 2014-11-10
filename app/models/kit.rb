@@ -2,18 +2,19 @@
 #
 # Table name: kits
 #
-#  id                     :integer          not null, primary key
-#  state                  :string(255)
-#  capacity :integer
-#  filling_person_id      :integer
-#  center_id              :integer
-#  guardian_id            :integer
-#  condition              :string(255)
-#  condition_comments     :text
-#  general_comments       :text
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#  kit_name_string        :string(255)
+#  id                      :integer          not null, primary key
+#  state                   :string(255)
+#  guardian_id             :integer
+#  condition               :string(255)
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  name                    :string(255)
+#  capacity                :integer
+#  deleted_at              :datetime
+#  comments                :text
+#  last_update             :string(255)
+#  last_updated_by_user_id :integer
+#  last_updated_at         :datetime
 #
 
 class Kit < ActiveRecord::Base
@@ -50,7 +51,7 @@ class Kit < ActiveRecord::Base
 
   validates :capacity, :presence => true,  :length => {:within => 1..4}, :numericality => {:only_integer => true }
 
-  #has_paper_trail
+  has_paper_trail
 
   #after_create :generateKitNameStringAfterCreate
   #before_update :generateKitNameString

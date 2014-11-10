@@ -1,3 +1,18 @@
+# == Schema Information
+#
+# Table name: program_donations
+#
+#  id              :integer          not null, primary key
+#  program_type_id :integer
+#  donation        :integer
+#  name            :string(255)
+#  deleted_at      :datetime
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#  sync_ts         :string(255)
+#  sync_id         :string(255)
+#
+
 class ProgramDonation < ActiveRecord::Base
   acts_as_paranoid
 

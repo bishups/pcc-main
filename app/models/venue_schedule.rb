@@ -2,16 +2,19 @@
 #
 # Table name: venue_schedules
 #
-#  id                :integer          not null, primary key
-#  venue_id          :integer
-#  reserving_user_id :integer
-#  slot              :string(255)
-#  start_date        :datetime
-#  end_date          :datetime
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  program_id        :integer
-#  state             :string(255)
+#  id                      :integer          not null, primary key
+#  venue_id                :integer
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  program_id              :integer
+#  state                   :string(255)
+#  blocked_by_user_id      :integer
+#  last_updated_by_user_id :integer
+#  comments                :text
+#  feedback                :text
+#  last_update             :string(255)
+#  last_updated_at         :datetime
+#  payment_amount          :integer          default(0)
 #
 
 class VenueSchedule < ActiveRecord::Base
