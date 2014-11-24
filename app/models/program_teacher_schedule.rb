@@ -234,15 +234,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
     end
 
-    self.program.roles.each { |role|
-      self.program.timings.each { |timing|
+    role   = self.teacher_schedule.role
+    timing = self.teacher_schedule.timing
+
         if ((self.program.no_of_teachers_connected(role, timing) <= self.program.minimum_no_of_teacher(role)) && self.program.venue_approved?)
           self.errors[:base] << "Cannot remove teacher. Number of #{role} needed for #{timing.name} session will become less than the number needed. Please add another #{role} and try again."
           return false
         end
-      }
-    }
-
     return true
   end
 
@@ -260,14 +258,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
     end
 
-    self.program.roles.each { |role|
-      self.program.timings.each { |timing|
+    role   = self.teacher_schedule.role
+    timing = self.teacher_schedule.timing
         if ((self.program.no_of_teachers_connected(role, timing) <= self.program.minimum_no_of_teacher(role)) && self.program.venue_approved?)
           self.errors[:base] << "Cannot remove teacher. Number of #{role} needed for #{timing.name} session will become less than the number needed. Please add another #{role} and try again."
           return false
         end
-      }
-    }
+
 
     return true
   end
