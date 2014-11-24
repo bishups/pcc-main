@@ -7,11 +7,13 @@ timing_mapping = {
 
 timing_mapping.each do |old_timing, new_timing|
   t=Timing.find_by_name(old_timing)
-  puts "Process timing #{t.name}" if t
-  t.name       = new_timing[0]
-  t.start_time = new_timing[1]
-  t.end_time   = new_timing[2]
-  unless t.save
-    put "#{t.errors.messages}"
+  if t
+    puts "Process timing #{t.name}"
+    t.name       = new_timing[0]
+    t.start_time = new_timing[1]
+    t.end_time   = new_timing[2]
+    unless t.save(:validate => false)
+      puts "#{t.errors.messages}"
+    end
   end
 end
