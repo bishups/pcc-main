@@ -4,8 +4,7 @@ class ProgramsController < ApplicationController
   def index
 
     in_geography = (current_user.is? :any, :in_group => [:geography])
-    in_pcc = (current_user.is? :any, :in_group => [:pcc])
-    center_ids = (in_geography or in_pcc) ? current_user.accessible_center_ids : []
+    center_ids = (in_geography) ? current_user.accessible_center_ids : []
     respond_to do |format|
       if center_ids.empty?
         @programs = []
@@ -89,10 +88,30 @@ class ProgramsController < ApplicationController
 
   def update
     @program = Program.find(params[:id])
+    @program.dummy_init_time
     @program.current_user = current_user
     @trigger = params[:trigger]
     @program.feedback = params[:feedback] if params.has_key?(:feedback)
     @program.capacity = params[:capacity] if params.has_key?(:capacity)
+    @program.announced_locality = params[:announced_locality] if params.has_key?(:announced_locality)
+    @program.contact_phone = params[:contact_phone] if params.has_key?(:contact_phone)
+    @program.contact_email = params[:contact_email] if params.has_key?(:contact_email)
+
+    for i in 1..Timing.all.count
+      start_time = "start_time_#{i.to_s}".to_sym
+      end_time = "end_time_#{i.to_s}".to_sym
+      if params.has_key?(start_time)
+        time = Time.zone.parse(params[start_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+      if params.has_key?(end_time)
+        time = Time.zone.parse(params[end_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+    end
+
     @program.load_comments!(params)
 
     respond_to do |format|

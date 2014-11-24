@@ -1,0 +1,31 @@
+<% if ::PccBreakRequest::EVENTS_WITH_COMMENTS.include?(@trigger) %>
+    <div class='alert alert-warning'>
+<% else %>
+    <div class='alert alert-info'>
+<% end %>
+
+<p>
+  <% if @trigger == ::PccBreakRequest::EVENT_REQUEST_CLARIFICATION%>
+      Are you sure you want to <strong>request clarification</strong> for this break request?
+
+
+   <% elsif @trigger == ::PccBreakRequest::EVENT_APPROVE%>
+      Are you sure you want to <strong>approve</strong> this break request?
+
+
+  <% elsif @trigger == ::PccBreakRequest::EVENT_REJECT%>
+      Are you sure you want to <strong>reject</strong> this break request?
+
+
+
+  <% elsif @trigger == ::PccBreakRequest::EVENT_CLARIFY%>
+      Please enter your clarification in the comments field
+
+  <% elsif @trigger == ::PccBreakRequest::EVENT_CANCEL%>
+      Are you sure you want to cancel this break request?
+  <% else %>
+      Are you sure you want to save these changes?
+  <% end%>
+</p>
+</div>
+</div>

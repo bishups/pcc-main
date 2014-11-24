@@ -1,0 +1,98 @@
+<%= form_for(@pcc_travel_request,:html => {:class => 'form'}) do |f| %>
+    <%= resource_error_messages!(@pcc_travel_request) %>
+
+    <% if @pcc_travel_request.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@pcc_travel_request.errors.count, "error") %> prohibited this PCC Travel Request from being saved:</h2>
+
+      <ul>
+      <% @pcc_travel_request.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <div class='form-group'>
+      <%= f.label 'Purpose' %>
+      <%= f.text_field :purpose, :class => 'form-control' %>
+
+    <div class='form-group'>
+      <%= f.label 'From' %>
+      <%= f.text_field :from, :class => 'form-control' %>
+    </div>
+    <div class='form-group'>
+      <%= f.label 'To' %>
+      <%= f.text_field :to, :class => 'form-control' %>
+    </div>
+    </div>
+    <div class="form-group">
+      <%= f.label :'Date Of Journey' %>
+      <%= f.text_field :doj, :class => 'form-control dateSelect' %>
+    </div>
+    <div class="form-group">
+      <%= f.label :'Preferred Time Of Journey (From)' %><small>optional</small><br />
+      <%= f.time_select :timefrom, minute_step: 5, include_blank: true,ampm: true %>
+      <!--=#f.time_select :timefrom, {:ampm => true} %>-->
+    </div>
+    <div class="form-group">
+      <%= f.label :'Preferred Time Of Journey (To)' %><small>optional</small><br />
+      <%= f.time_select :timeto, minute_step: 5, include_blank: true,ampm: true %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :'Preferred Class' %><br />
+      <%=  f.text_field :preferred_clss, :class => 'form-control'%>
+      <small>Eg: Sleeper </small>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :'Reach Before (Enter date and time)' %><br />
+      <%= f.text_field :reachbefore, :class => 'form-control datetimeSelect' %>
+
+    </div>
+    <div class="form-group">
+      <%= f.label :'Mode Of Travel' %><br />
+      <%=  f.select :mode, [['Bus', 'Bus'], ['Train', 'Train'],['Air', 'Air']]%><br />
+    </div>
+
+    <div class="form-group">
+      <%= f.label :'ID Proof' %><br />
+      <%=  f.select :idproof, [['Driving License', 'Driving License'], ['PAN Card', 'PAN Card'],['Voter ID', 'Voter ID']]%><br />
+    </div>
+    <div class="form-group">
+      <%= f.label :'ID Proof Number' %><br />
+      <%=  f.text_field :idproofnumber %><br />
+    </div>
+    <div class="form-group">
+      <%= f.label :'Tatkal' %><br />
+      <%=  f.select :tatkal,options_for_select( [['Yes', true], ['No', false]]), {:multiple => true, :class => 'form-control'}%><br />
+    </div>
+
+
+    <%= f.submit 'Create',  :class => 'btn btn-lg btn-primary' %>
+    <%= link_to "Cancel", pcc_travel_requests_path, :class => 'btn btn-lg btn-primary' %>
+    </div>
+<% end %>
+
+
+<script type='text/javascript'>
+    $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
+</script>
+
+
+<script type="text/javascript">
+    $(".datetimeSelect").datetimepicker({
+        datepicker:false,
+        format: "dd MM yyyy - HH:ii P",
+
+        showMeridian: true,
+        autoclose: true,
+        todayBtn: true,
+        minuteStep:15,
+        ampm:false
+    });
+</script>
+<script type="text/javascript">
+$('.basicExample').timepicker();
+</script>

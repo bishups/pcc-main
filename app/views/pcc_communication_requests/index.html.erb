@@ -1,0 +1,64 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#pcc_communication_request_table').dataTable({
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>PCC Communication Requests
+      <span class='pull-right'>
+            <%= link_to "Place New Communication Request", new_pcc_communication_request_path, :class => 'btn btn-success btn-sm' %>
+          </span>
+      <hr>
+    </h2>
+  </div>
+</div>
+<% if @pcc_communication_requests.empty? %>
+    <div class="alert alert-danger"> No Communication Requests Found.</div>
+<% else %>
+
+<table  id="pcc_communication_request_table" class='display dataTable table table-condensed table-hover table-bordered'>
+  <thead>
+  <tr>
+    <th>Requester</th>
+    <th>Purpose</th>
+    <th>Target audience</th>
+    <th>Attachment</th>
+
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+  </thead>
+  <tbody>
+<% @pcc_communication_requests.each do |pcc_communication_request| %>
+  <tr>
+    <td><%= pcc_communication_request.requester.fullname rescue '' %></td>
+    <td><%= pcc_communication_request.purpose %></td>
+    <td><%= pcc_communication_request.target_audience %></td>
+    <td><%= link_to "View/Download Attachment", pcc_communication_request.attachment_url ,:class => 'btn btn-primary btn-sm' %></td>
+    <td><%= link_to "View/Create Change Suggestions", change_suggestions_path(:id=>pcc_communication_request.id) , :class => 'btn btn-primary btn-sm'%></td>
+    <td><%= link_to 'Show', pcc_communication_request,:class => 'btn btn-primary btn-sm' %></td>
+    <td><%= link_to 'Edit', edit_pcc_communication_request_path(pcc_communication_request),:class => 'btn btn-primary btn-sm' %></td>
+    <td><%# link_to 'Destroy', pcc_communication_request, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+  </tr>
+  <% end %>
+  </tbody>
+</table>
+<%end %>
+
+

@@ -1,0 +1,11 @@
+<% program_timing_str = @selected_program.blank? ? "" : @selected_program.display_timings %>
+$('#program_timings_label').html("<%= escape_javascript(program_timing_str) %>");
+<% timings =  @selected_timings %>
+<% unless timings.blank? %>
+    $('#timing_ids_select').html("<%= escape_javascript(options_for_select(timings.map {|e| [e.name, e.id]})) %>");
+    $('#timings_select').prop('disabled', false)
+    $('#submit_button').prop('disabled', false)
+<% else %>
+    $('#timings_select').prop('disabled', true)
+    $('#submit_button').prop('disabled', true)
+<% end %>

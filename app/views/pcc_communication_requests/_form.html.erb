@@ -1,0 +1,59 @@
+<%= form_for(@pcc_communication_request,:html => {:class => 'form'}) do |f| %>
+    <%= resource_error_messages!(@pcc_communication_request) %>
+
+    <% if @pcc_communication_request.errors.any? %>
+        <div id="error_explanation">
+          <h2><%= pluralize(@pcc_communication_request.errors.count, "error") %> prohibited this PCC communication Request from being saved:</h2>
+
+          <ul>
+            <% @pcc_communication_request.errors.full_messages.each do |msg| %>
+                <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+    <% end %>
+
+    <div class='form-group'>
+      <%= f.label 'Purpose' %><br />
+      <%= f.text_field :purpose,  :size=>'20%' ,:class => 'form-control'%>
+    </div>
+
+    <div class='form-group'>
+      <%= f.label 'Target Audience' %><br />
+      <%= f.select :target_audience,(['Zonal Coordinators','Teachers','Organizers','Sector Coordinators','Meditators','Other']), {}, :class => 'form-control' %>
+      <%= f.label 'Other: Please Specify' %><br />
+      <%= f.text_field :other_target_audience , :class=>'form-control'%>
+      <%# f.select :target_audience ,[['Sector Coordinators', 'Sector Coordinators'], ['Centre Organizers', 'Centre Organizers'],['Other', 'Other']], :class => 'form-control' %>
+    </div>
+
+    <div class='form-group'>
+      <%= f.label 'Geography' %><br />
+      <%= f.select :geography,options_for_select(['Tamil Nadu','Outside Tamil Nadu','India','Overseas','Other']), {}, :class => 'form-control' %>
+      <%= f.label 'Other: Please Specify' %><br />
+      <%= f.text_field :other_geography , :class=>'form-control'%>
+      <%# f.select :target_audience ,[['Sector Coordinators', 'Sector Coordinators'], ['Centre Organizers', 'Centre Organizers'],['Other', 'Other']], :class => 'form-control' %>
+    </div>
+
+    <div class='form-group'>
+      <%= f.label 'Urgency' %><br />
+      <%= f.select :urgency, options_for_select(['Immediate','At Suitable Time','Specify Deadline']), {}, :class => 'form-control' %>
+      <%= f.label 'Deadline' %><br />
+      <%= f.text_field :deadline , :class=>'form-control dateSelect'%>
+      <%# f.select :target_audience ,[['Sector Coordinators', 'Sector Coordinators'], ['Centre Organizers', 'Centre Organizers'],['Other', 'Other']], :class => 'form-control' %>
+    </div>
+
+
+    <div class='form-group'>
+    <%= f.label :attachment %>
+    <%= f.file_field :attachment %>
+    </div>
+
+
+    <%= f.submit 'Create',  :class => 'btn btn-lg btn-primary' %>
+    <%= link_to "Cancel", pcc_communication_requests_path, :class => 'btn btn-lg btn-primary' %>
+    </div>
+<% end %>
+
+<script type='text/javascript'>
+    $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
+</script>

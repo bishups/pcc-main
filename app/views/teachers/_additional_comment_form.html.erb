@@ -1,0 +1,11 @@
+<%= form_for(@teacher, :html => { :class => 'form' }) do |f| %>
+    <%= resource_error_messages!(@teacher) %>
+
+    <div class='form-group'>
+      <label>Comments </label><small> (optional) </small>
+      <textarea name='additional_comments' class='form-control'><%= @teacher.additional_comments %> </textarea>
+    </div>
+
+    <%= submit_tag 'Update', :class => 'btn btn-lg btn-primary' %>
+    <%= link_to "Cancel", :back, :class => 'btn btn-primary btn-lg :hover' %>
+<% end %>

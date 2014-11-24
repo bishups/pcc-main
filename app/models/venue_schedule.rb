@@ -37,8 +37,7 @@ class VenueSchedule < ActiveRecord::Base
   validates :venue_id, :presence => true
   attr_accessible :venue_id, :venue
   validates_uniqueness_of :program_id, :on => :create, :scope => "venue_id", :unless => :venue_schedule_cancelled?, :message => " is already associated with the Venue."
-  validates :per_day_price, :length => {:within => 1..6},:numericality => {:only_integer => true }, :allow_nil => true
-
+  validates :payment_amount, :length => {:maximum => 7},:numericality => {:only_integer => true }, :if =>  Proc.new { |vs| vs.venue.commercial? }
 
   belongs_to :blocked_by_user, :class_name => User
   belongs_to :program
@@ -54,13 +53,13 @@ class VenueSchedule < ActiveRecord::Base
   #after_create :connect_program!
 
   # given a venue_schedule, returns a relation with other overlapping venue_schedule(s)
-  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('(venue_schedules.id != ? OR ? IS NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
+  scope :overlapping, lambda { |vs| joins(:program).merge(Program.overlapping(vs.program)).where('(venue_schedules.id != ? OR ? IS NULL) AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id = ? ', vs.id, vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   # given a venue and program, returns a relation containing all overlapping venue_schedule(s) for that venue (including the program itself - if present)
-  scope :all_overlapping, lambda { |venue, program| joins(:program).merge(Program.all_overlapping(program)).where('venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', ::VenueSchedule::FINAL_STATES, venue.id) }
+  scope :all_overlapping, lambda { |venue, program| joins(:program).merge(Program.all_overlapping(program)).where('venue_schedules.state NOT IN (?) AND venue_schedules.venue_id = ? ', ::VenueSchedule::FINAL_STATES, venue.id) }
 
   # given a venue_schedule, returns a relation with other non-overlapping venue_schedule(s)
-  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('(venue_schedules.id != ? OR ? IS NULL) AND venue_schedules.state NOT IN (?) AND (venue_schedules.venue_id = ? OR venue_schedules.venue_id IS NULL) ', vs.id, vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
+  scope :available, lambda { |vs| joins(:program).merge(Program.available(vs.program)).where('(venue_schedules.id != ? OR ? IS NULL) AND venue_schedules.state NOT IN (?) AND venue_schedules.venue_id = ? ', vs.id, vs.id, ::VenueSchedule::FINAL_STATES, vs.venue_id) }
 
   STATE_UNKNOWN                   = "Unknown"
   STATE_BLOCK_REQUESTED           = "Block Requested"
@@ -162,7 +161,7 @@ class VenueSchedule < ActiveRecord::Base
     event EVENT_AUTHORIZE_FOR_PAYMENT do
       transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT, :if => lambda {|t| t.is_sector_coordinator? }
     end
-    before_transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT, :do => :is_sector_coordinator?
+    before_transition STATE_APPROVAL_REQUESTED => STATE_AUTHORIZED_FOR_PAYMENT, :do => :can_authorize_for_payment?
     after_transition any => STATE_AUTHORIZED_FOR_PAYMENT, :do => :on_authorization_for_payment?
 
     event EVENT_REQUEST_PAYMENT do
@@ -272,7 +271,7 @@ class VenueSchedule < ActiveRecord::Base
   end
 
   def venue_schedule_cancelled?
-    VenueSchedule.where('(program_id = ? OR program_id IS NULL) AND (venue_id = ? OR venue_id IS NULL) AND state NOT IN (?)', self.program_id, self.venue_id, FINAL_STATES).count == 0
+    VenueSchedule.where('program_id = ? AND venue_id = ? AND state NOT IN (?)', self.program_id, self.venue_id, FINAL_STATES).count == 0
   end
 
   def trigger_block_expire
@@ -340,6 +339,14 @@ class VenueSchedule < ActiveRecord::Base
     # EVEN if program is not active, we not mark venue as inactive, unless it is specifically marked so.
     #return false unless self.program.is_active?
     return true
+  end
+
+  def can_authorize_for_payment?
+    return false unless self.is_sector_coordinator?
+    if self.payment_amount.nil? || self.payment_amount < 0
+      self.errors[:payment_amount] << " cannot be blank, or negative value."
+      return false
+    end
   end
 
   def on_authorization_for_payment?

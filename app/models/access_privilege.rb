@@ -46,15 +46,14 @@ class AccessPrivilege < ActiveRecord::Base
       valid_roles =
         case resource_type
           when "Zone"
-            # HACK - full_time_teacher_scheduler is a person who is allowed to only schedule full time teachers in a given zone
-            [:zonal_coordinator, :full_time_teacher_scheduler, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
+            [:zonal_coordinator, :zao, :pcc_accounts, :finance_department, :teacher_training_department]
           when "Sector"
             [:sector_coordinator]
           when "Center"
             # HACK - TODO - need to clean this up - using :treasurer, rather than :center_treasurer
             [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer, :teacher]
           else
-            [:super_admin]
+            [:super_admin, :pcc_travel, :pcc_break_approver,:pcc_department, :pcc_travel_approver, :pcc_travel_vendor]
         end
       if !valid_roles.include?(role)
         self.errors[:resource] << " does not match the specified role."

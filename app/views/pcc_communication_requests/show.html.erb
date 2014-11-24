@@ -1,0 +1,90 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Requester Details</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+
+
+          <tr>
+            <td width='20%'><strong>Name </strong></td>
+            <td><%= @pcc_communication_request.requester.name rescue ' ' %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Phone </strong></td>
+            <td><%= @pcc_communication_request.requester.mobile rescue ' ' %></td>
+          </tr>
+          <tr>
+          <tr>
+            <td><strong>Email Id </strong></td>
+            <td><%= @pcc_communication_request.requester.email rescue ' ' %></td>
+          </tr>
+
+          <tr>
+          <tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class='row'>
+  <div class='col-md-12'>
+    <h3>Communication Request Details</h3>
+    <div class = 'row'>
+      <div class='col-md-12'>
+        <table class='table table-bordered'>
+          <td width='20%'><strong>Purpose </strong></td>
+          <td><%= @pcc_communication_request.purpose %></td>
+          </tr>
+          <tr>
+            <td><strong>Target Audience</strong></td>
+            <%if @pcc_communication_request.target_audience=='Other'%>
+            <td><%= @pcc_communication_request.other_target_audience %></td>
+                <%else%>
+                <td><%= @pcc_communication_request.target_audience %></td>
+                <%end%>
+          </tr>
+          <tr>
+            <td><strong>Geography </strong></td>
+            <%if @pcc_communication_request.geography=='Other'%>
+                <td><%= @pcc_communication_request.other_geography %></td>
+            <%else%>
+                <td><%= @pcc_communication_request.geography %></td>
+            <%end%>
+          </tr>
+          <tr>
+
+          <td><strong>Urgency</strong></td>
+            <%if @pcc_communication_request.urgency=='Specify Deadline'%>
+                <td><%= 'Before ' +  (@pcc_communication_request.deadline).to_s %></td>
+                <% else%>
+                <td><%= @pcc_communication_request.urgency %></td>
+                <%end%>
+
+        </tr>
+          <tr>
+            <td><strong>Communication Document</strong></td>
+
+            <td><%= link_to "Communication Document",@pcc_communication_request.attachment.url %></td>
+          </tr>
+          <tr>
+
+
+          <tr>
+          <tr>
+          <tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+<%= link_to 'Back', pcc_communication_requests_path %>

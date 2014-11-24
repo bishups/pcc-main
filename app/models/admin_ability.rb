@@ -7,8 +7,7 @@ class AdminAbility
     can :manage, PendingUser, {:approver_email => user.email}
     if user.is?(:super_admin)
       can :manage, :all
-      # cannot :destroy, Teacher
-      cannot [:create,:update, :destroy], [Role, Permission ]
+      cannot [:create,:update, :destroy], [Timing, Role, Permission ]
       can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.delete_if{|k,v|  [:teacher].include?(k) }.map{|k,v| v[:text]} }
     else
       can :read, User, {:id => user.accessible_centers.map(&:user_ids).flatten.uniq }

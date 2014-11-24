@@ -81,7 +81,7 @@ sheet1[:table].each do |row|
   end
   teacher.user = user
   teacher.centers << Pincode.find_by_pincode(row["teacher_pincode"]).center
-  teacher.zone = center.zone
+  teacher.zones = [center.zone]
   teacher.program_types << ProgramType.first
   if not teacher.save
     puts "Teacher #{user.firstname} has not been saved because of #{teacher.errors.messages}"

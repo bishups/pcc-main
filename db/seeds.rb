@@ -69,7 +69,6 @@
   roles={
     ::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
-    ::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text] => ["Program Management","Teacher Scheduling","Kit View","Venue View"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:zao][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text] => ["Program Management","Teacher Scheduling","Kit Management","Venue Management"] ,
@@ -77,7 +76,7 @@
     ::User::ROLE_ACCESS_HIERARCHY[:volunteer_committee][:text] => ["Program Management","Teacher View","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text] => ["Program View","Teacher View","Kit Management","Venue Management"] ,
     ::User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text] => ["Program View","Teacher View","Kit Management","Venue Management"] ,
-    ::User::ROLE_ACCESS_HIERARCHY[:center_treasurer][:text] => ["Program View","Teacher View","Kit View","Venue View"],
+    ::User::ROLE_ACCESS_HIERARCHY[:treasurer][:text] => ["Program View","Teacher View","Kit View","Venue View"],
     ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]  => ["Program View","Teacher Scheduling","Kit View","Venue View"],
     ::User::ROLE_ACCESS_HIERARCHY[:teacher_training_department][:text]  => ["Program View","Teacher Scheduling"],
     ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text]  => ["Program Management","Venue Management"],
@@ -91,7 +90,6 @@
 # create notifications
 
 zonal_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text])
-full_time_teacher_scheduler = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:full_time_teacher_scheduler][:text])
 zao = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zao][:text])
 sector_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text])
 center_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_coordinator][:text])
@@ -99,7 +97,7 @@ volunteer_committee = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:volunteer
 center_scheduler = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_scheduler][:text])
 kit_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:kit_coordinator][:text])
 venue_coordinator = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:venue_coordinator][:text])
-center_treasurer = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:center_treasurer][:text])
+treasurer = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:treasurer][:text])
 teacher = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
 teacher_training_department = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher_training_department][:text])
 pcc_accounts = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text])
@@ -253,6 +251,7 @@ notifications = [
 
     {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_BLOCKED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_ASSIGNED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::TeacherSchedule::STATE_AVAILABLE, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'ProgramTeacherSchedule', :from_state => 'any', :to_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :on_event => ::ProgramTeacherSchedule::EVENT_REQUEST_RELEASE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => 'Request pending your approval.' },
     {:model => 'ProgramTeacherSchedule', :from_state => ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED, :to_state => ::TeacherSchedule::STATE_UNAVAILABLE, :on_event => ::ProgramTeacherSchedule::EVENT_RELEASE, :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => '' },

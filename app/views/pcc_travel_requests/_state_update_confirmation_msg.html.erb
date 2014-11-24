@@ -1,0 +1,36 @@
+<% if ::PccTravelRequest::EVENTS_WITH_COMMENTS.include?(@trigger) %>
+    <div class='alert alert-warning'>
+<% else %>
+    <div class='alert alert-info'>
+<% end %>
+
+<p>
+  <% if @trigger == ::PccTravelRequest::EVENT_REQUEST_CLARIFICATION%>
+      Are you sure you want to <strong>request clarification</strong> for this ticket request?
+
+
+  <% elsif @trigger == ::PccTravelRequest::EVENT_REQUEST_APPROVAL%>
+      Are you sure you want to <strong>request approval</strong> for this ticket request?
+
+
+  <% elsif @trigger == ::PccTravelRequest::EVENT_APPROVE%>
+      Are you sure you want to <strong>approve</strong> this ticket request?
+
+
+  <% elsif @trigger == ::PccTravelRequest::EVENT_REJECT%>
+      Are you sure you want to <strong>reject</strong> this ticket request?
+
+  <% elsif @trigger == ::PccTravelRequest::EVENT_BOOK%>
+      Are you sure you want to <strong>book</strong> this ticket request?
+
+  <% elsif @trigger == ::PccTravelRequest::EVENT_CLARIFY%>
+      Please enter your clarification in the comments field
+
+  <% elsif @trigger == ::PccTravelRequest::EVENT_CANCEL%>
+     Are you sure you want to cancel this ticket request?
+  <% else %>
+     Are you sure you want to save these changes?
+  <% end%>
+</p>
+</div>
+</div>

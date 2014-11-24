@@ -95,7 +95,7 @@
       </tr>
       <tr>
         <td width='20%'><strong>Center</strong></td>
-        <td><%= @program.center.name %></td>
+        <td><%= @program.locality_name %></td>
       </tr>
       <tr>
         <td><strong>Proposed By</strong></td>
@@ -111,12 +111,22 @@
       </tr>
       <tr>
         <td><strong>Timing (s)</strong></td>
-        <td><%= (@program.timings.map {|c| c[:name]}).join(", ") %></td>
+        <td><%= @program.display_timings %></td>
       </tr>
-      <tr>
-        <td><strong>Capacity</strong></td>
-        <td><%= @program.capacity rescue ''%></td>
-      </tr>
+      <% if @program.is_announced? %>
+          <tr>
+            <td><strong>Capacity</strong></td>
+            <td><%= @program.capacity rescue ''%></td>
+          </tr>
+          <tr>
+            <td><strong>Contact Phone (s)</strong></td>
+            <td><%= @program.contact_phone rescue ''%></td>
+          </tr>
+          <tr>
+            <td><strong>Contact Email-id (s)</strong></td>
+            <td><%= @program.contact_email rescue ''%></td>
+          </tr>
+      <% end %>
     </table>
   </div>
 </div>
@@ -132,7 +142,7 @@
 
   <div class='row'>
   <div class='col-md-12'>
-    <% if !@program.venue_schedules.nil? && @program.venue_schedules.count > 0 %>
+    <% if !@program.venue_schedules.nil? && @program.venue_schedules.count > 0  %>
         <% @program.venue_schedules.each do |vs| %>
             <%  vs.current_user = current_user %>
             <% if vs.is_connected? %>
@@ -216,68 +226,48 @@
 </div>
 <div class='row'>
   <div class='col-md-12'>
-    <% no_of_main_teachers_connected_or_conducted = @program.no_of_main_teachers_connected_or_conducted %>
-    <% no_of_co_teachers_connected_or_conducted = @program.no_of_co_teachers_connected_or_conducted %>
-    <% if (no_of_main_teachers_connected_or_conducted + no_of_co_teachers_connected_or_conducted) > 0 %>
-        <% if @program.has_co_teacher? and no_of_main_teachers_connected_or_conducted > 0 %>
-           <h5> <b> Main Teacher (s) </b> </h5>
-        <% end %>
-       <% @program.main_teachers_connected.each do |ts| %>
-          <%  ts.current_user = current_user %>
-          <div class='alert alert-success'>
-            <% if ts.can_view_schedule? %>
-                Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> is currently linked to the program.
-            <% elsif ts.teacher.can_view? %>
-                Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> is currently linked to the program.
-            <% else %>
-                Teacher <%= "#{ts.teacher.user.fullname}" %> is currently linked to the program.
-            <% end %>
-          </div>
-      <% end %>
-        <% @program.main_teachers_conducted_class.each  do |ts| %>
+
+    <% @program.roles.each {|role| %>
+        <h5> <b> <%= role %> (s) </b>
+        <small>
+          <% if @program.minimum_no_of_teacher(role) == 0 %>
+          <b> (optional) </b>
+          <% end %>
+        </small>
+        </h5>
+        <% total_teachers = 0 %>
+        <% @program.teachers_connected(role).each do |ts| %>
+            <% total_teachers += 1 %>
             <%  ts.current_user = current_user %>
             <div class='alert alert-success'>
               <% if ts.can_view_schedule? %>
-                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> conducted the program.
+                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> is currently linked to the program for <b><%= ts.display_timings(role) %></b>.
               <% elsif ts.teacher.can_view? %>
-                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> conducted the program.
+                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> is currently linked to the program for <b><%= ts.display_timings(role) %></b>.
               <% else %>
-                  Teacher <%= "#{ts.teacher.user.fullname}" %> was earlier linked to the program.
+                  Teacher <%= "#{ts.teacher.user.fullname}" %> is currently linked to the program for <b><%= ts.display_timings(role) %></b>.
               <% end %>
             </div>
         <% end %>
-        <% if @program.has_co_teacher? and no_of_co_teachers_connected_or_conducted > 0 %>
-        <h5> <b> Co-Teacher (s) </b> </h5>
-        <% @program.co_teachers_connected.each do |ts| %>
+        <% @program.teachers_conducted_class(role).each  do |ts| %>
+            <% total_teachers += 1 %>
             <%  ts.current_user = current_user %>
             <div class='alert alert-success'>
               <% if ts.can_view_schedule? %>
-                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> is currently linked to the program.
+                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> conducted the program for <b><%= ts.display_timings(role) %></b>.
               <% elsif ts.teacher.can_view? %>
-                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> is currently linked to the program.
+                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> conducted the program for <b><%= ts.display_timings(role) %></b>.
               <% else %>
-                  Teacher <%= "#{ts.teacher.user.fullname}" %> is currently linked to the program.
+                  Teacher <%= "#{ts.teacher.user.fullname}" %> was earlier linked to the program for <b><%= ts.display_timings(role) %></b>.
               <% end %>
             </div>
         <% end %>
-        <% @program.co_teachers_conducted_class.each  do |ts| %>
-            <%  ts.current_user = current_user %>
-            <div class='alert alert-success'>
-              <% if ts.can_view_schedule? %>
-                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", program_teacher_schedule_path(:id => ts.id) %> conducted the program.
-              <% elsif ts.teacher.can_view? %>
-                  Teacher  <%= link_to "#{ts.teacher.user.fullname}", teacher_path(ts.teacher) %> conducted the program.
-              <% else %>
-                  Teacher <%= "#{ts.teacher.user.fullname}" %> was earlier linked to the program.
-              <% end %>
+        <% if total_teachers == 0 %>
+            <div class='alert alert-danger'>
+              None Attached.
             </div>
         <% end %>
-        <% end %>
-  <% else %>
-    <div class='alert alert-danger'>
-      No Teacher is associated with this program.
-    </div>
-    <% end %>
+  <% } %>
   </div>
 </div>
 

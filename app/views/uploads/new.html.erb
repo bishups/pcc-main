@@ -1,0 +1,8 @@
+<%# uploads/new.html.erb%>
+<%= form_for(:upload, :url => uploads_path,
+             :html => { :method => :post, :multipart => true }) do |f| %>
+    <%= f.file_field :asset %>
+
+
+    <%= f.submit 'upload', :disable_with => 'uploading ...' %>
+<% end %>

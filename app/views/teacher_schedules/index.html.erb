@@ -19,32 +19,55 @@
 
 <div class='row'>
   <div class='col-md-12'>
+    <% display_additional_comments = false %>
     <h2>Teacher Schedule <small><%= @teacher.user.name %></small>
         <% if @teacher.full_time? %>
           <span class='pull-right'>
             <!-- Single button -->
             <div class="btn-group">
-              <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+              <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">
                 New Schedule <span class="caret"></span>
               </button>
               <ul class="dropdown-menu pull-right" role="menu">
                 <% if @teacher.can_create_program_schedule? %>
                     <li><%= link_to "Block Teacher", new_program_teacher_schedule_path(:teacher_id => @teacher.id) %></li>
+                    <% display_additional_comments = true %>
                 <% end %>
                 <% if @teacher.can_create_schedule? %>
                     <li><%= link_to "Reserve Teacher", reserve_teacher_teacher_schedule_path(:teacher_id => @teacher.id, :id => 0, :trigger => ::TeacherSchedule::EVENT_RESERVE) %></li>
+                    <li><%= link_to "Scheduler Note", comments_teacher_path(@teacher) %></li>
+                    <% display_additional_comments = true %>
                 <% end %>
               </ul>
             </div>
           </span>
         <% else %>
           <span class='pull-right'>
-            <%= link_to "Publish Schedule", new_teacher_teacher_schedule_path(@teacher), :class => 'btn btn-primary btn-sm' if @teacher.can_create_schedule? %>
-            <%= link_to "Block Teacher", new_program_teacher_schedule_path(:teacher_id => @teacher.id), :class => 'btn btn-primary btn-sm' if @teacher.can_create_program_schedule? %>
+            <% if @teacher.can_create_program_schedule? %>
+                <%= link_to "Block Teacher", new_program_teacher_schedule_path(:teacher_id => @teacher.id), :class => 'btn btn-primary btn-sm' %>
+                <% display_additional_comments = true %>
+            <% end %>
+            <% if @teacher.can_create_schedule? %>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">
+                    New Schedule <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu pull-right" role="menu">
+                    <li><%= link_to "Publish Schedule", new_teacher_teacher_schedule_path(@teacher) %></li>
+                    <li><%= link_to "Note for Scheduler", comments_teacher_path(@teacher) %></li>
+                  </ul>
+                </div>
+                <% display_additional_comments = true %>
+            <% end %>
           </span>
         <% end %>
       <hr>
     </h2>
+    <% if display_additional_comments and not @teacher.additional_comments.blank? %>
+        <blockquote>
+        <i>Note for Scheduler -- </i> <%= @teacher.additional_comments %>
+        </blockquote>
+    <% end %>
   </div>
 </div>
 
@@ -56,8 +79,10 @@
     <thead>
     <tr>
       <th>ID #</th>
+      <th>Program</th>
       <th>Start Date</th>
       <th>End Date</th>
+      <th>Role</th>
       <th>Timing(s)</th>
       <th>Center(s)</th>
       <th>State</th>
@@ -69,18 +94,14 @@
         <% ts.current_user = current_user %>
         <tr>
           <td><%= ts.id %></td>
+          <td><%= link_to ts.program.name,program_path(ts.program_id) rescue 'Not Applicable' %></td>
           <td><%= ts.start_date.strftime('%d %B %Y') %></td>
           <td><%= ts.end_date.strftime('%d %B %Y') %></td>
-          <td>
-            <% if ts.program_id %>
-                <%=  (ts.program.timings.map {|c| c[:name]}).join(", ") %>
-            <% else %>
-                <%= ts.timing.name rescue '' %>
-            <% end %>
-          </td>
+          <td><%= ts.role rescue '' %></td>
+          <td><%= ts.display_timings(ts.role) rescue '' %></td>
           <td>
           <% if ts.program_id %>
-              <%=  ts.program.center.name %>
+              <%=  ts.program.locality_name %>
           <% else %>
               <%= (ts.centers.map {|c| c[:name]}).join(", ")  rescue '' %>
           <% end %>
@@ -93,7 +114,7 @@
                 <% if ts.in_reserved_state? %>
                     <%= link_to "Open", teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.can_view_schedule? %>
                     <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm' if ts.can_delete? %>
-                <% elsif ::TeacherSchedule::STATE_PUBLISHED.include?(ts.state) && ts.start_date >= Time.zone.now.to_date  %>
+                <% elsif ::TeacherSchedule::STATE_PUBLISHED.include?(ts.state) && ts.end_date >= Time.zone.now.to_date  %>
                     <%= link_to "Edit", edit_teacher_teacher_schedule_path(:id => ts.id), :class => 'btn btn-primary btn-sm' if ts.can_update?  %>
                     <%= link_to "Delete", {:controller => "teacher_schedules", :action => 'destroy', :id => ts.id}, :confirm => "Are you sure you want to delete schedule?", :method => :delete, :class => 'btn btn-primary btn-sm'if ts.can_delete? %>
                 <% end %>

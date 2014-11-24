@@ -40,8 +40,11 @@ class Program < ActiveRecord::Base
 
   attr_accessor :current_user
   attr_accessible :name, :start_date, :center_id, :end_date, :feedback, :pid, :announced
+  attr_accessible :announced_locality, :announced_timing
+  # announced_timing e.g, (112 chars) -- "Morning (09:30 am-10:30 am), Afternoon(09:30 am-10:30 am), Evening(09:30 am-10:30 am), Night(09:30 am-10:30 am)"
+  validates :announced_locality, :announced_timing, :length => { :maximum => 120}
 
-  before_validation :assign_dates!
+  before_validation :assign_dates!, :on => :create
 
   belongs_to :center
 
@@ -141,10 +144,6 @@ class Program < ActiveRecord::Base
     super(*args)
   end
 
-  before_create do |program|
-    # Setting the registation as closed before announcing.
-    self.registration_closed = true
-  end
 
   after_create do |program|
     program.reload
@@ -316,8 +315,6 @@ class Program < ActiveRecord::Base
 
   def on_announce
     self.announced = true
-    # Changed by Senthil, open the registration once it is announced. By default registration is closed. Registration is opened only in announced state.
-    self.registration_closed = false
     # generate_program_id!
     self.notify_all(ANNOUNCED)
     # start the timer for start of class notification

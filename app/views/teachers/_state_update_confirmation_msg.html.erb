@@ -7,8 +7,6 @@
 <p>
   <% if @trigger == ::Teacher::EVENT_UNATTACH %>
       <strong>WARNING: </strong> This will remove the teacher from all center(s) and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
-  <% elsif @trigger == ::Teacher::EVENT_UNFIT %>
-      <strong>WARNING: </strong> This will mark teacher as unfit and delete all his/her schedules. This action cannot be reverted. Are you sure you want to proceed?
   <% end %>
 </p>
 </div>

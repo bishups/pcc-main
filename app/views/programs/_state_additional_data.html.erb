@@ -3,5 +3,106 @@
       <label> Program Capacity </label><small> (Required. Enter value as per Kit and Venue capacity. Current capacity of <b> Kit = <%= @program.kit_capacity %> </b> and <b> Venue = <%= @program.venue_capacity %> </b>) </small>
       <%= text_field_tag 'capacity', nil, :value=> @program.capacity, :class => 'form-control' %>
     </div>
+    <div class='form-group'>
+      <label> Program Locality </label><small> (Optional. If left blank, locality name will be same as center name <b> <%= @program.center.name %> </b>)</small>
+      <%= text_field_tag 'announced_locality', nil, :value=> @program.announced_locality, :class => 'form-control' %>
+    </div>
+
+    <div class='form_group'>
+      <label> Actual Session Timings </label><small> (Required. If your actual session timing overlaps across two slots, please enter start and end time as <b> 12:00am </b> in one of the slot and enter the actual timinig in another slot )</small>
+      <% count = @program.timings.count %>
+
+      <% if @program.full_day? %>
+         <div class = 'row'>
+            <div class='col-md-12'>
+              <table class='table table-bordered'>
+                <tr>
+                  <td width='20%'>
+                    <strong>Date</strong>
+                  </td>
+                  <td width='20%'>
+                    <strong>Time</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td width='20%'>
+                    <%= @program.start_date.strftime('%d %B %Y') %> <small>(<b>Starting</b>)</small>
+                  </td>
+                  <td>
+                    <div class="input-append bootstrap-timepicker">
+                      <%= text_field_tag "start_time_1", nil, :value=> '06:00 AM', :class => 'form-control input-small' %>
+                      <span class="add-on"><i class="icon-time"></i></span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td width='20%'>
+                    <%= @program.end_date.strftime('%d %B %Y') %> <small>(<b>Closing</b>)</small>
+                  </td>
+                  <td>
+                    <div class="input-append bootstrap-timepicker">
+                      <%= text_field_tag "end_time_1", nil, :value=> '06:00 PM', :class => 'form-control input-small' %>
+                      <span class="add-on"><i class="icon-time"></i></span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+    <% else %>
+      <div class = 'row'>
+        <div class='col-md-12'>
+          <table class='table table-bordered'>
+            <tr>
+              <td width='20%'>
+                <strong>Timing</strong>
+              </td>
+              <td width='20%'>
+                <strong>Start</strong>
+              </td>
+              <td width='20%'>
+                <strong>End</strong>
+              </td>
+            </tr>
+            <% for i in 1..count %>
+                <tr>
+                  <td width='20%'>
+                    <%= @program.timing_name(i-1) %>
+                  </td>
+                  <td>
+                    <div class="input-append bootstrap-timepicker">
+                      <%= text_field_tag "start_time_#{i.to_s}", nil, :value=> @program.timings[i-1].start_time.strftime('%I:%M %P'), :class => 'form-control input-small' %>
+                      <span class="add-on"><i class="icon-time"></i></span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="input-append bootstrap-timepicker">
+                      <%= text_field_tag "end_time_#{i.to_s}", nil, :value=> @program.timings[i-1].end_time.strftime('%I:%M %P'), :class => 'form-control input-small' %>
+                      <span class="add-on"><i class="icon-time"></i></span>
+                    </div>
+                  </td>
+                </tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+      <% end %>
+    </div>
+    <div class='form-group'>
+      <label> Contact Phone Number(s)</label><small> (Optional. Enter a valid mobile number (e.g, 8300042000), or stdcode-number (e.g, 0422-2515345). Multiple numbers should be comma separated (e.g, 8300042000, 0422-2515345))</small>
+      <%= text_field_tag 'contact_phone', nil, :value=> @program.contact_phone, :class => 'form-control' %>
+    </div>
+    <div class='form-group'>
+      <label> Contact Email(s)</label><small> (Optional. Enter a valid email-id. Multiple email-ids should be comma separated, e.g, iyc@ishafoundation.org, info@ishayoga.org)</small>
+      <%= text_field_tag 'contact_email', nil, :value=> @program.contact_email, :class => 'form-control' %>
+    </div>
 <% end %>
+
+<script type="text/javascript">
+    <% for i in 1..@program.timings.count %>
+    $('<%= "#start_time_#{i.to_s}"%>').timepicker();
+    $('<%= "#end_time_#{i.to_s}"%>').timepicker();
+    <% end %>
+</script>
+
 
