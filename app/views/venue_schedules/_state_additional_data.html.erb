@@ -7,8 +7,8 @@
     <div class='form-group'>
       <% no_of_days = @venue_schedule.program.no_of_days %>
       <% per_day_price = @venue_schedule.venue.per_day_price %>
-      <label>Payment Amount </label><small> (Required. Suggested payment amount is </b> Rs <% no_of_days * per_day_price %> </b>, where </b> number of days = <% no_of_days %> </b>, and </b> price per day = <% per_day_price %> ) </b> </small>
-      <%= text_field_tag 'payment_amount', @venue_schedule.payment_amount %>
+      <label>Payment Amount </label><small> (Required. Suggested payment amount is </b> Rs <%= no_of_days * per_day_price %> </b>, where </b> number of days = <%= no_of_days %> </b>, and </b> price per day = <%= per_day_price %> ) </b> </small>
+      <%= text_field_tag 'payment_amount', @venue_schedule.payment_amount != 0 ? @venue_schedule.payment_amount : no_of_days * per_day_price  %>
     </div>
 <% end %>
 
