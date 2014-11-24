@@ -27,3 +27,4 @@
 //= require jquery-ui
 //= require autocomplete-rails
 //= require jquery.timepicker
+//= require bootstrap-timepicker

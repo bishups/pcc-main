@@ -15,6 +15,7 @@
  *= require_tree .
  *= require bootstrap-datetimepicker
  *= require bootstrap-timepicker
+ *= require jquery.timepicker
  *= require dataTables/jquery.dataTables.bootstrap3
  *= require dataTables/extras/TableTools
  *= require dataTables/extras/TableTools_JUI
