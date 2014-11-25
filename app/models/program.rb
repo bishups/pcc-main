@@ -731,7 +731,7 @@ class Program < ActiveRecord::Base
 
 
   def blockable_venues
-    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND (venues.state = ? OR venues.state IS NULL) ', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
+    venues = Venue.joins("JOIN centers_venues ON venues.id = centers_venues.venue_id").where('centers_venues.center_id = ? AND venues.state = ? ', self.center_id, ::Venue::STATE_POSSIBLE).order('LOWER(venues.name) ASC').all
     blockable_venues = []
     venues.each {|venue|
       blockable_venues << venue if venue.can_be_blocked_by?(self)
@@ -755,8 +755,6 @@ class Program < ActiveRecord::Base
     end
     #@program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
   end
-
-
 
   def no_of_days
     self.program_donation.program_type.no_of_days.to_i
@@ -789,13 +787,11 @@ class Program < ActiveRecord::Base
     return [] if self.teacher_schedules.blank?
     teacher_ids = self.teacher_schedules.where('state IN (?) AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, timing_id).pluck('teacher_id')
     teacher_ids.uniq.sort
-length
   end
 
   def teachers_conducted_class(role)
     return [] if self.teacher_schedules.blank?
     self.teacher_schedules.where('state IN (?) AND role = ?', [::ProgramTeacherSchedule::STATE_COMPLETED_CLASS], role).group('teacher_id')
-#    self.teacher_schedules.where('state IN (?) ', ::ProgramTeacherSchedule::CONNECTED_STATES).group('teacher_id').length
   end
 
   def teachers_connected_or_conducted_class
@@ -828,11 +824,6 @@ length
       }
     }
     return true
-  end
-
-  def minimum_teachers_connected?
-    self.no_of_main_teachers_connected >= self.minimum_no_of_main_teacher &&
-        self.no_of_co_teachers_connected >= self.minimum_no_of_co_teacher
   end
 
   def program_needs_co_teacher?
@@ -918,11 +909,6 @@ length
         end
       }
     }
-
-    if (self.no_of_co_teachers_connected > 0)
-      self.errors[:base] << "Cannot close program, co-teacher(s) are still linked to the program."
-      return false
-    end
 
     return true
   end
