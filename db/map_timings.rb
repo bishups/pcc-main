@@ -18,8 +18,6 @@ timing_mapping.each do |old_timing, new_timing|
   end
 end
 
-
-
  { "Morning (6am-10am)" => "Morning (7 am to 9 am)",  "Evening (2pm-6pm)" => "Evening ( 6:30 pm to 8:30 pm)"}.each do | actual_timing, wrong_timing |
   wrong_timing_id=Timing.find_by_name(wrong_timing).id
   actual_timing_id=Timing.find_by_name(actual_timing).id
@@ -33,5 +31,30 @@ end
   result = ActiveRecord::Base.connection.execute(sql)
   puts result.inspect
   Timing.find_by_name(wrong_timing).delete
+end
+
+pt=ProgramType.find_by_name("Uyir Nokkam")
+pt.minimum_no_of_teacher=1
+pt.minimum_no_of_co_teacher=1
+pt.session_duration=200
+pt.minimum_no_of_organizing_teacher=-1
+pt.minimum_no_of_hall_teacher=-1
+pt.minimum_no_of_initiation_teacher=-1
+pt.save
+
+Teacher.all.each do |t|
+  puts "#{t.user.firstname}"
+  t.co_teacher_program_types = [pt]
+  t.save
+end
+
+s = []
+Teacher.joins(:user).where("users.firstname like '%%support%%'").each do |support|
+  s << support.user.firstname
+  support.program_types = []
+end
+
+s.each do |ss|
+  puts ss
 end
 
