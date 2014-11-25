@@ -36,7 +36,8 @@ end
 pt=ProgramType.find_by_name("Uyir Nokkam")
 pt.minimum_no_of_teacher=1
 pt.minimum_no_of_co_teacher=1
-pt.session_duration=200
+pt.session_duration=2
+pt.registration_close_timeout=3
 pt.minimum_no_of_organizing_teacher=-1
 pt.minimum_no_of_hall_teacher=-1
 pt.minimum_no_of_initiation_teacher=-1
