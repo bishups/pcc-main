@@ -480,7 +480,7 @@ class Program < ActiveRecord::Base
   end
 
   def full_day?
-    self.program_donation.program_type.session_duration < 0
+    self.program_donation.program_type.session_duration < 0 if self.program_donation.program_type.session_duration
   end
 
   def timing_name(index)
