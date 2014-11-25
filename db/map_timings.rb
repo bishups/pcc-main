@@ -17,3 +17,21 @@ timing_mapping.each do |old_timing, new_timing|
     end
   end
 end
+
+
+
+ { "Morning (6am-10am)" => "Morning (7 am to 9 am)",  "Evening (2pm-6pm)" => "Evening ( 6:30 pm to 8:30 pm)"}.each do | actual_timing, wrong_timing |
+  wrong_timing_id=Timing.find_by_name(wrong_timing).id
+  actual_timing_id=Timing.find_by_name(actual_timing).id
+  sql = "update programs_timings set timing_id = #{actual_timing_id} where timing_id =#{wrong_timing_id}"
+  result = ActiveRecord::Base.connection.execute(sql)
+  puts result.inspect
+  sql = "update teacher_schedules set timing_id = #{actual_timing_id} where timing_id =#{wrong_timing_id}"
+  result = ActiveRecord::Base.connection.execute(sql)
+  puts result.inspect
+  sql = "update program_types_timings set timing_id = #{actual_timing_id} where timing_id =#{wrong_timing_id}"
+  result = ActiveRecord::Base.connection.execute(sql)
+  puts result.inspect
+  Timing.find_by_name(wrong_timing).delete
+end
+
