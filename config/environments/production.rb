@@ -92,7 +92,7 @@ config.action_mailer.smtp_settings = {
   config.middleware.use ExceptionNotification::Rack,:email => {
     :email_prefix => "[Genie - Test Server Error] ",
     :sender_address => %{"Genie Test Server error" <genie.pcc@gmail.com>},
-    :exception_recipients => %w{isha-pcc-development@googlegroups.com,saurabh.jain@ishafoundation.org,anuj.gupta@ishafoundation.org,abhisek.datta@gmail.com,senthilkumar.rec83@gmail.com}
+    :exception_recipients => %w{isha-pcc-development@googlegroups.com,saurabh.jain@ishafoundation.org,anuj.gupta@ishafoundation.org,tejas.balwe@ishafoundation.org,senthilkumar.rec83@gmail.com}
   }
 
 
