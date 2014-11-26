@@ -2,7 +2,7 @@ class AdminAbility
   include CanCan::Ability
 
   def initialize(user)
-    can :access, :rails_admin if not user.access_privileges .empty? # Only user's having at least one center will have this access.
+    can :access, :rails_admin if not user.access_privileges.empty? # Only user's having at least one center will have this access.
     can :dashboard #if user.is?(:kit_coordinator) or user.is?(:venue_coordinator) or user.is?(:teacher_training_department)
     can :manage, PendingUser, {:approver_email => user.email}
     if user.is?(:super_admin)
