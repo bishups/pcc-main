@@ -143,6 +143,8 @@ class User < ActiveRecord::Base
   validates_uniqueness_of :mobile, :scope => :deleted_at
   validate :validate_approver_email, :on => :create, :unless => Proc.new { User.current_user.is_super_admin? if User.current_user }
 
+  normalize_attributes :approver_email, :email, :firstname, :lastname, :address, :mobile, :phone
+
   before_save do |user|
     logger.error("Inside User model before save. Values of user.email = #{user.email} and user.enabled? == #{user.enabled?} ")
     if not user.enabled?
