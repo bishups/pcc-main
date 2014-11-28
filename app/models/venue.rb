@@ -275,7 +275,7 @@ def can_reject?
   end
 
   def has_commercial?
-    self.errors.add(:commercial, "should be selected for venue with per day price.") if self.commercial.blank? && !self.per_day_price.blank?
+    self.errors.add(:commercial, "should be selected for venue with per day price.") if self.commercial.blank? && ( !self.per_day_price.blank? or self.per_day_price.blank !=0)
   end
 
   def is_pcc_accounts?
