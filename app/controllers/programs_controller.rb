@@ -11,9 +11,10 @@ class ProgramsController < ApplicationController
         format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @programs, status: :unprocessable_entity }
       else
-        @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 1.month.from_now), ::Program::FINAL_STATES).order('start_date DESC')
+#        @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 1.month.from_now), ::Program::FINAL_STATES).order('end_date DESC')
         format.html # index.html.erb
-        format.json { render json: @programs }
+#        format.json { render json: @programs }
+        format.json { render json: ProgramDatatable.new(view_context) }
       end
     end
   end

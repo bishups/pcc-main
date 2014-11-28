@@ -48,7 +48,7 @@ gem 'capistrano', '~> 2.15'
 
 gem 'devise'
 gem 'cancan'
-#gem 'will_paginate', "3.0.pre2"
+gem 'will_paginate'
 gem 'font-awesome-rails'
 gem 'state_machine'
 gem "rails_admin", :git => "https://github.com/sferik/rails_admin.git", :tag => "v0.4.9"
@@ -66,3 +66,5 @@ gem 'valid_email', require: 'valid_email/validate_email'
 gem 'carrierwave', '~> 0.9'
 gem 'daemons'
 gem 'attribute_normalizer'
+gem 'ajax-datatables-rails'
+#gem 'kaminari'
