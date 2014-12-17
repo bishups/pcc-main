@@ -39,19 +39,8 @@ PccMain::Application.configure do
   # HACK - This won't work for us, since we are generating the link in the model. See routes.default_url_options below
   #config.action_mailer.default_url_options = {:host => "http://localhost:3000"}
 
-
   config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-   :address              => "email-smtp.us-east-1.amazonaws.com",
-   :user_name            => "AKIAITTOBMB77BQAUSFA",
-   :password             => "AvOGrVfpn0gVO98p0Naq7cXkTA5Dg1XErRh8Zx5luEwz",
-   :authentication       => "login",
-   :domain => "test.genie.isha.in",
-   :enable_starttls_auto => true,
-   :port => 25
- }
-
-
+  config.action_mailer.smtp_settings = {:address => "localhost", :port => "1025"}
 
   # sms country configuration
   # TODO - fill the sms country user name here

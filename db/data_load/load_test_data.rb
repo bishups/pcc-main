@@ -172,7 +172,7 @@ count = 0
     puts "User #{user.firstname}  has not been saved because of #{user.errors.messages}"
   else
     zone=Zone.first
-    teacher=Teacher.new(:t_no=>count.to_s,:zone=>zone,:user=>user,:comments=>"Added for testing",:centers=>zone.centers.limit(3),:state=>Teacher::STATE_ATTACHED.to_s,:program_types=>ProgramType.all)
+    teacher=Teacher.new(:t_no=>count.to_s,:zones=>[zone],:user=>user,:comments=>"Added for testing",:centers=>zone.centers.limit(3),:state=>Teacher::STATE_ATTACHED.to_s,:program_types=>ProgramType.all)
     if not teacher.save
       puts "Teacher #{user.firstname} has not been saved because of #{teacher.errors.messages}"
     end
