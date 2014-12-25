@@ -86,6 +86,8 @@ class User < ActiveRecord::Base
   has_many :sectors, :through => :access_privileges, :source => :resource, :source_type => 'Sector', :extend => UserExtension
   has_many :zones, :through => :access_privileges, :source => :resource, :source_type => 'Zone', :extend => UserExtension
 
+  has_many :all_zones,:through => :centers, :source => :zone, :uniq => true
+
   has_many :sector_centers, :through => :sectors, :source => :centers, :extend => UserExtension
   has_many :zone_centers, :through => :zones, :source => :centers, :extend => UserExtension
   has_many :zone_sectors, :through => :zones, :source => :sectors, :extend => UserExtension
@@ -93,6 +95,8 @@ class User < ActiveRecord::Base
   has_many :zone_center_users, :through => :zone_centers, :source => :users
   has_many :zone_sector_users, :through => :zone_sectors, :source => :users
   has_many :zone_users, :through => :zones, :source => :users
+  has_many :all_zone_users, :through => :all_zones, :source => :users
+
 
   has_many :teachers, :dependent => :destroy
 
