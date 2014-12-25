@@ -1,3 +1,21 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#program_table').dataTable({
+            "sPaginationType": "bootstrap",
+            "sDom": 'T<"clear">lfrtip',
+            "oTableTools": {
+                "aButtons": [
+                    "print",
+                    {
+                        "sExtends":    "collection",
+                        "sButtonText": "Save",
+                        "aButtons":    [ "csv", "xls", "pdf" ]
+                    }
+                ]
+            }
+        } );
+    });
+</script>
 
 
 <div class='row'>
@@ -13,8 +31,10 @@
   </div>
 </div>
 
-
-    <table id="programs" class='display dataTable table table-condensed table-hover table-bordered' data-source="<%= programs_url(format: :json) %>">
+<% if @programs.empty? %>
+    <div class="alert alert-danger"> No Programs Found.</div>
+<% else %>
+    <table id="program_table" class='display dataTable table table-condensed table-hover table-bordered'>
       <thead>
       <tr>
         <th>Program #</th>
@@ -25,8 +45,29 @@
         <th>End Date</th>
         <th>Timings</th>
         <th>State</th>
+        <th></th>
       </tr>
       </thead>
       <tbody>
+      <% @programs.each do |program| %>
+          <% program.current_user = current_user %>
+          <tr>
+            <td><%= program.id %></td>
+            <td><%= program.pid %></td>
+            <td><%= program.locality_name %></td>
+            <td><%= (program.program_donation.name)%></td>
+            <td><%= program.start_date.strftime('%d %B %Y') %></td>
+            <td><%= program.end_date.strftime('%d %B %Y') %></td>
+            <td><%= program.display_timings %></td>
+            <td><%= program_state_tag(program) %></td>
+            <td>
+              <!-- Options -->
+              <% if program.can_view? %>
+                  <%= link_to "Open", program_path(program), :class => 'btn btn-primary btn-sm' %>
+              <% end %>
+            </td>
+          </tr>
+      <% end %>
       </tbody>
     </table>
+<% end %>
