@@ -178,7 +178,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     if self.program.is_announced? && self.program.is_active?
       self.send(::Program::ANNOUNCED)
       # update the timing_str for all teacher schedule(s) for the teacher, linked to the program
-      announced_timings = self.program.announced_timing ? self.program.announced_timing.split(", ") : []
+      # TODO - see how to handle residential and intro programs. Current logic won't work for that
+      announced_timings = self.program.timing_str.blank? ? [] : self.program.timing_str.split(", ")
       teacher_schedules = self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id)
       teacher_schedules.each { |ts|
         session_name = ts.timing.name.split(' ')[0]
@@ -402,7 +403,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     trs +=  self.blockable_full_time_teachers(role) if (User.current_user.is? :zao, :center_id => self.program.center_id)
     # Anyway they are going to be unique, since we splitting into part-time and full-time, still ...
     teachers = trs.uniq
-    return teachers unless self.program.full_day?
+    return teachers unless self.program.residential?
 
     # if all-day program, remove teachers which are not available full-day
     blockable = []
@@ -468,7 +469,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     # remove all-day programs where teacher is not available full-day
     blockable = []
     programs.each{ |p|
-      next if p[:program].full_day? and p[:program].timing_ids.sort != p[:timing_ids].sort
+      next if p[:program].residential? and p[:program].timing_ids.sort != p[:timing_ids].sort
       blockable << p
     }
     blockable

@@ -29,7 +29,11 @@ class Program < ActiveRecord::Base
   belongs_to :program_donation
   attr_accessible :program_donation, :program_donation_id
 
-  validates :start_date, :center_id, :name, :program_donation_id, :timings, :presence => true
+  validates :name, :start_date, :center_id, :program_donation_id, :presence => true
+  validates :timings, :presence => true, :unless => :residential?
+  validates :intro_timings, :presence => true, :if => :has_intro?
+  validate  :intro_timings_subset?, :if => :has_intro?
+#  validates :start_date, :center_id, :name, :program_donation_id, :timings, :presence => true
 #  validates :end_date, :presence => true
 
   belongs_to :proposer, :class_name => "User" #, :foreign_key => "rated_id"
@@ -40,9 +44,55 @@ class Program < ActiveRecord::Base
 
   attr_accessor :current_user
   attr_accessible :name, :start_date, :center_id, :end_date, :feedback, :pid, :announced
-  attr_accessible :announced_locality, :announced_timing
-  # announced_timing e.g, (112 chars) -- "Morning (09:30 am-10:30 am), Afternoon(09:30 am-10:30 am), Evening(09:30 am-10:30 am), Night(09:30 am-10:30 am)"
-  validates :announced_locality, :announced_timing, :length => { :maximum => 120}
+  attr_accessible :announced_locality, :timing_str, :announced_timing, :timing_str
+
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+  #
+  # announced_timing <-- for E-Media, to be published on website
+  #
+  # for Uyir Nokkam e.g, --
+  # "(4 batches): 9:30am - 10:30am OR 9:30am - 10:30am OR 9:30am - 10:30am OR 9:30am - 10:30am"
+  #
+  # for IE e.g, ---
+  # "(intro)\n"
+  # "Wed 7 Jan: 6:00am - 7:15am OR 10:00am - 11:15am OR 6:00pm - 7:15pm\n"
+  # "(session)\n"
+  # "Wed 7 Jan: 7:15am - 9:00am OR 11:15am - 1:00pm OR 7:15pm - 9:00pm\n"
+  # "Thu-Tue (3 batches): 6:00am - 9:00am OR 10:00am - 1:00pm OR 6:00pm - 9:00pm\n"
+  # "Sun 11 Jan: Full day\n"
+  #
+  # for BSP e.g, ---
+  # "Arrive by: 4pm on 17th\n"
+  # "Program ends: 6:30pm on 20th"
+  #
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+  #
+  # timing_str <-- used internally for displaying timings
+  #
+  # -----------------
+  # Before Announcing
+  # -----------------
+  # for Uyir Nokkam e.g, --
+  # "Morning (6am - 10am), Afternoon (10am - 2pm), Evening (2pm - 6pm), Night (6pm - 10pm)"
+  # for IE e.g, --
+  # "(Intro) Morning (6am - 10am), Night(6pm - 10pm); (Session) Morning (6am - 10am), Afternoon (10am - 2pm), Night (6pm - 10pm)"
+  # for BSP e.g, --
+  # "Starts on 2nd at 2:00pm. Ends on 6th by 6:00pm"
+  #
+  # -----------------
+  # After Announcing
+  # -----------------
+  # for Uyir Nokkam e.g, --
+  # "9:30am - 10:30am, 9:30am - 10:30am, 9:30am - 10:30am, 9:30am - 10:30am"
+  # for IE e.g, --
+  # "(Intro) 6:30am - 9:30am, 6:00pm - 9:00pm; (Session) 6:30am - 9:30am, 10:00am - 1:00pm, 6:00pm - 9:00pm"
+  # for BSP e.g, --
+  # "Starts on 2nd at 5:00pm. Ends on 6th by 3:00pm"
+  #
+  #
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+  validates :announced_locality, :length => { :maximum => 120}
 
   before_validation :assign_dates!, :on => :create
 
@@ -60,6 +110,12 @@ class Program < ActiveRecord::Base
   has_and_belongs_to_many :timings, :join_table => :programs_timings
   attr_accessible :timing_ids, :timings
 
+  has_and_belongs_to_many :intro_timings, :join_table => :programs_intro_timings, :class_name => "Timing"
+  attr_accessible :intro_timing_ids, :intro_timings
+
+  has_and_belongs_to_many :date_timings, :join_table => :programs_date_timings
+  attr_accessible :date_timing_ids, :date_timings
+
   belongs_to :last_updated_by_user, :class_name => User
   attr_accessible :last_update, :last_updated_at
 
@@ -70,7 +126,10 @@ class Program < ActiveRecord::Base
 
 
   #attr_accessor :start_time_1, :end_time_1, :start_time_2, :end_time_2, :start_time_3, :end_time_3, :start_time_4, :end_time_4
-  attr_accessor :time
+  attr_accessor :first_day_timing_id, :last_day_timing_id
+  attr_accessible :first_day_timing_id, :last_day_timing_id
+
+  attr_accessor :session_time, :intro_time
 
   STATE_UNKNOWN       = "Unknown"
   STATE_PROPOSED      = "Proposed"
@@ -131,27 +190,50 @@ class Program < ActiveRecord::Base
 
 
   # timing_ids = program.timing_ids.class == Array ? program.timing_ids : [program.timing_ids]
-  # given a program, returns a relation with other non-overlapping program(s)
-  scope :available, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('(programs.start_date NOT BETWEEN ? AND ?) AND (programs.end_date NOT BETWEEN ? AND ?) AND NOT (programs.start_date <= ? AND programs.end_date >= ?) AND programs_timings.timing_id NOT IN (?) AND (programs.id != ? OR ? IS NULL) ',
-                                                                             program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id, program.id) }
 
   # given a program, returns a relation with other overlapping program(s)
-  scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND (programs.id != ? OR ? IS NULL) ',
-                                                                               program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id, program.id) }
+  #scope :overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?) AND (programs.id != ? OR ? IS NULL) ',
+  #                                                                             program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids, program.id, program.id) }
 
 # given a program, returns a relation with all overlapping program(s) (including itself)
-  scope :all_overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?)',
-                                                                                                                                       program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids) }
+  #scope :all_overlapping, lambda { |program| Program.joins("JOIN programs_timings ON programs.id = programs_timings.program_id").where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?)) AND programs_timings.timing_id IN (?)',
+  #
+  #                                                                                                                                    program.start_date, program.end_date, program.start_date, program.end_date, program.start_date, program.end_date, program.timing_ids) }
+
   # given a program, returns a relation with other overlapping program(s)
   scope :overlapping_date_time, lambda { |start_date, end_date| Program.where('((programs.start_date BETWEEN ? AND ?) OR (programs.end_date BETWEEN ? AND ?) OR  (programs.start_date <= ? AND programs.end_date >= ?))',
-                                                                                                                                   start_date, end_date, start_date, end_date, start_date, end_date) }
+                                                                              start_date, end_date, start_date, end_date, start_date, end_date) }
+
+  ### program_date_timings
+  # given a program, returns a relation with other overlapping program(s)
+  # NOTE: initiation day for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
+  scope :overlapping, lambda { |program| Program.
+      joins("JOIN program_donations ON programs.program_donation_id = program_donations.id").
+      joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
+      joins("JOIN programs_date_timings ON programs.id = programs_date_timings.program_id").
+      joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
+      where('programs_date_timings.date_timing_id IN (?) AND (programs.id != ? OR ? IS NULL) AND NOT (program_types.id = ? AND date_timings.date = ?)',
+      program.date_timing_ids, program.id, program.id,
+      program.program_donation.program_type.id, (program.start_date.to_date + (program.program_donation.program_type.initiation_day - 1).day))}
+
+  # given a program, returns a relation with all overlapping program(s) (including itself)
+  # NOTE: initiation day for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
+  scope :all_overlapping, lambda { |program| Program.
+      joins("JOIN program_donations ON programs.program_donation_id = program_donations.id").
+      joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
+      joins("JOIN programs_date_timings ON programs.id = programs_date_timings.program_id").
+      joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
+      where('programs_date_timings.date_timing_id IN (?) AND NOT (program_types.id = ? AND date_timings.date = ?)',
+      program.date_timing_ids,
+      program.program_donation.program_type.id, (program.start_date.to_date + (program.program_donation.program_type.initiation_day - 1).day))}
 
   def initialize(*args)
     super(*args)
   end
 
   def dummy_init_time
-    @time = {:start=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM'],:end=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM']}
+    self.session_time = {:start=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM'],:end=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM']}
+    self.intro_time = {:start=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM'],:end=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM']}
   end
 
   after_create do |program|
@@ -315,7 +397,7 @@ class Program < ActiveRecord::Base
   end
 
 
-  def new_timings_valid?
+  def new_timings_valid?(timings, new_time, type_of_timing)
     # make an array for the timing slots which were booked, each slot corresponds to 1 minute -
     # make an array for the timing slots being announced, each slot corresponds to 1 minute -
     blocked_slots = []
@@ -329,9 +411,9 @@ class Program < ActiveRecord::Base
 
     # check if the gap between two timing is same as session duration, except when both are 12:00 AM
     duration_in_hrs = self.program_donation.program_type.session_duration
-    for i in 1..self.timings.count
-      blocked_start_time = self.timings[i-1].start_time
-      blocked_end_time = self.timings[i-1].end_time
+    for i in 1..timings.count
+      blocked_start_time = timings[i-1].start_time
+      blocked_end_time = timings[i-1].end_time
       # fill the slots that we have blocked
       start_in_mins = (blocked_start_time.hour - start_of_day.hour) * 60 + (blocked_start_time.min - start_of_day.min)
       end_in_mins = (blocked_end_time.hour - start_of_day.hour) * 60 + (blocked_end_time.min - start_of_day.min)
@@ -342,10 +424,10 @@ class Program < ActiveRecord::Base
       end
 
       # check for basic overlap
-      start_time = self.time[:start][i-1]
-      end_time = self.time[:end][i-1]
+      start_time = new_time[:start][i-1]
+      end_time = new_time[:end][i-1]
       if start_time > end_time
-        self.errors[:base] << "Invalid values for #{self.timing_name(i-1)} slot. End time cannot be less than the Start time."
+        self.errors[:base] << "Invalid values for #{type_of_timing} #{self.timing_name(timings[i-1])} slot. End time cannot be less than the Start time."
         return false
       end
 
@@ -354,7 +436,7 @@ class Program < ActiveRecord::Base
         # The user can blank out a time slot by making both start_time and end_time as 00:00 hrs
         # "2000-01-01 00:00" is equivalent to user enter 12:00 AM in the input value
         next if difference_in_minutes == 0 && start_time == start_of_day
-        self.errors[:base] << "Invalid values for #{self.timing_name(i-1)} slot. Difference between Start and End time should be #{duration_in_hrs.to_s} hours."
+        self.errors[:base] << "Invalid values for #{type_of_timing} #{self.timing_name(timings[i-1])} slot. Difference between Start and End time should be #{duration_in_hrs.to_s} hours."
         return false
       end
 
@@ -363,7 +445,7 @@ class Program < ActiveRecord::Base
       end_in_mins = (end_time.hour - start_of_day.hour) * 60 + (end_time.min - start_of_day.min)
       for j in start_in_mins..end_in_mins
         if announced_slots[j-1] != false
-          self.errors[:base] << "Invalid value for #{self.timing_name(i-1)} slot. Start (or End) time overlaps with other slot."
+          self.errors[:base] << "Invalid value for #{type_of_timing} #{self.timing_name(timings[i-1])} slot. Start (or End) time overlaps with other slot."
           return false
         end
         announced_slots[j-1] = teacher_ids
@@ -374,12 +456,26 @@ class Program < ActiveRecord::Base
     for i in 1..(24*60)
       if (announced_slots[i-1] != false) and (announced_slots[i-1] != blocked_slots[i-1])
         if (blocked_slots[i-1] == false)
-          self.errors[:base] << "Invalid value for Start (or End) time. Timings announced should fall within currently blocked timings."
+          self.errors[:base] << "Invalid value for #{type_of_timing} Start (or End) time. Timings announced should fall within currently blocked timings."
         else
-          self.errors[:base] << "Invalid value for Start (or End) time. Timings announced cannot overlap the currently blocked timings, when scheduled teacher(s) are not same."
+          self.errors[:base] << "Invalid value for #{type_of_timing} Start (or End) time. Timings announced cannot overlap the currently blocked timings, when scheduled teacher(s) are not same."
         end
         return false
       end
+    end
+
+    return true
+  end
+
+  def new_residential_timings_valid?(start_time, end_time)
+    if start_time.utc.strftime("%H%M%S") < self.start_date.to_time.utc.strftime("%H%M%S")
+      self.errors[:base] << "Invalid value for Start time. Start time cannot be less than #{self.start_date.strftime('%I:%M %P')}"
+      return false
+    end
+
+    if end_time.utc.strftime("%H%M%S") > self.end_date.to_time.utc.strftime("%H%M%S")
+      self.errors[:base] << "Invalid value for End time. End time cannot exceed #{self.end_date.strftime('%I:%M %P')}"
+      return false
     end
 
     return true
@@ -429,44 +525,113 @@ class Program < ActiveRecord::Base
       return false
     end
 
-    new_start_time = new_end_time = ""
-    unless self.full_day?
-      return false unless self.new_timings_valid?
-      # create the announced_timing string
-      self.announced_timing = ""
+    new_start_time = ""
+    new_end_time = ""
+    #
+    # If residential, e.g., BSP
+    #
+    # announced_timing = "Arrive by: 4pm on 17th\nProgram ends: 6:30pm on 20th"
+    # timing_str = "Starts on 2nd at 5:00pm. Ends on 6th by 1:00pm"
+    #
+    if self.residential?
+      new_start_time = start_time = self.session_time[:start][0]
+      new_end_time = end_time = self.session_time[:end][0]
+      return false unless self.new_residential_timings_valid?(new_start_time, new_end_time)
+      self.announced_timing = "Arrive by: #{start_time.strftime("%-I:%M%P")} on #{self.start_date.day.ordinalize}.\nProgram ends: #{end_time.strftime("%-I:%M%P")} on #{self.end_date.day.ordinalize}"
+      self.timing_str = "Starts on #{self.start_date.day.ordinalize} at #{start_time.strftime("%-I:%M%P")}. Ends on #{self.end_date.day.ordinalize} by #{end_time.strftime("%-I:%M%P")}."
+    else
+      #
+      # If non-residential, e.g., IE, or Uyir Nokkam
+      #
+      return false unless self.new_timings_valid?(self.timings, self.session_time, "session")
+      # fill the session timings
+      session_announced_timing = ""
+      session_timing_str = ""
+      count = 0
       for i in 1..self.timings.count
-        timing_name = self.timing_name(i-1)
-        start_time = self.time[:start][i-1]
-        end_time = self.time[:end][i-1]
+        # timing_name = self.timing_name(i-1)
+        start_time = self.session_time[:start][i-1]
+        end_time = self.session_time[:end][i-1]
         # include only the valid slots
-        # Morning (09:30 am-10:30 am), Afternoon(09:30 am-10:30 am), Evening(09:30 am-10:30 am), Night(09:30 am-10:30 am)
         new_timing_str = ""
         if ((end_time - start_time) / 1.minute).round > 0
-          new_timing_str = "#{timing_name} (#{start_time.strftime("%-I:%M %P")}-#{end_time.strftime("%-I:%M %P")}), "
-          self.announced_timing << new_timing_str
+          count = count + 1
+          #new_timing_str = "#{timing_name} (#{start_time.strftime("%-I:%M%P")} - #{end_time.strftime("%-I:%M%P")}) OR "
+          new_timing_str = "#{start_time.strftime("%-I:%M%P")} - #{end_time.strftime("%-I:%M%P")}"
+          session_announced_timing << "#{new_timing_str} OR "
+          session_timing_str << "#{new_timing_str}, "
           new_start_time = start_time if new_start_time.blank?
           new_end_time = end_time
         end
+        # TODO - fix this
         # update linked teacher schedule timing str
-        self.update_teacher_schedule_timing_str(self.timings[i-1].id, new_timing_str.chomp(", "))
+        self.update_teacher_schedule_timing_str(self.timings[i-1].id, new_timing_str)
       end
-      self.announced_timing = self.announced_timing.chomp(", ")
-    else
-      # create the announced_timing string
-      new_start_time = start_time = self.time[:start][0]
-      new_end_time = end_time = self.time[:end][0]
-      self.announced_timing = "Starts on #{self.start_date.strftime("%-d %B %Y")} at #{start_time.strftime("%-I:%M %P")}. Ends on #{self.end_date.strftime("%-d %B %Y")} at #{end_time.strftime("%-I:%M %P")}."
+
+      #
+      # If no intro, e.g., Uyir Nokkam
+      #
+      # announced_timing = "(4 batches): 9:30am - 10:30am OR 9:30am - 10:30am OR 9:30am - 10:30am OR 9:30am - 10:30am"
+      # timing_str = "9:30am - 10:30am, 9:30am - 10:30am, 9:30am - 10:30am, 9:30am - 10:30am"
+      #
+      if not self.has_intro?
+        self.announced_timing = "(#{count} batches): " + session_announced_timing.chomp(" OR ")
+        self.timing_str = session_timing_str.chomp(", ")
+      else
+        #
+        # If intro, e.g., IE
+        #
+        # announced_timing =
+        #   "(intro)\n"
+        #   "Wed 7 Jan: 6:00am - 7:15am OR 6:00pm - 7:15pm\n"
+        #   "(session)\n"
+        #   "Wed 7 Jan: 7:30am - 9:00am OR 7:30pm - 9:00pm\n"
+        #   "Thu-Tue (3 batches): 6:00am - 9:00am OR 10:00am - 1:00pm OR 6:00pm - 9:00pm\n"
+        #   "Sun 11 Jan: Full day\n"
+        #
+        # timing_str =
+        #   "(Intro) Morning (6am - 10am), Night(6pm - 10pm); (Session) Morning (6am - 10am), Afternoon (10am - 2pm), Night (6pm - 10pm)"
+        #
+        return false unless self.new_timings_valid?(self.intro_timings, self.intro_time, "intro")
+        intro_announced_timing_1 = ""
+        intro_announced_timing_2 = ""
+        intro_timing_str = ""
+        intro_duration = self.program_donation.program_type.intro_duration
+        intro_day = self.program_donation.program_type.intro_day
+        full_day = self.program_donation.program_type.initiation_day
+        for i in 1..self.intro_timings.count
+          start_time = self.intro_time[:start][i-1]
+          end_time = self.intro_time[:end][i-1]
+          # include only the valid slots
+          if ((end_time - start_time) / 1.minute).round > 0
+            intro_announced_timing_1 << "#{start_time.strftime("%-I:%M%P")} - #{(start_time + intro_duration.minutes).strftime("%-I:%M%P")} OR "
+            intro_announced_timing_2 << "#{(start_time + intro_duration.minutes).strftime("%-I:%M%P")} - #{(end_time).strftime("%-I:%M%P")} OR "
+            intro_timing_str << "#{start_time.strftime("%-I:%M%P")} - #{end_time.strftime("%-I:%M%P")}, "
+            new_start_time = start_time if i == 1
+          end
+        end
+
+        self.announced_timing = "(intro)\n #{intro_announced_timing_1.chomp(' OR ')}"\
+                             "\n(session)\n#{(self.start_date + (intro_day-1).days).strftime('%a %-d %b')}: #{intro_announced_timing_2.chomp(' OR ')}"\
+                             "\n#{(self.start_date + (intro_day).days).strftime('%a')}-#{self.end_date.strftime('%a')} (#{count} batches): #{session_announced_timing.chomp(' OR ')}"\
+                             "\n#{(self.start_date + (full_day-1).days).strftime('%a %-d %b')}: Full Day\n"
+        self.timing_str = "(Intro) #{intro_timing_str.chomp(', ')}; (Session) #{session_timing_str.chomp(', ')}"
+        #self.announced_timing = "(intro)\n" + intro_announced_timing_1.chomp(" OR ")
+        #                    + "\n(session)\n" + "#{(self.start_date + (intro_day-1).days).strftime("%a %-d %b")}:" + intro_announced_timing_2.chomp(" OR ")
+        #                    + "\n#{(self.start_date + (intro_day).days).strftime("%a")}-#{self.end_date.strftime("%a")} (#{count} batches): " + session_announced_timing.chomp(" OR ")
+        #                    + "\n#{(self.start_date + (full_day-1).days).strftime("%a %-d %b")}: Full Day\n"
+        #self.timing_str = "(Intro) " + intro_timing_str.chomp(", ") + "; (Session) " + session_timing_str.chomp(", ")
+      end
     end
 
     # update the start_date_time and end_date_time for the program
     self.start_date = self.start_date.change(:hour => new_start_time.hour, :min => new_start_time.min, :sec => new_start_time.sec)
     self.end_date = self.end_date.change(:hour => new_end_time.hour, :min => new_end_time.min, :sec => new_end_time.sec)
 
-
-    if self.announced_timing.nil? || self.announced_timing.blank?
-      self.errors[:announced_timing] << " cannot be blank."
-      return false
-    end
+    #if self.announced_timing.nil? || self.announced_timing.blank?
+    #  self.errors[:announced_timing] << " cannot be blank."
+    #  return false
+    #end
 
     return can_announce?
   end
@@ -479,23 +644,33 @@ class Program < ActiveRecord::Base
     end
   end
 
-  def full_day?
-    self.program_donation.program_type.session_duration < 0 if self.program_donation.program_type.session_duration
+  def residential?
+    self.program_donation.program_type.residential?
   end
 
-  def timing_name(index)
-    "#{self.timings[index].name.sub /\s*\(.+\)$/, ''}"
+  def has_intro?
+    self.program_donation.program_type.has_intro?
+  end
+
+  def timing_name(timing)
+    "#{timing.name.sub /\s*\(.+\)$/, ''}"
   end
 
   def display_timings
-    if self.full_day?
-      timings_str = 'Full Day'
-    else
-      timings_str = (self.timings.map {|c| c[:name]}).join(", ")
-    end
-    timings_str = self.announced_timing if self.is_announced?
-    timings_str
+    self.timing_str
+    # if self.residential?
+    #   timings_str = 'Full Day'
+    # else
+    #   timings_str = (self.timings.map {|c| c[:name]}).join(", ")
+    # end
+    # timings_str = self.announced_timing if self.is_announced?
+    # timings_str
   end
+
+  def intro_timings_subset?
+    self.errors.add(:intro_timings, " cannot exceed Timings.") if not (self.intro_timings - self.timings).empty?
+  end
+
 
   def on_announce
     self.announced = true
@@ -867,13 +1042,13 @@ class Program < ActiveRecord::Base
   end
 
   def start_date_time
-    timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('start_time ASC').first
-    self.start_date.advance(:hour => timing.start_time.hour, :min => timing.start_time.min, :sec => timing.start_time.sec)
+    timing = Timing.joins("JOIN date_timings ON timings.id = date_timings.timing_id").joins("JOIN programs_date_timings ON date_timings.id = programs_date_timings.date_timing_id").where('programs_date_timings.program_id = ?', self.id).order('date_timings.date ASC, start_time ASC').first
+    self.start_date.advance(:hours => timing.start_time.hour, :minutes => timing.start_time.min, :seconds => timing.start_time.sec)
   end
 
   def end_date_time
-    timing = Timing.joins("JOIN programs_timings ON timings.id = programs_timings.timing_id").where('programs_timings.program_id = ?', self.id).order('end_time DESC').first
-    self.end_date.advance(:hour => timing.end_time.hour, :min => timing.end_time.min, :sec => timing.end_time.sec)
+    timing = Timing.joins("JOIN date_timings ON timings.id = date_timings.timing_id").joins("JOIN programs_date_timings ON date_timings.id = programs_date_timings.date_timing_id").where('programs_date_timings.program_id = ?', self.id).order('date_timings.date DESC, end_time DESC').first
+    self.end_date.advance(:hours => timing.end_time.hour, :minutes => timing.end_time.min, :seconds => timing.end_time.sec)
   end
 
   def venue_approval_requested?

@@ -100,6 +100,13 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
 
   add_index "comments", ["deleted_at"], :name => "index_comments_on_deleted_at"
 
+  create_table "date_timings", :force => true do |t|
+    t.date     "date"
+    t.integer  "timing_id"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
   create_table "delayed_jobs", :force => true do |t|
     t.integer  "priority",   :default => 0, :null => false
     t.integer  "attempts",   :default => 0, :null => false
@@ -355,6 +362,9 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "minimum_no_of_organizing_teacher", :default => -1
     t.integer  "minimum_no_of_hall_teacher",       :default => -1
     t.integer  "minimum_no_of_initiation_teacher", :default => -1
+    t.integer  "intro_day"
+    t.integer  "initiation_day"
+    t.integer  "intro_duration"
   end
 
   add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
@@ -410,11 +420,22 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "sync_id"
     t.string   "contact_phone"
     t.string   "contact_email"
+    t.string   "timing_str"
     t.integer  "last_updated_by_user_id"
     t.text     "feedback"
     t.text     "comments"
     t.string   "last_update"
     t.datetime "last_updated_at"
+  end
+
+  create_table "programs_date_timings", :force => true do |t|
+    t.integer "program_id"
+    t.integer "date_timing_id"
+  end
+
+  create_table "programs_intro_timings", :force => true do |t|
+    t.integer "program_id"
+    t.integer "timing_id"
   end
 
   create_table "programs_timings", :force => true do |t|
@@ -593,11 +614,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
 
   create_table "venue_schedules", :force => true do |t|
     t.integer  "venue_id"
-    t.datetime "created_at",              :null => false
-    t.datetime "updated_at",              :null => false
+    t.datetime "created_at",                             :null => false
+    t.datetime "updated_at",                             :null => false
     t.integer  "program_id"
     t.string   "state"
-    t.integer  "payment_amount"
+    t.integer  "payment_amount",          :default => 0
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.text     "comments"
@@ -618,12 +639,12 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "contact_mobile"
     t.text     "contact_address"
     t.boolean  "commercial"
-    t.datetime "created_at",              :null => false
-    t.datetime "updated_at",              :null => false
+    t.datetime "created_at",                             :null => false
+    t.datetime "updated_at",                             :null => false
     t.string   "payment_contact_name"
     t.string   "payment_contact_address"
     t.string   "payment_contact_mobile"
-    t.integer  "per_day_price"
+    t.integer  "per_day_price",           :default => 0
     t.datetime "deleted_at"
     t.integer  "pincode_id"
     t.text     "comments"

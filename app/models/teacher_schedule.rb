@@ -157,7 +157,7 @@ class TeacherSchedule < ActiveRecord::Base
     program = self.program
     return self.timing_str if program.blank?
 
-    if program.full_day?
+    if program.residential?
       # check if teacher is linked to all program timings in the same role
       timing_ids = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_ids)
       return "Full Day" if timing_ids.sort == program.timing_ids.sort

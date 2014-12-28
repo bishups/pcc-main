@@ -22,6 +22,8 @@
 
 class ProgramType < ActiveRecord::Base
   attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :minimum_no_of_hall_teacher, :minimum_no_of_organizing_teacher, :minimum_no_of_initiation_teacher, :name, :no_of_days, :registration_close_timeout, :session_duration
+  attr_accessible :intro_day, :initiation_day, :length => {:within => 1..2}, :numericality => {:only_integer => true, :greater_than => 0}
+  attr_accessible :intro_duration, :length => {:within => 1..3}, :numericality => {:only_integer => true, :greater_than => 0}
   has_and_belongs_to_many :teachers
   has_and_belongs_to_many :co_teacher_program_types, class_name: "Teacher", join_table: "program_types_co_teachers"
   has_and_belongs_to_many :organizing_teacher_program_types, class_name: "Teacher", join_table: "program_types_organizing_teachers"
@@ -37,7 +39,8 @@ class ProgramType < ActiveRecord::Base
   validates :registration_close_timeout, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
   validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
   validates_uniqueness_of :name, :scope => :deleted_at
-  validate :full_day_program
+  validate :residential_program
+  validate :intro_initiation_day
 
   MIN_NO_TEACHER = {
       ::TeacherSchedule::ROLE_MAIN_TEACHER => "minimum_no_of_teacher" ,
@@ -58,9 +61,59 @@ class ProgramType < ActiveRecord::Base
 
   acts_as_paranoid
 
-  def full_day_program
-    if self.session_duration < 0 and self.timings.count != Timing.all.count
-      self.errors[:timings] << " cannot be left unselected. Please select all timings for a Full Day program."
+  def residential_program
+    if self.session_duration == 0
+      self.errors[:session_duration] << " invalid. Please specify value > 0. For residential specify -1."
+      return
+    end
+
+    if self.session_duration < 0
+      if self.timings.count != Timing.all.count
+        self.errors[:timings] << " cannot be left unselected. Please select all timings for a residential program."
+        return
+      end
+      if self.no_of_days < 2
+        self.errors[:no_of_days] << " cannot be less than 2 for residential program."
+        return
+      end
+    end
+  end
+
+  def intro_initiation_day
+    if self.intro_day.blank? and self.initiation_day.blank?
+      return
+    end
+
+    if self.session_duration < 0
+      if not intro_day.blank?
+        self.errors[:intro_day] << " invalid. Please leave blank for residential programs."
+        return
+      end
+      if not initiation_day.blank?
+        self.errors[:initiation_day] << " invalid. Please leave blank for residential programs."
+        return
+      end
+    end
+
+    if not self.intro_day.blank? and (self.intro_day > self.no_of_days )
+      self.errors[:intro_day] << " invalid. Please enter valid integer between 1 and #{self.no_of_days}."
+      return
+    end
+    if self.intro_day.blank? and not self.intro_duration.blank?
+      self.errors[:intro_day] << " required if intro duration is specified. Please enter valid for intro day, or remove intro duration."
+      return
+    end
+    if not self.intro_day.blank? and self.intro_duration.blank?
+      self.errors[:intro_duration] << " required if intro day is specified. Please enter valid for intro duration, or remove intro day."
+      return
+    end
+    if not self.initiation_day.blank? and (self.initiation_day > self.no_of_days)
+      self.errors[:initiation_day] << " invalid. Please enter valid integer between 1 and #{self.no_of_days}."
+      return
+    end
+    # if same day specified in both
+    if self.intro_day ==  self.initiation_day
+      self.errors[:initiation_day] << " invalid. Same day marked as both intro day and initiation day."
     end
   end
 
@@ -82,6 +135,14 @@ class ProgramType < ActiveRecord::Base
       roles += [k] unless v == -1
     }
     return roles
+  end
+
+  def residential?
+    self.session_duration.blank? ? false : self.session_duration < 0
+  end
+
+  def has_intro?
+    self.intro_day.blank? ? false : true
   end
 
   rails_admin do
@@ -132,10 +193,22 @@ class ProgramType < ActiveRecord::Base
       end
       field :session_duration do
         label "Duration of one session (in hrs)"
-        help "Enter -1 for a Full Day program"
+        help "Enter -1 for a residential program"
       end
       field :timings do
         inline_add false
+      end
+      field :intro_day do
+        label "Intro day"
+        help "e.g., 1 for IE. Not valid for residential programs."
+      end
+      field :intro_duration do
+        label "Intro duration (in minutes)"
+        help "e.g., 75 for IE. Required, if intro day is specified."
+      end
+      field :initiation_day do
+        label "Initiation day"
+        help "e.g., 5 for IE. Not valid for residential programs."
       end
       field :program_donations do
         inline_add false
