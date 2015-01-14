@@ -235,7 +235,7 @@ class ProgramsController < ApplicationController
       else
         if i == program_type.intro_day
           dt_ids = params[:program][:intro_timing_ids].map {|s| s.to_i unless s.blank?}
-        elsif i == program_type.initiation_day
+        elsif program_type.full_days.include?(i)
           dt_ids = full_day_timing_ids
         else
           dt_ids = @program.timing_ids

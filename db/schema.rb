@@ -363,8 +363,9 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "minimum_no_of_hall_teacher",       :default => -1
     t.integer  "minimum_no_of_initiation_teacher", :default => -1
     t.integer  "intro_day"
-    t.integer  "initiation_day"
     t.integer  "intro_duration"
+    t.string   "full_day"
+    t.string   "combined_day"
   end
 
   add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"
@@ -476,8 +477,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "user_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
-    t.string   "sync_ts"
-    t.string   "sync_id"
   end
 
   add_index "roles_users", ["role_id"], :name => "index_roles_users_on_role_id", :unique => true
@@ -524,6 +523,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
+    t.integer  "program_type_id"
   end
 
   create_table "teacher_slots", :force => true do |t|

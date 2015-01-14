@@ -46,7 +46,8 @@ ProgramType:
      no_of_days: 7
      session_duration: 3
      intro_day: 1
-     initiation_day: 5
+     full_day: 5
+     common_day: 5
      intro_duration: 75
   -  name: "BSP E"
      language: "English"

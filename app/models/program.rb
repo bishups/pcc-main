@@ -212,9 +212,9 @@ class Program < ActiveRecord::Base
       joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
       joins("JOIN programs_date_timings ON programs.id = programs_date_timings.program_id").
       joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
-      where('programs_date_timings.date_timing_id IN (?) AND (programs.id != ? OR ? IS NULL) AND NOT (program_types.id = ? AND date_timings.date = ?)',
+      where('programs_date_timings.date_timing_id IN (?) AND (programs.id != ? OR ? IS NULL) AND NOT (program_types.id = ? AND date_timings.date IN (?))',
       program.date_timing_ids, program.id, program.id,
-      program.program_donation.program_type.id, (program.start_date.to_date + (program.program_donation.program_type.initiation_day - 1).day))}
+      program.program_donation.program_type.id, program.program_donation.program_type.common_days.map{|d| program.start_date.to_date + (d - 1).day})}
 
   # given a program, returns a relation with all overlapping program(s) (including itself)
   # NOTE: initiation day for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
@@ -223,9 +223,9 @@ class Program < ActiveRecord::Base
       joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
       joins("JOIN programs_date_timings ON programs.id = programs_date_timings.program_id").
       joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
-      where('programs_date_timings.date_timing_id IN (?) AND NOT (program_types.id = ? AND date_timings.date = ?)',
+      where('programs_date_timings.date_timing_id IN (?) AND NOT (program_types.id = ? AND date_timings.date IN (?))',
       program.date_timing_ids,
-      program.program_donation.program_type.id, (program.start_date.to_date + (program.program_donation.program_type.initiation_day - 1).day))}
+      program.program_donation.program_type.id, program.program_donation.program_type.common_days.map{|d| program.start_date.to_date + (d - 1).day})}
 
   def initialize(*args)
     super(*args)
@@ -598,7 +598,7 @@ class Program < ActiveRecord::Base
         intro_timing_str = ""
         intro_duration = self.program_donation.program_type.intro_duration
         intro_day = self.program_donation.program_type.intro_day
-        full_day = self.program_donation.program_type.initiation_day
+        full_days = self.program_donation.program_type.full_days
         for i in 1..self.intro_timings.count
           start_time = self.intro_time[:start][i-1]
           end_time = self.intro_time[:end][i-1]
@@ -611,10 +611,12 @@ class Program < ActiveRecord::Base
           end
         end
 
+        full_days_str = full_days.map{|d| "#{(self.start_date + (d-1).days).strftime('%a %-d %b')}"}.join(", ")
         self.announced_timing = "(intro)\n #{intro_announced_timing_1.chomp(' OR ')}"\
                              "\n(session)\n#{(self.start_date + (intro_day-1).days).strftime('%a %-d %b')}: #{intro_announced_timing_2.chomp(' OR ')}"\
                              "\n#{(self.start_date + (intro_day).days).strftime('%a')}-#{self.end_date.strftime('%a')} (#{count} batches): #{session_announced_timing.chomp(' OR ')}"\
-                             "\n#{(self.start_date + (full_day-1).days).strftime('%a %-d %b')}: Full Day\n"
+                             "\n#{full_days_str}: Full Day\n"
+                             #"\n#{(self.start_date + (full_day-1).days).strftime('%a %-d %b')}: Full Day\n"
         self.timing_str = "(Intro) #{intro_timing_str.chomp(', ')}; (Session) #{session_timing_str.chomp(', ')}"
         #self.announced_timing = "(intro)\n" + intro_announced_timing_1.chomp(" OR ")
         #                    + "\n(session)\n" + "#{(self.start_date + (intro_day-1).days).strftime("%a %-d %b")}:" + intro_announced_timing_2.chomp(" OR ")
