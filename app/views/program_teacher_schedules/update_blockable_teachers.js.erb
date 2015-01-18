@@ -9,6 +9,8 @@
 <% else %>
     $('#teachers_select').html("<%= escape_javascript(options_for_select(['None Available'])) %>");
     $('#teachers_select').prop('disabled', true)
+    $('#timing_ids_select').html("<%= escape_javascript(options_for_select([''])) %>");
     $('#timings_select').prop('disabled', true)
     $('#submit_button').prop('disabled', true)
 <% end %>
+$('#blockable_timing_ids_hidden').val("<%= @blockable_timing_ids %>");

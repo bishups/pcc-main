@@ -177,18 +177,38 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   def if_program_announced!
     if self.program.is_announced? && self.program.is_active?
       self.send(::Program::ANNOUNCED)
-      # update the timing_str for all teacher schedule(s) for the teacher, linked to the program
-      # TODO - see how to handle residential and intro programs. Current logic won't work for that
-      announced_timings = self.program.timing_str.blank? ? [] : self.program.timing_str.split(", ")
-      teacher_schedules = self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id)
-      teacher_schedules.each { |ts|
-        session_name = ts.timing.name.split(' ')[0]
-        ts.timing_str = ""
-        announced_timings.each { |timing_str|
-          ts.timing_str = timing_str unless timing_str.index(session_name).nil?
+      #
+      # *************************************************
+      # Update the timing_str for all teacher schedule(s) for the teacher, linked to the program
+      # (IMPORTANT NOTE - the logic here should be in sync with before_announce method)
+      # *************************************************
+      #
+      # timing_str <-- used internally for displaying timings
+      #
+      # -----------------
+      # After Announcing
+      # -----------------
+      # for Uyir Nokkam e.g, --
+      # "9:30am - 10:30am, 9:30am - 10:30am, 9:30am - 10:30am, 9:30am - 10:30am"
+      # for IE e.g, --
+      # "(Intro) 6:30am - 9:30am, 6:00pm - 9:00pm; (Session) 6:30am - 9:30am, 10:00am - 1:00pm, 6:00pm - 9:00pm"
+      # for BSP e.g, --
+      # "Starts on 2nd at 5:00pm. Ends on 6th by 3:00pm"
+      #
+      if self.program.residential?
+        self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id).update_all(:timing_str => self.program.timing_str)
+      else
+        timing_str = self.program.has_intro? ? self.program.timing_str.split(" (Session) ").last : self.program.timing_str
+        announced_timings = timing_str.blank? ? [] : timing_str.split(", ")
+        teacher_schedules = self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id)
+        index = 0
+        teacher_schedules.each { |ts|
+          # fill the announced_timings on first-cum-first-serve basis, blank out the remaining
+          ts.timing_str = index < announced_timings.length ? announced_timings[index-1] : ""
+          ts.save
+          index = index + 1
         }
-        ts.save
-      }
+      end
     end
   end
 
@@ -252,12 +272,15 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     role   = self.teacher_schedule.role
-    timing = self.teacher_schedule.timing
+    # find all the timings for which the specific teacher has active teacher schedule attached to the program
+    timing_ids = self.program.teacher_schedules.where("teacher_id = ? AND state IN (?) AND role = ?",self.teacher_id, CONNECTED_STATES, role).pluck(:timing_id)
 
-        if ((self.program.no_of_teachers_connected(role, timing) <= self.program.minimum_no_of_teacher(role)) && self.program.venue_approved?)
-          self.errors[:base] << "Cannot remove teacher. Number of #{role} needed for #{timing.name} session will become less than the number needed. Please add another #{role} and try again."
-          return false
-        end
+    timing_ids.each { |timing_id|
+      if ((self.program.no_of_teachers_connected(role, timing_id) <= self.program.minimum_no_of_teacher(role)) && self.program.venue_approved?)
+        self.errors[:base] << "Cannot remove teacher. Number of #{role} needed for #{Timing(timing_id).pluck(:name)} session will become less than the number needed. Please add another #{role} and try again."
+        return false
+      end
+    }
     return true
   end
 
@@ -275,13 +298,16 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       end
     end
 
-    role   = self.teacher_schedule.role
-    timing = self.teacher_schedule.timing
-        if ((self.program.no_of_teachers_connected(role, timing) <= self.program.minimum_no_of_teacher(role)) && self.program.venue_approved?)
-          self.errors[:base] << "Cannot remove teacher. Number of #{role} needed for #{timing.name} session will become less than the number needed. Please add another #{role} and try again."
-          return false
-        end
+    role = self.teacher_schedule.role
+    # find all the timings for which the specific teacher has active teacher schedule attached to the program
+    timing_ids = self.program.teacher_schedules.where("teacher_id = ? AND state IN (?) AND role = ?",self.teacher_id, CONNECTED_STATES, role).pluck(:timing_id)
 
+    timing_ids.each { |timing_id|
+      if ((self.program.no_of_teachers_connected(role, timing_id) <= self.program.minimum_no_of_teacher(role)) && self.program.venue_approved?)
+        self.errors[:base] << "Cannot remove teacher. Number of #{role} needed for #{Timing(timing_id).pluck(:name)} session will become less than the number needed. Please add another #{role} and try again."
+        return false
+      end
+    }
 
     return true
   end
@@ -348,23 +374,48 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     # get all part-time teachers for specific program type, for the specified role, attached to the specified center
     program_types_teachers_str = ::Teacher::PROGRAM_TYPES_TABLES[role]
-    teacher_ids = Teacher.joins("JOIN #{program_types_teachers_str} ON #{program_types_teachers_str}.teacher_id = teachers.id").joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where("#{program_types_teachers_str}.program_type_id = ? AND teachers.full_time = ? AND teachers.state IN (?) AND centers_teachers.center_id = ?",
-                                                                                                                              program.program_donation.program_type_id, false, [::Teacher::STATE_ATTACHED], program.center_id).readonly(false).pluck(:id)
-
+    teacher_ids = Teacher.joins("JOIN #{program_types_teachers_str} ON #{program_types_teachers_str}.teacher_id = teachers.id").
+                          joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").
+                          where("#{program_types_teachers_str}.program_type_id = ? AND teachers.full_time = ? AND teachers.state IN (?) AND centers_teachers.center_id = ?",
+                          program.program_donation.program_type_id, false, [::Teacher::STATE_ATTACHED], program.center_id).readonly(false).pluck(:id)
     teacher_ids = teacher_ids.uniq
-    # if teacher is available for *any* of timing specified in the program for the specified center (as per published schedule)
-    teacher_schedules = TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").where(['teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? AND teachers.id IN (?)',
-                                          program.start_date.to_date, program.end_date.to_date, program.timings,
-                                          ::TeacherSchedule::STATE_AVAILABLE, program.center_id , teacher_ids]).readonly(false)
+
+    teacher_schedules = []
+    # if teacher is available for *any* of timings (valid for all days) specified in the program for the specified center (as per published schedule)
+    timing_ids_valid_all_days = program.has_intro? ? program.intro_timing_ids : program.timing_ids
+    teacher_schedules += TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                        joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").
+                                        where(['teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? AND teachers.id IN (?)',
+                                        program.start_date.to_date, program.end_date.to_date, timing_ids_valid_all_days,
+                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id , teacher_ids]).readonly(false).all unless timing_ids_valid_all_days.blank?
+
+    # if teacher is available for *any* of other timings specified in the program for the specified center (as per published schedule)
+    other_timing_ids = program.has_intro? ? (program.timing_ids - program.intro_timing_ids) : []
+    teacher_schedules += TeacherSchedule.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                        joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").
+                                        where(['teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? AND teachers.id IN (?)',
+                                        (program.start_date.to_date + 1.day), program.end_date.to_date, other_timing_ids,
+                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id , teacher_ids]).readonly(false).all unless other_timing_ids.blank?
 
     blockable = []
-    teacher_schedules.each { |teacher_schedule|
+      teacher_schedules.each { |teacher_schedule|
       #next unless teacher_ids.include?(teacher_schedule.teacher_id)
-      teacher = teacher_schedule.teacher
+        teacher = teacher_schedule.teacher
       blockable << {:teacher => teacher, :timing_ids => []} if (blockable.last.blank? or blockable.last[:teacher] != teacher)
       blockable.last[:timing_ids] << teacher_schedule.timing_id
     }
-    return blockable
+    blockable
+
+    #
+    # NOTE:
+    # 1... Right now we are not explicitly handling full_day availability of a part-time teacher
+    # for a non-residential program. E.g., if part-time teacher is available for any of the timing(s) of
+    # IE 7-Day, we will not explicitly check if teacher is available for all timings on initiation day.
+    # We will still allow the teacher to be scheduled for initiation day.
+    # 2... But in case the teacher has been blocked for some other program_type on the initiation day
+    # then the teacher cannot be blocked. This is handled for all teacher types in blockable_teachers
+    #
+    #
   end
 
 
@@ -394,7 +445,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         end
       }
     }
-    return blockable
+    blockable
   end
 
   def blockable_teachers(role)
@@ -403,14 +454,34 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     trs +=  self.blockable_full_time_teachers(role) if (User.current_user.is? :zao, :center_id => self.program.center_id)
     # Anyway they are going to be unique, since we splitting into part-time and full-time, still ...
     teachers = trs.uniq
-    return teachers unless self.program.residential?
 
-    # if all-day program, remove teachers which are not available full-day
+    return teachers if not (self.program.residential? or self.program.has_full_day?)
+
     blockable = []
-    teachers.each{ |t|
-      next if self.program.timing_ids.sort != t[:timing_ids].sort
-      blockable << t
-    }
+    full_day_timing_ids = Timing.pluck(:id)
+    full_day_dates = self.program.program_donation.program_type.full_days.map{ |d| program.start_date + (d-1).days}
+    if self.program.residential?
+      # remove teachers which are not available full-day
+      teachers.each{ |t|
+        next if full_day_timing_ids.sort != t[:timing_ids].sort
+        blockable << t
+      }
+    else
+      # remove teachers which are blocked for any portion of the full-days for the program
+      ts = TeacherSchedule.new
+      ts.program = self.program
+      teachers.each {|tr|
+        overlaps = false
+        ts.teacher_id = tr[:teacher].id
+        if full_day_timing_ids != tr[:timing_ids].sort
+          full_day_dates.each { |full_day_date|
+            break if overlaps
+            overlaps = true if TeacherSchedule.overlapping_full_day_blocks(ts, full_day_date).count() > 0
+          }
+        end
+        blockable << tr unless overlaps
+      }
+    end
     blockable
   end
 
@@ -466,10 +537,28 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     else
       programs = self.blockable_programs_for_part_time_teachers(role)
     end
-    # remove all-day programs where teacher is not available full-day
+
+    # check if residential programs or program with full_days meet all conditions
     blockable = []
+    full_day_timing_ids = Timing.pluck(:id)
+    full_day_dates = self.program.program_donation.program_type.full_days.map{ |d| program.start_date + (d-1).days}
+    ts = TeacherSchedule.new
+    ts.teacher_id = self.teacher.id
+
     programs.each{ |p|
-      next if p[:program].residential? and p[:program].timing_ids.sort != p[:timing_ids].sort
+      # remove residential programs where teacher is not available full-day
+      if p[:program].residential?
+        next if full_day_timing_ids.sort != p[:timing_ids].sort
+      elsif  p[:program].has_full_day?
+        # remove programs where teacher is blocked for any portion of the full-days for the program
+        ts.program = p
+        overlaps = false
+        full_day_dates.each { |full_day_date|
+          break if overlaps
+          overlaps = true if TeacherSchedule.overlapping_full_day_blocks(ts, full_day_date).count() > 0
+        }
+        next if overlaps
+      end
       blockable << p
     }
     blockable
@@ -480,11 +569,15 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 #      ts = teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND (centers_teacher_schedules.center_id = ? OR centers_teacher_schedules.center_id IS NULL) AND (teacher_schedules.program_type_id = ? OR teacher_schedules.program_type_id IS NULL) ',
 #                                                                                                                                                           program.start_date.to_date, program.end_date.to_date, t.id,
 #                                                                                                                                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_donation.program_type_id).readonly(false).first
-      ts = teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
-                                                                                                                                                           program.start_date.to_date, program.end_date.to_date, timing_id,
-                                                                                                                                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id).readonly(false).first
+      start_date = program.start_date
+      start_date = start_date + 1.day if (program.has_intro? and program.intro_timing_ids.include?(timing_id))
+
+      ts = teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                      where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                      start_date.to_date, program.end_date.to_date, timing_id,
+                                      ::TeacherSchedule::STATE_AVAILABLE, program.center_id).readonly(false).first
       # split this schedule as per program dates
-      ts.split_schedule!(program.start_date.to_date, program.end_date.to_date)
+      ts.split_schedule!(start_date.to_date, program.end_date.to_date)
       # TODO - check if break if correct idea, we should rollback previous change(s) in this loop
       if !ts.errors.empty?
         self.errors[:base] << ts.errors.full_messages
@@ -514,10 +607,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
   def block_full_time_teacher_schedule!(program, teacher, timing_ids)
     timing_ids.each {|timing_id|
+      start_date = program.start_date
+      start_date = start_date + 1.day if (program.has_intro? and program.intro_timing_ids.include?(timing_id))
+
       # create a new schedule of the same duration as the program, and mark it as available
       ts = TeacherSchedule.new
       ts.teacher_id = teacher.id
-      ts.start_date = program.start_date
+      ts.start_date = start_date
       ts.end_date = program.end_date
       ts.centers = [program.center]
       ts.program_id = program.id

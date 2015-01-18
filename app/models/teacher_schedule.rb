@@ -94,7 +94,16 @@ class TeacherSchedule < ActiveRecord::Base
 
   # given a teacher schedule (linked to a program), returns a relation with all overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
   # --  ts.id = NULL, ts.timing, ts.teacher_id, ts.program
-  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.all_overlapping(ts.program)).where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND teacher_schedules.teacher_id = ? AND teacher_schedules.timing_id = ?', ts.id, ts.id, states, ts.teacher_id, ts.timing_id) }
+  scope :overlapping_blocks, lambda { |ts, states| joins(:program).merge(Program.all_overlapping(ts.program)).
+                                    where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND teacher_schedules.teacher_id = ? AND teacher_schedules.timing_id = ?',
+                                    ts.id, ts.id, states, ts.teacher_id, ts.timing_id) }
+
+  # given a teacher schedule (linked to a program), returns a relation with all overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
+  # where full day is over-lapping
+  # --  ts.id = NULL, ts.timing, ts.teacher_id, ts.program
+  scope :overlapping_full_day_blocks, lambda { |ts, full_day_date| joins(:program).merge(Program.all_overlapping(ts.program)).
+                                            where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.teacher_id = ? AND (teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ?)',
+                                            ts.id, ts.id, ts.teacher_id, full_day_date, full_day_date) }
 
   # given a teacher schedule (not linked to program), returns a relation with other overlapping teacher schedules(s) (linked to programs) for the specific teacher, not in specified states
   # -- ts.id = NULL, ts.teacher_id, ts.start_date, ts.end_date
@@ -154,19 +163,25 @@ class TeacherSchedule < ActiveRecord::Base
   end
 
   def display_timings(role)
+    return "Full Day" if self.in_reserved_state?
     program = self.program
     return self.timing_str if program.blank?
 
-    if program.residential?
-      # check if teacher is linked to all program timings in the same role
-      timing_ids = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_ids)
-      return "Full Day" if timing_ids.sort == program.timing_ids.sort
-      # else fall through -- return specific timing str
-    end
+    # in residential, teacher cannot be linked in different roles, to different timings
+    # also, each teacher_schedule timing_str is the full description
+    return self.timing_str if program.residential?
 
     # concatenate all the timing_str from all the schedule linked to the program for specified role
     timing_strs = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_str)
-    return timing_strs.reject(&:blank?).join(", ")
+    timing_str = timing_strs.reject(&:blank?).join(", ")
+
+    # adding full day information -- e.g, (3rd, 4th: Full Day)
+    if program.has_full_day?
+      full_day_str = program.program_donation.program_type.full_days.map{|d| "#{(self.start_date + (d-1).days).day.ordinalize}"}.join(", ")
+      return "#{timing_str} (#{full_day_str}: Full Day)"
+    else
+      return timing_str
+    end
   end
 
   def split_schedule!(start_date, end_date)

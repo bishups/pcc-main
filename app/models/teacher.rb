@@ -395,14 +395,27 @@ class Teacher < ActiveRecord::Base
         timing_ids << timing_id unless ts.schedule_overlaps?
       }
     else
-      # for each of the program timing_ids
-      program.timing_ids.each { |timing_id|
-        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
-                                                                                                                                                        program.start_date.to_date, program.end_date.to_date, timing_id,
-                                                                                                                                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
+      # for each of the program timing_ids (valid all days)
+      timing_ids_valid_all_days = program.has_intro? ? program.intro_timing_ids : program.timing_ids
+      timing_ids_valid_all_days.each { |timing_id|
+        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                    where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                    program.start_date.to_date, program.end_date.to_date, timing_id,
+                                    ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
+        timing_ids << timing_id unless ts.nil?
+      }
+
+      # for each of the program timing_ids (valid other days)
+      other_timing_ids = program.has_intro? ? (program.timing_ids - program.intro_timing_ids) : []
+      other_timing_ids.each { |timing_id|
+        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+            where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                  program.start_date.to_date + 1.day, program.end_date.to_date, timing_id,
+                  ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
         timing_ids << timing_id unless ts.nil?
       }
     end
+
     return timing_ids
   end
 
@@ -418,21 +431,31 @@ class Teacher < ActiveRecord::Base
       # for each of the specified timing_ids
       timing_ids.each { |timing_id|
         ts.timing_id = timing_id
-        # if program schedule does not overlap any other schedule for the teacher
-        return false if ts.schedule_overlaps?
+      # if program schedule does not overlap any other schedule for the teacher
+      return false if ts.schedule_overlaps?
       }
     else
-      ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
-                                                                                                                                                        program.start_date.to_date, program.end_date.to_date, timing_ids,
-                                                                                                                                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
-      return false if ts.nil?
+      ts = []
+      timing_ids_valid_all_days = program.has_intro? ? program.intro_timing_ids & timing_ids : timing_ids
+      ts += self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                  where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                  program.start_date.to_date, program.end_date.to_date, timing_ids_valid_all_days,
+                                  ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first unless timing_ids_valid_all_days.empty?
+
+      other_timing_ids = program.has_intro? ? (timing_ids - timing_ids_valid_all_days) : []
+      ts += self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                   where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                   program.start_date.to_date + 1.day, program.end_date.to_date, other_timing_ids,
+                                   ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first unless other_timing_ids.empty?
+
+      return false if ts.empty?
     end
     return true
   end
 
 
-  def can_be_blocked_for_full_day?(program, timing_ids)
-    program.timing_ids.sort == timing_ids.sort
+  def can_be_blocked_for_full_day?(timing_ids)
+    Timing.pluck(:id).sort == timing_ids.sort
   end
 
 

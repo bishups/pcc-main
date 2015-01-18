@@ -33,6 +33,12 @@ class ProgramTeacherSchedulesController < ApplicationController
       # this was an update, which came to create, because of all the activerecord non-sense
       _update
     else
+      # in case of residential program, we reserve the teacher for all timings
+      if params.has_key?(:program_id)
+        program = ::Program.find((params[:program_id]).to_i)
+        params[:timing_ids] = ::Timing.pluck(:id) if program.residential?
+      end
+
       @program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
       program = @program_teacher_schedule.program
       teacher = @program_teacher_schedule.teacher
@@ -112,7 +118,8 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   def update_additional_comments
     selected_teacher_id = params[:teacher_id].to_i
-    blockable_timing_ids = eval(params[:blockable_timing_ids])
+    # gsub HACK to unescape html, could not find anything in jquery .val() that worked
+    blockable_timing_ids = eval(params[:blockable_timing_ids].gsub '&gt;', '>')
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     @selected_timings = blockable_timing_ids[selected_teacher_id].map { |id| Timing.find(id)}
     @additional_comments = Teacher.find(selected_teacher_id).additional_comments
@@ -120,10 +127,12 @@ class ProgramTeacherSchedulesController < ApplicationController
 
   def update_program_timings
     selected_program_id = params[:program_id].to_i
-    blockable_timing_ids = eval(params[:blockable_timing_ids])
+    # gsub HACK to unescape html, could not find anything in jquery .val() that worked
+    blockable_timing_ids = eval(params[:blockable_timing_ids].gsub '&gt;', '>')
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     @selected_timings = blockable_timing_ids[selected_program_id].map { |id| Timing.find(id)}
     @selected_program = Program.find(selected_program_id)
+    @hide_timings = @selected_program.residential? ? true : false
   end
 
   #def load_additional_comments!
@@ -152,6 +161,7 @@ class ProgramTeacherSchedulesController < ApplicationController
   def load_blockable_teachers!(teacher_role = nil)
     @teacher_roles = @program_teacher_schedule.program.roles
     @selected_teacher_role = teacher_role.nil? ? @teacher_roles[0] : teacher_role
+    @hide_timings = @program_teacher_schedule.program.residential? ? true : false
     #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
     blockable_teachers = @program_teacher_schedule.blockable_teachers(@selected_teacher_role)
     @blockable_teachers = blockable_teachers.sort_by{|entry| entry[:teacher].user.fullname}
@@ -176,6 +186,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     @blockable_programs = blockable_programs.sort_by{|entry| entry[:program].friendly_name}
     @blockable_timing_ids = Hash[@blockable_programs.map {|e| [e[:program].id, e[:timing_ids]] }]
     @selected_program = @blockable_programs.blank? ? nil : @blockable_programs.first[:program]
+    @hide_timings = @selected_program.residential? ? true : false
     @selected_timings = @blockable_programs.blank? ? [] : Timing.find(@blockable_programs.first[:timing_ids])
   end
 
@@ -188,6 +199,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     @blockable_programs = blockable_programs.sort_by{|entry| entry[:program].friendly_name}
     @blockable_timing_ids = Hash[@blockable_programs.map {|e| [e[:program].id, e[:timing_ids]] }]
     @selected_program = @blockable_programs.blank? ? nil : @blockable_programs.first[:program]
+    @hide_timings = @selected_program.residential? ? true : false
     @selected_timings = @blockable_programs.blank? ? [] : Timing.find(@blockable_programs.first[:timing_ids])
   end
 

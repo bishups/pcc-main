@@ -206,7 +206,7 @@ class Program < ActiveRecord::Base
 
   ### program_date_timings
   # given a program, returns a relation with other overlapping program(s)
-  # NOTE: initiation day for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
+  # NOTE: combined days for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
   scope :overlapping, lambda { |program| Program.
       joins("JOIN program_donations ON programs.program_donation_id = program_donations.id").
       joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
@@ -214,10 +214,10 @@ class Program < ActiveRecord::Base
       joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
       where('programs_date_timings.date_timing_id IN (?) AND (programs.id != ? OR ? IS NULL) AND NOT (program_types.id = ? AND date_timings.date IN (?))',
       program.date_timing_ids, program.id, program.id,
-      program.program_donation.program_type.id, program.program_donation.program_type.common_days.map{|d| program.start_date.to_date + (d - 1).day})}
+      program.program_donation.program_type.id, program.program_donation.program_type.combined_days.map{|d| program.start_date.to_date + (d - 1).day})}
 
   # given a program, returns a relation with all overlapping program(s) (including itself)
-  # NOTE: initiation day for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
+  # NOTE: combined days for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
   scope :all_overlapping, lambda { |program| Program.
       joins("JOIN program_donations ON programs.program_donation_id = program_donations.id").
       joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
@@ -225,7 +225,7 @@ class Program < ActiveRecord::Base
       joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
       where('programs_date_timings.date_timing_id IN (?) AND NOT (program_types.id = ? AND date_timings.date IN (?))',
       program.date_timing_ids,
-      program.program_donation.program_type.id, program.program_donation.program_type.common_days.map{|d| program.start_date.to_date + (d - 1).day})}
+      program.program_donation.program_type.id, program.program_donation.program_type.combined_days.map{|d| program.start_date.to_date + (d - 1).day})}
 
   def initialize(*args)
     super(*args)
@@ -539,6 +539,8 @@ class Program < ActiveRecord::Base
       return false unless self.new_residential_timings_valid?(new_start_time, new_end_time)
       self.announced_timing = "Arrive by: #{start_time.strftime("%-I:%M%P")} on #{self.start_date.day.ordinalize}.\nProgram ends: #{end_time.strftime("%-I:%M%P")} on #{self.end_date.day.ordinalize}"
       self.timing_str = "Starts on #{self.start_date.day.ordinalize} at #{start_time.strftime("%-I:%M%P")}. Ends on #{self.end_date.day.ordinalize} by #{end_time.strftime("%-I:%M%P")}."
+      # update linked teacher schedule timing str
+      self.update_teacher_schedule_timing_str(Timing.pluck(:id), self.timing_str)
     else
       #
       # If non-residential, e.g., IE, or Uyir Nokkam
@@ -563,9 +565,8 @@ class Program < ActiveRecord::Base
           new_start_time = start_time if new_start_time.blank?
           new_end_time = end_time
         end
-        # TODO - fix this
         # update linked teacher schedule timing str
-        self.update_teacher_schedule_timing_str(self.timings[i-1].id, new_timing_str)
+        self.update_teacher_schedule_timing_str([self.timings[i-1].id], new_timing_str)
       end
 
       #
@@ -590,14 +591,14 @@ class Program < ActiveRecord::Base
         #   "Sun 11 Jan: Full day\n"
         #
         # timing_str =
-        #   "(Intro) Morning (6am - 10am), Night(6pm - 10pm); (Session) Morning (6am - 10am), Afternoon (10am - 2pm), Night (6pm - 10pm)"
+        # "(Intro) 6:30am - 9:30am, 6:00pm - 9:00pm; (Session) 6:30am - 9:30am, 10:00am - 1:00pm, 6:00pm - 9:00pm"
         #
         return false unless self.new_timings_valid?(self.intro_timings, self.intro_time, "intro")
         intro_announced_timing_1 = ""
         intro_announced_timing_2 = ""
         intro_timing_str = ""
         intro_duration = self.program_donation.program_type.intro_duration
-        intro_day = self.program_donation.program_type.intro_day
+        intro_day = 1
         full_days = self.program_donation.program_type.full_days
         for i in 1..self.intro_timings.count
           start_time = self.intro_time[:start][i-1]
@@ -652,6 +653,10 @@ class Program < ActiveRecord::Base
 
   def has_intro?
     self.program_donation.program_type.has_intro?
+  end
+
+  def has_full_day?
+    self.program_donation.program_type.has_full_day?
   end
 
   def timing_name(timing)
@@ -950,9 +955,9 @@ class Program < ActiveRecord::Base
   #  end
   #end
 
-  def no_of_teachers_connected(role, timing)
+  def no_of_teachers_connected(role, timing_id)
     return 0 if self.teacher_schedules.blank?
-    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing.id).group('teacher_id').length
+    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing_id).group('teacher_id').length
   end
 
   def teachers_connected(role)
@@ -984,8 +989,8 @@ class Program < ActiveRecord::Base
     self.program_donation.program_type.role_minimum_no_of_teacher(role)
   end
 
-  def update_teacher_schedule_timing_str(timing_id, timing_str)
-    self.teacher_schedules.where('state IN (?) AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, timing_id).update_all(:timing_str => timing_str)
+  def update_teacher_schedule_timing_str(timing_ids, timing_str)
+    self.teacher_schedules.where('state IN (?) AND timing_id IN (?)', ::ProgramTeacherSchedule::CONNECTED_STATES, timing_ids).update_all(:timing_str => timing_str)
   end
 
   def roles
@@ -995,7 +1000,7 @@ class Program < ActiveRecord::Base
   def minimum_teachers_connected?(plus=0)
     self.roles.each { |role|
       self.timings.each { |timing|
-        if self.no_of_teachers_connected(role, timing) < (self.minimum_no_of_teacher(role) + plus)
+        if self.no_of_teachers_connected(role, timing.id) < (self.minimum_no_of_teacher(role) + plus)
           return false
         end
       }
@@ -1080,7 +1085,7 @@ class Program < ActiveRecord::Base
 
     self.roles.each { |role|
       self.timings.each { |timing|
-        if self.no_of_teachers_connected(role, timing) > 0
+        if self.no_of_teachers_connected(role, timing.id) > 0
           self.errors[:base] << "Cannot close program, Teacher(s) are still linked to the program."
           return false
         end
@@ -1132,7 +1137,7 @@ class Program < ActiveRecord::Base
     errors = []
     self.roles.each { |role|
       self.timings.each { |timing|
-        connected = self.no_of_teachers_connected(role, timing)
+        connected = self.no_of_teachers_connected(role, timing.id)
         minimum = self.minimum_no_of_teacher(role)
         session = timing.name
         errors << "<i>#{role}(s)</i> added = <b>#{connected}</b> for <i>#{session}</i>. Please add <b>#{minimum-connected}</b> more." if connected < minimum

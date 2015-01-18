@@ -362,7 +362,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "minimum_no_of_organizing_teacher", :default => -1
     t.integer  "minimum_no_of_hall_teacher",       :default => -1
     t.integer  "minimum_no_of_initiation_teacher", :default => -1
-    t.integer  "intro_day"
     t.integer  "intro_duration"
     t.string   "full_day"
     t.string   "combined_day"

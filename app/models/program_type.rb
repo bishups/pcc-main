@@ -22,7 +22,6 @@
 
 class ProgramType < ActiveRecord::Base
   attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :minimum_no_of_hall_teacher, :minimum_no_of_organizing_teacher, :minimum_no_of_initiation_teacher, :name, :no_of_days, :registration_close_timeout, :session_duration
-  attr_accessible :intro_day, :length => {:within => 1..2}, :numericality => {:only_integer => true, :greater_than => 0}
   attr_accessible :intro_duration, :length => {:within => 1..3}, :numericality => {:only_integer => true, :greater_than => 0}
   attr_accessible :full_day, :combined_day
   has_and_belongs_to_many :teachers
@@ -69,7 +68,7 @@ class ProgramType < ActiveRecord::Base
     end
 
     if self.session_duration < 0
-      if self.timings.count != Timing.all.count
+      if self.timings.length != Timing.all.count
         self.errors[:timings] << " cannot be left unselected. Please select all timings for a residential program."
         return
       end
@@ -81,13 +80,13 @@ class ProgramType < ActiveRecord::Base
   end
 
   def intro_full_combined_day
-    if self.intro_day.blank? and self.full_day.blank? and self.combined_day.blank?
+    if self.intro_duration.blank? and self.full_day.blank? and self.combined_day.blank?
       return
     end
 
     if self.session_duration < 0
-      if not intro_day.blank?
-        self.errors[:intro_day] << " invalid. Please leave blank for residential programs."
+      if not self.intro_duration.blank?
+        self.errors[:intro_duration] << " invalid. Please leave blank for residential programs."
         return
       end
       if not full_day.blank?
@@ -100,18 +99,6 @@ class ProgramType < ActiveRecord::Base
       end
     end
 
-    if not self.intro_day.blank? and (self.intro_day > self.no_of_days )
-      self.errors[:intro_day] << " invalid. Please enter valid integer between 1 and #{self.no_of_days}."
-      return
-    end
-    if self.intro_day.blank? and not self.intro_duration.blank?
-      self.errors[:intro_day] << " required if intro duration is specified. Please enter valid for intro day, or remove intro duration."
-      return
-    end
-    if not self.intro_day.blank? and self.intro_duration.blank?
-      self.errors[:intro_duration] << " required if intro day is specified. Please enter valid for intro duration, or remove intro day."
-      return
-    end
     if not self.full_day.blank? and not (self.full_days  - (1..self.no_of_days).to_a).blank?
       self.errors[:full_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}. Multiple values should be comma separated."
       return
@@ -120,14 +107,18 @@ class ProgramType < ActiveRecord::Base
       self.errors[:combined_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}. Multiple values should be comma separated."
       return
     end
-    # if same day specified in both
-    if not self.full_day.blank? and self.full_days.include?(self.intro_day)
-      self.errors[:full_day] << " invalid. Same day marked as both intro day and full day."
+    if not self.intro_duration.blank? and not self.full_day.blank? and self.full_days.include?(1)
+      self.errors[:full_day] << " invalid. Day 1 cannot be marked as full day for program having first-day intro."
+      return
     end
   end
 
   def full_days
     self.full_day.delete(' ').split(',').map {|c| c.to_i}
+  end
+
+  def has_full_day?
+    not self.full_day.blank?
   end
 
   def combined_days
@@ -159,7 +150,7 @@ class ProgramType < ActiveRecord::Base
   end
 
   def has_intro?
-    self.intro_day.blank? ? false : true
+    not self.intro_duration.blank?
   end
 
   rails_admin do
@@ -215,21 +206,17 @@ class ProgramType < ActiveRecord::Base
       field :timings do
         inline_add false
       end
-      field :intro_day do
-        label "Intro day"
-        help "e.g., 1 for IE. Not valid for residential programs."
-      end
       field :intro_duration do
         label "Intro duration (in minutes)"
-        help "e.g., 75 for IE. Required, if intro day is specified."
+        help "e.g., 75 for IE. Not valid for residential programs."
       end
       field :full_day do
         label "Full Day(s)"
-        help "e.g., 5 for IE. Not valid for residential programs. Comma separate multiple values, e.g., 3,4 for Sadhguru IE."
+        help "e.g., 5 for IE. Not valid for residential programs. Comma separate multiple values (e.g., 3,4 for Sadhguru IE)"
       end
       field :combined_day do
         label "Combined Day(s)"
-        help "Day(s) when combined session can happen for multiple announced programs. e.g., 5 for IE. Not valid for residential programs. Comma separate multiple values."
+        help "Day(s) when combined session can happen for multiple programs (e.g., 5 for IE). Not valid for residential programs. Comma separate multiple values."
       end
       field :program_donations do
         inline_add false
