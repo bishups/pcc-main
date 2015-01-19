@@ -223,12 +223,16 @@ class Program < ActiveRecord::Base
       joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
       joins("JOIN programs_date_timings ON programs.id = programs_date_timings.program_id").
       joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
-      where('programs_date_timings.date_timing_id IN (?) AND NOT (program_types.id = ? AND date_timings.date IN (?))',
+      where('programs_date_timings.date_timing_id IN (?) AND NOT (program_types.id = ? AND (? IS NOT NULL AND date_timings.date IN (?)))',
       program.date_timing_ids,
-      program.program_donation.program_type.id, program.program_donation.program_type.combined_days.map{|d| program.start_date.to_date + (d - 1).day})}
+      program.program_donation.program_type.id, program.combined_dates, program.combined_dates)}
 
   def initialize(*args)
     super(*args)
+  end
+
+  def combined_dates
+    self.program_donation.program_type.combined_days.map{|d| self.start_date.to_date + (d - 1).day}
   end
 
   def dummy_init_time
@@ -540,7 +544,7 @@ class Program < ActiveRecord::Base
       self.announced_timing = "Arrive by: #{start_time.strftime("%-I:%M%P")} on #{self.start_date.day.ordinalize}.\nProgram ends: #{end_time.strftime("%-I:%M%P")} on #{self.end_date.day.ordinalize}"
       self.timing_str = "Starts on #{self.start_date.day.ordinalize} at #{start_time.strftime("%-I:%M%P")}. Ends on #{self.end_date.day.ordinalize} by #{end_time.strftime("%-I:%M%P")}."
       # update linked teacher schedule timing str
-      self.update_teacher_schedule_timing_str(Timing.pluck(:id), self.timing_str)
+      # self.update_teacher_schedule_timing_str(Timing.pluck(:id), self.timing_str)
     else
       #
       # If non-residential, e.g., IE, or Uyir Nokkam
@@ -613,7 +617,7 @@ class Program < ActiveRecord::Base
         end
 
         full_days_str = full_days.map{|d| "#{(self.start_date + (d-1).days).strftime('%a %-d %b')}"}.join(", ")
-        self.announced_timing = "(intro)\n #{intro_announced_timing_1.chomp(' OR ')}"\
+        self.announced_timing = "(intro)\n#{(self.start_date).strftime('%a %-d %b')}: #{intro_announced_timing_1.chomp(' OR ')}"\
                              "\n(session)\n#{(self.start_date + (intro_day-1).days).strftime('%a %-d %b')}: #{intro_announced_timing_2.chomp(' OR ')}"\
                              "\n#{(self.start_date + (intro_day).days).strftime('%a')}-#{self.end_date.strftime('%a')} (#{count} batches): #{session_announced_timing.chomp(' OR ')}"\
                              "\n#{full_days_str}: Full Day\n"

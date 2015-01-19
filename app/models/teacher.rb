@@ -437,13 +437,13 @@ class Teacher < ActiveRecord::Base
     else
       ts = []
       timing_ids_valid_all_days = program.has_intro? ? program.intro_timing_ids & timing_ids : timing_ids
-      ts += self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+      ts << self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
                                   where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
                                   program.start_date.to_date, program.end_date.to_date, timing_ids_valid_all_days,
                                   ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first unless timing_ids_valid_all_days.empty?
 
       other_timing_ids = program.has_intro? ? (timing_ids - timing_ids_valid_all_days) : []
-      ts += self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+      ts << self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
                                    where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
                                    program.start_date.to_date + 1.day, program.end_date.to_date, other_timing_ids,
                                    ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first unless other_timing_ids.empty?

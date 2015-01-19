@@ -196,7 +196,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       # "Starts on 2nd at 5:00pm. Ends on 6th by 3:00pm"
       #
       if self.program.residential?
-        self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id).update_all(:timing_str => self.program.timing_str)
+        # DO NOTHING
+        # self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id).update_all(:timing_str => self.program.timing_str)
       else
         timing_str = self.program.has_intro? ? self.program.timing_str.split(" (Session) ").last : self.program.timing_str
         announced_timings = timing_str.blank? ? [] : timing_str.split(", ")
@@ -400,9 +401,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     blockable = []
       teacher_schedules.each { |teacher_schedule|
       #next unless teacher_ids.include?(teacher_schedule.teacher_id)
-        teacher = teacher_schedule.teacher
-      blockable << {:teacher => teacher, :timing_ids => []} if (blockable.last.blank? or blockable.last[:teacher] != teacher)
-      blockable.last[:timing_ids] << teacher_schedule.timing_id
+      teacher = teacher_schedule.teacher
+      b = blockable.find {|e| e[:teacher] == teacher}
+      if b.blank?
+        b = {:teacher => teacher, :timing_ids => []}
+        blockable << b
+      end
+      b[:timing_ids] << teacher_schedule.timing_id
     }
     blockable
 
@@ -440,8 +445,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         ts.timing_id = timing_id
         # if program schedule does not overlap any other schedule for the teacher
         unless ts.schedule_overlaps?
-          blockable << {:teacher => teacher, :timing_ids => []} if (blockable.last.blank? or blockable.last[:teacher] != teacher)
-          blockable.last[:timing_ids] << timing_id
+          b = blockable.find {|e| e[:teacher] == teacher}
+          if b.blank?
+            b = {:teacher => teacher, :timing_ids => []}
+            blockable << b
+          end
+          b[:timing_ids] << timing_id
         end
       }
     }
@@ -570,7 +579,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 #                                                                                                                                                           program.start_date.to_date, program.end_date.to_date, t.id,
 #                                                                                                                                                           ::TeacherSchedule::STATE_AVAILABLE, program.center_id, program.program_donation.program_type_id).readonly(false).first
       start_date = program.start_date
-      start_date = start_date + 1.day if (program.has_intro? and program.intro_timing_ids.include?(timing_id))
+      start_date = start_date + 1.day if (program.has_intro? and not program.intro_timing_ids.include?(timing_id))
 
       ts = teacher.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
                                       where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',

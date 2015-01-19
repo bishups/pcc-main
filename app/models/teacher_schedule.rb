@@ -168,13 +168,13 @@ class TeacherSchedule < ActiveRecord::Base
     return self.timing_str if program.blank?
 
     # in residential, teacher cannot be linked in different roles, to different timings
-    # also, each teacher_schedule timing_str is the full description
-    return self.timing_str if program.residential?
+    return self.program.timing_str if program.residential?
 
     # concatenate all the timing_str from all the schedule linked to the program for specified role
     timing_strs = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_str)
     timing_str = timing_strs.reject(&:blank?).join(", ")
 
+=begin
     # adding full day information -- e.g, (3rd, 4th: Full Day)
     if program.has_full_day?
       full_day_str = program.program_donation.program_type.full_days.map{|d| "#{(self.start_date + (d-1).days).day.ordinalize}"}.join(", ")
@@ -182,6 +182,7 @@ class TeacherSchedule < ActiveRecord::Base
     else
       return timing_str
     end
+=end
   end
 
   def split_schedule!(start_date, end_date)

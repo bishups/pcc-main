@@ -114,7 +114,7 @@ class ProgramType < ActiveRecord::Base
   end
 
   def full_days
-    self.full_day.delete(' ').split(',').map {|c| c.to_i}
+    self.full_day.blank? ? [] : self.full_day.delete(' ').split(',').map {|c| c.to_i}
   end
 
   def has_full_day?
@@ -122,7 +122,7 @@ class ProgramType < ActiveRecord::Base
   end
 
   def combined_days
-    self.combined_day.delete(' ').split(',').map {|c| c.to_i}
+    self.combined_day.blank? ? [] : self.combined_day.delete(' ').split(',').map {|c| c.to_i}
   end
 
   def role_minimum_no_of_teacher(role = nil)

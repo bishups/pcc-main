@@ -55,10 +55,12 @@ class ProgramsController < ApplicationController
     @program.current_user = current_user
     @program.proposer_id = current_user.id
 
-    # perform validations for attr_accessor
     if @program.residential?
+      # perform validations for attr_accessor
       @program.errors[:first_day_timing_id] << "required. Please select start timing for first day." if not params[:program].has_key?(:first_day_timing_id)
       @program.errors[:last_day_timing_id] << "required. Please select end timing for last day." if not params[:program].has_key?(:last_day_timing_id)
+      # initialize timing_ids
+      @program.timing_ids = Timing.pluck(:id)
     end
 
     respond_to do |format|
@@ -235,7 +237,7 @@ class ProgramsController < ApplicationController
       else
         if @program.has_intro? and i == 1
           dt_ids = params[:program][:intro_timing_ids].map {|s| s.to_i unless s.blank?}
-        elsif program_type.full_days.include?(i)
+        elsif program_type.has_full_day? and program_type.full_days.include?(i)
           dt_ids = full_day_timing_ids
         else
           dt_ids = @program.timing_ids
