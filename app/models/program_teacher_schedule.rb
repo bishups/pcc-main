@@ -550,7 +550,6 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     # check if residential programs or program with full_days meet all conditions
     blockable = []
     full_day_timing_ids = Timing.pluck(:id)
-    full_day_dates = self.program.program_donation.program_type.full_days.map{ |d| program.start_date + (d-1).days}
     ts = TeacherSchedule.new
     ts.teacher_id = self.teacher.id
 
@@ -560,7 +559,8 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         next if full_day_timing_ids.sort != p[:timing_ids].sort
       elsif  p[:program].has_full_day?
         # remove programs where teacher is blocked for any portion of the full-days for the program
-        ts.program = p
+        ts.program = p[:program]
+        full_day_dates = ts.program.program_donation.program_type.full_days.map{ |d| ts.program.start_date + (d-1).days}
         overlaps = false
         full_day_dates.each { |full_day_date|
           break if overlaps

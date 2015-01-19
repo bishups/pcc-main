@@ -1,6 +1,7 @@
 <% if @blockable_programs.count > 0 %>
-    <% blockable_programs = @blockable_programs.map{|p| [p.friendly_name, p.id]} %>
-    $('#programs_select').html("<%= escape_javascript(options_for_select(blockable_programs)) %>");
+    <% blockable_programs = @blockable_programs.map {|x| x[:program]}  %>
+    $('#programs_select').html("<%= escape_javascript(options_for_select(blockable_programs.map{|p| [p.friendly_name, p.id]})) %>");
+    $('#program_timings_label').html("<%= escape_javascript(@selected_program.blank? ? "" : @selected_program.display_timings) %>");
     $('#programs_select').prop('disabled', false)
     <% timings =  @selected_timings %>
     $('#timing_ids_select').html("<%= escape_javascript(options_for_select(timings.map {|e| [e.name, e.id]})) %>");
@@ -19,4 +20,5 @@
     $("#timings").show();
 <% end %>
 $('#blockable_timing_ids_hidden').val("<%= @blockable_timing_ids %>");
+
 

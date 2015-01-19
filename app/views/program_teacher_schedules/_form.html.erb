@@ -32,7 +32,7 @@
         <% else %>
             <%= f.select :timing_ids, options_for_select(['None Available']), {:disabled => true}, :id => 'timing_ids_select', :class => 'form-control' %>
         <% end %>
-        <small><i>NOTE: </i>Program Timing(s) are <%= @program_teacher_schedule.program.display_timings %>.</small>
+        <small><i>NOTE: </i>Program Timing(s) are <%= @program_teacher_schedule.program.display_timings %></small>
       </div>
       <div class='form-group'>
         <label for='additional_comments'>Note for Scheduler</label>
@@ -69,7 +69,7 @@
               <%= f.select :timing_ids, options_for_select(['None Available']), {:disabled => true}, :id => 'timing_ids_select', :class => 'form-control' %>
           <% end %>
           <% unless program_timing_str.blank? %>
-            <small><i>NOTE: </i>Program Timing(s) are <%= f.label program_timing_str, :id => 'program_timings_label' %>.</small>
+            <small><i>NOTE: </i>Program Timing(s) are <%= f.label program_timing_str, :id => 'program_timings_label' %></small>
           <% end %>
         </div>
 
