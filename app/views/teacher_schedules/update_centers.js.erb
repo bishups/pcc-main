@@ -1,5 +1,5 @@
 <% if @disable_centers_select %>
-    $("#centers_select").prop('disabled', true);
+    $("#centers").hide();
 <% else %>
-    $("#centers_select").prop('disabled', false);
+    $("#centers").show();
 <% end %>

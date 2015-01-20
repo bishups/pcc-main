@@ -227,6 +227,18 @@ class Program < ActiveRecord::Base
       program.date_timing_ids,
       program.program_donation.program_type.id, program.combined_dates, program.combined_dates)}
 
+
+  # given a program, returns a relation with all overlapping program(s) (including itself), for given timing_id
+  # NOTE: combined days for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
+  scope :all_overlapping_for_timing_id, lambda { |program, timing_id| Program.
+      joins("JOIN program_donations ON programs.program_donation_id = program_donations.id").
+      joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
+      joins("JOIN programs_date_timings ON programs.id = programs_date_timings.program_id").
+      joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
+      where('programs_date_timings.date_timing_id IN (?) AND date_timings.timing_id = ? AND NOT (program_types.id = ? AND (? IS NOT NULL AND date_timings.date IN (?)))',
+            program.date_timing_ids, timing_id,
+            program.program_donation.program_type.id, program.combined_dates, program.combined_dates)}
+
   def initialize(*args)
     super(*args)
   end
@@ -535,7 +547,7 @@ class Program < ActiveRecord::Base
     # If residential, e.g., BSP
     #
     # announced_timing = "Arrive by: 4pm on 17th\nProgram ends: 6:30pm on 20th"
-    # timing_str = "Starts on 2nd at 5:00pm. Ends on 6th by 1:00pm"
+    # timing_str = "2nd (2:00pm) to 6th (6:00pm)"
     #
     if self.residential?
       new_start_time = start_time = self.session_time[:start][0]

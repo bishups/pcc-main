@@ -267,8 +267,8 @@ class ProgramsController < ApplicationController
     # update timing_str string
     if @program.residential?
       # If residential, e.g., for BSP --
-      # "Starts on 2nd at 2:00pm. Ends on 6th by 6:00pm"
-      timing_str = "Starts on #{@program.start_date.day.ordinalize} at #{@program.start_date.strftime("%-I:%M%P")}. Ends on #{@program.end_date.day.ordinalize} by #{@program.end_date.strftime("%-I:%M%P")}."
+      # "2nd (2:00pm) to 6th (6:00pm)"
+      timing_str = "#{@program.start_date.day.ordinalize} (#{@program.start_date.strftime("%-I:%M%P")}) to #{@program.end_date.day.ordinalize} (#{@program.end_date.strftime("%-I:%M%P")})"
     else
       if @program.has_intro?
         # If intro e.g, IE --

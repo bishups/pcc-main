@@ -5,7 +5,7 @@
       <%= label_tag :type %>
       <%= select_tag 'teacher_schedule[state]', options_for_select(@reserve_states, [@selected_reserve_state]), {:id => 'reserve_state_select', :class => 'form-control'} %>
     </div>
-    <div class='form-group'>
+    <div id="centers" class="form-group">
       <%= label_tag 'Center(s)' %>
       <% centers = @centers.sort_by{|e| e[:name]} %>
       <%= select_tag 'teacher_schedule[center_ids]',  options_for_select(centers.map {|e| [e.name, e.id]}), {:multiple => true, :disabled => @disable_centers_select, :id => 'centers_select', :class => 'form-control'} %>
@@ -41,6 +41,10 @@
                   dataType: "script"
               });
           });
-
+          <% if @disable_centers_select %>
+            $("#centers").hide();
+          <% else %>
+            $("#centers").show();
+          <% end %>
       });
   </script>
