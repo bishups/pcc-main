@@ -212,9 +212,9 @@ class Program < ActiveRecord::Base
       joins("JOIN program_types ON program_donations.program_type_id = program_types.id").
       joins("JOIN programs_date_timings ON programs.id = programs_date_timings.program_id").
       joins("JOIN date_timings ON programs_date_timings.date_timing_id = date_timings.id").
-      where('programs_date_timings.date_timing_id IN (?) AND (programs.id != ? OR ? IS NULL) AND NOT (program_types.id = ? AND date_timings.date IN (?))',
+      where('programs_date_timings.date_timing_id IN (?) AND (programs.id != ? OR ? IS NULL) AND NOT (program_types.id = ? AND (? IS NOT NULL AND date_timings.date IN (?)))',
       program.date_timing_ids, program.id, program.id,
-      program.program_donation.program_type.id, program.program_donation.program_type.combined_days.map{|d| program.start_date.to_date + (d - 1).day})}
+      program.program_donation.program_type.id, program.combined_dates, program.combined_dates)}
 
   # given a program, returns a relation with all overlapping program(s) (including itself)
   # NOTE: combined days for same program type are allowed to overlap (i.e allowing scope for combined initiation day for multiple programs)
@@ -232,7 +232,7 @@ class Program < ActiveRecord::Base
   end
 
   def combined_dates
-    self.program_donation.program_type.combined_days.map{|d| self.start_date.to_date + (d - 1).day}
+    self.program_donation.program_type.combined_days.map{|d| self.start_date.beginning_of_day + (d - 1).day}
   end
 
   def dummy_init_time

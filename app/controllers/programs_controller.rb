@@ -236,7 +236,8 @@ class ProgramsController < ApplicationController
         end
       else
         if @program.has_intro? and i == 1
-          dt_ids = params[:program][:intro_timing_ids].map {|s| s.to_i unless s.blank?}
+          # remove nil values using compact
+          dt_ids = params[:program][:intro_timing_ids].map {|s| s.to_i unless s.blank?}.compact
         elsif program_type.has_full_day? and program_type.full_days.include?(i)
           dt_ids = full_day_timing_ids
         else
@@ -252,7 +253,8 @@ class ProgramsController < ApplicationController
     day_timing_ids.each { |dt|
       date = @program.start_date.to_date + day_offset.day
       dt.each { |t|
-        date_timings << DateTiming.where(:date => @program.start_date + day_offset.day, :timing_id => t).first_or_create
+        # double check - create only if timing_id is there
+        date_timings << DateTiming.where(:date => @program.start_date + day_offset.day, :timing_id => t).first_or_create unless t.blank?
       }
       day_offset = day_offset + 1
     }

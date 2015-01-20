@@ -617,7 +617,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   def block_full_time_teacher_schedule!(program, teacher, timing_ids)
     timing_ids.each {|timing_id|
       start_date = program.start_date
-      start_date = start_date + 1.day if (program.has_intro? and program.intro_timing_ids.include?(timing_id))
+      start_date = start_date + 1.day if (program.has_intro? and not program.intro_timing_ids.include?(timing_id))
 
       # create a new schedule of the same duration as the program, and mark it as available
       ts = TeacherSchedule.new

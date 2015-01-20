@@ -98,10 +98,10 @@ class TeacherSchedule < ActiveRecord::Base
                                     where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.state NOT IN (?) AND teacher_schedules.teacher_id = ? AND teacher_schedules.timing_id = ?',
                                     ts.id, ts.id, states, ts.teacher_id, ts.timing_id) }
 
-  # given a teacher schedule (linked to a program), returns a relation with all overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
+  # given a teacher schedule (linked to a program), returns a relation with other overlapping teacher_schedule(s) (linked to programs) for the specific teacher, not in specified states
   # where full day is over-lapping
   # --  ts.id = NULL, ts.timing, ts.teacher_id, ts.program
-  scope :overlapping_full_day_blocks, lambda { |ts, full_day_date| joins(:program).merge(Program.all_overlapping(ts.program)).
+  scope :overlapping_full_day_blocks, lambda { |ts, full_day_date| joins(:program).merge(Program.overlapping(ts.program)).
                                             where('(teacher_schedules.id != ? OR ? IS NULL) AND teacher_schedules.teacher_id = ? AND (teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ?)',
                                             ts.id, ts.id, ts.teacher_id, full_day_date, full_day_date) }
 
