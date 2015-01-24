@@ -400,7 +400,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
         role.name == ::User::ROLE_ACCESS_HIERARCHY[:center_scheduler][:text]
       # only to zao if full-time teacher
       updated_role = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zao][:text]) if self.teacher.full_time?
-      return updated_role, self.teacher.primary_zones_centers
+      return updated_role, (self.teacher.primary_zones_centers & self.teacher.centers)
     end
 
     # send a block-request cancel or reject notification to all zones
@@ -412,7 +412,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     end
 
     # send a block approved notification to zone specified as per program center
-    if from_state.include?(STATE_BLOCK_REQUESTED) and to_state.include?(STATE_BLOCKED) and on_event == EVENT_APPROVE and
+    if from_state.include?(STATE_BLOCK_REQUESTED) and to_state.include?(STATE_BLOCKED) and on_event.include?(EVENT_APPROVE) and
         role.name == ::User::ROLE_ACCESS_HIERARCHY[:center_scheduler][:text]
       # only to zao if full-time teacher
       updated_role = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:zao][:text]) if self.teacher.full_time?
