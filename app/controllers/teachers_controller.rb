@@ -17,11 +17,12 @@ class TeachersController < ApplicationController
         format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @teachers, status: :unprocessable_entity }
       else
-        @teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).order('teachers.t_no ASC').uniq.all
-        if !zone_ids.empty?
-          @teachers_in_zones = Teacher.joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("zones_teachers.zone_id IN (?)", zone_ids).uniq.all
-          @teachers = @teachers + (@teachers_in_zones - @teachers)
+        teachers = Teacher.joins("JOIN centers_teachers ON centers_teachers.teacher_id = teachers.id").where('centers_teachers.center_id IN (?)', center_ids).order('teachers.t_no ASC').uniq.all
+        if not zone_ids.empty?
+          teachers += Teacher.joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("zones_teachers.zone_id IN (?)", zone_ids).uniq.all
+          teachers += Teacher.joins("JOIN secondary_zones_teachers on teachers.id = secondary_zones_teachers.teacher_id").where("secondary_zones_teachers.zone_id IN (?)", zone_ids).uniq.all
         end
+        @teachers = teachers.uniq
         format.html # index.html.erb
         format.json { render json: @teachers }
       end

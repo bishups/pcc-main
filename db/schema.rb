@@ -481,6 +481,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
   add_index "roles_users", ["role_id"], :name => "index_roles_users_on_role_id", :unique => true
   add_index "roles_users", ["user_id"], :name => "index_roles_users_on_user_id", :unique => true
 
+  create_table "secondary_zones_teachers", :force => true do |t|
+    t.integer "zone_id"
+    t.integer "teacher_id"
+  end
+
   create_table "sectors", :force => true do |t|
     t.string   "name"
     t.integer  "zone_id"

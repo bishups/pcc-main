@@ -207,6 +207,10 @@ class TeacherSchedule < ActiveRecord::Base
     end
   end
 
+  def in_schedule?
+    self.is_connected? or self.state == ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED
+  end
+
   def is_connected?
     ::ProgramTeacherSchedule::CONNECTED_STATES.include?(self.state)
   end
@@ -258,9 +262,10 @@ class TeacherSchedule < ActiveRecord::Base
     valid_states = {
         ::Program::CANCELLED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
         ::Program::DROPPED => [::ProgramTeacherSchedule::STATE_BLOCKED],
+        ::Program::DROPPED => [::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED],
         ::Program::ANNOUNCED => [::ProgramTeacherSchedule::STATE_BLOCKED],
         ::Program::STARTED => [::ProgramTeacherSchedule::STATE_ASSIGNED],
-        ::Program::FINISHED => [::ProgramTeacherSchedule::STATE_IN_CLASS, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED]
+        ::Program::FINISHED => [::ProgramTeacherSchedule::STATE_IN_CLASS, ::ProgramTeacherSchedule::STATE_BLOCKED, ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED, ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED]
     }
 
     # first create the temporary object
@@ -332,10 +337,12 @@ class TeacherSchedule < ActiveRecord::Base
         return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => self.teacher.center_ids
       end
     else
+      center_ids = [self.program.center_id.to_i]
+      center_ids += self.teacher.primary_zones_center_ids if self.state == ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED
       if self.teacher.full_time?
-        return true if User.current_user.is? :zao, :center_id => self.program.center_id
+        return true if User.current_user.is? :zao, :for => :any, :center_id => center_ids
       else
-        return true if User.current_user.is? :center_scheduler, :center_id => self.program.center_id
+        return true if User.current_user.is? :center_scheduler, :for => :any, :center_id => center_ids
       end
     end
     return true if User.current_user == self.teacher.user

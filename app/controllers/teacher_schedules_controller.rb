@@ -23,8 +23,31 @@ class TeacherSchedulesController < ApplicationController
 
     # get the schedules for full-time teachers attached to zones, for which current_user is zao (or above)
     unless zao_zone_ids.empty?
-      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").where("teacher_schedules.end_date >= ? AND zones_teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), zao_zone_ids, true).group("role","coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").order("teacher_schedules.start_date DESC")
+      # primary zones
+      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").
+                                                      joins("JOIN zones_teachers on teachers.id = zones_teachers.teacher_id").
+                                                      where("teacher_schedules.end_date >= ? AND zones_teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), zao_zone_ids, true).
+                                                      group("role","coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").
+                                                      order("teacher_schedules.start_date DESC")
+      # secondary zones
+      teacher_schedules += @teacher.teacher_schedules.joins("JOIN teachers ON teachers.id = teacher_schedules.teacher_id").
+                                                      joins("JOIN secondary_zones_teachers on teachers.id = secondary_zones_teachers.teacher_id").
+                                                      where("teacher_schedules.end_date >= ? AND secondary_zones_teachers.zone_id IN (?) AND teachers.full_time = ?", (Time.zone.now.to_date - 1.month.from_now.to_date), zao_zone_ids, true).
+                                                      group("role","coalesce(teacher_schedules.program_id, teacher_schedules.created_at *10 +teacher_schedules.id)").
+                                                      order("teacher_schedules.start_date DESC")
     end
+    # get the schedules for self, i.e. current user is the teacher
+    if User.current_user == @teacher.user
+      if @teacher.full_time?
+        # filter out block-requested for full-time teachers
+        @teacher.teacher_schedules.each{ |ts|
+          teacher_schedules << ts unless ts.state == ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED
+        }
+      else
+        teacher_schedules += @teacher.teacher_schedules
+      end
+    end
+
     @teacher_schedules = teacher_schedules.uniq
 
     respond_to do |format|

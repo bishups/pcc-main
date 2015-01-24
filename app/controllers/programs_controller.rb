@@ -254,7 +254,7 @@ class ProgramsController < ApplicationController
       date = @program.start_date.to_date + day_offset.day
       dt.each { |t|
         # double check - create only if timing_id is there
-        date_timings << DateTiming.where(:date => @program.start_date + day_offset.day, :timing_id => t).first_or_create unless t.blank?
+        date_timings << DateTiming.where(:date => date, :timing_id => t).first_or_create unless t.blank?
       }
       day_offset = day_offset + 1
     }

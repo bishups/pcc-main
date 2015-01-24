@@ -4,6 +4,8 @@ module ProgramTeacherSchedulesHelper
     proc do
       if pts.state == ::ProgramTeacherSchedule::STATE_BLOCKED
         '<span class="label label-danger">Blocked</span>'
+      elsif pts.state == ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED
+        '<span class="label label-warning">Block Requested</span>'
       elsif pts.state == ::ProgramTeacherSchedule::STATE_ASSIGNED
         '<span class="label label-success">Assigned</span>'
       elsif pts.state == ::ProgramTeacherSchedule::STATE_RELEASE_REQUESTED

@@ -56,7 +56,7 @@
       <% } %>
       <tr>
         <td><strong>Zone(s)</strong></td>
-        <td><%= (@teacher.zones.map {|z| z[:name]}).join(", ") rescue '' %></td>
+        <td><%= @teacher.display_zones rescue '' %></td>
       </tr>
       <tr>
         <td><strong>Center(s)</strong></td>

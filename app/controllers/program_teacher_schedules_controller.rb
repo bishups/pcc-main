@@ -13,11 +13,11 @@ class ProgramTeacherSchedulesController < ApplicationController
     if params.has_key?(:program_id)
       load_blockable_teachers!
       #load_additional_comments!
-      center_ids = [@program_teacher_schedule.program.center_id]
+      center_ids = [@program_teacher_schedule.program.center_id.to_i]
     end
 
     respond_to do |format|
-      if @program_teacher_schedule.can_create?(center_ids)
+      if @program_teacher_schedule.can_create?(center_ids) or @program_teacher_schedule.can_create_block_request?(center_ids)
         format.html
         # format.html {render :layout => false}  if request.xhr?
         format.json { render json: @program_teacher_schedule }
@@ -44,7 +44,7 @@ class ProgramTeacherSchedulesController < ApplicationController
       teacher = @program_teacher_schedule.teacher
       # Double check if indeed we can block the teacher with the program, because block_teacher_schedule! should not fail
       respond_to do |format|
-        if !@program_teacher_schedule.can_create?
+        if not (@program_teacher_schedule.can_create? or @program_teacher_schedule.can_create_block_request?)
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         elsif !teacher.can_be_blocked_by_given_timings?(program, @program_teacher_schedule.teacher_role, @program_teacher_schedule.timing_ids)
@@ -84,6 +84,10 @@ class ProgramTeacherSchedulesController < ApplicationController
       if @program_teacher_schedule.can_update?
         format.html # show.html.erb
         format.json { render json: @program_teacher_schedule }
+      elsif @program_teacher_schedule.can_create?(@program_teacher_schedule.teacher.center_ids)
+        # This is HACK -- so that we don't print error msg when redirecting, after block-request has been approved
+        format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher)}
+        format.json { render json: @program_teacher_schedule}
       else
         format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
