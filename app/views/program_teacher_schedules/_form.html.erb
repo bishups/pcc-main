@@ -24,7 +24,7 @@
             <%= f.select :teacher_id, options_for_select(['None Available']), {:disabled => true}, :id => 'teachers_select', :class => 'form-control' %>
         <% end %>
       </div>
-      <div class='form-group'>
+      <div id="timings" class="form-group">
         <label for='timings'>Timing(s)</label><small> for which Teacher is Available. This may be different from Program Timing(s).</small>
         <% timings =  @selected_timings %>
         <% unless timings.blank?  %>
@@ -32,7 +32,7 @@
         <% else %>
             <%= f.select :timing_ids, options_for_select(['None Available']), {:disabled => true}, :id => 'timing_ids_select', :class => 'form-control' %>
         <% end %>
-        <small><i>NOTE: </i>Program Timing(s) are <%= @program_teacher_schedule.program.display_timings %>.</small>
+        <small><i>NOTE: </i>Program Timing(s) are <%= @program_teacher_schedule.program.display_timings %></small>
       </div>
       <div class='form-group'>
         <label for='additional_comments'>Note for Scheduler</label>
@@ -59,7 +59,7 @@
               <%= f.select :program_id, options_for_select(['None Available']), {:disabled => true}, :id => 'programs_select', :class => 'form-control' %>
           <% end %>
         </div>
-        <div class='form-group'>
+        <div id="timings" class="form-group">
           <label for='timings'>Timing(s)</label><small> for which Teacher is Available. This may be different from Program Timing(s).</small>
           <% timings =  @selected_timings %>
           <% program_timing_str = @selected_program.blank? ? "" : @selected_program.display_timings %>
@@ -69,7 +69,7 @@
               <%= f.select :timing_ids, options_for_select(['None Available']), {:disabled => true}, :id => 'timing_ids_select', :class => 'form-control' %>
           <% end %>
           <% unless program_timing_str.blank? %>
-            <small><i>NOTE: </i>Program Timing(s) are <%= f.label program_timing_str, :id => 'program_timings_label' %>.</small>
+            <small><i>NOTE: </i>Program Timing(s) are <%= f.label program_timing_str, :id => 'program_timings_label' %></small>
           <% end %>
         </div>
 
@@ -125,6 +125,10 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
                 dataType: "script"
             });
         });
-
+        <% if @hide_timings %>
+        $("#timings").hide();
+        <% else %>
+        $("#timings").show();
+        <% end %>
     });
 </script>

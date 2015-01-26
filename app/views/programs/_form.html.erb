@@ -20,12 +20,39 @@
     <%= f.label :start_date %>
     <%= f.text_field :start_date, :class => 'form-control dateSelect' %>
   </div>
-    <div class="form-group">
+    <div id= "timings" class="form-group">
       <%= f.label :timings %>
       <% if @timings.empty? %>
           <%= f.select :timing_ids, options_for_select(['None Available']), {}, :multiple => true, :id => 'timings_select', :class => 'form-control' %>
       <% else %>
           <%= f.select :timing_ids,  options_for_select(@timings.map {|e| [e.name, e.id]}), {}, :multiple => true, :id => 'timings_select', :class => 'form-control' %>
+      <% end %>
+    </div>
+
+    <div id="intro_timings" class="form-group">
+      <%= f.label :intro_timings %>
+      <% if @timings.empty? %>
+          <%= f.select :intro_timing_ids, options_for_select(['None Available']), {}, :multiple => true, :id => 'intro_timings_select', :class => 'form-control' %>
+      <% else %>
+          <%= f.select :intro_timing_ids, options_for_select(@timings.map {|e| [e.name, e.id]}), {}, :multiple => true, :id => 'intro_timings_select', :class => 'form-control' %>
+      <% end %>
+    </div>
+
+    <div id="first_day_timing" class="form-group">
+      <%= f.label 'First day start timing' %>
+      <% if @timings.empty? %>
+          <%= f.select :first_day_timing_id, options_for_select(['None Available']), {}, :multiple => true, :id => 'first_day_timing_select', :class => 'form-control' %>
+      <% else %>
+          <%= f.select :first_day_timing_id, options_for_select(@timings.map {|e| [e.name, e.id]}), {}, :id => 'first_day_timing_select', :class => 'form-control' %>
+      <% end %>
+    </div>
+
+    <div id="last_day_timing" class="form-group">
+      <%= f.label 'Last day end timing' %>
+      <% if @timings.empty? %>
+          <%= f.select :last_day_timing_id, options_for_select(['None Available']), {}, :multiple => true, :id => 'first_day_timing_select', :class => 'form-control' %>
+      <% else %>
+          <%= f.select :last_day_timing_id, options_for_select(@timings.map {|e| [e.name, e.id]}), {}, :id => 'first_day_timing_select', :class => 'form-control' %>
       <% end %>
     </div>
 
@@ -59,7 +86,26 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
                 dataType: "script"
             });
         });
-
+        <% if @hide_intro_timings %>
+            $("#intro_timings").hide();
+        <% else %>
+            $("#intro_timings").show();
+        <% end %>
+        <% if @hide_first_day_timing %>
+            $("#first_day_timing").hide();
+        <% else %>
+            $("#first_day_timing").show();
+        <% end %>
+        <% if @hide_last_day_timing %>
+            $("#last_day_timing").hide();
+        <% else %>
+            $("#last_day_timing").show();
+        <% end %>
+        <% if @hide_timings %>
+            $("#timings").hide();
+        <% else %>
+            $("#timings").show();
+        <% end %>
     });
 </script>
 

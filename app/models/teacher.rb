@@ -21,7 +21,9 @@ class Teacher < ActiveRecord::Base
   validate :has_centers? , :unless => :full_time?
 
   has_and_belongs_to_many :zones, :join_table => "zones_teachers", :before_add => :before_add_zone, :after_add => :after_add_zone, :before_remove  => :before_remove_zone, :after_remove  => :after_remove_zone
-  attr_accessible :zone_ids, :zones
+  has_and_belongs_to_many :secondary_zones, class_name: "Zone", :join_table => "secondary_zones_teachers", :before_add => :before_add_zone, :after_add => :after_add_zone, :before_remove  => :before_remove_zone, :after_remove  => :after_remove_zone
+  attr_accessible :zone_ids, :zones, :secondary_zones, :secondary_zone_ids
+  validate :primary_secondary_zone?
   #validate :has_zone?
 
 
@@ -122,8 +124,12 @@ class Teacher < ActiveRecord::Base
   #  self.last_state = STATE_UNATTACHED
   #end
 
+  def all_zones
+    self.zones + self.secondary_zones
+  end
+
   def before_add_zone(zone)
-    self.state = STATE_ATTACHED if self.zones.blank?
+    self.state = STATE_ATTACHED if self.all_zones.blank?
     return true
   end
 
@@ -139,12 +145,12 @@ class Teacher < ActiveRecord::Base
 
   def before_remove_zone(zone)
     if self.in_schedule?(zone)
-      self.errors.add(:zones, " #{zone.name} cannot be un-attached. Teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
+      self.errors.add(:base, " #{zone.name} cannot be un-attached. Teacher is linked to a program. Please remove teacher from linked program(s) and try again.")
       return false
     end
 
     # set the new value of states
-    self.state = STATE_UNATTACHED if self.zones == [zone]
+    self.state = STATE_UNATTACHED if self.all_zones == [zone]
     return true
   end
 
@@ -176,6 +182,7 @@ class Teacher < ActiveRecord::Base
       #program_types = self.program_types
       centers = self.centers
       zones = self.zones
+      secondary_zones = self.secondary_zones
       self.reload
       ::Teacher::PROGRAM_TYPES.each{ |role, value|
         eval("self.#{value} = temp_program_types[\"#{role}\"]")
@@ -183,6 +190,7 @@ class Teacher < ActiveRecord::Base
       #self.program_types = program_types
       self.centers = centers
       self.zones = zones
+      #self.secondary_zones = secondary_zones
     end
 
     # STEP-3 : Now make the changes ... for teacher changed from part-time to full-time
@@ -192,7 +200,8 @@ class Teacher < ActiveRecord::Base
 
     # Change # 2 - update centers for attached zones
       self.centers = []
-      self.zones.each { |zone|
+      all_zones = self.zones + self.secondary_zones
+      all_zones.each { |zone|
         self.centers += zone.centers
       }
       self.save
@@ -268,31 +277,38 @@ class Teacher < ActiveRecord::Base
 
   def in_schedule?(zone)
     self.teacher_schedules.each { |ts|
-      return true if ts.is_connected? and ts.program.center.zone == zone
+      return true if ts.in_schedule? and ts.program.center.zone == zone
     }
     return false
   end
 
   def has_centers?
-    self.errors.add(:centers, " needed if teacher attached to zone(s).") if !self.zones.blank? && self.centers.blank? and (!self.full_time?)
+    self.errors.add(:centers, " needed if teacher attached to zone(s).") if not self.all_zones.blank? and self.centers.blank? and (not self.full_time?)
     self.errors.add(:zones, " needed if teacher attached to center(s). To un-attach from a zone, first remove the center(s).") if self.zones.blank? && !self.centers.blank? and (!self.full_time?)
     #self.errors.add(:centers, " should belong to one sector.") if self.centers && !::Sector::all_centers_in_one_sector?(self.centers)
     self.centers.each { |center|
-      unless self.zones.include?(center.zone)
+      unless self.all_zones.include?(center.zone)
         self.errors.add(:centers, " #{center.name} does not belong to specified zone(s).")
         break
       end
     }
     unless self.full_time?
-      self.zones.each {|zone|
+      self.all_zones.each {|zone|
         if (self.center_ids - zone.center_ids) == self.center_ids
-          self.errors.add(:zone, " #{zone.name} does not have any center specified.")
+          self.errors.add(:base, " #{zone.name} does not have any center specified.")
           break
         end
       }
     end
   end
 
+  def primary_secondary_zone?
+    self.errors.add(:zones, " needed if teacher attached to secondary zone(s).") if self.zones.blank? and not self.secondary_zones.blank?
+    if not (self.zones.blank? and self.secondary_zones.blank?)
+      overlap = self.zones & self.secondary_zones
+      self.errors.add(:zones, " #{(overlap.map{|z| z[:name]}).sort.join(", ")} marked as both Primary and Secondary Zone. Please mark as either Primary or Secondary.") if not overlap.blank?
+    end
+  end
 
   def has_program_types?
     no_of_program_types = self.role_program_types.inject(0){|a,(_,b)|a+b.size}
@@ -348,11 +364,50 @@ class Teacher < ActiveRecord::Base
     return program_teacher_schedule.can_create?(self.center_ids)
   end
 
+  def can_request_program_block?
+    program_teacher_schedule = ProgramTeacherSchedule.new
+    program_teacher_schedule.current_user = User.current_user
+    program_teacher_schedule.teacher = self
+    return program_teacher_schedule.can_create_block_request?(self.center_ids)
+  end
+
+  def primary_zones_center_ids
+    center_ids = []
+    self.zones.each { |zone|
+      center_ids += zone.center_ids
+    }
+    center_ids
+  end
+
+  def primary_zones_centers
+    centers = []
+    self.zones.each { |zone|
+      centers += zone.centers
+    }
+    centers
+  end
+
+  def secondary_zones_center_ids
+    center_ids = []
+    self.secondary_zones.each { |zone|
+      center_ids += zone.center_ids
+    }
+    center_ids
+  end
+
+  def secondary_zones_centers
+    centers = []
+    self.secondary_zones.each { |zone|
+      centers += zone.centers
+    }
+    centers
+  end
+
   def can_update?
     center_ids = []
     if self.center_ids.blank?
       center_ids = []
-      self.zones.each { |zone|
+      self.all_zones.each { |zone|
         center_ids += zone.center_ids
       }
     else
@@ -395,14 +450,27 @@ class Teacher < ActiveRecord::Base
         timing_ids << timing_id unless ts.schedule_overlaps?
       }
     else
-      # for each of the program timing_ids
-      program.timing_ids.each { |timing_id|
-        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
-                                                                                                                                                        program.start_date.to_date, program.end_date.to_date, timing_id,
-                                                                                                                                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
+      # for each of the program timing_ids (valid all days)
+      timing_ids_valid_all_days = program.has_intro? ? program.intro_timing_ids : program.timing_ids
+      timing_ids_valid_all_days.each { |timing_id|
+        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                    where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                    program.start_date.to_date, program.end_date.to_date, timing_id,
+                                    ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
+        timing_ids << timing_id unless ts.nil?
+      }
+
+      # for each of the program timing_ids (valid other days)
+      other_timing_ids = program.has_intro? ? (program.timing_ids - program.intro_timing_ids) : []
+      other_timing_ids.each { |timing_id|
+        ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+            where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id = ? AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                  program.start_date.to_date + 1.day, program.end_date.to_date, timing_id,
+                  ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
         timing_ids << timing_id unless ts.nil?
       }
     end
+
     return timing_ids
   end
 
@@ -418,21 +486,31 @@ class Teacher < ActiveRecord::Base
       # for each of the specified timing_ids
       timing_ids.each { |timing_id|
         ts.timing_id = timing_id
-        # if program schedule does not overlap any other schedule for the teacher
-        return false if ts.schedule_overlaps?
+      # if program schedule does not overlap any other schedule for the teacher
+      return false if ts.schedule_overlaps?
       }
     else
-      ts = self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
-                                                                                                                                                        program.start_date.to_date, program.end_date.to_date, timing_ids,
-                                                                                                                                                        ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first
-      return false if ts.nil?
+      ts = []
+      timing_ids_valid_all_days = program.has_intro? ? program.intro_timing_ids & timing_ids : timing_ids
+      ts << self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                  where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                  program.start_date.to_date, program.end_date.to_date, timing_ids_valid_all_days,
+                                  ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first unless timing_ids_valid_all_days.empty?
+
+      other_timing_ids = program.has_intro? ? (timing_ids - timing_ids_valid_all_days) : []
+      ts << self.teacher_schedules.joins("JOIN centers_teacher_schedules ON centers_teacher_schedules.teacher_schedule_id = teacher_schedules.id").
+                                   where('teacher_schedules.start_date <= ? AND teacher_schedules.end_date >= ? AND teacher_schedules.timing_id IN (?) AND teacher_schedules.state = ? AND centers_teacher_schedules.center_id = ? ',
+                                   program.start_date.to_date + 1.day, program.end_date.to_date, other_timing_ids,
+                                   ::TeacherSchedule::STATE_AVAILABLE, program.center_id).first unless other_timing_ids.empty?
+
+      return false if ts.empty?
     end
     return true
   end
 
 
-  def can_be_blocked_for_full_day?(program, timing_ids)
-    program.timing_ids.sort == timing_ids.sort
+  def can_be_blocked_for_full_day?(timing_ids)
+    Timing.pluck(:id).sort == timing_ids.sort
   end
 
 
@@ -458,6 +536,15 @@ class Teacher < ActiveRecord::Base
       roles += [k] unless v.blank?
     }
     return roles
+  end
+
+  def display_zones
+    zones = self.zones
+    secondary_zones = self.secondary_zones
+    str = ""
+    str += (zones.map{|z| z[:name]}).sort.join(", ") unless zones.blank?
+    str += " (#{(secondary_zones.map{|z| z[:name]}).sort.join(", ")})" unless secondary_zones.blank?
+    str
   end
 
   def url
@@ -642,6 +729,25 @@ class Teacher < ActiveRecord::Base
         end
       end
       field :zones  do
+        label "Primary Zone(s)"
+        # inverse_of :teachers
+        #inline_edit false
+        inline_add false
+        read_only do
+          # user.is? is always returning true for super admin even if we a super admin is? :teacher_training_department,
+          # but here we want to make this field read, only if use is super admin.
+          if bindings[:controller].current_user.is?(:super_admin)
+            # 7 Sep 2014 - Anuj - allowing super_admin same access as teacher_training_department
+            false #true
+          elsif bindings[:controller].current_user.is?(:teacher_training_department)
+            false
+          else
+            true
+          end
+        end
+      end
+      field :secondary_zones  do
+        label "Secondary Zone(s)"
         # inverse_of :teachers
         #inline_edit false
         inline_add false

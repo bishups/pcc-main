@@ -45,13 +45,16 @@ ProgramType:
      registration_close_timeout: 3
      no_of_days: 7
      session_duration: 3
+     full_day: "5"
+     combined_day: "5"
+     intro_duration: 75
   -  name: "BSP E"
      language: "English"
      minimum_no_of_teacher:  1
-     minimum_no_of_co_teacher: 2
+     minimum_no_of_co_teacher: 1
      registration_close_timeout: -48
      no_of_days: 4
-     session_duration: 0
+     session_duration: -1
 
 ProgramDonation:
   - name: "Uyir_Nokkam_250"

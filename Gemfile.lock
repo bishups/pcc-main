@@ -59,10 +59,13 @@ GEM
       i18n (= 0.6.1)
       multi_json (~> 1.0)
     addressable (2.3.6)
+    ajax-datatables-rails (0.2.1)
+      railties (>= 3.1)
     annotate (2.6.3)
       activerecord (>= 2.3.0)
       rake (>= 0.8.7)
     arel (3.0.3)
+    attribute_normalizer (1.2.0)
     bcrypt (3.1.7)
     bootstrap-datetime-picker-for-rails (0.0.4)
       rails (>= 3.2.0)
@@ -91,6 +94,7 @@ GEM
       coffee-script-source
       execjs
     coffee-script-source (1.7.0)
+    daemons (1.1.9)
     delayed_job (4.0.1)
       activesupport (>= 3.0, < 4.2)
     delayed_job_active_record (4.0.1)
@@ -268,7 +272,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  ajax-datatables-rails
   annotate (>= 2.6.0)
+  attribute_normalizer
   bootstrap-datetime-picker-for-rails
   bootstrap-sass (~> 2.3.2.0)
   bootstrap-timepicker-rails-addon
@@ -276,6 +282,7 @@ DEPENDENCIES
   capistrano (~> 2.15)
   carrierwave (~> 0.9)
   coffee-rails (~> 3.2.1)
+  daemons
   delayed_job_active_record
   devise
   devise-encryptable
@@ -283,6 +290,7 @@ DEPENDENCIES
   font-awesome-rails
   jquery-datatables-rails
   jquery-rails
+  kaminari
   letter_opener
   mysql2
   omniauth-google-oauth2

@@ -24,7 +24,7 @@
   </div>
 </div>
 
-<% if @teachers.empty? %>
+<% if @teachers.blank? %>
     <div class="alert alert-danger"> No Teachers Found.</div>
 <% else %>
 <table id="teacher_table" class='display dataTable table table-condensed table-hover table-bordered'>
@@ -52,7 +52,7 @@
             <%= ["[#{role}] #{(pts.map{|pt| pt[:name]}).sort.join(", ")}"].join("; ") unless pts.blank? %>
           <% } %>
         </td>
-        <td><%= (teacher.zones.map{|z| z[:name]}).sort.join(", ") rescue '' %></td>
+        <td><%= teacher.display_zones rescue '' %></td>
         <% if teacher.full_time? %>
             <td><%= '[All Centers in Zone]' %></td>
         <% else %>

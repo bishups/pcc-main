@@ -87,6 +87,13 @@ module CommonFunctions
     notifications = Notification.where('model = ? AND from_state IN (?) AND to_state IN (?)  AND on_event IN (?) ', model, from, to, on).all
     notifications.each { |n|
       r = Role.find(n.role_id)
+
+      if self.methods.include?(:update_role_and_centers_for_notification!)
+        updated_role, updated_centers = self.update_role_and_centers_for_notification!(r, from, to, on, centers, teachers)
+        centers = updated_centers
+        r = updated_role
+      end
+
       case r.name
         when ::User::ROLE_ACCESS_HIERARCHY[:zonal_coordinator][:text],
             ::User::ROLE_ACCESS_HIERARCHY[:zao][:text],

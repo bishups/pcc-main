@@ -24,7 +24,10 @@ class Timing < ActiveRecord::Base
   has_and_belongs_to_many :programs, :join_table => :programs_timings
   attr_accessible :program_ids, :programs
 
+  has_and_belongs_to_many :programs, :join_table => :programs_intro_timings
+
   has_many :teacher_schedules
+  has_many :program_date_timings
   has_many :teachers, through: :teacher_schedules
   validates :name, :start_time, :end_time, :presence => true
   validate :start_end_time?

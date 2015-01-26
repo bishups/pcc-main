@@ -22,6 +22,8 @@
 
 class ProgramType < ActiveRecord::Base
   attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :minimum_no_of_hall_teacher, :minimum_no_of_organizing_teacher, :minimum_no_of_initiation_teacher, :name, :no_of_days, :registration_close_timeout, :session_duration
+  attr_accessible :intro_duration, :length => {:within => 1..3}, :numericality => {:only_integer => true, :greater_than => 0}
+  attr_accessible :full_day, :combined_day
   has_and_belongs_to_many :teachers
   has_and_belongs_to_many :co_teacher_program_types, class_name: "Teacher", join_table: "program_types_co_teachers"
   has_and_belongs_to_many :organizing_teacher_program_types, class_name: "Teacher", join_table: "program_types_organizing_teachers"
@@ -37,7 +39,8 @@ class ProgramType < ActiveRecord::Base
   validates :registration_close_timeout, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
   validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
   validates_uniqueness_of :name, :scope => :deleted_at
-  validate :full_day_program
+  validate :residential_program
+  validate :intro_full_combined_day
 
   MIN_NO_TEACHER = {
       ::TeacherSchedule::ROLE_MAIN_TEACHER => "minimum_no_of_teacher" ,
@@ -58,10 +61,68 @@ class ProgramType < ActiveRecord::Base
 
   acts_as_paranoid
 
-  def full_day_program
-    if self.session_duration < 0 and self.timings.count != Timing.all.count
-      self.errors[:timings] << " cannot be left unselected. Please select all timings for a Full Day program."
+  def residential_program
+    if self.session_duration == 0
+      self.errors[:session_duration] << " invalid. Please specify value > 0. For residential specify -1."
+      return
     end
+
+    if self.session_duration < 0
+      if self.timings.length != Timing.all.count
+        self.errors[:timings] << " cannot be left unselected. Please select all timings for a residential program."
+        return
+      end
+      if self.no_of_days < 2
+        self.errors[:no_of_days] << " cannot be less than 2 for residential program."
+        return
+      end
+    end
+  end
+
+  def intro_full_combined_day
+    if self.intro_duration.blank? and self.full_day.blank? and self.combined_day.blank?
+      return
+    end
+
+    if self.session_duration < 0
+      if not self.intro_duration.blank?
+        self.errors[:intro_duration] << " invalid. Please leave blank for residential programs."
+        return
+      end
+      if not full_day.blank?
+        self.errors[:full_day] << " invalid. Please leave blank for residential programs."
+        return
+      end
+      if not combined_day.blank?
+        self.errors[:combined_day] << " invalid. Please leave blank for residential programs."
+        return
+      end
+    end
+
+    if not self.full_day.blank? and not (self.full_days  - (1..self.no_of_days).to_a).blank?
+      self.errors[:full_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}. Multiple values should be comma separated."
+      return
+    end
+    if not self.combined_day.blank? and not (self.combined_days  - (1..self.no_of_days).to_a).blank?
+      self.errors[:combined_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}. Multiple values should be comma separated."
+      return
+    end
+    if not self.intro_duration.blank? and not self.full_day.blank? and self.full_days.include?(1)
+      self.errors[:full_day] << " invalid. Day 1 cannot be marked as full day for program having first-day intro."
+      return
+    end
+  end
+
+  def full_days
+    self.full_day.blank? ? [] : self.full_day.delete(' ').split(',').map {|c| c.to_i}
+  end
+
+  def has_full_day?
+    not self.full_day.blank?
+  end
+
+  def combined_days
+    self.combined_day.blank? ? [] : self.combined_day.delete(' ').split(',').map {|c| c.to_i}
   end
 
   def role_minimum_no_of_teacher(role = nil)
@@ -82,6 +143,14 @@ class ProgramType < ActiveRecord::Base
       roles += [k] unless v == -1
     }
     return roles
+  end
+
+  def residential?
+    self.session_duration.blank? ? false : self.session_duration < 0
+  end
+
+  def has_intro?
+    not self.intro_duration.blank?
   end
 
   rails_admin do
@@ -132,10 +201,22 @@ class ProgramType < ActiveRecord::Base
       end
       field :session_duration do
         label "Duration of one session (in hrs)"
-        help "Enter -1 for a Full Day program"
+        help "Enter -1 for a residential program"
       end
       field :timings do
         inline_add false
+      end
+      field :intro_duration do
+        label "Intro duration (in minutes)"
+        help "e.g., 75 for IE. Not valid for residential programs."
+      end
+      field :full_day do
+        label "Full Day(s)"
+        help "e.g., 5 for IE. Not valid for residential programs. Comma separate multiple values (e.g., 3,4 for Sadhguru IE)"
+      end
+      field :combined_day do
+        label "Combined Day(s)"
+        help "Day(s) when combined session can happen for multiple programs (e.g., 5 for IE). Not valid for residential programs. Comma separate multiple values."
       end
       field :program_donations do
         inline_add false

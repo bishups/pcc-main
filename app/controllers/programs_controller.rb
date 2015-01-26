@@ -53,21 +53,35 @@ class ProgramsController < ApplicationController
     @program = Program.new(params[:program])
     @program.current_user = current_user
     @program.proposer_id = current_user.id
-    # Also update the start_date and end_date to start_date_time and end_date_time
+
+    if @program.residential?
+      # perform validations for attr_accessor
+      @program.errors[:first_day_timing_id] << "required. Please select start timing for first day." if not params[:program].has_key?(:first_day_timing_id)
+      @program.errors[:last_day_timing_id] << "required. Please select end timing for last day." if not params[:program].has_key?(:last_day_timing_id)
+      # initialize timing_ids
+      @program.timing_ids = Timing.pluck(:id)
+    end
 
     respond_to do |format|
-      if @program.can_create?
-        if @program.send(::Venue::EVENT_PROPOSE) && @program.save
-          @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
-          format.html { redirect_to @program, :notice => 'Program created successfully' }
+      if not @program.errors.empty?
+        format.html { render action: "new" }
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      else
+        if @program.can_create?
+          if @program.send(::Program::EVENT_PROPOSE) && @program.save
+            # initialize program date timings
+            self.update_date_timings!(params)
+            format.html { redirect_to @program, :notice => 'Program created successfully' }
+          else
+            load_centers_program_type_timings!(Center.find(params[:program][:center_id].to_i),
+                                               ProgramDonation.find(params[:program][:program_donation_id].to_i))
+            format.html { render action: "new" }
+            format.json { render json: @program.errors, status: :unprocessable_entity }
+          end
         else
-          load_centers_program_type_timings!
-          format.html { render action: "new" }
+          format.html { redirect_to programs_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
           format.json { render json: @program.errors, status: :unprocessable_entity }
         end
-      else
-        format.html { redirect_to programs_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
-        format.json { render json: @program.errors, status: :unprocessable_entity }
       end
     end
   end
@@ -99,16 +113,28 @@ class ProgramsController < ApplicationController
 
     for i in 1..Timing.all.count
       start_time = "start_time_#{i.to_s}".to_sym
-      end_time = "end_time_#{i.to_s}".to_sym
       if params.has_key?(start_time)
         time = Time.zone.parse(params[start_time])
         # normalize the timings - this is same as the remove_date HACK in timing model
-        @program.time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+        @program.session_time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
       end
+      end_time = "end_time_#{i.to_s}".to_sym
       if params.has_key?(end_time)
         time = Time.zone.parse(params[end_time])
         # normalize the timings - this is same as the remove_date HACK in timing model
-        @program.time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+        @program.session_time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+      intro_start_time = "intro_start_time_#{i.to_s}".to_sym
+      if params.has_key?(intro_start_time)
+        time = Time.zone.parse(params[intro_start_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.intro_time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+      intro_end_time = "intro_end_time_#{i.to_s}".to_sym
+      if params.has_key?(intro_end_time)
+        time = Time.zone.parse(params[intro_end_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.intro_time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
       end
     end
 
@@ -135,9 +161,10 @@ class ProgramsController < ApplicationController
 
   def update_timings
     # updates timings based on selection
-    program_donation = ProgramDonation.find(params[:program_donation_id])
+    @selected_program_donation = program_donation = ProgramDonation.find(params[:program_donation_id])
     # map to name and id for use in our options_for_select
     @disable_create_button = true
+    self.hide_intro_first_last_day_timings(false, program_donation)
     timings = program_donation.program_type.timings.sort_by{|t| t[:start_time]}
     unless timings.empty?
       @timings = timings.map{|a| [a.name, a.id]}
@@ -155,8 +182,10 @@ class ProgramsController < ApplicationController
       @program_donations = ['None Available']
       @timings = ['None Available']
       @disable_create_button = true
+      self.hide_intro_first_last_day_timings(true)
     else
       timings =  program_donations[0].program_type.timings
+      self.hide_intro_first_last_day_timings(false, program_donations[0])
       if timings.empty?
         @disable_create_button = true
       else
@@ -168,24 +197,104 @@ class ProgramsController < ApplicationController
     @selected_program_donation = @program_donations[0]
   end
 
-  def load_centers_program_type_timings!
+  def load_centers_program_type_timings!(selected_center = nil, selected_program_donation = nil)
     center_ids = current_user.accessible_center_ids(:center_scheduler)
     @centers = Center.where("id IN (?)", center_ids).order('name ASC')
-    @selected_center = @centers[0]
+    @selected_center = selected_center.blank? ? @centers[0] : selected_center
     @program_donations = @selected_center.program_donations.sort_by{|pd| pd[:name]}
     if @program_donations.empty?
       @selected_program_donation = ['None Available']
       @timings = []
       @disable_create_button = true
+      self.hide_intro_first_last_day_timings(true)
     else
-      @selected_program_donation = @program_donations[0]
-      @timings =  @selected_program_donation.program_type.timings.sort_by{|t| t[:start_time]}
+      @selected_program_donation = selected_program_donation.blank? ? @program_donations[0] : selected_program_donation
+      @timings = @selected_program_donation.program_type.timings.sort_by{|t| t[:start_time]}
       @disable_create_button = false
+      self.hide_intro_first_last_day_timings(false, @selected_program_donation)
     end
   end
 
+  def update_date_timings!(params)
+    # mark day_timing_ids for different program types
+    program_type = @program.program_donation.program_type
+    day_timing_ids = []
+    full_day_timing_ids = Timing.pluck(:id)
+    for i in 1..program_type.no_of_days
+      if @program.residential?
+        if i != 1 and i != program_type.no_of_days
+          dt_ids = full_day_timing_ids
+        else
+          if i == 1
+            id = params[:program][:first_day_timing_id].to_i
+            dt_ids = Array(id..Timing.pluck(:id).last)
+          elsif i == program_type.no_of_days
+            id = params[:program][:last_day_timing_id].to_i
+            dt_ids = Array(Timing.pluck(:id).first..id)
+          end
+        end
+      else
+        if @program.has_intro? and i == 1
+          # remove nil values using compact
+          dt_ids = params[:program][:intro_timing_ids].map {|s| s.to_i unless s.blank?}.compact
+        elsif program_type.has_full_day? and program_type.full_days.include?(i)
+          dt_ids = full_day_timing_ids
+        else
+          dt_ids = @program.timing_ids
+        end
+      end
+      day_timing_ids << dt_ids
+    end
+
+    # create the date timings for the day_timing_ids above
+    date_timings = []
+    day_offset = 0
+    day_timing_ids.each { |dt|
+      date = @program.start_date.to_date + day_offset.day
+      dt.each { |t|
+        # double check - create only if timing_id is there
+        date_timings << DateTiming.where(:date => date, :timing_id => t).first_or_create unless t.blank?
+      }
+      day_offset = day_offset + 1
+    }
+    # update data timings
+    @program.update_attributes :date_timings => date_timings
+
+    # update start and end date time
+    @program.update_attributes :start_date => @program.start_date_time, :end_date => @program.end_date_time
+
+    # update timing_str string
+    if @program.residential?
+      # If residential, e.g., for BSP --
+      # "2nd (2:00pm) to 6th (6:00pm)"
+      timing_str = "#{@program.start_date.day.ordinalize} (#{@program.start_date.strftime("%-I:%M%P")}) to #{@program.end_date.day.ordinalize} (#{@program.end_date.strftime("%-I:%M%P")})"
+    else
+      if @program.has_intro?
+        # If intro e.g, IE --
+        # "(Intro) Morning (6am - 10am), Night(6pm - 10pm); (Session) Morning (6am - 10am), Afternoon (10am - 2pm), Night (6pm - 10pm)"
+        timing_str = "[Intro] " + (@program.intro_timings.map {|c| c[:name]}).join(", ") + "; [Session] " + (@program.timings.map {|c| c[:name]}).join(", ")
+      else
+        # If no intro e.g, Uyir Nokkam --
+        # "Morning (6am - 10am), Afternoon (10am - 2pm), Evening (2pm - 6pm), Night (6pm - 10pm)"
+        timing_str = (@program.timings.map {|c| c[:name]}).join(", ")
+      end
+    end
+    @program.update_attributes :timing_str => timing_str
+
+  end
 
 
+  def hide_intro_first_last_day_timings(flag, program_donation = nil)
+    if flag
+      @hide_intro_timings = @hide_first_day_timing = @hide_last_day_timing = true
+      @hide_timings = false
+    else
+      @hide_intro_timings = (program_donation.program_type.has_intro? == false)
+      @hide_first_day_timing = (program_donation.program_type.residential? == false)
+      @hide_last_day_timing = (program_donation.program_type.residential? == false)
+      @hide_timings = (program_donation.program_type.residential? == true)
+    end
+  end
 
   private
 
@@ -194,9 +303,6 @@ class ProgramsController < ApplicationController
       prog.send(trig)
     end
   end
-
-
-
 
 
 end

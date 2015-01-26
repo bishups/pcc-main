@@ -1,21 +1,3 @@
-<script type="text/javascript">
-    $(document).ready(function() {
-        $('#program_table').dataTable({
-            "sPaginationType": "bootstrap",
-            "sDom": 'T<"clear">lfrtip',
-            "oTableTools": {
-                "aButtons": [
-                    "print",
-                    {
-                        "sExtends":    "collection",
-                        "sButtonText": "Save",
-                        "aButtons":    [ "csv", "xls", "pdf" ]
-                    }
-                ]
-            }
-        } );
-    });
-</script>
 
 
 <div class='row'>
@@ -31,7 +13,7 @@
   </div>
 </div>
 
-<% if @programs.empty? %>
+<% if @programs.blank? %>
     <div class="alert alert-danger"> No Programs Found.</div>
 <% else %>
     <table id="program_table" class='display dataTable table table-condensed table-hover table-bordered'>
