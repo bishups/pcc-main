@@ -84,7 +84,9 @@
   }
   roles.each do |name,permissions|
     puts "####### #{name} --> #{permissions}"
-    Role.create(:name=>name.to_s,:permissions=>Permission.find_all_by_name(permissions))
+    if not Role.create(:name=>name.to_s,:permissions=>Permission.find_all_by_name(permissions))
+      puts "Role #{name.to_s} has not been saved"
+    end
   end
 
 # create notifications
@@ -274,8 +276,10 @@ notifications.each{|n| Notification.create(n)}
 
 
 ### Dummy users for all the roles used for testing purpose.
-  user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :address=> "IYC", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123",:enable => true )
+  user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :approver_email => "super-admin@pcc-ishayoga.org", :address=> "IYC", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123",:enable => true )
   user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text]).first)
-  user.save(:validate => false)
+  if not user.save(:validate => false)
+    puts "User #{user.firstname} has not been saved because of #{user.errors.messages}"
+  end
 
 

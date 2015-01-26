@@ -45,6 +45,7 @@ class ProgramDatatable < AjaxDatatablesRails::Base
           program.program_donation.name,
           program.start_date.strftime('%d %B %Y'),
           program.end_date.strftime('%d %B %Y'),
+          program.display_timings,
           program_state_tag(program),
           program.can_view? ? link_to("Open", program_path(program), :class => 'btn btn-primary btn-sm') : ""
       ]
