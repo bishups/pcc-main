@@ -60,6 +60,7 @@ PccMain::Application.routes.draw do
     end
     member do
       get 'comments'
+      get 'search'
     end
   end
 

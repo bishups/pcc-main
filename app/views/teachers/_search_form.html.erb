@@ -1,0 +1,31 @@
+<%= form_for(@teacher, :html => {:class => 'form'}) do |f| %>
+  <%= resource_error_messages!(@teacher) %>
+
+    <div id="teachers" class="form-group">
+      <%= label_tag 'Teachers(s)' %>
+      <% if @teachers.blank? %>
+          <%= select_tag 'teacher_ids', options_for_select(['None Available']), {:multiple => true, :class => 'form-control'} %>
+      <% else %>
+          <% teachers = @teachers.sort_by{|e| e.user.fullname} %>
+          <%= select_tag 'teacher_ids', options_for_select(teachers.map {|e| [e.user.fullname, e.id]}), {:multiple => true, :class => 'form-control'} %>
+      <% end %>
+    </div>
+    <div class="form-group">
+      <%= label_tag :start_date %>
+      <%= text_field_tag 'start_date', nil, :class => 'form-control dateSelect' %>
+    </div>
+    <div class="form-group">
+      <%= label_tag :end_date %>
+      <%= text_field_tag 'end_date', nil, :class => 'form-control dateSelect' %>
+    </div>
+
+    <%= submit_tag "Search", :class => 'btn btn-primary btn-lg' %>
+<% end %>
+
+
+
+
+<script type='text/javascript'>
+$('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
+</script>
+
