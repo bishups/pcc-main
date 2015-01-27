@@ -776,15 +776,14 @@ class Teacher < ActiveRecord::Base
         #   # but here we want to make this field read, only if use is super admin.
         #   bindings[:controller].current_user.is?(:teacher_training_department) if not bindings[:controller].current_user.is?(:super_admin)
         # end
-        associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
+         associated_collection_cache_all true  # REQUIRED if you want to SORT the list as below
         associated_collection_scope do
           # bindings[:object] & bindings[:controller] are available, but not in scope's block!
         accessible_centers = bindings[:controller].current_user.accessible_centers(:zao)
+        # Added by Senthil to fix the issue of center from other zone getting disappearing when zao adds a center. Show already assigned center even if the zao / admin does not have access to.
+        centers = (accessible_centers+bindings[:object].centers).uniq
           Proc.new { |scope|
-            # scoping all Players currently, let's limit them to the team's league
-            # Be sure to limit if there are a lot of Players and order them by position
-            # scope = scope.where(:id => accessible_centers )
-            scope = scope.where(:id => accessible_centers )
+            scope = scope.where(:id => centers )
           }
         end
       end

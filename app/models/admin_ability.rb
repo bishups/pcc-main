@@ -48,8 +48,10 @@ class AdminAbility
         can :manage, AccessPrivilege, {:resource_type => "Sector", :resource_id => user.accessible_sectors}
         can :manage, AccessPrivilege, {:resource_type => "Zone", :resource_id => user.accessible_zones}
         can [:read], Zone, {:id => user.accessible_zones.map(&:id) }
-        can :manage, Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
-      #  can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
+        can [:update,:create,:delete], Center, {:id => user.accessible_centers(User::ROLE_ACCESS_HIERARCHY[:sector_coordinator][:text]).map(&:id).uniq}
+        can :read, Center
+
+        #  can  [:create, :destroy], Sector, {:id => user.accessible_sectors.map(&:id)}
         can :manage, Pincode
         can :read, ProgramDonation
         can :read, Role, { :name => User::ROLE_ACCESS_HIERARCHY.dup.map{|k,v| v[:text] if [:center_coordinator, :volunteer_committee, :center_scheduler, :kit_coordinator, :venue_coordinator, :treasurer, :zao, :sector_coordinator].include?(k)}.compact}
