@@ -49,7 +49,26 @@ class ProgramsController < ApplicationController
     end
   end
 
+  # GET /program/search
+  # GET /program/search.json
+  def search
+    @centers = searchable_centers()
+    respond_to do |format|
+      if @centers.empty?
+        format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
+        format.json { render json: @centers, status: :unprocessable_entity }
+      else
+        # we will hit search only if there are teachers listed for the user
+        @program = Program.new
+        format.html { render action: "search" }
+        format.json { render json: @centers}
+      end
+    end
+  end
+
   def create
+    # TODO - HACK - clean this up later
+    return search_results if params.has_key?(:start_date) and params.has_key?(:end_date)
     @program = Program.new(params[:program])
     @program.current_user = current_user
     @program.proposer_id = current_user.id
@@ -101,6 +120,7 @@ class ProgramsController < ApplicationController
   end
 
   def update
+    return search_results if params.has_key?(:start_date) and params.has_key?(:end_date)
     @program = Program.find(params[:id])
     @program.dummy_init_time
     @program.current_user = current_user
@@ -293,6 +313,72 @@ class ProgramsController < ApplicationController
       @hide_first_day_timing = (program_donation.program_type.residential? == false)
       @hide_last_day_timing = (program_donation.program_type.residential? == false)
       @hide_timings = (program_donation.program_type.residential? == true)
+    end
+  end
+
+  def searchable_centers()
+    searchable_centers = []
+    in_geography = (current_user.is? :any, :in_group => [:geography])
+    centers = in_geography ? current_user.accessible_centers : []
+    centers.each{ |center|
+      searchable_centers << center if current_user.is? :zao, :center_id => center.id
+    }
+    searchable_centers
+  end
+
+  def search_results
+    # HACK - fix this - should not create temporary in-memory object
+    @program = Program.new
+    @program.errors.add(:center_ids, " cannot be left blank") if params[:center_ids].blank?
+    @program.errors.add(:start_date, " cannot be left blank") if params[:start_date].blank?
+    @program.errors.add(:end_date, " cannot be left blank") if params[:end_date].blank?
+
+    @centers = searchable_centers()
+    respond_to do |format|
+      if @program.errors.empty?
+        @start_date = DateTime.strptime(params[:start_date], '%d %B %Y (%A)').to_date
+        @end_date = DateTime.strptime(params[:end_date], '%d %B %Y (%A)').to_date
+        center_ids = params[:center_ids].map {|s| s.to_i }
+        programs = Program.where("center_id IN (?) AND ((start_date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?) OR  (start_date <= ? AND end_date >= ?))",
+                                          center_ids, @start_date, @end_date, @start_date, @end_date, @start_date, @end_date).all
+        # add dummy entry for start and end date
+        @center_schedules = [[' ', ' ', [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0], [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],"white"],
+                              [' ', ' ', [@end_date.year, @end_date.month-1, @end_date.day, 23, 59, 59], [@end_date.year, @end_date.month-1, @end_date.day, 23, 59, 59],"white"]
+        ]
+        # add teacher schedules found
+        centers_added = []
+        programs.each { |program|
+          s = program.start_date
+          e = program.end_date
+          color = (program.state == ::Program::STATE_PROPOSED) ? "yellow" : "green"
+          color = "red" if ::Program::CANCELLED_STATES.include?(program.state)
+          schedule = [program.center.name, "#{program.program_donation.program_type.name} (#{program.pid})",
+                      [s.year, s.month-1, s.day, s.hour, s.min, s.sec], [e.year, e.month-1, e.day, e.hour, e.min, e.sec],
+                      color]
+          centers_added << program.center unless centers_added.include?(program.center)
+          @center_schedules << schedule
+        }
+
+        # add dummy entries for centers for whom no schedule was found
+        @centers.each { |center|
+          next if centers_added.include?(center)
+          @center_schedules << [center.name, ' ',
+                                 [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
+                                 [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
+                                 "white"]
+
+        }
+
+        # sort the array based on center name
+        @center_schedules.sort_by!{ |v| v[0]}
+
+        format.html { render template: "programs/search_results", :locals => {:center_schedules => @center_schedules}}# search_results.html.erb
+        format.json { render json: @centers }
+      else
+        format.html { render :action => :search}
+        format.json { render json: @program.errors, status: :unprocessable_entity }
+      end
+
     end
   end
 

@@ -1,0 +1,53 @@
+<div class='row'>
+  <div class='col-md-12'>
+    <h2>Center Schedules
+    </h2>
+  </div>
+</div>
+<br>
+<script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization',
+       'version':'1','packages':['timeline']}]}"></script>
+<script type="text/javascript">
+
+    google.setOnLoadCallback(drawChart);
+    function drawChart() {
+        var container = document.getElementById('center_schedule_search_results');
+        var chart = new google.visualization.Timeline(container);
+        var dataTable = new google.visualization.DataTable();
+        dataTable.addColumn({ type: 'string', id: 'Position' });
+        dataTable.addColumn({ type: 'string', id: 'Name' });
+        dataTable.addColumn({ type: 'string', role: 'style' });
+        dataTable.addColumn({ type: 'date', id: 'Start' });
+        dataTable.addColumn({ type: 'date', id: 'End' });
+        var center_schedules = <%= raw @center_schedules.to_json %>;
+        for (index = 0; index < center_schedules.length; ++index) {
+            var value = center_schedules[index];
+            var color;
+            switch(value[4]) {
+                case "yellow":
+                    color = '#FFFF00';
+                    break;
+                case "green":
+                    color = '#00CC00';
+                    break;
+                case "red":
+                    color = '#E60000';
+                    break;
+                case "blue":
+                    color = '#0066FF';
+                    break;
+                case "white":
+                    color = '#EEEEEE';
+                    break;
+            }
+            dataTable.addRow([value[0], value[1], color,
+                new Date(value[2][0], value[2][1], value[2][2], value[2][3], value[2][4], value[2][5]),
+                new Date(value[3][0], value[3][1], value[3][2], value[3][3], value[3][4], value[3][5])
+            ]);
+        };
+        var options = {};
+
+        chart.draw(dataTable, options);
+    }
+</script>
+<div id="center_schedule_search_results" style="width: 900px; height: 700px;"></div>

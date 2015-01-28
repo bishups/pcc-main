@@ -115,7 +115,7 @@ class TeachersController < ApplicationController
   # POST /teachers
   # POST /teachers.json
   def create
-    # HACK - clean this up later
+    # TODO - HACK - clean this up later
     return search_results if params.has_key?(:start_date) and params.has_key?(:end_date)
     @teacher = Teacher.new(params[:teacher])
     @teacher.current_user = current_user
@@ -209,8 +209,8 @@ class TeachersController < ApplicationController
         teacher_schedules = TeacherSchedule.where("teacher_id IN (?) AND ((start_date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?) OR  (start_date <= ? AND end_date >= ?)) AND state IN (?)",
                                                   teacher_ids, @start_date, @end_date, @start_date, @end_date, @start_date, @end_date, (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED])).all
         # add dummy entry for start and end date
-        @teacher_schedules = [[' ', ' ', [@start_date.year, @start_date.month, @start_date.day, 0, 0, 0], [@start_date.year, @start_date.month, @start_date.day, 0, 0, 0],"white"],
-                              [' ', ' ', [@end_date.year, @end_date.month, @end_date.day+1, 0, 0, 0], [@end_date.year, @end_date.month, @end_date.day+1, 0, 0, 0],"white"]
+        @teacher_schedules = [[' ', ' ', [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0], [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],"white"],
+                              [' ', ' ', [@end_date.year, @end_date.month-1, @end_date.day, 23, 59, 59], [@end_date.year, @end_date.month-1, @end_date.day, 23, 59, 59],"white"]
                              ]
         # add teacher schedules found
         teachers_added = []
@@ -219,7 +219,7 @@ class TeachersController < ApplicationController
           s = program.start_date
           e = program.end_date
           schedule = [ts.teacher.user.fullname, "#{program.program_donation.program_type.name}-#{program.center.name} (#{program.pid})",
-                    [s.year, s.month, s.day, s.hour, s.min, s.sec], [e.year, e.month, e.day, e.hour, e.min, e.sec],
+                    [s.year, s.month-1, s.day, s.hour, s.min, s.sec], [e.year, e.month-1, e.day, e.hour, e.min, e.sec],
                     (ts.state == ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED ? "yellow" : "green")]
           teachers_added << ts.teacher unless teachers_added.include?(ts.teacher)
           @teacher_schedules << schedule
@@ -229,8 +229,8 @@ class TeachersController < ApplicationController
         @teachers.each { |teacher|
           next if teachers_added.include?(teacher)
           @teacher_schedules << [teacher.user.fullname, ' ',
-                                 [@start_date.year, @start_date.month, @start_date.day, 0, 0, 0],
-                                 [@start_date.year, @start_date.month, @start_date.day, 0, 0, 0],
+                                 [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
+                                 [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
                                  "white"]
 
         }

@@ -22,6 +22,7 @@
     <h2>Programs
       <% if current_user.is? :center_scheduler %>
           <span class='pull-right'>
+            <%= link_to "Advance Search", search_program_path(:id => 0), :class => 'btn btn-primary btn-sm' if current_user.is?(:zao) %>
             <%= link_to "Propose Program", new_program_path, :class => 'btn btn-primary btn-sm' %>
           </span>
       <% end %>

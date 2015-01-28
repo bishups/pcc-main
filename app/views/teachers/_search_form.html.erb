@@ -19,7 +19,7 @@
       <%= text_field_tag 'end_date', nil, :class => 'form-control dateSelect' %>
     </div>
 
-    <%= submit_tag "Search", :class => 'btn btn-primary btn-lg' %>
+    <%= submit_tag "Search", :disabled => (@teachers.blank? ? true: false), :class => 'btn btn-primary btn-lg' %>
 <% end %>
 
 
