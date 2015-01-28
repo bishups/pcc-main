@@ -196,15 +196,18 @@ class TeachersController < ApplicationController
   def search_results
     # HACK - fix this - should not create temporary in-memory object
     @teacher = Teacher.new
-    @teacher.errors.add(:teacher_ids, " cannot be left blank") if params[:teacher_ids].blank?
+    @teacher.errors.add(:teachers, " cannot be left blank") if params[:teacher_ids].blank?
     @teacher.errors.add(:start_date, " cannot be left blank") if params[:start_date].blank?
     @teacher.errors.add(:end_date, " cannot be left blank") if params[:end_date].blank?
+    if @teacher.errors.empty?
+      @start_date = DateTime.strptime(params[:start_date], '%d %B %Y (%A)').to_date
+      @end_date = DateTime.strptime(params[:end_date], '%d %B %Y (%A)').to_date
+      @teacher.errors.add(:start_date, " cannot exceed end date") if @end_date < @start_date
+    end
 
     @teachers = searchable_teachers()
     respond_to do |format|
       if @teacher.errors.empty?
-        @start_date = DateTime.strptime(params[:start_date], '%d %B %Y (%A)').to_date
-        @end_date = DateTime.strptime(params[:end_date], '%d %B %Y (%A)').to_date
         teacher_ids = params[:teacher_ids].map {|s| s.to_i }
         teacher_schedules = TeacherSchedule.where("teacher_id IN (?) AND ((start_date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?) OR  (start_date <= ? AND end_date >= ?)) AND state IN (?)",
                                                   teacher_ids, @start_date, @end_date, @start_date, @end_date, @start_date, @end_date, (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED])).all

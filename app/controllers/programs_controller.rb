@@ -329,15 +329,18 @@ class ProgramsController < ApplicationController
   def search_results
     # HACK - fix this - should not create temporary in-memory object
     @program = Program.new
-    @program.errors.add(:center_ids, " cannot be left blank") if params[:center_ids].blank?
+    @program.errors.add(:centers, " cannot be left blank") if params[:center_ids].blank?
     @program.errors.add(:start_date, " cannot be left blank") if params[:start_date].blank?
     @program.errors.add(:end_date, " cannot be left blank") if params[:end_date].blank?
+    if @program.errors.empty?
+      @start_date = DateTime.strptime(params[:start_date], '%d %B %Y (%A)').to_date
+      @end_date = DateTime.strptime(params[:end_date], '%d %B %Y (%A)').to_date
+      @program.errors.add(:start_date, " cannot exceed end date") if @end_date < @start_date
+    end
 
     @centers = searchable_centers()
     respond_to do |format|
       if @program.errors.empty?
-        @start_date = DateTime.strptime(params[:start_date], '%d %B %Y (%A)').to_date
-        @end_date = DateTime.strptime(params[:end_date], '%d %B %Y (%A)').to_date
         center_ids = params[:center_ids].map {|s| s.to_i }
         programs = Program.where("center_id IN (?) AND ((start_date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?) OR  (start_date <= ? AND end_date >= ?))",
                                           center_ids, @start_date, @end_date, @start_date, @end_date, @start_date, @end_date).all
@@ -350,8 +353,8 @@ class ProgramsController < ApplicationController
         programs.each { |program|
           s = program.start_date
           e = program.end_date
-          color = (program.state == ::Program::STATE_PROPOSED) ? "yellow" : "green"
-          color = "red" if ::Program::CANCELLED_STATES.include?(program.state)
+          color = ::Program::CANCELLED_STATES.include?(program.state) ? "red" : "green"
+          color = "yellow" if (program.state == ::Program::STATE_PROPOSED) and not program.minimum_teachers_connected?
           schedule = [program.center.name, "#{program.program_donation.program_type.name} (#{program.pid})",
                       [s.year, s.month-1, s.day, s.hour, s.min, s.sec], [e.year, e.month-1, e.day, e.hour, e.min, e.sec],
                       color]
