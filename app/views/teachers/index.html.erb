@@ -21,7 +21,7 @@
   <div class='col-md-12'>
     <h2>Available Teachers
           <span class='pull-right'>
-            <%= link_to "Advance Search", search_teacher_path(:id => 0), :class => 'btn btn-primary btn-sm' if not @teachers.blank? %>
+            <%= link_to "Advance Search", search_teacher_path(:id => 0), :class => 'btn btn-primary btn-sm' unless @searchable_teachers.blank? %>
           </span>
       <hr>
     </h2>

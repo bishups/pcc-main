@@ -1,10 +1,10 @@
 <div class='row'>
   <div class='col-md-12'>
-    <h2>Search Results
+    <h2>Teacher Schedules
     </h2>
   </div>
 </div>
-
+<br>
 <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization',
        'version':'1','packages':['timeline']}]}"></script>
 <script type="text/javascript">
@@ -14,22 +14,38 @@
         var container = document.getElementById('teacher_schedule_search_results');
         var chart = new google.visualization.Timeline(container);
         var dataTable = new google.visualization.DataTable();
-        dataTable.addColumn({ type: 'string', id: 'Teacher' });
-        dataTable.addColumn({ type: 'string', id: 'Program' });
+        dataTable.addColumn({ type: 'string', id: 'Position' });
+        dataTable.addColumn({ type: 'string', id: 'Name' });
+        dataTable.addColumn({ type: 'string', role: 'style' });
         dataTable.addColumn({ type: 'date', id: 'Start' });
         dataTable.addColumn({ type: 'date', id: 'End' });
         var teacher_schedules = <%= raw @teacher_schedules.to_json %>;
         for (index = 0; index < teacher_schedules.length; ++index) {
             var value = teacher_schedules[index];
-            dataTable.addRow([value[0], value[1],
+            var color;
+            switch(value[4]) {
+                case "yellow":
+                    color = '#FFFF00';
+                    break;
+                case "green":
+                    color = '#00CC00';
+                    break;
+                case "red":
+                    color = '#E60000';
+                    break;
+                case "blue":
+                    color = '#0066FF';
+                    break;
+                case "white":
+                    color = '#EEEEEE';
+                    break;
+            }
+            dataTable.addRow([value[0], value[1], color,
                 new Date(value[2][0], value[2][1], value[2][2], value[2][3], value[2][4], value[2][5]),
-                new Date(value[3][0], value[3][1], value[3][2], value[3][3], value[3][4], value[3][5])]
-            );
+                new Date(value[3][0], value[3][1], value[3][2], value[3][3], value[3][4], value[3][5])
+            ]);
         };
-        var options = {
-            timeline: { colorByRowLabel: true },
-            backgroundColor: '#ffd'
-        };
+        var options = {};
 
         chart.draw(dataTable, options);
     }
