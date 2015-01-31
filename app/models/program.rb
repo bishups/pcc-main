@@ -986,6 +986,11 @@ class Program < ActiveRecord::Base
     self.teacher_schedules.where('state = ? AND role = ?', ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED, role).group('teacher_id')
   end
 
+  def no_of_teachers_block_requested()
+    return [] if self.teacher_schedules.blank?
+    self.teacher_schedules.where('state = ?', ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED).group('teacher_id').length
+  end
+
   def teachers_connected_for_timing(timing_id)
     return [] if self.teacher_schedules.blank?
     teacher_ids = self.teacher_schedules.where('state IN (?) AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, timing_id).pluck('teacher_id')

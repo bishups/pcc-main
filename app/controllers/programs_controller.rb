@@ -353,9 +353,13 @@ class ProgramsController < ApplicationController
         programs.each { |program|
           s = program.start_date
           e = program.end_date
-          color = ::Program::CANCELLED_STATES.include?(program.state) ? "red" : "green"
-          color = "yellow" if (program.state == ::Program::STATE_PROPOSED) and not program.minimum_teachers_connected?
-          schedule = [program.center.name, "#{program.program_donation.program_type.name} (#{program.pid})",
+          color = "green"
+          if ::Program::CANCELLED_STATES.include?(program.state)
+            color = "red"
+          elsif program.no_of_teachers_block_requested() > 0 or ((program.state == ::Program::STATE_PROPOSED) and not program.minimum_teachers_connected?)
+            color = "yellow"
+          end
+          schedule = [program.center.name, "#{program.program_donation.program_type.name} (##{program.id})",
                       [s.year, s.month-1, s.day, s.hour, s.min, s.sec], [e.year, e.month-1, e.day, e.hour, e.min, e.sec],
                       color]
           centers_added << program.center unless centers_added.include?(program.center)

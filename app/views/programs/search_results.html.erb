@@ -47,6 +47,31 @@
         };
         var options = {};
 
+        function selectHandler() {
+            var selectedItem = chart.getSelection()[0];
+            if (selectedItem) {
+                var description = dataTable.getValue(selectedItem.row, 1);
+                var elements = description.split("(#");
+                if (elements.length < 2){
+                    return;
+                }
+                var id = parseInt((elements[1]).slice(0,-1));
+                if (isNaN(id)) {
+                    return;
+                }
+                // extract id for the resource
+                var win = window.open(Routes.program_path(id) , '_blank');
+                if(win){
+                    //Browser has allowed it to be opened
+                    win.focus();
+                }else{
+                    //Browser has blocked it
+                    alert('Please allow popups for this site');
+                }
+            }
+        }
+
+        google.visualization.events.addListener(chart, 'select', selectHandler);
         chart.draw(dataTable, options);
     }
 </script>

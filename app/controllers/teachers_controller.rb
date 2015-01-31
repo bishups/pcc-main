@@ -210,7 +210,7 @@ class TeachersController < ApplicationController
       if @teacher.errors.empty?
         teacher_ids = params[:teacher_ids].map {|s| s.to_i }
         teacher_schedules = TeacherSchedule.where("teacher_id IN (?) AND ((start_date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?) OR  (start_date <= ? AND end_date >= ?)) AND state IN (?)",
-                                                  teacher_ids, @start_date, @end_date, @start_date, @end_date, @start_date, @end_date, (::ProgramTeacherSchedule::CONNECTED_STATES + [::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED])).all
+                                                  teacher_ids, @start_date, @end_date, @start_date, @end_date, @start_date, @end_date, (::ProgramTeacherSchedule::CONNECTED_STATES + ::TeacherSchedule::RESERVED_STATES + [::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED])).all
         # add dummy entry for start and end date
         @teacher_schedules = [[' ', ' ', [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0], [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],"white"],
                               [' ', ' ', [@end_date.year, @end_date.month-1, @end_date.day, 23, 59, 59], [@end_date.year, @end_date.month-1, @end_date.day, 23, 59, 59],"white"]
@@ -218,12 +218,27 @@ class TeachersController < ApplicationController
         # add teacher schedules found
         teachers_added = []
         teacher_schedules.each { |ts|
-          program = ts.program
-          s = program.start_date
-          e = program.end_date
-          schedule = [ts.teacher.user.fullname, "#{program.program_donation.program_type.name}-#{program.center.name} (#{program.pid})",
-                    [s.year, s.month-1, s.day, s.hour, s.min, s.sec], [e.year, e.month-1, e.day, e.hour, e.min, e.sec],
-                    (ts.state == ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED ? "yellow" : "green")]
+          if ts.program.blank?
+            st = [ts.start_date.year, ts.start_date.month-1, ts.start_date.day, 0, 0, 0]
+            et = [ts.end_date.year, ts.end_date.month-1, ts.end_date.day, 23, 59, 59]
+            if ts.state == ::TeacherSchedule::STATE_RESERVED
+              color = "red"
+            elsif ts.state == ::TeacherSchedule::STATE_BREAK
+              color = "blue"
+            else
+              color = "green"
+            end
+            comments = ts.comments.blank? ? "" : "-#{ts.comments}"
+            desc = "#{ts.state}#{comments} (*#{ts.id})"
+          else
+            st = [ts.program.start_date.year, ts.program.start_date.month-1, ts.program.start_date.day,
+                  ts.program.start_date.hour, ts.program.start_date.min, ts.program.start_date.sec]
+            et = [ts.program.end_date.year, ts.program.end_date.month-1, ts.program.end_date.day,
+                  ts.program.end_date.hour, ts.program.end_date.min, ts.program.end_date.sec]
+            color = ts.state == ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED ? "yellow" : "green"
+            desc = "#{ts.program.program_donation.program_type.name}-#{ts.program.center.name} (##{ts.id})"
+          end
+          schedule = ["#{ts.teacher.user.fullname} (##{ts.teacher.id})", desc, st, et, color]
           teachers_added << ts.teacher unless teachers_added.include?(ts.teacher)
           @teacher_schedules << schedule
         }
@@ -231,7 +246,7 @@ class TeachersController < ApplicationController
         # add dummy entries for teachers for whom no schedule was found
         @teachers.each { |teacher|
           next if teachers_added.include?(teacher)
-          @teacher_schedules << [teacher.user.fullname, ' ',
+          @teacher_schedules << ["#{ts.teacher.user.fullname} (##{ts.teacher.id})", ' ',
                                  [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
                                  [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
                                  "white"]

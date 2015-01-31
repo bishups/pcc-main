@@ -47,6 +47,57 @@
         };
         var options = {};
 
+        function selectHandler() {
+            var selectedItem = chart.getSelection()[0];
+            if (selectedItem) {
+                var hidden = dataTable.getValue(selectedItem.row, 5);
+
+                var t_description = dataTable.getValue(selectedItem.row, 0);
+                var t_elements = t_description.split("(#");
+                if (t_elements.length < 2){
+                    return;
+                }
+                tid_str = (t_elements[1]).slice(0,-1);
+                var tid = parseInt(tid_str);
+                if (isNaN(tid)) {
+                    return;
+                }
+
+                var description = dataTable.getValue(selectedItem.row, 1);
+                var elements = description.split("(*");
+                var pid = 0;
+                if (elements.length < 2){
+                    elements = description.split("(#");
+                    if (elements.length < 2){
+                        return;
+                    }
+                    pid = 1;
+                }
+                tsid_str = (elements[1]).slice(0,-1);
+                var tsid = parseInt(tsid_str);
+                if (isNaN(tsid)) {
+                    return;
+                }
+                var path = "";
+                if (pid == 0){
+                    path = Routes.teacher_teacher_schedule_path(tid, tsid);
+                }else{
+                    path = Routes.program_teacher_schedule_path(tsid);
+                }
+
+                // extract id for the resource
+                var win = window.open(path, '_blank');
+                if(win){
+                    //Browser has allowed it to be opened
+                    win.focus();
+                }else{
+                    //Browser has blocked it
+                    alert('Please allow popups for this site');
+                }
+            }
+        }
+
+        google.visualization.events.addListener(chart, 'select', selectHandler);
         chart.draw(dataTable, options);
     }
 </script>

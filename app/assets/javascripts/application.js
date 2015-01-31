@@ -28,3 +28,4 @@
 //= require autocomplete-rails
 //= require jquery.timepicker
 //= require bootstrap-timepicker
+//= require js-routes
