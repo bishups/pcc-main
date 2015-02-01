@@ -116,10 +116,12 @@ class User < ActiveRecord::Base
           :venue_coordinator    => {:text => "Venue Coordinator", :access_level => 0, :group => [:geography]},
           :treasurer            => {:text => "Treasurer", :access_level => 0, :group => [:geography]},
           :teacher              => {:text => "Teacher", :access_level => 0, :group => [:geography]},
-          # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department, they need to be added to relevant zones.
+          # NOTE: when creating user-id corresponding to teacher_training_department/ pcc_accounts/ finance_department/ program_announcement, they need to be added to relevant zones.
           :teacher_training_department     => {:text => "Teacher Training Department", :access_level => 0, :group => [:training]},
           :pcc_accounts         => {:text => "PCC Accounts", :access_level => 0, :group => [:finance]},
           :finance_department   => {:text => "Finance Department", :access_level => 0, :group => [:finance]},
+          # Dummy group is just a place-holder group, which can be used for all roles which are not related by any hierarchy.
+          :program_announcement    => {:text => "Program Announcement", :access_level => 0, :group => [:dummy]},
           :pcc_department         => {:text => "PCC Department", :access_level => 0, :group => [:pcc_requests]},
           :pcc_break_approver         => {:text => "PCC Break Approver", :access_level => 0, :group => [:pcc_requests]},
           :pcc_travel         => {:text => "PCC Travel", :access_level => 0, :group => [:pcc_requests]},

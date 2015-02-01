@@ -80,7 +80,8 @@
     ::User::ROLE_ACCESS_HIERARCHY[:teacher][:text]  => ["Program View","Teacher Scheduling","Kit View","Venue View"],
     ::User::ROLE_ACCESS_HIERARCHY[:teacher_training_department][:text]  => ["Program View","Teacher Scheduling"],
     ::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text]  => ["Program Management","Venue Management"],
-    ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]  => ["Program View","Venue View"]
+    ::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text]  => ["Program View","Venue View"],
+    ::User::ROLE_ACCESS_HIERARCHY[:program_announcement][:text]  => ["Program View"]
   }
   roles.each do |name,permissions|
     puts "####### #{name} --> #{permissions}"
@@ -104,6 +105,7 @@ teacher = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
 teacher_training_department = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher_training_department][:text])
 pcc_accounts = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:pcc_accounts][:text])
 finance_department = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:finance_department][:text])
+program_announcement = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:program_announcement][:text])
 
 notifications = [
     {:model => 'Program', :from_state => ::Program::STATE_UNKNOWN, :to_state => ::Program::STATE_PROPOSED, :on_event => ::Program::EVENT_PROPOSE, :role_id =>  sector_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -126,6 +128,7 @@ notifications = [
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => ::Program::STATE_PROPOSED, :to_state => ::Program::STATE_ANNOUNCED, :on_event => ::Program::EVENT_ANNOUNCE, :role_id =>  program_announcement.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id =>  center_coordinator.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => ::Program::STATE_ANNOUNCED, :to_state => ::Program::STATE_REGISTRATION_CLOSED, :on_event => 'any', :role_id =>  volunteer_committee.id, :send_sms => true, :send_email => true, :additional_text => '' },
@@ -141,6 +144,7 @@ notifications = [
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  center_scheduler.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  pcc_accounts.id, :send_sms => true, :send_email => true, :additional_text => '' },
     {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  finance_department.id, :send_sms => true, :send_email => true, :additional_text => '' },
+    {:model => 'Program', :from_state => 'any', :to_state => ::Program::STATE_CANCELLED, :on_event => ::Program::EVENT_CANCEL, :role_id =>  program_announcement.id, :send_sms => true, :send_email => true, :additional_text => '' },
 
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_CONDUCTED, :on_event => 'any', :role_id =>  teacher.id, :send_sms => true, :send_email => true, :additional_text => 'Please enter feedback' },
     {:model => 'Program', :from_state =>  'any', :to_state => ::Program::STATE_TEACHER_CLOSED, :on_event => 'any', :role_id => zao.id, :send_sms => true, :send_email => true, :additional_text => 'Please mark as closed' },

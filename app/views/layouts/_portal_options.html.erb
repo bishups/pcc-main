@@ -4,13 +4,14 @@
 <% in_finance = (current_user.is? :any, :in_group => [:finance]) %>
 <% in_pcc_vendor = (current_user.is? :any, :in_group => [:pcc_vendor]) %>
 <% in_pcc_requests = (current_user.is? :any, :in_group => [:pcc_requests]) %>
+<% in_program_announcement = (current_user.is? :any, :in_group => [:program_announcement]) %>
 
 <ul class="nav navbar-nav">
   <% if (current_user.is? :super_admin) or center_ids.count > 0 %>
       <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">Schedules <b class="caret"></b></a>
         <ul class="dropdown-menu">
-          <% if in_geography %>
+          <% if in_geography or in_program_announcement %>
               <li><a href="<%= programs_path %>">Program</a></li>
           <% end %>
           <% if in_geography or in_training %>
@@ -24,17 +25,17 @@
           <% end %>
         </ul>
       </li>
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-hover="dropdown">Logs <b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="<%= activity_logs_path %>"> Activity </a></li>
-              <li><a href="<%= notification_logs_path %>">Notification </a></li>
-            </ul>
-          </li>
+      <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-hover="dropdown">Logs <b class="caret"></b></a>
+        <ul class="dropdown-menu">
+          <li><a href="<%= activity_logs_path %>"> Activity </a></li>
+          <li><a href="<%= notification_logs_path %>">Notification </a></li>
+        </ul>
+      </li>
       <!-- TODO: Enforce role -->
-  <% if current_user.is? :super_admin or not current_user.access_privileges.empty?   %>
-      <li><a href="<%= rails_admin_path %>"> Admin Panel </a></li>
-  <% end %>
+      <% if current_user.is? :super_admin or not current_user.access_privileges.empty?   %>
+          <li><a href="<%= rails_admin_path %>"> Admin Panel </a></li>
+      <% end %>
   <% end %>
 
   <% if in_pcc_requests or in_pcc_vendor %>
