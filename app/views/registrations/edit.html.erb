@@ -59,7 +59,14 @@
                 <%= f.text_area :address, :class => 'form-control', :rows => 5 %>
                 <p class="help-block">Required. Length up to 3000.</p>
               </div>
-              <p class="help-block">Required.</p>
+              <div class='form-group'>
+                <%= f.label :receive_email %>
+                <%= f.check_box :receive_email, :class => 'form-control'%>
+              </div>
+              <div class='form-group'>
+                <%= f.label :receive_sms %>
+                <%= f.check_box :receive_sms, :class => 'form-control'%>
+              </div>
               <%= f.submit "Update", :class => 'btn btn-lg btn-primary' %>
           <% end %>
         </div>

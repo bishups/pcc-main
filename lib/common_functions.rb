@@ -148,8 +148,8 @@ module CommonFunctions
 
 
   def notify_user(user, from, to, on, value)
-    UserMailer.email(self, user, from, to, on, value[:additional_text]).deliver if value[:send_email]
-    UserMailer.sms(self, user, from, to, on, value[:additional_text]).deliver if value[:send_sms]
+    UserMailer.email(self, user, from, to, on, value[:additional_text]).deliver if value[:send_email] and user.receive_email
+    UserMailer.sms(self, user, from, to, on, value[:additional_text]).deliver if value[:send_sms] and user.receive_sms
     self.log_notify(user, from, to, on, value[:additional_text]) if value[:send_email] || value[:send_sms]
   end
 

@@ -610,6 +610,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "provider"
     t.string   "sync_ts"
     t.string   "sync_id"
+    t.boolean  "receive_email",                          :default => true
+    t.boolean  "receive_sms",                            :default => true
   end
 
   add_index "users", ["deleted_at"], :name => "index_users_on_deleted_at"

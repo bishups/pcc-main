@@ -146,7 +146,7 @@ class User < ActiveRecord::Base
 
   # Setup accessible (or protected) attributes for your model
   attr_accessor :username, :uid
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent
+  attr_accessible :email, :password, :password_confirmation, :remember_me, :enable, :approval_email_sent, :receive_email, :receive_sms
   attr_accessible :firstname, :lastname, :address, :phone, :mobile, :access_privilege_names, :type
   attr_accessible :access_privileges, :access_privileges_attributes
   attr_accessible :username, :provider, :uid, :approver_email, :message_to_approver
@@ -548,7 +548,21 @@ class User < ActiveRecord::Base
         end
         help "Required"
       end
-      field :enable
+      field :enable do
+        read_only do
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
+        end
+      end
+      field :receive_email do
+        read_only do
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
+        end
+      end
+      field :receive_sms do
+        read_only do
+          not ( bindings[:controller].current_user.is?(:super_admin) or bindings[:controller].current_user.is?(:zao) )
+        end
+      end
       field :access_privileges
       #field :custom_access_privileges do
       #  read_only true
