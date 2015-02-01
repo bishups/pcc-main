@@ -52,6 +52,18 @@ module UserExtension
       find(:all)
     end
   end
+
+  def by_group(group_name)
+    current_group_values = User::ROLE_ACCESS_HIERARCHY.select { |k, v| v[:group] == group_name }.values
+    if not current_group_values.empty?
+      role_names = current_group_values.map { |a| a[:text] }
+      puts role_names.inspect
+      role_ids=Role.where(:name => role_names).map(&:id)
+      find(:all, :conditions => ["access_privileges.role_id in (?)", role_ids])
+    else
+      []
+    end
+  end
 end
 
 
@@ -239,6 +251,12 @@ class User < ActiveRecord::Base
     centers.collect(&:id)
   end
 
+  def accessible_center_ids_by_group(group_name=nil)
+    centers = self.accessible_centers_by_group(group_name)
+    centers = [centers] unless centers.class == Array
+    centers.collect(&:id)
+  end
+
   def accessible_centers(role_name=nil)
     if self.is?(:super_admin)
       Center.all
@@ -247,11 +265,27 @@ class User < ActiveRecord::Base
     end
   end
 
+  def accessible_centers_by_group(group_name=nil)
+    if self.is?(:super_admin)
+      Center.all
+    else
+      self.centers.by_group(group_name) + self.sector_centers.by_group(group_name) +self.zone_centers.by_group(group_name)
+    end
+  end
+
   def accessible_sectors(role_name=nil)
     if self.is?(:super_admin)
       Sector.all
     else
       self.sectors.by_role(role_name)+self.zone_sectors.by_role(role_name)
+    end
+  end
+
+  def accessible_sectors_by_group(group_name=nil)
+    if self.is?(:super_admin)
+      Sector.all
+    else
+      self.sectors.by_group(group_name)+self.zone_sectors.by_group(group_name)
     end
   end
 
@@ -266,6 +300,14 @@ class User < ActiveRecord::Base
       Zone.all
     else
       self.zones.by_role(role_name)
+    end
+  end
+
+  def accessible_zones_by_group(group_name=nil)
+    if self.is?(:super_admin)
+      Zone.all
+    else
+      self.zones.by_group(group_name)
     end
   end
 

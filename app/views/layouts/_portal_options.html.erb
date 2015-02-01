@@ -4,14 +4,14 @@
 <% in_finance = (current_user.is? :any, :in_group => [:finance]) %>
 <% in_pcc_vendor = (current_user.is? :any, :in_group => [:pcc_vendor]) %>
 <% in_pcc_requests = (current_user.is? :any, :in_group => [:pcc_requests]) %>
-<% in_program_announcement = (current_user.is? :any, :in_group => [:program_announcement]) %>
+<% is_program_announcement = (current_user.is? :program_announcement) %>
 
 <ul class="nav navbar-nav">
   <% if (current_user.is? :super_admin) or center_ids.count > 0 %>
       <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">Schedules <b class="caret"></b></a>
         <ul class="dropdown-menu">
-          <% if in_geography or in_program_announcement %>
+          <% if in_geography or is_program_announcement %>
               <li><a href="<%= programs_path %>">Program</a></li>
           <% end %>
           <% if in_geography or in_training %>

@@ -2,17 +2,18 @@ class ProgramsController < ApplicationController
   before_filter :authenticate_user!
 
   def index
-
-    in_geography = (current_user.is? :any, :in_group => [:geography])
-    in_program_announcement = (current_user.is? :any, :in_group => [:program_announcement])
-    center_ids = (in_geography or in_program_announcement) ? current_user.accessible_center_ids : []
+    geography_center_ids = current_user.accessible_center_ids_by_group(:geography)
+    program_announcement_center_ids = current_user.accessible_center_ids(:program_announcement)
     respond_to do |format|
-      if center_ids.empty?
+      if (geography_center_ids + program_announcement_center_ids).empty?
         @programs = []
         format.html { redirect_to root_path, :alert => "[ ACCESS DENIED ] Cannot perform the requested action. Please contact your coordinator for access." }
         format.json { render json: @programs, status: :unprocessable_entity }
       else
-        @programs = Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", center_ids, (Time.zone.now - 1.month.from_now), ::Program::FINAL_STATES).order('start_date DESC')
+        @programs = []
+        @programs += Program.where("center_id IN (?) AND (end_date > ? OR state NOT IN (?))", geography_center_ids, (Time.zone.now - 1.month.from_now), ::Program::FINAL_STATES).order('start_date DESC')
+        @programs += Program.where("center_id IN (?) AND (end_date > ? AND state IN (?))", program_announcement_center_ids, (Time.zone.now - 1.month.from_now), ::Program::ANNOUNCED_STATES).order('start_date DESC')
+        @programs.uniq!
         format.html # index.html.erb
         format.json { render json: @programs }
       end
