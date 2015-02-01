@@ -285,10 +285,17 @@ notifications.each{|n| Notification.create(n)}
 
 
 ### Dummy users for all the roles used for testing purpose.
-  user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :approver_email => "super-admin@pcc-ishayoga.org", :address=> "IYC", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123",:enable => true )
+  user = User.new(:firstname => "Super Admin", :email=> "super-admin@pcc-ishayoga.org", :approver_email => "super-admin@pcc-ishayoga.org", :address=> "IYC", :mobile=>"9999999999", :password => "super_admin_123", :password_confirmation => "super_admin_123",:enable => true, :message_to_approver => "test" )
+  puts "#### creating #{user.firstname} "
   user.access_privileges.build(:role=>Role.where(:name=>::User::ROLE_ACCESS_HIERARCHY[:super_admin][:text]).first)
-  if not user.save(:validate => false)
-    puts "User #{user.firstname} has not been saved because of #{user.errors.messages}"
+  begin
+    if not user.save(:validate => false)
+      puts "User #{user.firstname} has not been saved because of #{user.errors.messages}"
+    end
+  rescue Errno::ECONNREFUSED
+    puts "###################################"
+    puts "rake aborted! \nErrno::ECONNREFUSED: Connection refused - connect(2)"
+    puts "SMTP server not running. For developement environment, please start mailcatcher (http://mailcatcher.me/) and try again."
+    puts "###################################"
   end
-
 
