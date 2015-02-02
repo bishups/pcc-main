@@ -740,10 +740,13 @@ class ProgramTeacherSchedule < ActiveRecord::Base
   # 1. given the teacher_id, find the schedules relevant for the program_id
   # 2. split the schedule, marking the one against program - with program_id and state
   def block_teacher_schedule!(params)
+    timing_ids = ([params[:timing_ids]].flatten).reject(&:blank?).map{|x| x.to_i}
+    if timing_ids.blank?
+      self.errors[:timings] << " cannot be blank."
+      return
+    end
     program = Program.find(params[:program_id])
     teacher = Teacher.find(params[:teacher_id])
-    timing_ids = ([params[:timing_ids]].flatten).reject(&:blank?).map{|x| x.to_i}
-
     event = self.can_create? ? EVENT_BLOCK : EVENT_REQUEST_BLOCK
     if teacher.full_time?
       self.block_full_time_teacher_schedule!(program, teacher, timing_ids, event)

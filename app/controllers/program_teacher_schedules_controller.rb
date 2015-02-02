@@ -66,6 +66,7 @@ class ProgramTeacherSchedulesController < ApplicationController
             # TODO - check whether to call load_blockable_teachers! or load_blockable_programs! or load_additional_comments! here
             # For now leaving it, since we should not be reaching this state, because of double check above
             #load_blockable_teachers!(params[:teacher_role])
+            reload_blockable!
             format.html { render action: "new" }
             format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
           end
@@ -212,6 +213,15 @@ class ProgramTeacherSchedulesController < ApplicationController
     @selected_timings = @blockable_programs.blank? ? [] : Timing.find(@blockable_programs.first[:timing_ids])
   end
 
+  def reload_blockable!()
+    if params[:program_teacher_schedule].has_key?(:additional_comments)
+      load_blockable_teachers!
+    else
+      load_blockable_programs!
+      # HACK - so as to re-direct to correct form
+      @program_teacher_schedule.program_id = 0
+    end
+  end
 
   private
 

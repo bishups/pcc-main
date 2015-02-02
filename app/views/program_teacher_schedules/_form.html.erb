@@ -2,12 +2,12 @@
   <%= resource_error_messages!(@program_teacher_schedule) %>
   <% submit_disabled = false %>
 
-  <% if @program_teacher_schedule.program_id %>
+  <% if @program_teacher_schedule.program_id and not @program_teacher_schedule.program_id == 0 %>
       <div class='form-group'>
         <label for='program_id'>Program ID</label>
-        <% program = Program.find(params[:program_id]) if params[:program_id]  %>
+        <% program = Program.find(@program_teacher_schedule.program_id) %>
         <%= f.text_field :program_display_name, :value=> "#{program.pid if program} - #{program.name if program}", :readonly => true, :id => 'program_id_field', :class => 'form-control' %>
-        <%= f.hidden_field :program_id, :value=> params[:program_id], :id => :program_id_hidden, :class => 'form-control' %>
+        <%= f.hidden_field :program_id, :value=> @program_teacher_schedule.program_id, :id => :program_id_hidden, :class => 'form-control' %>
       </div>
       <div class='form-group'>
         <label for='teacher_role'>Role</label>

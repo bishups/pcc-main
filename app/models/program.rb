@@ -975,7 +975,7 @@ class Program < ActiveRecord::Base
 
   def no_of_teachers_connected(role, timing_id)
     return 0 if self.teacher_schedules.blank?
-    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing_id).group('teacher_id').size
+    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing_id).group('teacher_id').length
   end
 
   def teachers_connected(role)
@@ -990,7 +990,7 @@ class Program < ActiveRecord::Base
 
   def no_of_teachers_block_requested()
     return 0 if self.teacher_schedules.blank?
-    self.teacher_schedules.where('state = ?', ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED).group('teacher_id').size
+    self.teacher_schedules.where('state = ?', ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED).group('teacher_id').length
   end
 
   def teachers_connected_for_timing(timing_id)
