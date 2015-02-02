@@ -975,7 +975,7 @@ class Program < ActiveRecord::Base
 
   def no_of_teachers_connected(role, timing_id)
     return 0 if self.teacher_schedules.blank?
-    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing_id).group('teacher_id').length
+    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing_id).group('teacher_id').size
   end
 
   def teachers_connected(role)
@@ -989,8 +989,8 @@ class Program < ActiveRecord::Base
   end
 
   def no_of_teachers_block_requested()
-    return [] if self.teacher_schedules.blank?
-    self.teacher_schedules.where('state = ?', ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED).group('teacher_id').length
+    return 0 if self.teacher_schedules.blank?
+    self.teacher_schedules.where('state = ?', ::ProgramTeacherSchedule::STATE_BLOCK_REQUESTED).group('teacher_id').size
   end
 
   def teachers_connected_for_timing(timing_id)
@@ -1136,6 +1136,13 @@ class Program < ActiveRecord::Base
     return true if User.current_user.is? :any, :in_group => [:pcc], :center_id => self.center_id
     return true if User.current_user.is? :program_announcement, :center_id => self.center_id and ANNOUNCED_STATES.include?(self.state)
     return false
+  end
+
+  # NOTE - program_announcement_view? is complement of can_view?
+  def program_announcement_view?
+    return false if User.current_user.is? :any, :in_group => [:geography], :center_id => self.center_id
+    return false if User.current_user.is? :any, :in_group => [:pcc], :center_id => self.center_id
+    return true if User.current_user.is? :program_announcement, :center_id => self.center_id and ANNOUNCED_STATES.include?(self.state)
   end
 
   def can_propose?
