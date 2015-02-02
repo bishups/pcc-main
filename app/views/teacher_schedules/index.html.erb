@@ -66,11 +66,21 @@
         <% end %>
       <hr>
     </h2>
-    <% if display_additional_comments and not @teacher.additional_comments.blank? %>
+        <% show_note = (display_additional_comments and not @teacher.additional_comments.blank?) %>
+        <% show_capabilities = (@teacher.can_view_capabilities? and not @teacher.capabilities.blank?) %>
+        <% if show_note or show_capabilities %>
         <blockquote>
-        <i>Note for Scheduler -- </i> <%= @teacher.additional_comments %>
+        <% if show_note %>
+            <i>Note for Scheduler -- </i> <%= @teacher.additional_comments %>
+        <% end %>
+        <% if show_note and show_capabilities %>
+            <br>
+        <% end %>
+        <% if show_capabilities %>
+            <i>Teacher Capabilities -- </i> <%= @teacher.capabilities %>
+        <% end %>
         </blockquote>
-    <% end %>
+        <% end %>
   </div>
 </div>
 

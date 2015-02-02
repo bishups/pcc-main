@@ -127,6 +127,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     @selected_timings = blockable_timing_ids[selected_teacher_id].map { |id| Timing.find(id)}
     @additional_comments = Teacher.find(selected_teacher_id).additional_comments
+    @capabilities = Teacher.find(selected_teacher_id).capabilities
   end
 
   def update_program_timings
@@ -156,9 +157,11 @@ class ProgramTeacherSchedulesController < ApplicationController
     unless @blockable_teachers.blank?
       @selected_timings = Timing.find(@blockable_teachers.first[:timing_ids])
       @additional_comments = @blockable_teachers.first[:teacher].additional_comments
+      @capabilities = @blockable_teachers.first[:teacher].capabilities
     else
       @selected_timings = []
       @additional_comments = ""
+      @capabilities = ""
     end
   end
 
@@ -173,9 +176,11 @@ class ProgramTeacherSchedulesController < ApplicationController
     unless @blockable_teachers.blank?
       @selected_timings = Timing.find(@blockable_teachers.first[:timing_ids])
       @additional_comments = @blockable_teachers.first[:teacher].additional_comments
+      @capabilities = @blockable_teachers.first[:teacher].capabilities
     else
       @selected_timings = []
       @additional_comments = ""
+      @capabilities = ""
     end
   end
 

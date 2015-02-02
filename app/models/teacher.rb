@@ -79,7 +79,7 @@ class Teacher < ActiveRecord::Base
   has_many :timings, through: :teacher_schedules
   attr_accessible :teacher_schedules, :teacher_schedule_ids
 
-  attr_accessible :comments, :additional_comments
+  attr_accessible :comments, :additional_comments, :capabilities
 
   after_initialize :init
 
@@ -326,6 +326,11 @@ class Teacher < ActiveRecord::Base
     AccessPrivilege.destroy_all({ :role_id => role.id, :user_id => self.user.id, :resource_id => center.id, :resource_type => "Center" })
   end
 
+  def can_view_capabilities?
+    return true if User.current_user.is? :zao, :for => :any, :center_id => self.center_ids
+    return true if User.current_user.is? :teacher_training_department, :for => :any, :center_id => self.center_ids
+    return false
+  end
 
   def can_view?
     if self.full_time?
@@ -793,6 +798,10 @@ class Teacher < ActiveRecord::Base
       field :additional_comments do
         label "Note for Scheduler"
         help "Optional. Additional comments from/about teacher needed when scheduling (NOTE - field visible to part-time, but not full-time teacher)"
+      end
+      field :capabilities do
+        label "Teacher capabilities"
+        help "Optional. E.g. PR, Organizing, Languages, IT Skills, Artistic"
       end
     end
     create do

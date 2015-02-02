@@ -553,6 +553,7 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
     t.datetime "last_updated_at"
+    t.text     "capabilities"
   end
 
   add_index "teachers", ["deleted_at"], :name => "index_teachers_on_deleted_at"
