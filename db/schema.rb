@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 201405012120301) do
+ActiveRecord::Schema.define(:version => 20150203100346) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -94,8 +94,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "text"
     t.datetime "created_at",                   :null => false
     t.datetime "updated_at",                   :null => false
-    t.datetime "deleted_at"
     t.boolean  "active",     :default => true
+    t.datetime "deleted_at"
   end
 
   add_index "comments", ["deleted_at"], :name => "index_comments_on_deleted_at"
@@ -194,10 +194,10 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",              :null => false
     t.string   "name"
     t.integer  "capacity"
-    t.datetime "deleted_at"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "deleted_at"
     t.datetime "last_updated_at"
   end
 
@@ -409,6 +409,11 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "end_date"
     t.datetime "created_at",                                 :null => false
     t.datetime "updated_at",                                 :null => false
+    t.integer  "last_updated_by_user_id"
+    t.text     "feedback"
+    t.text     "comments"
+    t.string   "last_update"
+    t.datetime "last_updated_at"
     t.integer  "program_donation_id"
     t.string   "pid"
     t.boolean  "announced",               :default => false
@@ -421,11 +426,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "contact_phone"
     t.string   "contact_email"
     t.string   "timing_str"
-    t.integer  "last_updated_by_user_id"
-    t.text     "feedback"
-    t.text     "comments"
-    t.string   "last_update"
-    t.datetime "last_updated_at"
   end
 
   create_table "programs_date_timings", :force => true do |t|
@@ -476,6 +476,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "user_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.string   "sync_ts"
+    t.string   "sync_id"
   end
 
   add_index "roles_users", ["role_id"], :name => "index_roles_users_on_role_id", :unique => true
@@ -513,8 +515,6 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "created_at",              :null => false
     t.datetime "updated_at",              :null => false
     t.string   "state"
-    t.string   "role"
-    t.string   "timing_str"
     t.date     "start_date"
     t.date     "end_date"
     t.integer  "timing_id"
@@ -527,7 +527,8 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
-    t.integer  "program_type_id"
+    t.string   "role"
+    t.string   "timing_str"
   end
 
   create_table "teacher_slots", :force => true do |t|
@@ -545,14 +546,14 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.integer  "user_id"
     t.datetime "created_at",                                 :null => false
     t.datetime "updated_at",                                 :null => false
-    t.datetime "deleted_at"
-    t.integer  "sync_id"
-    t.boolean  "full_time",               :default => false
-    t.text     "additional_comments"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "deleted_at"
     t.datetime "last_updated_at"
+    t.integer  "sync_id"
+    t.boolean  "full_time",               :default => false
+    t.text     "additional_comments"
     t.text     "capabilities"
   end
 
@@ -625,13 +626,13 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.datetime "updated_at",                             :null => false
     t.integer  "program_id"
     t.string   "state"
-    t.integer  "payment_amount",          :default => 0
     t.integer  "blocked_by_user_id"
     t.integer  "last_updated_by_user_id"
     t.text     "comments"
     t.text     "feedback"
     t.string   "last_update"
     t.datetime "last_updated_at"
+    t.integer  "payment_amount",          :default => 0
   end
 
   create_table "venues", :force => true do |t|
@@ -652,12 +653,12 @@ ActiveRecord::Schema.define(:version => 201405012120301) do
     t.string   "payment_contact_address"
     t.string   "payment_contact_mobile"
     t.integer  "per_day_price",           :default => 0
-    t.datetime "deleted_at"
-    t.integer  "pincode_id"
     t.text     "comments"
     t.string   "last_update"
     t.integer  "last_updated_by_user_id"
+    t.datetime "deleted_at"
     t.datetime "last_updated_at"
+    t.integer  "pincode_id"
   end
 
   add_index "venues", ["deleted_at"], :name => "index_venues_on_deleted_at"

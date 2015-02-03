@@ -39,6 +39,7 @@ class Role < ActiveRecord::Base
   end
 
   attr_accessible :name, :permission_ids, :permissions
+  validates :name, :uniqueness => true
 
  # validates :name, :permissions, :presence => true
 
