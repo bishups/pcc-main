@@ -29,3 +29,4 @@
 //= require jquery.timepicker
 //= require bootstrap-timepicker
 //= require js-routes
+//= require bootstrap-multiselect
