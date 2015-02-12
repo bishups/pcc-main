@@ -10,16 +10,16 @@
  *
  *= require bootstrap.min
  *= require_self
- *= require font-awesome
- *= require jquery-ui
  *= require_tree .
  *= require bootstrap-datetimepicker
  *= require bootstrap-timepicker
+ *= require bootstrap-multiselect
+ *= require font-awesome
+ *= require jquery-ui
  *= require jquery.timepicker
  *= require dataTables/jquery.dataTables.bootstrap3
  *= require dataTables/extras/TableTools
  *= require dataTables/extras/TableTools_JUI
- *= require bootstrap-multiselect
  */
 
 /* http://rvg.me/2013/11/using-bootstrap-3-with-rails-4/ */

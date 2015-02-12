@@ -1,5 +1,6 @@
 class ProgramsController < ApplicationController
   before_filter :authenticate_user!
+  include CommonFunctions
 
   def index
     geography_center_ids = current_user.accessible_center_ids_by_group(:geography)
@@ -75,16 +76,16 @@ class ProgramsController < ApplicationController
     @program.current_user = current_user
     @program.proposer_id = current_user.id
 
-    if @program.residential?
-      # perform validations for attr_accessor
-      @program.errors[:first_day_timing_id] << "required. Please select start timing for first day." if not params[:program].has_key?(:first_day_timing_id)
-      @program.errors[:last_day_timing_id] << "required. Please select end timing for last day." if not params[:program].has_key?(:last_day_timing_id)
-      # initialize timing_ids
-      @program.timing_ids = Timing.pluck(:id)
-    end
+    # initialize timing_ids
+    @program.timing_ids = Timing.pluck(:id) if @program.residential? or @program.custom_session_duration?
+
+    # verify custom session durations
+    # session_timings_valid? if @program.custom_session_duration?
 
     respond_to do |format|
       if not @program.errors.empty?
+        load_centers_program_type_timings!(Center.find(params[:program][:center_id].to_i),
+                                           ProgramDonation.find(params[:program][:program_donation_id].to_i))
         format.html { render action: "new" }
         format.json { render json: @program.errors, status: :unprocessable_entity }
       else
@@ -127,41 +128,9 @@ class ProgramsController < ApplicationController
     @program.dummy_init_time
     @program.current_user = current_user
     @trigger = params[:trigger]
-    @program.feedback = params[:feedback] if params.has_key?(:feedback)
-    @program.capacity = params[:capacity] if params.has_key?(:capacity)
-    @program.announced_locality = params[:announced_locality] if params.has_key?(:announced_locality)
-    @program.contact_phone = params[:contact_phone] if params.has_key?(:contact_phone)
-    @program.contact_email = params[:contact_email] if params.has_key?(:contact_email)
 
-    for i in 1..Timing.all.count
-      start_time = "start_time_#{i.to_s}".to_sym
-      if params.has_key?(start_time)
-        time = Time.zone.parse(params[start_time])
-        # normalize the timings - this is same as the remove_date HACK in timing model
-        @program.session_time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
-      end
-      end_time = "end_time_#{i.to_s}".to_sym
-      if params.has_key?(end_time)
-        time = Time.zone.parse(params[end_time])
-        # normalize the timings - this is same as the remove_date HACK in timing model
-        @program.session_time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
-      end
-      intro_start_time = "intro_start_time_#{i.to_s}".to_sym
-      if params.has_key?(intro_start_time)
-        time = Time.zone.parse(params[intro_start_time])
-        # normalize the timings - this is same as the remove_date HACK in timing model
-        @program.intro_time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
-      end
-      intro_end_time = "intro_end_time_#{i.to_s}".to_sym
-      if params.has_key?(intro_end_time)
-        time = Time.zone.parse(params[intro_end_time])
-        # normalize the timings - this is same as the remove_date HACK in timing model
-        @program.intro_time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
-      end
-    end
-
+    update_incoming_values!
     @program.load_comments!(params)
-
     respond_to do |format|
       if @program.can_update?
         if state_update(@program, @trigger) &&  @program.save!
@@ -178,18 +147,69 @@ class ProgramsController < ApplicationController
     end
   end
 
+  def update_incoming_values!
+    @program.feedback = params[:feedback] if params.has_key?(:feedback)
+    @program.capacity = params[:capacity] if params.has_key?(:capacity)
+    @program.announced_locality = params[:announced_locality] if params.has_key?(:announced_locality)
+    @program.contact_phone = params[:contact_phone] if params.has_key?(:contact_phone)
+    @program.contact_email = params[:contact_email] if params.has_key?(:contact_email)
+
+    pt = @program.program_donation.program_type
+    count = @program.custom_session_duration? ? pt.session_duration_list.flatten.length : Timing.all.count
+    for i in 1..count
+      start_time = "start_time_#{i.to_s}".to_sym
+      if params.has_key?(start_time) and not params[start_time].blank?
+        time = Time.zone.parse(params[start_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.session_time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+      end_time = "end_time_#{i.to_s}".to_sym
+      if params.has_key?(end_time) and not params[end_time].blank?
+        time = Time.zone.parse(params[end_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.session_time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+      intro_start_time = "intro_start_time_#{i.to_s}".to_sym
+      if params.has_key?(intro_start_time) and not params[intro_start_time].blank?
+        time = Time.zone.parse(params[intro_start_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.intro_time[:start][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+      intro_end_time = "intro_end_time_#{i.to_s}".to_sym
+      if params.has_key?(intro_end_time) and not params[intro_end_time].blank?
+        time = Time.zone.parse(params[intro_end_time])
+        # normalize the timings - this is same as the remove_date HACK in timing model
+        @program.intro_time[:end][i-1] = time.change(:month => 1, :day => 1, :year => 2000)
+      end
+    end
+  end
+
   def destroy
+  end
+
+
+  def load_timings_session_details(program_donation)
+    pt = program_donation.program_type
+    timings = pt.timings.sort_by{|t| t[:start_time]}
+    sessions = []
+    if pt.custom_session_duration?
+      sessions = pt.session_duration_list
+      @session_offsets = pt.session_offsets
+    end
+    [timings, sessions]
   end
 
   def update_timings
     # updates timings based on selection
     @selected_program_donation = program_donation = ProgramDonation.find(params[:program_donation_id])
+    @maximum_no_of_sessions = params[:maximum_no_of_sessions].to_i
     # map to name and id for use in our options_for_select
     @disable_create_button = true
     self.hide_intro_first_last_day_timings(false, program_donation)
-    timings = program_donation.program_type.timings.sort_by{|t| t[:start_time]}
-    unless timings.empty?
-      @timings = timings.map{|a| [a.name, a.id]}
+    timings, @sessions = self.load_timings_session_details(program_donation)
+    @timings = timings.map{|a| [a.name, a.id]}
+    #timings = program_donation.program_type.timings.sort_by{|t| t[:start_time]}
+    unless @timings.empty? and @sessions.empty?
       @disable_create_button = false
     end
   end
@@ -198,21 +218,22 @@ class ProgramsController < ApplicationController
    # @program_donations = center.program_donations.sort_by{|pd| pd[:name]}.map{|a| [a.name, a.id]}
     # updates program donation based on selection
     center = Center.find(params[:center_id].to_i)
+    @maximum_no_of_sessions = params[:maximum_no_of_sessions].to_i
     # map to name and id for use in our options_for_select
     program_donations = center.program_donations.sort_by{|pd| pd[:name]}
+    @disable_create_button = true
     if program_donations.empty?
       @program_donations = ['None Available']
       @timings = ['None Available']
-      @disable_create_button = true
       self.hide_intro_first_last_day_timings(true)
     else
-      timings =  program_donations[0].program_type.timings
       self.hide_intro_first_last_day_timings(false, program_donations[0])
-      if timings.empty?
-        @disable_create_button = true
-      else
+      timings, @sessions = self.load_timings_session_details(program_donations[0])
+      @timings = timings.map{|a| [a.name, a.id]}
+      #timings =  program_donations[0].program_type.timings
+      unless @timings.empty? and @sessions.empty?
         @disable_create_button = false
-        @timings = timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
+        #@timings = timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
       end
       @program_donations = program_donations.map{|a| [a.name, a.id]}
     end
@@ -224,16 +245,21 @@ class ProgramsController < ApplicationController
     @centers = Center.where("id IN (?)", center_ids).order('name ASC')
     @selected_center = selected_center.blank? ? @centers[0] : selected_center
     @program_donations = @selected_center.program_donations.sort_by{|pd| pd[:name]}
+    # get the maximum number of session possible
+    @maximum_no_of_sessions = (ProgramType.pluck(:custom_session_duration).map{|l| l.blank? ? 0 : l.length/2 + 1}).max
+    @disable_create_button = true
     if @program_donations.empty?
       @selected_program_donation = ['None Available']
       @timings = []
-      @disable_create_button = true
       self.hide_intro_first_last_day_timings(true)
     else
       @selected_program_donation = selected_program_donation.blank? ? @program_donations[0] : selected_program_donation
-      @timings = @selected_program_donation.program_type.timings.sort_by{|t| t[:start_time]}
-      @disable_create_button = false
       self.hide_intro_first_last_day_timings(false, @selected_program_donation)
+      @timings, @sessions = self.load_timings_session_details(@selected_program_donation)
+      # @timings = @selected_program_donation.program_type.timings.sort_by{|t| t[:start_time]}
+      unless @timings.empty? and @sessions.empty?
+        @disable_create_button = false
+      end
     end
   end
 
@@ -242,8 +268,11 @@ class ProgramsController < ApplicationController
     program_type = @program.program_donation.program_type
     day_timing_ids = []
     full_day_timing_ids = Timing.pluck(:id)
+    #session_timings = session_per_day_timings if @program.custom_session_duration?
     for i in 1..program_type.no_of_days
-      if @program.residential?
+      if @program.residential? or @program.custom_session_duration?
+        dt_ids = full_day_timing_ids
+=begin
         if i != 1 and i != program_type.no_of_days
           dt_ids = full_day_timing_ids
         else
@@ -255,6 +284,9 @@ class ProgramsController < ApplicationController
             dt_ids = Array(Timing.pluck(:id).first..id)
           end
         end
+      elsif @program.custom_session_duration?
+        dt_ids = session_timings[i]
+=end
       else
         if @program.has_intro? and i == 1
           # remove nil values using compact
@@ -289,7 +321,30 @@ class ProgramsController < ApplicationController
     if @program.residential?
       # If residential, e.g., for BSP --
       # "2nd (2:00pm) to 6th (6:00pm)"
-      timing_str = "#{@program.start_date.day.ordinalize} (#{@program.start_date.strftime("%-I:%M%P")}) to #{@program.end_date.day.ordinalize} (#{@program.end_date.strftime("%-I:%M%P")})"
+      #timing_str = "#{@program.start_date.day.ordinalize} (#{@program.start_date.strftime("%-I:%M%P")}) to #{@program.end_date.day.ordinalize} (#{@program.end_date.strftime("%-I:%M%P")})"
+      timing_str = "Full Day"
+=begin
+    elsif @program.custom_session_duration?
+      timing_str = ""
+      for i in 0..(session_timings.length-1)
+        timing_str = "[#{(@program.start_date + i.day).day.ordinalize}] "
+        timing_str += (session_timings[i].map {|c| c[:name]}).join(", ")
+        timing_str += " "
+      end
+      dt_ids = session_timings[i]
+=end
+    elsif  @program.custom_session_duration?
+      timing_str = ""
+      sessions = @program.program_donation.program_type.session_duration_list
+      for i in 0..(sessions.length-1)
+        timing_str += "(#{(@program.start_date + i.days).day.ordinalize}) "
+        timing_str += sessions[i].map{ |d| "#{d.to_f}".chomp(".0")}.join(" + ")
+        if (i != sessions.length-1)
+          timing_str += " "
+        else
+          timing_str += " hrs"
+        end
+      end
     else
       if @program.has_intro?
         # If intro e.g, IE --
@@ -305,16 +360,56 @@ class ProgramsController < ApplicationController
 
   end
 
+=begin
+  def session_per_day_timings
+    selected_timings = []
+    session_offsets = @program.program_donation.program_type.session_offsets
+    for i in 0..(@program.program_donation.program_type.no_of_days-1)
+      timings = "session_#{(i+1).to_s}_timings"
+      day = session_offsets[i]
+      selected_timings[day] = [] if selected_timings[day].nil?
+      selected_timings[day] +=  params[timings].map {|s| s.to_i unless s.blank?}.compact
+    end
+    selected_timings
+  end
+
+  def session_timings_valid?
+    return unless @program.custom_session_duration?
+    number, interval = self.timings_interval
+    sessions = @program.program_donation.program_type.session_duration_list.flatten
+    session_offsets = @program.program_donation.program_type.session_offsets
+    selected_timings = {}
+    for i in 0..(sessions.length-1)
+      timings = "session_#{(i+1).to_s}_timings"
+      if not params.has_key?(timings) or params[timings].blank?
+        @program.errors[timings.to_sym] << "required. Please select time slot(s) for session."
+      elsif params[timings].length * interval < sessions[i]
+        @program.errors[timings.to_sym] << "invalid. Duration of time slot(s) selected less than session duration."
+      else
+        day = session_offsets[i]
+        selected_timings[day] = [] unless selected_timings.has_key?(day)
+        selected_timings[day] +=  params[timings]
+        if selected_timings[day].uniq.length != selected_timings[day].length
+          @program.errors[timings.to_sym] << "invalid. Time slot(s) cannot overlap for same day sessions."
+        end
+      end
+    end
+    selected_timings
+  end
+=end
 
   def hide_intro_first_last_day_timings(flag, program_donation = nil)
     if flag
-      @hide_intro_timings = @hide_first_day_timing = @hide_last_day_timing = true
-      @hide_timings = false
+      @hide_session_details = @hide_intro_timings = @hide_first_day_timing = @hide_last_day_timing = true
+      @hide_timings = @hide_end_date = false
     else
-      @hide_intro_timings = (program_donation.program_type.has_intro? == false)
-      @hide_first_day_timing = (program_donation.program_type.residential? == false)
-      @hide_last_day_timing = (program_donation.program_type.residential? == false)
-      @hide_timings = (program_donation.program_type.residential? == true)
+      pt = program_donation.program_type
+      @hide_intro_timings = not(pt.has_intro?)
+      # @hide_first_day_timing = @hide_last_day_timing  = not(pt.residential?)
+      @hide_first_day_timing = @hide_last_day_timing  = true
+      @hide_session_details = not(pt.custom_session_duration?)
+      @hide_timings = (pt.residential? or pt.custom_session_duration?)
+      @hide_end_date = pt.custom_session_duration?
     end
   end
 

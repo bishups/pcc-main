@@ -17,6 +17,14 @@ $('#last_day_timing_select').html("<%= escape_javascript(options_for_select(@tim
 <% else %>
     $("#first_day_timing").show();
 <% end %>
+<% if @hide_end_date %>
+    $("#end_date").hide();
+<% else %>
+    $("#end_date").show();
+    $("#no_of_days_field").val("<%= @selected_program_donation.program_type.no_of_days %>");
+    $('#start_date_field').val("");
+    $('#end_date_field').val("");
+<% end %>
 <% if @hide_last_day_timing %>
     $("#last_day_timing").hide();
 <% else %>
@@ -26,4 +34,21 @@ $('#last_day_timing_select').html("<%= escape_javascript(options_for_select(@tim
     $("#timings").hide();
 <% else %>
     $("#timings").show();
+<% end %>
+<% if @hide_session_details %>
+    $("#session_details").hide();
+<% else %>
+    $("#session_details").show();
+    $('#start_date_field').val("");
+    $('<%= "#sessions_field"%>').val("<%= @sessions %>");
+    $('<%= "#session_offsets_field"%>').val("<%= @session_offsets.to_json %>");
+    <% sessions_list = @sessions.flatten %>
+    <% for i in 1..sessions_list.length %>
+        $('<%= "#session_#{i.to_s}_row"%>').show();
+        $('<%= "#session_#{i.to_s}_duration"%>').html("<%= escape_javascript(sessions_list[i-1].to_s) %>");
+        $('<%= "#session_#{i.to_s}_date"%>').val("");
+    <% end %>
+    <% for i in (sessions_list.length+1)..@maximum_no_of_sessions %>
+        $('<%= "#session_#{i.to_s}_row"%>').hide();
+    <% end %>
 <% end %>

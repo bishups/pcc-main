@@ -234,7 +234,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
       # for BSP e.g, --
       # "Starts on 2nd at 5:00pm. Ends on 6th by 3:00pm"
       #
-      if self.program.residential?
+      if self.program.residential? or self.program.custom_session_duration?
         # DO NOTHING
         # self.teacher.teacher_schedules.where('state IN (?) AND program_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, self.program_id).update_all(:timing_str => self.program.timing_str)
       else
@@ -551,12 +551,12 @@ class ProgramTeacherSchedule < ActiveRecord::Base
     # Anyway they are going to be unique, since we splitting into part-time and full-time, still ...
     teachers = trs.uniq
 
-    return teachers if not (self.program.residential? or self.program.has_full_day?)
+    return teachers if not (self.program.residential? or self.program.has_full_day? or self.program.custom_session_duration?)
 
     blockable = []
     full_day_timing_ids = Timing.pluck(:id)
     full_day_dates = self.program.program_donation.program_type.full_days.map{ |d| program.start_date + (d-1).days}
-    if self.program.residential?
+    if self.program.residential? or self.program.custom_session_duration?
       # remove teachers which are not available full-day
       teachers.each{ |t|
         next if full_day_timing_ids.sort != t[:timing_ids].sort
@@ -642,7 +642,7 @@ class ProgramTeacherSchedule < ActiveRecord::Base
 
     programs.each{ |p|
       # remove residential programs where teacher is not available full-day
-      if p[:program].residential?
+      if p[:program].residential? or p[:program].custom_session_duration?
         next if full_day_timing_ids.sort != p[:timing_ids].sort
       elsif  p[:program].has_full_day?
         # remove programs where teacher is blocked for any portion of the full-days for the program

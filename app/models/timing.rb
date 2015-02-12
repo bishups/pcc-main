@@ -35,6 +35,7 @@ class Timing < ActiveRecord::Base
 
   before_validation :remove_date
   validate :overlap
+  validate :time_interval
 
   # given a program, returns a relation with other overlapping program(s)
   scope :overlapping, lambda { |timing| Timing.where('((start_time > ? AND start_time < ?) OR (end_time > ? AND end_time < ?) OR  (start_time < ? AND end_time > ?)) AND (id != ? OR ? IS NULL) ',
@@ -56,6 +57,31 @@ class Timing < ActiveRecord::Base
     if Timing.overlapping(self).count > 0
       self.errors[:base] << "Timing overlaps with other timings. Please adjust the specified start (or end) time."
     end
+  end
+
+  def time_interval
+    timing = Timing.first
+    current_interval = ((timing.end_time - timing.start_time) / 1.min).round
+    new_interval = ((self.end_time - self.start_time) / 1.min).round
+    if current_interval != new_interval
+      self.errors[:base] << "Interval between Start and End time does not match existing record. Timing(s) should be of equal interval"
+    end
+  end
+
+  def self.interval
+    # All intervals are equal -- see the time_interval check above
+    timing = Timing.first
+    interval = ((timing.end_time - timing.start_time) / 1.hour).round
+    number = Timing.all.length
+    [number, interval]
+  end
+
+  def self.start
+    Timing.minimum(:start_time)
+  end
+
+  def self.end
+    Timing.maximum(:end_time)
   end
 
   rails_admin do

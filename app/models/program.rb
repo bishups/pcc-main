@@ -30,7 +30,7 @@ class Program < ActiveRecord::Base
   attr_accessible :program_donation, :program_donation_id
 
   validates :name, :start_date, :center_id, :program_donation_id, :presence => true
-  validates :timings, :presence => true, :unless => :residential?
+  validates :timings, :presence => true, :unless => :residential? or :custom_session_duration?
   validates :intro_timings, :presence => true, :if => :has_intro?
   validate  :intro_timings_subset?, :if => :has_intro?
 #  validates :start_date, :center_id, :name, :program_donation_id, :timings, :presence => true
@@ -128,6 +128,7 @@ class Program < ActiveRecord::Base
   #attr_accessor :start_time_1, :end_time_1, :start_time_2, :end_time_2, :start_time_3, :end_time_3, :start_time_4, :end_time_4
   attr_accessor :first_day_timing_id, :last_day_timing_id
   attr_accessible :first_day_timing_id, :last_day_timing_id
+  #validates :first_day_timing_id, :last_day_timing_id, :presence => true, :if => :residential?
 
   attr_accessor :session_time, :intro_time
 
@@ -250,8 +251,8 @@ class Program < ActiveRecord::Base
   end
 
   def dummy_init_time
-    self.session_time = {:start=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM'],:end=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM']}
-    self.intro_time = {:start=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM'],:end=>['12:00 AM', '12:00 AM', '12:00 AM', '12:00 AM']}
+    self.session_time = {:start=>[],:end=>[]}
+    self.intro_time = {:start=>[],:end=>[]}
   end
 
   after_create do |program|
@@ -444,6 +445,12 @@ class Program < ActiveRecord::Base
       # check for basic overlap
       start_time = new_time[:start][i-1]
       end_time = new_time[:end][i-1]
+
+      if start_time.blank? or end_time.blank?
+        self.errors[:base] << "Invalid values for #{type_of_timing} #{self.timing_name(timings[i-1])} slot. Timing cannot be left blank."
+        return false
+      end
+
       if start_time > end_time
         self.errors[:base] << "Invalid values for #{type_of_timing} #{self.timing_name(timings[i-1])} slot. End time cannot be less than the Start time."
         return false
@@ -485,7 +492,88 @@ class Program < ActiveRecord::Base
     return true
   end
 
+  def custom_duration_session_timings_valid?(sessions, new_time)
+    session_list = sessions.flatten
+    # for each new_time, start and end
+    # - check difference for session duration
+    # - if start time exceeds end time
+    for i in 0..(session_list.length-1)
+      start_time = new_time[:start][i]
+      end_time = new_time[:end][i]
+
+      if start_time.blank? or end_time.blank?
+        self.errors[:base] << "Invalid values for session ##{i+1} timings. Timing cannot be left blank."
+        return false
+      end
+
+      if start_time > end_time
+        self.errors[:base] << "Invalid values for session ##{i+1} timings. End time cannot be less than the Start time."
+        return false
+      end
+
+      if start_time.strftime("%H%M%S") < Timing::start.to_time.utc.strftime("%H%M%S")
+        self.errors[:base] << "Invalid value for session ##{i+1} timings. Start time cannot be less than #{Timing::start.to_time.utc.strftime('%I:%M %P')}"
+        return false
+      end
+
+      if end_time.strftime("%H%M%S") > Timing::end.to_time.utc.strftime("%H%M%S")
+        self.errors[:base] << "Invalid value for session ##{i+1} timings. End time cannot exceed #{Timing::end.to_time.utc.strftime('%I:%M %P')}"
+        return false
+      end
+
+      difference_in_minutes = ((end_time - start_time) / 1.minute).round
+      if difference_in_minutes != session_list[i] * 60
+        self.errors[:base] << "Invalid values for session ##{i+1} timings. Difference between Start and End time should be #{session_list[i]} hours."
+        return false
+      end
+    end
+
+    # setting start_of_day to "2000-01-01 00:00" with appropriate time_zone
+    start_of_day = Time.zone.parse("2000-01-01 00:00")
+
+    # check if overlap of timings for specific day
+    # loop over the days
+    count = 0
+    for i in 0..(sessions.length-1)
+      # if not array, there cannot be any timing conflict
+      if not sessions[i].is_a? Array
+        count += 1
+        next
+      end
+
+      # make an array for the timing slots being announced, each slot corresponds to 1 minute -
+      announced_slots = []
+      for k in 1..(24*60)
+        announced_slots[k-1] = false
+      end
+
+      # loop over sessions in a day
+      for j in 0..(sessions[i].length-1)
+        count += 1
+        start_time = new_time[:start][count-1]
+        end_time = new_time[:end][count-1]
+        # fill the slots that we are announcing, check if the slots overlap each other
+        start_in_mins = (start_time.hour - start_of_day.hour) * 60 + (start_time.min - start_of_day.min)
+        end_in_mins = (end_time.hour - start_of_day.hour) * 60 + (end_time.min - start_of_day.min)
+        for l in start_in_mins..end_in_mins
+          if announced_slots[l-1] != false
+            self.errors[:base] << "Invalid value for session ##{count} timings. Start (or End) time overlaps with other session timings."
+            return false
+          end
+          announced_slots[l-1] = true
+        end
+      end
+    end
+    return true
+  end
+
+
   def new_residential_timings_valid?(start_time, end_time)
+    if start_time.blank? or end_time.blank?
+      self.errors[:base] << "Start/ End time cannot be left blank."
+      return false
+    end
+
     if start_time.utc.strftime("%H%M%S") < self.start_date.to_time.utc.strftime("%H%M%S")
       self.errors[:base] << "Invalid value for Start time. Start time cannot be less than #{self.start_date.strftime('%I:%M %P')}"
       return false
@@ -529,9 +617,9 @@ class Program < ActiveRecord::Base
       self.errors[:capacity] << " should be non-zero."
       return false
     end
-    if self.announced_locality.nil? || self.announced_locality.blank?
-      self.announced_locality = self.center.name
-    end
+    #if self.announced_locality.nil? || self.announced_locality.blank?
+    #  self.announced_locality = self.center.name
+    #end
 
     if not self.valid_contact_phone?
       self.errors[:contact_phone] << " invalid. Please enter valid phone number(s)."
@@ -559,6 +647,18 @@ class Program < ActiveRecord::Base
       self.timing_str = "Starts on #{self.start_date.day.ordinalize} at #{start_time.strftime("%-I:%M%P")}. Ends on #{self.end_date.day.ordinalize} by #{end_time.strftime("%-I:%M%P")}."
       # update linked teacher schedule timing str
       # self.update_teacher_schedule_timing_str(Timing.pluck(:id), self.timing_str)
+    elsif self.custom_session_duration?
+      # 2. update the announcement string
+      sessions = self.program_donation.program_type.session_duration_list
+      length = sessions.flatten.length
+      new_start_time = self.session_time[:start][0]
+      new_end_time = self.session_time[:end][length-1]
+      # verify timings
+      return false unless self.custom_duration_session_timings_valid?(sessions, self.session_time)
+      # fill timings strings
+      announced_timing, timing_str = custom_duration_timing_str(sessions, self.session_time)
+      self.announced_timing = announced_timing
+      self.timing_str = timing_str
     else
       #
       # If non-residential, e.g., IE, or Uyir Nokkam
@@ -657,6 +757,107 @@ class Program < ActiveRecord::Base
     return can_announce?
   end
 
+  def custom_duration_timing_str(sessions, session_time)
+    # store value in the session format --
+    index = 0
+    for i in (0..sessions.length-1)
+      unless sessions[i].is_a? Array
+        sessions[i] = {:start => session_time[:start][index], :end => session_time[:end][index]}
+        index += 1
+      else
+        for j in 0..(sessions[i].length-1)
+          sessions[i][j] = {:start => session_time[:start][index], :end => session_time[:end][index]}
+          index += 1
+        end
+      end
+    end
+
+    # check if any of session days same ..
+    timing_map = {}
+    count = 0
+    for i in (0..sessions.length-1)
+      entry = timing_map.select {|k,v| v[:timings] == sessions[i]}
+      if entry.blank?
+        timing_map[count] = {:timings => sessions[i], :days => [i]}
+        count += 1
+      else
+        key = entry.keys.first
+        timing_map[key][:days] << i
+      end
+    end
+
+    # announced_timing =
+    #   "Fri 9, Mon 12-Wed 14, Fri 16: 7:30pm - 9:00pm"
+    #   "Sat 10, Sun 11: 7:30am - 9:00am AND 7:00pm - 9:00pm"
+    #   "Thu 15 : 6:00pm - 9:00pm"
+    #
+    # timing_str =
+    # "(9th, 12th-14th, 16th) 7:30pm - 9:00pm, (10th,11th) 7:30am - 9:00am AND 7:30pm - 9:00pm, (15th) 6:00pm - 9:00pm"
+    #
+
+    session_announced_timing = ""
+    session_timing_str = ""
+    for i in 0..(timing_map.length-1)
+      timing_str = ""
+      timings = timing_map[i][:timings]
+      unless timings.is_a? Array
+        new_timing_str = "#{timings[:start].strftime("%-I:%M%P")} - #{timings[:end].strftime("%-I:%M%P")}"
+      else
+        new_timing_str = ""
+        for j in (0..timings.length-1)
+          new_timing_str += "#{timings[j][:start].strftime("%-I:%M%P")} - #{timings[j][:end].strftime("%-I:%M%P")}"
+          new_timing_str += " AND " unless j == (timings.length-1)
+        end
+      end
+
+      # add the days in front
+      days = timing_map[i][:days]
+      announced_day_str = "";
+      day_str = "";
+      last_day = -1;
+      for j in (0..days.length-1)
+        if (j == (days.length-1)) or (days[j]+1 != days[j+1])
+          # flush pipeline
+          today = self.start_date + days[j].days
+          last_date = self.start_date + last_day.days
+          if last_day == -1
+            # "Thu 15 : "
+            # "(15th) "
+            announced_day_str += "#{today.strftime('%a %-d')}"
+            day_str += "#{today.day.ordinalize}"
+          elsif last_day+1 == days[j]
+            # announced - "Sat 10, Sun 11: "
+            # timing - "(10th,11th) "
+            announced_day_str += "#{last_date.strftime('%a %-d')}, #{today.strftime('%a %-d')}"
+            day_str += "#{last_date.day.ordinalize}, #{today.day.ordinalize}"
+          else
+            # announced - "Fri 9, Mon 12-Wed 14, Fri 16: "
+            # timing - "(9th, 12th-14th, 16th) "
+            announced_day_str += "#{last_date.strftime('%a %-d')}-#{today.strftime('%a %-d')}"
+            day_str += "#{last_date.day.ordinalize}-#{today.day.ordinalize}"
+          end
+          last_day = -1
+          unless j == days.length-1
+            announced_day_str += ", "
+            day_str += ", "
+          end
+        else
+          last_day = days[j] if last_day == -1
+        end
+      end
+      announced_day_str += ": "
+      day_str = "(#{day_str}) "
+
+      session_announced_timing += (announced_day_str + new_timing_str)
+      session_timing_str += (day_str + new_timing_str.gsub(" AND ", ", "))
+      unless i == (timing_map.length-1)
+        session_announced_timing += "\n"
+        session_timing_str += " "
+      end
+    end
+    [session_announced_timing, session_timing_str]
+  end
+
   def locality_name
     if self.announced_locality.nil? ||  self.announced_locality.blank?
       self.center.name
@@ -667,6 +868,10 @@ class Program < ActiveRecord::Base
 
   def residential?
     self.program_donation.program_type.residential?
+  end
+
+  def custom_session_duration?
+    self.program_donation.program_type.custom_session_duration?
   end
 
   def has_intro?
@@ -957,7 +1162,7 @@ class Program < ActiveRecord::Base
   end
 
   def no_of_days
-    self.program_donation.program_type.no_of_days.to_i
+      self.program_donation.program_type.no_of_days.to_i
   end
 
   #def no_of_teachers_connected_or_conducted_class(role=nil)
@@ -973,9 +1178,13 @@ class Program < ActiveRecord::Base
   #  end
   #end
 
-  def no_of_teachers_connected(role, timing_id)
+  def no_of_teachers_connected(role, timing_id = 0)
     return 0 if self.teacher_schedules.blank?
-    self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing_id).group('teacher_id').length
+    if timing_id == 0
+      self.teacher_schedules.where('state IN (?) AND role = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role).group('teacher_id').length
+    else
+      self.teacher_schedules.where('state IN (?) AND role = ? AND timing_id = ?', ::ProgramTeacherSchedule::CONNECTED_STATES, role, timing_id).group('teacher_id').length
+    end
   end
 
   def teachers_connected(role)
@@ -1172,12 +1381,19 @@ class Program < ActiveRecord::Base
   def teacher_status
     errors = []
     self.roles.each { |role|
-      self.timings.each { |timing|
-        connected = self.no_of_teachers_connected(role, timing.id)
+      # in case of residential? or custom_session_duration?, check only for specific role
+      if self.residential? or self.custom_session_duration?
+        connected = self.no_of_teachers_connected(role)
         minimum = self.minimum_no_of_teacher(role)
-        session = timing.name
-        errors << "<i>#{role}(s)</i> added = <b>#{connected}</b> for <i>#{session}</i>. Please add <b>#{minimum-connected}</b> more." if connected < minimum
-      }
+        errors << "<i>#{role}(s)</i> added = <b>#{connected}</b>. Please add <b>#{minimum-connected}</b> more." if connected < minimum
+      else
+        self.timings.each { |timing|
+          connected = self.no_of_teachers_connected(role, timing.id)
+          minimum = self.minimum_no_of_teacher(role)
+          session = timing.name
+          errors << "<i>#{role}(s)</i> added = <b>#{connected}</b> for <i>#{session}</i>. Please add <b>#{minimum-connected}</b> more." if connected < minimum
+        }
+      end
     }
     if errors.empty?
       return ['<span class="label label-success">Ready</span>']

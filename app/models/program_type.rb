@@ -21,7 +21,8 @@
 #
 
 class ProgramType < ActiveRecord::Base
-  attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :minimum_no_of_hall_teacher, :minimum_no_of_organizing_teacher, :minimum_no_of_initiation_teacher, :name, :no_of_days, :registration_close_timeout, :session_duration
+  include CommonFunctions
+  attr_accessible :language, :minimum_no_of_teacher, :minimum_no_of_co_teacher, :minimum_no_of_hall_teacher, :minimum_no_of_organizing_teacher, :minimum_no_of_initiation_teacher, :name, :no_of_days, :custom_session_duration, :registration_close_timeout, :session_duration
   attr_accessible :intro_duration, :length => {:within => 1..3}, :numericality => {:only_integer => true, :greater_than => 0}
   attr_accessible :full_day, :combined_day
   has_and_belongs_to_many :teachers
@@ -37,10 +38,12 @@ class ProgramType < ActiveRecord::Base
   validates :minimum_no_of_hall_teacher, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
   validates :minimum_no_of_initiation_teacher, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
   validates :registration_close_timeout, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
-  validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
+  validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }, :if => 'custom_session_duration.blank?'
   validates_uniqueness_of :name, :scope => :deleted_at
   validate :residential_program
   validate :intro_full_combined_day
+  validate :valid_custom_session_duration?
+  validate :has_timings?
 
   MIN_NO_TEACHER = {
       ::TeacherSchedule::ROLE_MAIN_TEACHER => "minimum_no_of_teacher" ,
@@ -61,13 +64,22 @@ class ProgramType < ActiveRecord::Base
 
   acts_as_paranoid
 
+  def has_timings?
+    if self.timings.blank?
+      self.errors[:timings] << " cannot be left unselected. Select at least one timing."
+      return
+    end
+  end
+
   def residential_program
-    if self.session_duration == 0
-      self.errors[:session_duration] << " invalid. Please specify value > 0. For residential specify -1."
+    return if not self.custom_session_duration.blank?
+
+    if self.session_duration.blank? or self.session_duration == 0
+      self.errors[:session_duration] << " invalid."
       return
     end
 
-    if self.session_duration < 0
+    if not self.session_duration.blank? and self.session_duration < 0
       if self.timings.length != Timing.all.count
         self.errors[:timings] << " cannot be left unselected. Please select all timings for a residential program."
         return
@@ -80,31 +92,33 @@ class ProgramType < ActiveRecord::Base
   end
 
   def intro_full_combined_day
+    return if not self.custom_session_duration.blank?
+
     if self.intro_duration.blank? and self.full_day.blank? and self.combined_day.blank?
       return
     end
 
-    if self.session_duration < 0
+    if not self.session_duration.blank? and self.session_duration < 0
       if not self.intro_duration.blank?
-        self.errors[:intro_duration] << " invalid. Please leave blank for residential programs."
+        self.errors[:intro_duration] << " invalid."
         return
       end
       if not full_day.blank?
-        self.errors[:full_day] << " invalid. Please leave blank for residential programs."
+        self.errors[:full_day] << " invalid."
         return
       end
       if not combined_day.blank?
-        self.errors[:combined_day] << " invalid. Please leave blank for residential programs."
+        self.errors[:combined_day] << " invalid."
         return
       end
     end
 
     if not self.full_day.blank? and not (self.full_days  - (1..self.no_of_days).to_a).blank?
-      self.errors[:full_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}. Multiple values should be comma separated."
+      self.errors[:full_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}."
       return
     end
     if not self.combined_day.blank? and not (self.combined_days  - (1..self.no_of_days).to_a).blank?
-      self.errors[:combined_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}. Multiple values should be comma separated."
+      self.errors[:combined_day] << " invalid. Please enter valid value between 1 and #{self.no_of_days}."
       return
     end
     if not self.intro_duration.blank? and not self.full_day.blank? and self.full_days.include?(1)
@@ -149,9 +163,125 @@ class ProgramType < ActiveRecord::Base
     self.session_duration.blank? ? false : self.session_duration < 0
   end
 
+  def custom_session_duration?
+    not self.custom_session_duration.blank?
+  end
+
   def has_intro?
     not self.intro_duration.blank?
   end
+
+  #
+  # E.g --
+  #
+  #   2 day program of total 9 hours, with two session of 3 hours on first day, and two sessions on second day (of 2 hours and 1 hours respectively)
+  #   - no_of_days = 2
+  #   - custom_session_duration = '3+3,2+1'
+  #   NOTE - in this case multiple batches are not allowed
+  #
+  def valid_custom_session_duration?
+    str = self.custom_session_duration
+    return if str.blank?
+
+    if not self.session_duration.blank?
+      self.errors[:session_duration] << " invalid. Leave blank if custom session duration specified."
+      return
+    end
+
+    if not self.intro_duration.blank?
+      self.errors[:intro_duration] << " invalid."
+      return
+    end
+
+    if not self.full_day.blank?
+      self.errors[:full_day] << " invalid."
+      return
+    end
+
+    if not self.combined_day.blank?
+      self.errors[:combined_day] << " invalid."
+      return
+    end
+
+    if self.timings.length != Timing.all.count
+      self.errors[:timings] << " cannot be left unselected. Please select all timings for custom session duration."
+      return
+    end
+
+    if not str.match(/^[0-9][0-9+., ]*[0-9]$/)
+      self.errors[:custom_session_duration] << " invalid. Only numeric values allowed, separated by + or ,"
+      return
+    end
+
+    if not (str.include?("+") or str.include?(","))
+      self.errors[:custom_session_duration] << " invalid. Please specify numeric values separated by + or ,"
+      return
+    end
+
+    days = str.delete(' ').split(',')
+    if days.length != self.no_of_days
+      self.errors[:custom_session_duration] << " invalid. Number of days do not match earlier specified value."
+      return
+    end
+
+    days.each { |day|
+      if not is_integer?(day[-1])
+        self.errors[:custom_session_duration] << " invalid. Trailing special characters not allowed."
+        return
+      end
+      if day.include?("+")
+        elements = day.split("+")
+        if elements.length > 4
+          self.errors[:custom_session_duration] << " invalid. Maximum four sessions allowed in a day."
+          return
+        end
+        elements.each { |element|
+          if not is_numeric?(element)
+            self.errors[:custom_session_duration] << " invalid. Specify day with multiples sessions as 'session_duration_in_hrs + session_duration_in_hrs ...' . E.g., 2+3+2"
+            return
+          end
+        }
+        number, interval = Timing::interval
+        if elements.map{|x| x.to_f}.inject(:+) > (number * interval)
+          self.errors[:custom_session_duration] << " invalid. Total session duration for a day cannot exceed #{(number * interval)} hrs."
+          return
+        end
+      end
+    }
+  end
+
+  #
+  # Assumes that validate_custom_session_duration was success, does not perform fresh validations --
+  #
+  def session_duration_list
+    return [] if self.custom_session_duration.blank?
+    days = []
+    self.custom_session_duration.delete(' ').split(',').each { |day|
+      if day.include?("+")
+        days << day.split("+").map{|s| s.to_f}
+      else
+        days << [day.to_f]
+      end
+    }
+    return days
+  end
+
+  def session_offsets
+    sessions = self.session_duration_list
+    offsets = []
+    offset = 0
+    sessions.each { |day|
+      if day.is_a? Array
+        offsets += day.map{|d| offset}
+      else
+        offsets << offset
+      end
+      offset += 1
+    }
+    offsets
+  end
+
+
 
   rails_admin do
     navigation_label 'Program'
@@ -176,6 +306,16 @@ class ProgramType < ActiveRecord::Base
       field :no_of_days do
         label "Number of days"
       end
+      field :session_duration do
+        label "Duration of one session (in hrs)"
+        help "Enter -1 for a residential program."
+      end
+      field :timings do
+        inline_add false
+      end
+      field :program_donations do
+        inline_add false
+      end
       field :minimum_no_of_teacher do
         label "Minimum number of Main Teachers"
       end
@@ -199,27 +339,21 @@ class ProgramType < ActiveRecord::Base
         label "Registration Close Timeout (in hrs)"
         help "(If not already closed) the number of hours (after start of program), when registration is marked closed. Negative values are allowed."
       end
-      field :session_duration do
-        label "Duration of one session (in hrs)"
-        help "Enter -1 for a residential program"
-      end
-      field :timings do
-        inline_add false
-      end
       field :intro_duration do
         label "Intro duration (in minutes)"
-        help "e.g., 75 for IE. Not valid for residential programs."
+        help "e.g., 75 for IE. Leave blank for residential or hatha yoga programs."
       end
       field :full_day do
         label "Full Day(s)"
-        help "e.g., 5 for IE. Not valid for residential programs. Comma separate multiple values (e.g., 3,4 for Sadhguru IE)"
+        help "e.g., 5 for IE. Leave blank for residential or hatha yoga programs. Comma separate multiple values (e.g., 3,4 for Sadhguru IE)"
       end
       field :combined_day do
         label "Combined Day(s)"
-        help "Day(s) when combined session can happen for multiple programs (e.g., 5 for IE). Not valid for residential programs. Comma separate multiple values."
+        help "Day(s) when combined session can happen for multiple programs (e.g., 5 for IE). Leave blank for residential or hatha yoga programs. Comma separate multiple values."
       end
-      field :program_donations do
-        inline_add false
+      field :custom_session_duration do
+        label "Custom Session Duration"
+        help "Valid only for hatha yoga modules. E.g., 4+4,3 (for two four-hour, and one three-hour session. Two on first day, one on second day)"
       end
     end
   end

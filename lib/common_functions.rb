@@ -1,4 +1,16 @@
 module CommonFunctions
+
+  def is_integer?(str)
+    str.to_i.to_s == str
+  end
+
+  def is_numeric?(str)
+    number = str.to_f.chomp(".0")
+    # trim un-necessay trailing zero
+    number = number.to_i if number.to_s[-2..-1] == ".0"
+    number.to_s == str
+  end
+
   def has_comments?
     if self.comments.nil? || self.comments.blank?
       self.errors[:comments] << " cannot be blank"

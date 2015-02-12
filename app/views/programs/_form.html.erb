@@ -1,25 +1,30 @@
 <%= form_for(@program, :html => {:class => 'form'}) do |f| %>
   <%= resource_error_messages!(@program) %>
 
-  <div class='form-group'>
-    <%= f.label 'Name' %>
-    <%= f.text_field :name, :class => 'form-control' %>
-  </div>
-    <div class="form-group">
-      <%= f.label :center %>
-      <%= f.select :center_id, options_for_select(@centers.map {|c| [c.name, c.id]}, [@selected_center.name, @selected_center.id]), {}, :id => 'centers_select', :class => 'form-control' %>
+    <div class='form-group'>
+        <%= f.label 'Name' %>
+        <%= f.text_field :name, :class => 'form-control' %>
     </div>
-  <div class="form-group">
-    <%= f.label :program_type %>
-    <% if @program_donations.empty? %>
-        <%= f.select :program_donation_id, options_for_select(['None Available']), {}, :id => 'program_donations_select', :class => 'form-control' %>
-    <% else %>
-        <%= f.select :program_donation_id, options_for_select(@program_donations.map {|e| [e.name, e.id]}, [@selected_program_donation.name, @selected_program_donation.id]), {}, :id => 'program_donations_select', :class => 'form-control' %>
-    <% end %>
-    <br/>
-    <%= f.label :start_date %>
-    <%= f.text_field :start_date, :class => 'form-control dateSelect' %>
-  </div>
+    <div class="form-group">
+        <%= f.label :center %>
+        <%= f.select :center_id, options_for_select(@centers.map {|c| [c.name, c.id]}, [@selected_center.name, @selected_center.id]), {}, :id => 'centers_select', :class => 'form-control' %>
+    </div>
+    <div class="form-group">
+        <%= f.label :program_type %>
+        <% if @program_donations.empty? %>
+            <%= f.select :program_donation_id, options_for_select(['None Available']), {}, :id => 'program_donations_select', :class => 'form-control' %>
+        <% else %>
+            <%= f.select :program_donation_id, options_for_select(@program_donations.map {|e| [e.name, e.id]}, [@selected_program_donation.name, @selected_program_donation.id]), {}, :id => 'program_donations_select', :class => 'form-control' %>
+        <% end %>
+    </div>
+    <div id = "start_date" class="form-group">
+        <%= f.label :start_date %>
+        <%= f.text_field :start_date, :class => 'form-control dateSelect', :id => 'start_date_field' %>
+    </div>
+    <div id = "end_date" class="form-group">
+        <%= label_tag "End Date" %>
+        <%= text_field_tag "end_date", "", {:disabled => true, :class => 'form-control dateSelect', :id => "end_date_field"} %>
+    </div>
     <div id= "timings" class="form-group">
       <%= f.label :timings %>
       <% if @timings.empty? %>
@@ -56,6 +61,66 @@
       <% end %>
     </div>
 
+    <!--
+    <div class='form-group'>
+      <label> Toppings </label>
+      <%#= select_tag 'topping_ids', options_for_select(['Cheese', 'Tomatoes', 'Mozzarella', 'Mushrooms']), {:multiple => true, :id => 'toppings_select', :class => 'form-control'} %>
+    </div>
+    -->
+
+    <% if @maximum_no_of_sessions %>
+    <%= hidden_field_tag "sessions", @sessions, :id => :sessions_field %>
+    <%= hidden_field_tag "session_offsets", @session_offsets.to_json, :id => :session_offsets_field %>
+    <%= hidden_field_tag "no_of_days", @program_donations.empty? ? "" : @selected_program_donation.program_type.no_of_days.to_json, :id => :no_of_days_field %>
+    <div class = 'row' id = "session_details">
+      <div class='col-md-12'>
+        <label> Session Details </label>
+        <!-- <small>(select multiple consecutive slots if session timings do not fall in one slot)</small> -->
+        <table class='table table-bordered'>
+          <tr>
+            <td width='10%'>
+              <strong> # </strong>
+            </td>
+            <td width='20%'>
+              <strong>Duration</strong>
+            </td>
+            <td width='70%'>
+              <strong>Date</strong>
+            </td>
+            <!--
+            <td width='40%'>
+              <strong>Time Slot</strong>
+            </td>
+            -->
+          </tr>
+          <% sessions_list = @sessions.flatten %>
+          <% for i in 1..@maximum_no_of_sessions %>
+              <tr id = '<%= "session_#{i.to_s}_row"%>' >
+                <td width='10%'>
+                  <%= "#{i.to_s}" %>
+                </td>
+                <td>
+                  <small><%= label_tag "session_#{i.to_s}_d", (sessions_list[i-1]).to_s, :id => "session_#{i.to_s}_duration" %> hrs</small>
+                </td>
+                <td>
+                    <%= text_field_tag "session_#{i.to_s}_t", "", {:disabled => true, :class => 'form-control dateSelect', :id => "session_#{i.to_s}_date"} %>
+                </td>
+                <!--
+                <td>
+                  <%# if @timings.empty? %>
+                      <%#= select_tag "session_#{i.to_s}_timings", options_for_select(['None Available']), {:multiple => true, :id => "session_#{i.to_s}_timings", :class => 'form-control'} %>
+                  <%# else %>
+                      <%#= select_tag "session_#{i.to_s}_timings", options_for_select(@timings.map {|e| [e.name, e.id]}), {:multiple => true, :id => "session_#{i.to_s}_timings", :class => 'form-control'} %>
+                  <%# end %>
+                </td>
+                -->
+              </tr>
+          <% end %>
+        </table>
+      </div>
+    </div>
+    <% end %>
+
     <%= f.submit 'Create', :id => 'create_button', :disabled => @disable_create_button, :class => 'btn btn-lg btn-primary' %>
 <% end %>
 
@@ -67,12 +132,56 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
 </script>
 
 <script>
+    function update_session_dates(){
+        var start_date = $('#start_date_field').val();
+        var session_offsets = $.parseJSON($('#session_offsets_field').val());
+        var valid_date = moment(start_date, "D MMMM YYYY (dddd)").isValid();
+        for (i = 0; i < session_offsets.length; i++) {
+            //var md = moment(start_date, "D MMMM YYYY (dddd)").add(parseInt(session_offsets[i]), 'days').format('MMM Do (ddd)');
+            var md = moment(start_date, "D MMMM YYYY (dddd)").add(parseInt(session_offsets[i]), 'days').format('D MMMM YYYY (dddd)');
+            var id = "#session_x_date".replace("x", (i+1).toString());
+            if (valid_date){
+                $(id).val(md);
+            }else{
+                $(id).val("");
+            }
+        }
+        return;
+    }
+
+    function update_end_date(){
+        var start_date = $('#start_date_field').val();
+        var no_of_days = $('#no_of_days_field').val();
+        var valid_date = moment(start_date, "D MMMM YYYY (dddd)").isValid();
+        if (valid_date){
+            var md = moment(start_date, "D MMMM YYYY (dddd)").add(parseInt(no_of_days)-1, 'days').format('D MMMM YYYY (dddd)');
+            $("#end_date_field").val(md);
+        }else{
+            $("#end_date_field").val("");
+        }
+        return;
+    }
+
     $(document).ready(function() {
+        <!--
+        <%# for i in 1..@maximum_no_of_sessions %>
+        $('<%#= "#session_#{i.to_s}_timings"%>').multiselect({
+            buttonWidth: '250px',
+            dropRight: true,
+            maxHeight: 150,
+            numberDisplayed: 1,
+            disableIfEmpty: true
+            <%-# , includeSelectAllOption: true -%>
+            <%-# , enableCaseInsensitiveFiltering: true -%>
+        });
+        <%# end %>
+        -->
         $('#centers_select').change(function() {
             $.ajax({
                 url: "<%= update_program_donations_path %>",
                 data: {
-                    center_id : $('#centers_select').val()
+                    center_id : $('#centers_select').val(),
+                    maximum_no_of_sessions : "<%= @maximum_no_of_sessions %>"
                 },
                 dataType: "script"
             });
@@ -81,10 +190,23 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
             $.ajax({
                 url: "<%= update_program_timings_path %>",
                 data: {
-                    program_donation_id : $('#program_donations_select').val()
+                    program_donation_id : $('#program_donations_select').val(),
+                    maximum_no_of_sessions : "<%= @maximum_no_of_sessions %>"
                 },
                 dataType: "script"
             });
+        });
+        $('#start_date_field').change(function() {
+            var hidden = $("#session_details").is(":hidden");
+            if (!hidden){
+                update_session_dates();
+            }
+            hidden = $("#end_date").is(":hidden");
+            console.log(hidden);
+            if (!hidden){
+                update_end_date();
+            }
+
         });
         <% if @hide_intro_timings %>
             $("#intro_timings").hide();
@@ -105,6 +227,25 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
             $("#timings").hide();
         <% else %>
             $("#timings").show();
+        <% end %>
+        <% if @hide_end_date %>
+            $("#end_date").hide();
+        <% else %>
+            $("#end_date").show();
+            $('#start_date_field').val("");
+            $('#end_date_field').val("");
+            //update_end_date();
+        <% end %>
+        <% if @hide_session_details %>
+            $("#session_details").hide();
+        <% else %>
+            $("#session_details").show();
+            $('#start_date_field').val("");
+            //update_session_dates();
+            <% sessions_list = @sessions.flatten %>
+            <% for i in (sessions_list.length+1)..@maximum_no_of_sessions %>
+                $('<%= "#session_#{i.to_s}_row"%>').hide();
+            <% end %>
         <% end %>
     });
 </script>

@@ -167,8 +167,8 @@ class TeacherSchedule < ActiveRecord::Base
     program = self.program
     return self.timing_str if program.blank?
 
-    # in residential, teacher cannot be linked in different roles, to different timings
-    return self.program.timing_str if program.residential?
+    # in residential, or custom session duration, teacher cannot be linked in different roles, to different timings
+    return self.program.timing_str if program.residential? or program.custom_session_duration?
 
     # concatenate all the timing_str from all the schedule linked to the program for specified role
     timing_strs = TeacherSchedule.where("program_id = ? AND teacher_id = ? AND role IN (?)", program.id, self.teacher.id, role).pluck(:timing_str)

@@ -12,21 +12,18 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require bootstrap.min
-//= require bootstrap-hover-dropdown.min
 //= require jquery-ui
+//= require bootstrap.min
 //= require_tree .
+//= require bootstrap-hover-dropdown.min
 //= require bootstrap-datetimepicker/bootstrap-datetimepicker
 //= require bootstrap-timepicker
+//= require bootstrap-multiselect
 //= require dataTables/jquery.dataTables
 //= require dataTables/jquery.dataTables.bootstrap3
 //= require dataTables/extras/TableTools
 //= require dataTables/extras/ZeroClipboard
-//= require jquery
-//= require jquery_ujs
-//= require jquery-ui
 //= require autocomplete-rails
 //= require jquery.timepicker
-//= require bootstrap-timepicker
 //= require js-routes
-//= require bootstrap-multiselect
+//= require moment

@@ -36,7 +36,8 @@ class ProgramTeacherSchedulesController < ApplicationController
       # in case of residential program, we reserve the teacher for all timings
       if params[:program_teacher_schedule].has_key?(:program_id)
         program = ::Program.find((params[:program_teacher_schedule][:program_id]).to_i)
-        params[:program_teacher_schedule][:timing_ids] = ::Timing.pluck(:id) if program.residential?
+        # in case of residential or custom session duration, we are blocking teacher for the full day
+        params[:program_teacher_schedule][:timing_ids] = ::Timing.pluck(:id) if program.residential? or program.custom_session_duration?
       end
 
       @program_teacher_schedule = load_program_teacher_schedule!(params[:program_teacher_schedule])
@@ -49,9 +50,6 @@ class ProgramTeacherSchedulesController < ApplicationController
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         elsif !teacher.can_be_blocked_by_given_timings?(program, @program_teacher_schedule.teacher_role, @program_teacher_schedule.timing_ids)
           format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Request timed out, cannot perform the requested action. Please try again." }
-          format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
-        elsif program.residential? and !teacher.can_be_blocked_for_full_day?(@program_teacher_schedule.timing_ids)
-          format.html { redirect_to teacher_teacher_schedules_path(@program_teacher_schedule.teacher), :alert => "[ ERROR ] Teacher cannot be blocked for Full-Day Program. Please select all available Timing(s) and try again." }
           format.json { render json: @program_teacher_schedule.errors, status: :unprocessable_entity }
         else
           @program_teacher_schedule.block_teacher_schedule!(params[:program_teacher_schedule])
@@ -138,7 +136,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     @program_teacher_schedule = load_program_teacher_schedule!(params)
     @selected_timings = blockable_timing_ids[selected_program_id].map { |id| Timing.find(id)}
     @selected_program = Program.find(selected_program_id)
-    @hide_timings = (@selected_program.blank? or @selected_program.residential?) ? true : false
+    @hide_timings = (@selected_program.blank? or @selected_program.residential? or @selected_program.custom_session_duration?)
   end
 
   #def load_additional_comments!
@@ -169,7 +167,7 @@ class ProgramTeacherSchedulesController < ApplicationController
   def load_blockable_teachers!(teacher_role = nil)
     @teacher_roles = @program_teacher_schedule.program.roles
     @selected_teacher_role = teacher_role.nil? ? @teacher_roles[0] : teacher_role
-    @hide_timings = (@program_teacher_schedule.program.blank? or @program_teacher_schedule.program.residential?) ? true : false
+    @hide_timings = (@program_teacher_schedule.program.blank? or @program_teacher_schedule.program.residential? or @program_teacher_schedule.program.custom_session_duration?)
     #@timings = @selected_program_type.timings.sort_by{|t| t[:start_time]}
     blockable_teachers = @program_teacher_schedule.blockable_teachers(@selected_teacher_role)
     @blockable_teachers = blockable_teachers.sort_by{|entry| entry[:teacher].user.fullname}
@@ -196,7 +194,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     @blockable_programs = blockable_programs.sort_by{|entry| entry[:program].friendly_name}
     @blockable_timing_ids = Hash[@blockable_programs.map {|e| [e[:program].id, e[:timing_ids]] }]
     @selected_program = @blockable_programs.blank? ? nil : @blockable_programs.first[:program]
-    @hide_timings = (@selected_program.blank? or @selected_program.residential?) ? true : false
+    @hide_timings = (@selected_program.blank? or @selected_program.residential? or @selected_program.custom_session_duration?)
     @selected_timings = @blockable_programs.blank? ? [] : Timing.find(@blockable_programs.first[:timing_ids])
   end
 
@@ -209,7 +207,7 @@ class ProgramTeacherSchedulesController < ApplicationController
     @blockable_programs = blockable_programs.sort_by{|entry| entry[:program].friendly_name}
     @blockable_timing_ids = Hash[@blockable_programs.map {|e| [e[:program].id, e[:timing_ids]] }]
     @selected_program = @blockable_programs.blank? ? nil : @blockable_programs.first[:program]
-    @hide_timings = (@selected_program.blank? or @selected_program.residential?) ? true : false
+    @hide_timings = (@selected_program.blank? or @selected_program.residential? or @selected_program.custom_session_duration?)
     @selected_timings = @blockable_programs.blank? ? [] : Timing.find(@blockable_programs.first[:timing_ids])
   end
 

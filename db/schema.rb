@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20150203100346) do
+ActiveRecord::Schema.define(:version => 20150308064710) do
 
   create_table "access_privileges", :force => true do |t|
     t.integer  "role_id"
@@ -365,6 +365,7 @@ ActiveRecord::Schema.define(:version => 20150203100346) do
     t.integer  "intro_duration"
     t.string   "full_day"
     t.string   "combined_day"
+    t.string   "custom_session_duration"
   end
 
   add_index "program_types", ["deleted_at"], :name => "index_program_types_on_deleted_at"

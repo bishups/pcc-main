@@ -514,11 +514,6 @@ class Teacher < ActiveRecord::Base
   end
 
 
-  def can_be_blocked_for_full_day?(timing_ids)
-    Timing.pluck(:id).sort == timing_ids.sort
-  end
-
-
   def full_time?
     return self.full_time
   end
