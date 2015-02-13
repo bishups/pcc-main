@@ -224,6 +224,7 @@ class ProgramsController < ApplicationController
     @disable_create_button = true
     if program_donations.empty?
       @program_donations = ['None Available']
+      @selected_program_donation = ['None Available']
       @timings = ['None Available']
       self.hide_intro_first_last_day_timings(true)
     else
@@ -235,9 +236,9 @@ class ProgramsController < ApplicationController
         @disable_create_button = false
         #@timings = timings.sort_by{|t| t[:start_time]}.map{|a| [a.name, a.id]}
       end
+      @selected_program_donation = program_donations[0]
       @program_donations = program_donations.map{|a| [a.name, a.id]}
     end
-    @selected_program_donation = program_donations[0]
   end
 
   def load_centers_program_type_timings!(selected_center = nil, selected_program_donation = nil)
