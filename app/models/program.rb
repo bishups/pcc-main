@@ -1333,7 +1333,6 @@ class Program < ActiveRecord::Base
   end
 
   def ready_for_announcement?
-    return true
     return false unless self.no_of_venues_paid > 0
     return false unless self.no_of_kits_connected > 0
     return false unless self.minimum_teachers_connected?
