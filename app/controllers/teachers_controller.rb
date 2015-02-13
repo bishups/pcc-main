@@ -244,9 +244,9 @@ class TeachersController < ApplicationController
         }
 
         # add dummy entries for teachers for whom no schedule was found
-        @teachers.each { |teacher|
+        Teacher.find(teacher_ids).each { |teacher|
           next if teachers_added.include?(teacher)
-          @teacher_schedules << ["#{ts.teacher.user.fullname} (##{ts.teacher.id})", ' ',
+          @teacher_schedules << ["#{teacher.user.fullname} (##{teacher.id})", ' ',
                                  [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
                                  [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
                                  "white"]
