@@ -50,7 +50,6 @@
         function selectHandler() {
             var selectedItem = chart.getSelection()[0];
             if (selectedItem) {
-                var hidden = dataTable.getValue(selectedItem.row, 5);
 
                 var t_description = dataTable.getValue(selectedItem.row, 0);
                 var t_elements = t_description.split("(#");
