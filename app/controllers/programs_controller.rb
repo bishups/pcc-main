@@ -237,7 +237,7 @@ class ProgramsController < ApplicationController
       end
       @program_donations = program_donations.map{|a| [a.name, a.id]}
     end
-    @selected_program_donation = @program_donations[0]
+    @selected_program_donation = program_donations[0]
   end
 
   def load_centers_program_type_timings!(selected_center = nil, selected_program_donation = nil)
