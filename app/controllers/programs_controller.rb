@@ -464,7 +464,7 @@ class ProgramsController < ApplicationController
         }
 
         # add dummy entries for centers for whom no schedule was found
-        @centers.each { |center|
+        Center.find(center_ids).each { |center|
           next if centers_added.include?(center)
           @center_schedules << [center.name, ' ',
                                  [@start_date.year, @start_date.month-1, @start_date.day, 0, 0, 0],
