@@ -38,10 +38,10 @@ class ProgramType < ActiveRecord::Base
   validates :minimum_no_of_hall_teacher, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
   validates :minimum_no_of_initiation_teacher, :presence => true, :length => {:within => 1..2}, :numericality => {:only_integer => true }
   validates :registration_close_timeout, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }
-  validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }, :if => 'custom_session_duration.blank?'
+  validates :session_duration, :presence => true, :length => {:within => 1..3}, :numericality => {:only_integer => true }, :unless => :custom_session_duration?
   validates_uniqueness_of :name, :scope => :deleted_at
-  validate :residential_program
-  validate :intro_full_combined_day
+  validate :residential_program, :unless => :custom_session_duration?
+  validate :intro_full_combined_day, :unless => :custom_session_duration?
   validate :valid_custom_session_duration?
   validate :has_timings?
 
@@ -72,8 +72,6 @@ class ProgramType < ActiveRecord::Base
   end
 
   def residential_program
-    return if not self.custom_session_duration.blank?
-
     if self.session_duration.blank? or self.session_duration == 0
       self.errors[:session_duration] << " invalid."
       return
@@ -92,8 +90,6 @@ class ProgramType < ActiveRecord::Base
   end
 
   def intro_full_combined_day
-    return if not self.custom_session_duration.blank?
-
     if self.intro_duration.blank? and self.full_day.blank? and self.combined_day.blank?
       return
     end

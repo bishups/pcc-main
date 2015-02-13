@@ -617,9 +617,9 @@ class Program < ActiveRecord::Base
       self.errors[:capacity] << " should be non-zero."
       return false
     end
-    #if self.announced_locality.nil? || self.announced_locality.blank?
-    #  self.announced_locality = self.center.name
-    #end
+    if self.announced_locality.nil? || self.announced_locality.blank?
+      self.announced_locality = self.center.name
+    end
 
     if not self.valid_contact_phone?
       self.errors[:contact_phone] << " invalid. Please enter valid phone number(s)."
@@ -859,7 +859,7 @@ class Program < ActiveRecord::Base
   end
 
   def locality_name
-    if self.announced_locality.nil? ||  self.announced_locality.blank?
+    if (self.announced_locality.nil? ||  self.announced_locality.blank? || self.announced_locality == self.center.name)
       self.center.name
     else
       "#{self.announced_locality} (#{self.center.name})"
@@ -1333,6 +1333,7 @@ class Program < ActiveRecord::Base
   end
 
   def ready_for_announcement?
+    return true
     return false unless self.no_of_venues_paid > 0
     return false unless self.no_of_kits_connected > 0
     return false unless self.minimum_teachers_connected?

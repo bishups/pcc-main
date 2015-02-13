@@ -63,6 +63,7 @@ class AccessPrivilege < ActiveRecord::Base
 
   def is_teacher_attached?
     teacher_role = Role.find_by_name(::User::ROLE_ACCESS_HIERARCHY[:teacher][:text])
+    return if teacher_role.blank? or self.role.blank?
     if self.role.id == teacher_role.id && self.resource_type == "Center"
       teacher = Teacher.find_by_user_id(self.user_id)
       if CentersTeachers.where('teacher_id = ? AND center_id = ?', teacher.id, self.resource_id).count > 0
