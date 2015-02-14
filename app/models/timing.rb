@@ -61,8 +61,9 @@ class Timing < ActiveRecord::Base
 
   def time_interval
     timing = Timing.first
-    current_interval = ((timing.end_time - timing.start_time) / 1.min).round
-    new_interval = ((self.end_time - self.start_time) / 1.min).round
+    return if timing.blank?
+    current_interval = ((timing.end_time - timing.start_time) / 1.minute).round
+    new_interval = ((self.end_time - self.start_time) / 1.minute).round
     if current_interval != new_interval
       self.errors[:base] << "Interval between Start and End time does not match existing record. Timing(s) should be of equal interval"
     end
