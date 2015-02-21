@@ -163,6 +163,7 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
     }
 
     $(document).ready(function() {
+        <% if false %>
         <!--
         <%# for i in 1..@maximum_no_of_sessions %>
         $('<%#= "#session_#{i.to_s}_timings"%>').multiselect({
@@ -171,11 +172,12 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
             maxHeight: 150,
             numberDisplayed: 1,
             disableIfEmpty: true
-            <%-# , includeSelectAllOption: true -%>
-            <%-# , enableCaseInsensitiveFiltering: true -%>
+            <%# , includeSelectAllOption: true %>
+            <%# , enableCaseInsensitiveFiltering: true %>
         });
         <%# end %>
         -->
+        <% end %>
         $('#centers_select').change(function() {
             $.ajax({
                 url: "<%= update_program_donations_path %>",
@@ -202,7 +204,6 @@ $('.dateSelect').datepicker({dateFormat: 'd MM yy (DD)'});
                 update_session_dates();
             }
             hidden = $("#end_date").is(":hidden");
-            console.log(hidden);
             if (!hidden){
                 update_end_date();
             }

@@ -405,10 +405,10 @@ class ProgramsController < ApplicationController
       @hide_timings = @hide_end_date = false
     else
       pt = program_donation.program_type
-      @hide_intro_timings = not(pt.has_intro?)
+      @hide_intro_timings = !(pt.has_intro?)
       # @hide_first_day_timing = @hide_last_day_timing  = not(pt.residential?)
       @hide_first_day_timing = @hide_last_day_timing  = true
-      @hide_session_details = not(pt.custom_session_duration?)
+      @hide_session_details = !(pt.custom_session_duration?)
       @hide_timings = (pt.residential? or pt.custom_session_duration?)
       @hide_end_date = pt.custom_session_duration?
     end
