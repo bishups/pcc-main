@@ -54,7 +54,7 @@ module UserExtension
   end
 
   def by_group(group_name)
-    current_group_values = User::ROLE_ACCESS_HIERARCHY.select { |k, v| v[:group] == group_name }.values
+    current_group_values = User::ROLE_ACCESS_HIERARCHY.select { |k, v| v[:group].include?(group_name) }.values
     if not current_group_values.empty?
       role_names = current_group_values.map { |a| a[:text] }
       puts role_names.inspect
