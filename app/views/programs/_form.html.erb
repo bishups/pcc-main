@@ -93,7 +93,7 @@
             </td>
             -->
           </tr>
-          <% sessions_list = @sessions.flatten %>
+          <% sessions_list = @sessions ?  @sessions.flatten : [] %>
           <% for i in 1..@maximum_no_of_sessions %>
               <tr id = '<%= "session_#{i.to_s}_row"%>' >
                 <td width='10%'>
