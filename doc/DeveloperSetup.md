@@ -46,10 +46,16 @@ The default database configuration file (config/database.yml) is set to use sqli
 Setup database tables:
 
 ```
+bundle exec rake db:create
+
 bundle exec rake db:migrate
 ```
 
 It is a good practice to run database migration after every pull from the repository in order to sync local schema with other developers.
+
+### Populate sample data
+
+bundle exec rake db:seed
 
 ### Run Application Server
 
